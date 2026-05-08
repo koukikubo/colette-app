@@ -1,0 +1,37 @@
+services:
+  frontend:
+    image: node:22.15.0
+    container_name: colette_frontend
+    tty: true
+    working_dir: /frontend
+    volumes:
+      - ./frontend:/frontend
+    ports:
+      - "3010:3000"
+
+  backend:
+    image: ruby:3.4.4
+    container_name: colette_backend
+    tty: true
+    working_dir: /backend
+    volumes:
+      - ./backend:/backend
+    ports:
+      - "3011:3000"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:17.4
+    container_name: colette_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: colette_development
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
