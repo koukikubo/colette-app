@@ -8,6 +8,7 @@ services:
       - ./frontend:/frontend
     ports:
       - "3010:3000"
+    command: sh -c "npm install && npm run dev"
 
   backend:
     image: ruby:3.4.4
@@ -20,6 +21,7 @@ services:
       - "3011:3000"
     depends_on:
       - db
+    command: sh -c "bundle install && rails db:create db:migrate && rails s -b 0.0.0.0"
 
   db:
     image: postgres:17.4
