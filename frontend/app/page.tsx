@@ -1,10 +1,20 @@
 import { Button } from "@/components/ui/button";
 
-export default function Home() {
+export default async function Home() {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/health`,
+
+    {
+      cache: "no-store",
+    },
+  );
+
+  const data = await response.json();
   return (
     <main className="flex min-h-screen items-center justify-center">
       <p>Welcome to COLETTE</p>
       <Button>COLETTE</Button>
+      <p>{data.status}</p>
     </main>
   );
 }
