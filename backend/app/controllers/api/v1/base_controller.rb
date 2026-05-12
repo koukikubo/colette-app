@@ -1,0 +1,49 @@
+class Api::V1::BaseController < ApplicationController
+  protect_from_forgery with: :null_session
+
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+  # 本番環境用の例外処理
+  # rescue_from StandardError, with: :render_internal_server_error
+
+
+  private
+  # 正常系JSONレスポンス統一
+  def render_success(data: {}, status: :ok)
+    render json: {
+        status: "success",
+        data: data 
+        }, status: status
+  end
+  # 異常系JSONレスポンス統一
+  def render_error(
+    message: "An error occurred",
+    errors: [],
+    status: :unprocessable_entity
+  )
+    render json: {
+        status: "error",
+        message: message,
+        errors: errors
+        }, status: status
+  end
+  
+  # ActiveRecord::RecordNotFound例外をキャッチして404エラーを返す
+  def render_not_found(error)
+    render_error(
+      message: "データが見つかりませんでした",
+      errors: [error.message],
+      status: :not_found
+    )    
+  end
+
+  def render_internal_server_error(error)
+    logger.error error.message
+    logger.error error.backtrace.join("\n")
+
+    render_error(
+      message: "サーバーエラーが発生しました",
+      errors: [error.message],
+      status: :internal_server_error
+    )    
+  end
+end
