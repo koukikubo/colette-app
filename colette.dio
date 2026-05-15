@@ -1,0 +1,105 @@
+<mxfile host="65bd71144e">
+    <diagram name="COLETTE ER Diagram" id="0">
+        <mxGraphModel dx="1491" dy="860" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="108" value="" style="edgeStyle=none;html=1;entryX=0.541;entryY=0.001;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="2" target="5">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="450" y="300" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="170" y="300"/>
+                            <mxPoint x="500" y="300"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="114" value="1：N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="108">
+                    <mxGeometry x="-0.0922" y="-5" relative="1" as="geometry">
+                        <mxPoint x="-1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="2" value="&lt;b&gt;staffs&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;FK staff_master_id&lt;br/&gt;password_digest&lt;br/&gt;login_enabled&lt;br/&gt;failed_attempts&lt;br/&gt;last_logged_in_at&lt;br/&gt;created_at&lt;br/&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="40" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="120" style="edgeStyle=none;html=1;exitX=0.286;exitY=0.001;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.007;entryY=0.194;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="3" target="10">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="20" y="760" as="targetPoint"/>
+                        <mxPoint x="425" y="40" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="430" y="20"/>
+                            <mxPoint x="20" y="20"/>
+                            <mxPoint x="20" y="700"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="123" value="1：N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" vertex="1" connectable="0" parent="120">
+                    <mxGeometry x="0.2509" y="-1" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="3" value="&lt;b&gt;staff_masters&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;code&lt;br/&gt;name&lt;br/&gt;role_code&lt;br/&gt;employment_started_at&lt;br/&gt;employment_ended_at&lt;br/&gt;note&lt;br/&gt;deleted_at&lt;br/&gt;created_at&lt;br/&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="40" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="&lt;b&gt;customers&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;customer_code&lt;br/&gt;last_name&lt;br/&gt;first_name&lt;br/&gt;phone_number&lt;br/&gt;email&lt;br/&gt;gender_code&lt;br/&gt;custom_field_01..30_code&lt;br/&gt;deleted_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="350" width="260" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="&lt;b&gt;reservations&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;FK customer_id&lt;br/&gt;FK staff_id&lt;br/&gt;reservation_date&lt;br/&gt;reservation_time&lt;br/&gt;guest_count&lt;br/&gt;reservation_status_code&lt;br/&gt;reservation_route_code&lt;br/&gt;canceled_at&lt;br/&gt;visited_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="340" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="&lt;b&gt;table_masters&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;code&lt;br/&gt;name&lt;br/&gt;seat_count&lt;br/&gt;area_code&lt;br/&gt;active&lt;br/&gt;display_order" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="720" y="340" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="&lt;b&gt;reservation_tables&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;FK reservation_id&lt;br/&gt;FK table_master_id&lt;br/&gt;created_at&lt;br/&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="720" y="620" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="&lt;b&gt;standard_masters&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;code&lt;br/&gt;name&lt;br/&gt;description&lt;br/&gt;active&lt;br/&gt;display_order&lt;br/&gt;created_at&lt;br/&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="40" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="&lt;b&gt;standard_list_masters&lt;/b&gt;&lt;hr&gt;PK id&lt;br&gt;FK standard_master_id&lt;br&gt;code：&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;_code は standard_list_masters.code を参照する&lt;/span&gt;&lt;br&gt;label&lt;br&gt;description&lt;br&gt;active&lt;br&gt;display_order&lt;br&gt;created_at&lt;br&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1045" y="340" width="330" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;b&gt;customer_memos&lt;/b&gt;&lt;hr/&gt;PK id&lt;br/&gt;FK customer_id&lt;br/&gt;FK staff_master_id&lt;br/&gt;content&lt;br/&gt;created_at&lt;br/&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="660" width="260" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="100" value="1 : 1" style="endArrow=block;html=1;rounded=0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="3" target="2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="102" value="1 : N" style="endArrow=block;html=1;rounded=0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="4" target="5" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="350" y="455"/>
+                            <mxPoint x="350" y="455"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="104" value="1 : N" style="endArrow=block;html=1;rounded=0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="6" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="850" y="620" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="105" value="1 : N" style="endArrow=block;html=1;rounded=0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="8" target="9" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="106" value="1 : N" style="endArrow=block;html=1;rounded=0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="4" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="124" value="" style="endArrow=classic;html=1;rounded=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;edgeStyle=none;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=-0.01;entryY=0.541;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="5" target="7">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="590" y="790" as="sourcePoint"/>
+                        <mxPoint x="640" y="740" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="490" y="740"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="125" value="1：N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;" vertex="1" connectable="0" parent="124">
+                    <mxGeometry x="-0.3799" y="2" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
