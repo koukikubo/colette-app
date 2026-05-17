@@ -4,7 +4,7 @@ class StandardListMaster < ApplicationRecord
   # バリデーション（入力チェック）
   with_options presence: true do
     validates :code, uniqueness: true
-    validates :name
+    validates :label
     validates :position,
               numericality: { only_integer: true }
   end
