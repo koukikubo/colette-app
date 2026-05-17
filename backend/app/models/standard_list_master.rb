@@ -13,22 +13,5 @@ class StandardListMaster < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
 
-  # 検索メソッド(遅延評価:条件に一致しているものだけを返す)
-  def self.search(query: nil, active: nil)
-    result = all
-
-    if query.present?
-      result = result.where(
-        "code LIKE :q OR name LIKE :q",
-        q: "%#{query}%"
-      )
-    end
-
-    unless active.nil?
-      result = result.where(active: active)
-    end
-
-    result
-  end
-
+  
 end
