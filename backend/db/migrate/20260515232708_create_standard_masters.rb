@@ -13,6 +13,6 @@ class CreateStandardMasters < ActiveRecord::Migration[8.1]
     add_index :standard_masters, :code, unique: true
     add_index :standard_masters, :name
     add_index :standard_masters, :active
-    add_index :standard_masters, :position
+    add_index :standard_masters, :position, unique: true
   end
 end
