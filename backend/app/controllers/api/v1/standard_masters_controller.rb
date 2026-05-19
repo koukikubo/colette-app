@@ -15,7 +15,7 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
 
   def show
     standard_master =
-      Api::V1::StandardMaster
+      StandardMaster
       .includes(:standard_list_masters)
       .find_by!(code: params[:code])
     render_success(

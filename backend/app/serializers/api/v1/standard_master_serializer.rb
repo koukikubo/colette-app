@@ -11,7 +11,7 @@ module Api
           active: @resource.active,
           position: @resource.position,
           items: @resource.standard_list_masters.ordered.map do |item|
-            StandardListMasterSerializer.new(item).as_json
+            Api::V1::StandardListMasterSerializer.new(item).as_json
           end
         }
       end
