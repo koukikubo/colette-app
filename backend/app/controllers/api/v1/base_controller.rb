@@ -1,5 +1,5 @@
 class Api::V1::BaseController < ApplicationController
-  protect_from_forgery with: :null_session
+  # protect_from_forgery with: :null_session
 
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   # 本番環境用の例外処理
