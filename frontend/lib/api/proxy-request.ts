@@ -8,6 +8,7 @@ export async function proxyRequest(
   if (!RAILS_API_URL) {
     throw new Error("RAILS_API_URL is not defined");
   }
+
   // リクエストのメソッド、CSRFトークン、ヘッダーを準備
   const method = request.method;
   const csrfToken = request.headers.get("X-CSRF-Token");
@@ -39,7 +40,7 @@ export async function proxyRequest(
   const responseBody = await upstream.text();
   const responseHeaders = new Headers();
   responseHeaders.set(
-    "Set-Cookie",
+    "Content-Type",
     upstream.headers.get("content-type") ?? "application/json",
   );
   // Rails APIからのSet-Cookieヘッダーを転送
