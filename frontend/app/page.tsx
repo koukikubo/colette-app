@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 export default async function Home() {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/health`,
+    `http://localhost:3010/api/v1/health`,
 
     {
       cache: "no-store",
