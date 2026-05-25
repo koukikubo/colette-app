@@ -1,12 +1,14 @@
 class Api::V1::Staff::SessionsController < Api::V1::BaseController
   before_action :require_staff_login!, only: %i[current]
 
+  MAX_FAILED_ATTEMPTS = 30
+
   # POST /api/v1/staff/sessions
   def create
-    staff = Staff.includes(:staff_master).find_by(id: login_params[:staff_id])
+    staff = ::Staff.includes(:staff_master).find_by(id: login_params[:staff_id])
     # スタッフが存在しない、パスワードが間違っている、またはログインが許可されていない場合はエラーを返す
     unless staff&.authenticate(login_params[:password]) && staff.login_allowed?
-      increment_failed_attempts(staff)
+      record_login_failure(staff)
 
       # セキュリティの観点から、どの条件が失敗したのかは明示せず、一般的なエラーメッセージを返す
       return render_error(
@@ -17,6 +19,7 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
 
     # ログイン成功時はセッションをリセットしてからスタッフIDを保存する（セッション固定攻撃対策）
     reset_session
+
     # セッションにスタッフIDと最後のアクセス日時を保存する
     session[:staff_id] = staff.id
     session[:last_access_at] = Time.current
@@ -60,13 +63,18 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
   private
   # ストロングパラメータでログイン情報を許可する
   def login_params
-    params.expect(:staff_id, :password)
+    params.expect(staff: %i[staff_id password])
   end
 
   # ログイン失敗回数をインクリメントするヘルパーメソッド
-  def increment_failed_attempts(staff)
+  def record_login_failure(staff)
     return if staff.blank?
 
     staff.increment!(:failed_attempts)
+
+    return if staff.failed_attempts < MAX_FAILED_ATTEMPTS
+
+    # 一定回数以上の失敗があった場合はログインを無効化する
+    staff.update!(login_enabled: false)
   end
 end

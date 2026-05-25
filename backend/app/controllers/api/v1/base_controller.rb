@@ -2,6 +2,7 @@ class Api::V1::BaseController < ApplicationController
   # protect_from_forgery with: :null_session
 
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+  rescue_from ActionController::ParameterMissing, with: :render_bad_request
   # 本番環境用の例外処理
   # rescue_from StandardError, with: :render_internal_server_error
 
@@ -36,6 +37,16 @@ class Api::V1::BaseController < ApplicationController
         data: data 
         }, status: status
   end
+
+  # リクエストパラメータが不正な場合のレスポンス
+  def render_bad_request(error)
+    render_error(
+      message: "リクエストパラメータが不正です",
+      errors: [error.message],
+      status: :bad_request
+    )
+  end
+  
   # 異常系JSONレスポンス統一
   def render_error(
     message: "An error occurred",
