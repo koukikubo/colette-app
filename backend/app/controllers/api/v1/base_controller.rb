@@ -7,6 +7,28 @@ class Api::V1::BaseController < ApplicationController
 
 
   private
+  # セッションから現在のスタッフを取得するヘルパーメソッド
+  def current_staff
+    return nil if session[:staff_id].blank?
+
+    @current_staff ||= Staff.includes(:staff_master).find_by(id: session[:staff_id])
+  end
+
+  # スタッフがログイン中かどうかを判定
+  def staff_logged_in?
+    current_staff.present?
+  end
+
+  # ログイン必須API用の認証チェック
+  def require_staff_login!
+    return if staff_logged_in?
+
+    render_error(
+      message: "ログインが必要です",
+      status: :unauthorized
+    )
+  end
+
   # 正常系JSONレスポンス統一
   def render_success(data: {}, status: :ok)
     render json: {
