@@ -3,6 +3,8 @@ class Api::V1::BaseController < ApplicationController
 
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
+  rescue_from ActionController::InvalidAuthenticityToken,
+            with: :render_invalid_authenticity_token
   # 本番環境用の例外処理
   # rescue_from StandardError, with: :render_internal_server_error
 
@@ -58,6 +60,15 @@ class Api::V1::BaseController < ApplicationController
         message: message,
         errors: errors
         }, status: status
+  end
+
+  # CSRFトークンが不正な場合のレスポンス
+  def render_invalid_authenticity_token(error)
+    render_error(
+      message: "CSRFトークンが不正です",
+      errors: [error.message],
+      status: :unprocessable_entity
+    )
   end
   
   # ActiveRecord::RecordNotFound例外をキャッチして404エラーを返す

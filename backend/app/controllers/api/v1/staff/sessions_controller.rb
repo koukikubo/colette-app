@@ -61,9 +61,13 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
   end
 
   private
-  # ストロングパラメータでログイン情報を許可する
+  # ログインに必要なパラメータを安全に取得するためのストロングパラメータメソッド
   def login_params
-    params.expect(staff: %i[staff_id password])
+    #expectメソッドを使用して、staffパラメータの中にstaff_idとpasswordが存在することを要求する
+    permitted_params = params.expect(staff: %i[staff_id password])
+    permitted_params.require(%i[staff_id password])
+
+    permitted_params
   end
 
   # ログイン失敗回数をインクリメントするヘルパーメソッド
