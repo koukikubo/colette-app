@@ -1,0 +1,33 @@
+export type StaffMaster = {
+  id: number;
+  code: string;
+  name: string;
+  role_code: string;
+};
+
+export type Staff = {
+  id: number;
+  login_enabled: boolean;
+  failed_attempts: number;
+  last_logged_in_at: string | null;
+  staff_master: StaffMaster;
+};
+
+export type LoginStaffRequest = {
+  staff: {
+    staff_id: number;
+    password: string;
+  };
+};
+
+export type StaffAuthResponse = {
+  status: "success";
+  data: Staff;
+};
+
+export type LogoutResponse = {
+  status: "success";
+  data: {
+    message: string;
+  };
+};
