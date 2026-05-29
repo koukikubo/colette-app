@@ -21,6 +21,7 @@ import { FormEvent, useState } from "react";
 import { loginStaff } from "../../api/staff-auth-api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 
 type StaffOption = {
   id: number;
@@ -39,7 +40,7 @@ export function LoginForm({
   ...props
 }: LoginFormProps) {
   const router = useRouter();
-
+  const { refreshCurrentStaff } = useAuth();
   const [staffId, setStaffId] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -69,6 +70,8 @@ export function LoginForm({
           password,
         },
       });
+
+      await refreshCurrentStaff();
 
       router.replace("/customers");
     } catch (error) {
