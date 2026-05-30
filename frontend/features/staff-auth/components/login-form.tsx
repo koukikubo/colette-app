@@ -1,24 +1,24 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/features/staff-auth/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "@/features/staff-auth/components/ui/field";
-import { Input } from "@/features/staff-auth/components/ui/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/features/staff-auth/components/ui/select";
+} from "@/components/ui/select";
 
 import { FormEvent, useState } from "react";
-import { loginStaff } from "../../api/staff-auth-api";
+import { loginStaff } from "../api/staff-auth-api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 

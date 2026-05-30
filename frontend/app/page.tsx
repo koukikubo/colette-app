@@ -1,4 +1,4 @@
-import { Button } from "@/features/staff-auth/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export default async function Home() {
   const response = await fetch(
