@@ -22,7 +22,7 @@ export type LoginStaffRequest = {
 
 export type StaffAuthResponse = {
   status: "success";
-  data: Staff;
+  data: { staff: Staff };
 };
 
 export type LogoutResponse = {
