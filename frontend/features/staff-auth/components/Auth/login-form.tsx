@@ -1,26 +1,22 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+
+import { FormEvent, useState } from "react";
+import { loginStaff } from "../../api/staff-auth-api";
+import { ApiClientError } from "@/lib/api/api-client";
+import { useRouter } from "next/navigation";
+import { Button } from "../ui/button";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "../ui/field";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-
-import { FormEvent, useState } from "react";
-import { loginStaff } from "../api/staff-auth-api";
-import { ApiClientError } from "@/lib/api/api-client";
-import { useRouter } from "next/navigation";
+} from "../ui/select";
+import { Input } from "../ui/input";
+import { useAuth } from "../../hooks/use-auth";
 
 type StaffOption = {
   id: number;
@@ -31,7 +27,7 @@ type LoginFormProps = React.ComponentProps<"div"> & {
   staffOptions?: StaffOption[];
 };
 
-const temporaryStaffOptions: StaffOption[] = [{ id: 1, name: "久保 光輝" }];
+const temporaryStaffOptions: StaffOption[] = [{ id: 1, name: "オーナー" }];
 
 export function LoginForm({
   className,
@@ -44,6 +40,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { refreshCurrentStaff } = useAuth();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,7 +67,9 @@ export function LoginForm({
         },
       });
 
-      router.replace("/customers");
+      await refreshCurrentStaff();
+
+      router.replace("/dashboard");
     } catch (error) {
       if (error instanceof ApiClientError) {
         setErrorMessage(error.message);
@@ -157,4 +156,7 @@ export function LoginForm({
       </form>
     </div>
   );
+}
+function refreshCurrentStaff() {
+  throw new Error("Function not implemented.");
 }
