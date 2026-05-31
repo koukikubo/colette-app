@@ -47,6 +47,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await fetchCurrentStaff();
 
       setStaff(response.data.staff);
+
       setStatus("authenticated");
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {
@@ -67,10 +68,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadCurrentStaff() {
       try {
         const response = await fetchCurrentStaff();
-
+        
         if (ignored) return;
 
         setStaff(response.data.staff);
+
         setStatus("authenticated");
       } catch (error) {
         if (ignored) return;
