@@ -12,7 +12,7 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
 
       # セキュリティの観点から、どの条件が失敗したのかは明示せず、一般的なエラーメッセージを返す
       return render_error(
-        message: "ログイン情報が正しくありません",
+        message: "パスワードが正しくありません。ログインが許可されていない可能性があります。",
         status: :unauthorized
       )
     end
