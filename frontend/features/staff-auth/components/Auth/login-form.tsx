@@ -157,6 +157,3 @@ export function LoginForm({
     </div>
   );
 }
-function refreshCurrentStaff() {
-  throw new Error("Function not implemented.");
-}
