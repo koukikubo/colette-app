@@ -23,6 +23,10 @@ type StandardListCodeResponse = ApiSuccessResponse<{
   standard_list_master: StandardListCode;
 }>;
 
+export type NextStandardCodeResponse = ApiSuccessResponse<{
+  code: string;
+}>;
+
 export function fetchStandardCodes() {
   return apiFetch<StandardCodesResponse>("/api/v1/standard_masters");
 }
@@ -100,5 +104,11 @@ export function deleteStandardListCode(StandardCode: string, id: number) {
     {
       method: "DELETE",
     },
+  );
+}
+
+export function fetchNextStandardCode() {
+  return apiFetch<NextStandardCodeResponse>(
+    "/api/v1/standard_masters/next_code",
   );
 }
