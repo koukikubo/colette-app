@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 import { FormEvent, useState } from "react";
-import { loginStaff } from "../../api/staff-auth-api";
+import { loginStaff } from "./api/staff-auth-api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";

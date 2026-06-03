@@ -13,8 +13,8 @@ import { ApiClientError } from "@/lib/api/api-client";
 import {
   fetchCurrentStaff,
   logoutStaff,
-} from "@/features/staff-auth/api/staff-auth-api";
-import type { Staff } from "@/features/staff-auth/types";
+} from "@/features/staff-auth/components/Auth/api/staff-auth-api";
+import type { Staff } from "@/features/staff-auth/components/Auth/types";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadCurrentStaff() {
       try {
         const response = await fetchCurrentStaff();
-        
+
         if (ignored) return;
 
         setStaff(response.data.staff);
