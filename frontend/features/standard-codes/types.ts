@@ -1,5 +1,6 @@
 export type StandardListCode = {
   id: number;
+  display_code: string;
   code: string;
   label: string;
   description: string | null;
@@ -9,6 +10,7 @@ export type StandardListCode = {
 
 export type StandardCode = {
   id: number;
+  display_code: string;
   code: string;
   name: string;
   description: string | null;
