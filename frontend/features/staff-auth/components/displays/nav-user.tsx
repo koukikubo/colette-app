@@ -4,7 +4,7 @@ import {
   Avatar,
   AvatarFallback,
   // AvatarImage,
-} from "@/features/staff-auth/components/ui/avatar";
+} from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +13,13 @@ import {
   DropdownMenuLabel,
   // DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/features/staff-auth/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/features/staff-auth/components/ui/sidebar";
+} from "@/components/ui/sidebar";
 import { LogoutButton } from "@/features/staff-auth/components/Auth/LogoutButton";
 import {
   EllipsisVerticalIcon,
