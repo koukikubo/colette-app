@@ -40,26 +40,28 @@ export function StandardListCodeTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-28">コード</TableHead>
+            <TableHead className="w-28">選択肢コード</TableHead>
             <TableHead>表示名</TableHead>
-            <TableHead className="w-24 text-right">並び順</TableHead>
+            <TableHead>説明</TableHead>
             <TableHead className="w-20 text-right">状態</TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
           {standardListCodes.map((standardListCode) => (
-            <TableRow key={standardListCode.code}>
+            <TableRow key={standardListCode.display_code}>
               <TableCell className="font-mono text-xs">
-                {standardListCode.code}
+                {standardListCode.display_code}
               </TableCell>
 
               <TableCell>
                 <span className="font-medium">{standardListCode.label}</span>
               </TableCell>
 
-              <TableCell className="text-right">
-                {standardListCode.position}
+              <TableCell>
+                <p className="text-muted-foreground text-sm">
+                  {standardListCode.description}
+                </p>
               </TableCell>
 
               <TableCell className="text-right">

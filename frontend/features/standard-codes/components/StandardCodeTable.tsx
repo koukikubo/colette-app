@@ -57,8 +57,9 @@ export function StandardCodeTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-28">コード</TableHead>
+            <TableHead className="w-28">基本コード</TableHead>
             <TableHead>名称</TableHead>
+            <TableHead>説明</TableHead>
             <TableHead className="w-20 text-right">状態</TableHead>
           </TableRow>
         </TableHeader>
@@ -69,11 +70,12 @@ export function StandardCodeTable({
              * 現在選択中の基本コードかどうかを判定します。
              * 選択中の場合は行に背景色を付けます。
              */
-            const isSelected = selectedStandardCode?.code === standardCode.code;
+            const isSelected =
+              selectedStandardCode?.display_code === standardCode.display_code;
 
             return (
               <TableRow
-                key={standardCode.code}
+                key={standardCode.display_code}
                 className={
                   isSelected
                     ? "bg-muted cursor-pointer"
@@ -82,13 +84,19 @@ export function StandardCodeTable({
                 onClick={() => onSelect(standardCode)}
               >
                 <TableCell className="font-mono text-xs">
-                  {standardCode.code}
+                  {standardCode.display_code}
                 </TableCell>
 
                 <TableCell>
                   <div className="flex flex-col gap-1">
                     <span className="font-medium">{standardCode.name}</span>
                   </div>
+                </TableCell>
+
+                <TableCell>
+                  <p className="text-muted-foreground text-sm">
+                    {standardCode.description}
+                  </p>
                 </TableCell>
 
                 <TableCell className="text-right">
