@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 
 import { proxyRequest } from "@/lib/api/proxy-request";
 
@@ -9,44 +9,44 @@ type RouteContext = {
   }>;
 };
 
-async function proxyJsonResponse(response: Response) {
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
-
-  return NextResponse.json(data, {
-    status: response.status,
-  });
-}
-
+/**
+ * 選択肢コード詳細取得。
+ */
 export async function GET(request: NextRequest, context: RouteContext) {
   const { code, id } = await context.params;
 
-  const response = await proxyRequest(
+  return proxyRequest(
     request,
-    `/api/v1/standard_masters/${code}/items/${id}`,
+    `/api/v1/standard_masters/${encodeURIComponent(
+      code,
+    )}/items/${encodeURIComponent(id)}`,
   );
-
-  return proxyJsonResponse(response);
 }
 
+/**
+ * 選択肢コード更新。
+ */
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const { code, id } = await context.params;
 
-  const response = await proxyRequest(
+  return proxyRequest(
     request,
-    `/api/v1q/standard_masters/${code}/items/${id}`,
+    `/api/v1/standard_masters/${encodeURIComponent(
+      code,
+    )}/items/${encodeURIComponent(id)}`,
   );
-
-  return proxyJsonResponse(response);
 }
 
+/**
+ * 選択肢コード削除。
+ */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   const { code, id } = await context.params;
 
-  const response = await proxyRequest(
+  return proxyRequest(
     request,
-    `/api/v1/standard_masters/${code}/items/${id}`,
+    `/api/v1/standard_masters/${encodeURIComponent(
+      code,
+    )}/items/${encodeURIComponent(id)}`,
   );
-
-  return proxyJsonResponse(response);
 }
