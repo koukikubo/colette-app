@@ -23,7 +23,6 @@ export type StandardCodeFormValues = {
   code: string;
   name: string;
   description: string | null;
-  position: number;
   active: boolean;
 };
 
@@ -31,6 +30,5 @@ export type StandardListCodeFormValues = {
   code: string;
   label: string;
   description: string | null;
-  position: number;
   active: boolean;
 };
