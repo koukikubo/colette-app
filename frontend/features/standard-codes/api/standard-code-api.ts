@@ -27,10 +27,12 @@ export type NextStandardCodeResponse = ApiSuccessResponse<{
   code: string;
 }>;
 
+// 基本コード一覧の取得
 export function fetchStandardCodes() {
   return apiFetch<StandardCodesResponse>("/api/v1/standard_masters");
 }
 
+// 基本コードの詳細取得
 export function createStandardCode(values: StandardCodeFormValues) {
   return apiFetch<StandardCodeResponse>("/api/v1/standard_masters", {
     method: "POST",
@@ -40,6 +42,7 @@ export function createStandardCode(values: StandardCodeFormValues) {
   });
 }
 
+// 基本コードの更新
 export function updateStandardCode(
   code: string,
   values: StandardCodeFormValues,
@@ -52,7 +55,8 @@ export function updateStandardCode(
   });
 }
 
-export function deleteStandardCode(code: string) {
+// 基本コードの削除
+export function disableStandardCode(code: string) {
   return apiFetch<ApiSuccessResponse<null>>(
     `/api/v1/standard_masters/${code}`,
     {
@@ -60,13 +64,14 @@ export function deleteStandardCode(code: string) {
     },
   );
 }
-
+// 選択肢コード一覧の取得
 export function fetchStandardListCodes(StandardCode: string) {
   return apiFetch<StandardListCodesResponse>(
     `/api/v1/standard_masters/${StandardCode}/items`,
   );
 }
 
+// 選択肢コードの詳細取得
 export function createStandardListCode(
   StandardCode: string,
   values: StandardListCodeFormValues,
@@ -82,6 +87,7 @@ export function createStandardListCode(
   );
 }
 
+// 選択肢コードの更新
 export function updateStandardListCode(
   StandardCode: string,
   id: number,
@@ -98,7 +104,8 @@ export function updateStandardListCode(
   );
 }
 
-export function deleteStandardListCode(StandardCode: string, id: number) {
+// 選択肢コードの削除
+export function disableStandardListCode(StandardCode: string, id: number) {
   return apiFetch<ApiSuccessResponse<null>>(
     `/api/v1/standard_masters/${StandardCode}/items/${id}`,
     {
@@ -107,6 +114,7 @@ export function deleteStandardListCode(StandardCode: string, id: number) {
   );
 }
 
+// 次の基本コード候補の取得
 export function fetchNextStandardCode() {
   return apiFetch<NextStandardCodeResponse>(
     "/api/v1/standard_masters/next_code",
