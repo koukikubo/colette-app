@@ -1,4 +1,6 @@
 class Api::V1::StandardListMastersController < Api::V1::BaseController
+  before_action :set_standard_master
+
   def index
     standard_master = StandardMaster.find_by!(code: params[:standard_master_code])
     render_success(
@@ -8,5 +10,85 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
         end
       }
     )
+  end
+
+  def show
+    standard_list_master =
+      @standard_master.standard_list_masters.find(params[:id])
+
+    render_success(
+      data: {
+        standard_list_master:
+          Api::V1::StandardListMasterSerializer
+            .new(standard_list_master)
+            .as_json
+      }
+    )
+  end
+
+  def create
+    standard_list_master =
+      @standard_master.standard_list_masters.new(standard_list_master_params)
+
+    standard_list_master.position =
+      @standard_master.standard_list_masters.maximum(:position).to_i + 1
+
+    standard_list_master.save!
+
+    render_success(
+      data: {
+        standard_list_master:
+          Api::V1::StandardListMasterSerializer
+            .new(standard_list_master)
+            .as_json
+      },
+      status: :created
+    )
+  end
+
+  def update
+    standard_list_master =
+      @standard_master.standard_list_masters.find(params[:id])
+
+    standard_list_master.update!(standard_list_master_params)
+
+    render_success(
+      data: {
+        standard_list_master:
+          Api::V1::StandardListMasterSerializer
+            .new(standard_list_master)
+            .as_json
+      }
+    )
+  end
+
+  def destroy
+    standard_list_master =
+      @standard_master.standard_list_masters.find(params[:id])
+
+    standard_list_master.update!(active: false)
+
+    render_success(
+      data: {
+        message: "選択肢コードを無効化しました。",
+        standard_list_master:
+          Api::V1::StandardListMasterSerializer
+            .new(standard_list_master)
+            .as_json
+      }
+    )
+  end
+
+  private
+
+  def set_standard_master
+    @standard_master =
+      StandardMaster.find_by!(code: params[:standard_master_code])
+  end
+
+  def standard_list_master_params
+    params
+      .require(:standard_list_master)
+      .permit(:code, :label, :description, :active)
   end
 end
