@@ -59,16 +59,26 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
     )
   end
 
-  def destroy
+  def disable
     standard_master = StandardMaster.find_by!(code: params[:code])
 
     standard_master.update!(active: false)
 
     render_success(
       data: {
-        message: "標準マスタを無効化しました。",
-        standard_master:
-          Api::V1::StandardMasterSerializer.new(standard_master).as_json
+        standard_master: Api::V1::StandardMasterSerializer.new(standard_master).as_json
+      }
+    )
+  end
+
+  def enable
+    standard_master = StandardMaster.find_by!(code: params[:code])
+
+    standard_master.update!(active: true)
+
+    render_success(
+      data: {
+        standard_master: Api::V1::StandardMasterSerializer.new(standard_master).as_json
       }
     )
   end
@@ -82,6 +92,15 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
     permitted_params
   end
 
+  def standard_master_params
+    params.expect(
+      standard_master: %i[
+        label
+        description
+        active
+      ]
+    )
+  end
 
 end
 

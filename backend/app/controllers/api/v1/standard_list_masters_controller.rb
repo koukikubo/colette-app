@@ -62,23 +62,6 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     )
   end
 
-  def destroy
-    standard_list_master =
-      @standard_master.standard_list_masters.find(params[:id])
-
-    standard_list_master.update!(active: false)
-
-    render_success(
-      data: {
-        message: "選択肢コードを無効化しました。",
-        standard_list_master:
-          Api::V1::StandardListMasterSerializer
-            .new(standard_list_master)
-            .as_json
-      }
-    )
-  end
-
   private
 
   def set_standard_master
