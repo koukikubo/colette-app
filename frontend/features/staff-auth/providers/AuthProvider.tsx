@@ -55,8 +55,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setStatus("unauthenticated");
         return;
       }
-
-      console.error(error);
+      console.warn("[AuthProvider] current staff request failed[AuthProvider] current staff request failed", error);
       setStaff(null);
       setStatus("unauthenticated");
     }
@@ -83,7 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
-        console.error(error);
+        console.warn("[AuthProvider] current staff request failed", error);
         setStaff(null);
         setStatus("unauthenticated");
       }
