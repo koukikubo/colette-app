@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/table";
 
 import type { StandardCode } from "@/features/standard-codes/types";
+import { Pencil, Ban } from "lucide-react";
 
 type StandardCodeTableProps = {
   /**
@@ -32,12 +34,24 @@ type StandardCodeTableProps = {
    * 紐づく選択肢コード一覧を取得します。
    */
   onSelect: (standardCode: StandardCode) => void;
+
+  /**
+   * 基本コードを編集する時に実行する関数。
+   */
+  onEdit: (standardCode: StandardCode) => void;
+
+  /**
+   * 基本コードを無効化する時に実行する関数。
+   */
+  onDisable: (standardCode: StandardCode) => void;
 };
 
 export function StandardCodeTable({
   standardCodes,
   selectedStandardCode,
   onSelect,
+  onEdit,
+  onDisable,
 }: StandardCodeTableProps) {
   /**
    * 検索・フィルター後に1件も表示対象がない場合の表示です。
@@ -105,6 +119,37 @@ export function StandardCodeTable({
                   ) : (
                     <Badge variant="secondary">無効</Badge>
                   )}
+                </TableCell>
+
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onEdit(standardCode);
+                      }}
+                    >
+                      <Pencil className="mr-1 h-4 w-4" />
+                      編集
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!standardCode.active}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDisable(standardCode);
+                      }}
+                    >
+                      <Ban className="mr-1 h-4 w-4" />
+                      無効化
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

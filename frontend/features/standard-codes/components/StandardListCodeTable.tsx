@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/table";
 
 import type { StandardListCode } from "@/features/standard-codes/types";
+import { Pencil, Ban } from "lucide-react";
 
 type StandardListCodeTableProps = {
   /**
@@ -17,10 +19,22 @@ type StandardListCodeTableProps = {
    * 親コンポーネント側で検索・有効/無効フィルター済みの配列を受け取ります。
    */
   standardListCodes: StandardListCode[];
+
+  /**
+   * 選択肢コードを編集する時に実行する関数。
+   */
+  onEdit: (standardListCode: StandardListCode) => void;
+
+  /**
+   * 選択肢コードを無効化する時に実行する関数。
+   */
+  onDisable: (standardListCode: StandardListCode) => void;
 };
 
 export function StandardListCodeTable({
   standardListCodes,
+  onEdit,
+  onDisable,
 }: StandardListCodeTableProps) {
   /**
    * 検索・フィルター後に1件も表示対象がない場合の表示です。
@@ -70,6 +84,31 @@ export function StandardListCodeTable({
                 ) : (
                   <Badge variant="secondary">無効</Badge>
                 )}
+              </TableCell>
+
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onEdit(standardListCode)}
+                  >
+                    <Pencil className="mr-1 h-4 w-4" />
+                    編集
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!standardListCode.active}
+                    onClick={() => onDisable(standardListCode)}
+                  >
+                    <Ban className="mr-1 h-4 w-4" />
+                    無効化
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
