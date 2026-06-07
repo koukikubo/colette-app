@@ -115,26 +115,6 @@ function StandardListCodeFormContent({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="standard-list-code-code">内部コード</Label>
-          <Input
-            id="standard-list-code-code"
-            value={values.code}
-            disabled={isEditMode || isSubmitting}
-            placeholder="例: reserved"
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                code: event.target.value,
-              }))
-            }
-            required
-          />
-          <p className="text-muted-foreground text-xs">
-            内部コードはAPIや内部処理で使います。編集時は変更できません。
-          </p>
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="standard-list-code-label">表示名</Label>
           <Input
             id="standard-list-code-label"
