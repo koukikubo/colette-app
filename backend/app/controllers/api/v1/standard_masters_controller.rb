@@ -69,7 +69,6 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
         message: "標準マスタを無効化しました。",
         standard_master:
           Api::V1::StandardMasterSerializer.new(standard_master).as_json
-          .new(standard_master).as_json 
       }
     )
   end
