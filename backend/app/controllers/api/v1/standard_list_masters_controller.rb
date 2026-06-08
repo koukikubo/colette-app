@@ -2,7 +2,6 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
   before_action :set_standard_master
 
   def index
-    standard_master = StandardMaster.find_by!(code: params[:standard_master_code])
     render_success(
       data: {
         standard_list_masters: standard_master.standard_list_masters.ordered.map do |item|
@@ -30,6 +29,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     standard_list_master =
       @standard_master.standard_list_masters.new(standard_list_master_params)
 
+    standard_list_master.code = StandardListMaster.next_code_for(@standard_master)
     standard_list_master.position =
       @standard_master.standard_list_masters.maximum(:position).to_i + 1
 
@@ -62,6 +62,31 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     )
   end
 
+  def disable
+    standard_list_master = @standard_master.standard_list_masters.find(params[:id])
+
+    standard_list_master.update!(active: false)
+
+    render_success(
+      data: {
+        standard_list_master: Api::V1::StandardListMasterSerializer.new(standard_list_master).as_json
+      }
+    )
+  end
+
+  def enable
+    standard_list_master = @standard_master.standard_list_masters.find(params[:id])
+
+    standard_list_master.update!(active: true)
+
+    render_success(
+      data: {
+        standard_list_master: Api::V1::StandardListMasterSerializer.new(standard_list_master).as_json
+      }
+    )
+  end
+
+
   private
 
   def set_standard_master
@@ -70,8 +95,8 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
   end
 
   def standard_list_master_params
-    params
-      .require(:standard_list_master)
-      .permit(:code, :label, :description, :active)
+    params.expect(
+      standard_list_master: %i[label description active]
+    )
   end
 end

@@ -32,6 +32,7 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
   def create
     standard_master = StandardMaster.new(standard_master_params)
 
+    standard_master.code = StandardMaster.next_code
     standard_master.position =
       StandardMaster.maximum(:position).to_i + 1
 
@@ -86,16 +87,9 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
   private
 
   def standard_master_params
-    permitted_params = params.expect(standard_master: %i[code name description active])
-    permitted_params.require(:standard_master).permit(:code, :name, :description, :active)
-
-    permitted_params
-  end
-
-  def standard_master_params
     params.expect(
       standard_master: %i[
-        label
+        name
         description
         active
       ]
