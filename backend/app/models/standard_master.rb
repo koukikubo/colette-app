@@ -3,7 +3,7 @@ class StandardMaster < ApplicationRecord
 
   # バリデーション（入力チェック）
   with_options presence: true do
-      validates :code, uniqueness: true
+      validates :code, presence: true, uniqueness: true
       validates :name
       validates :position,
                 numericality: { only_integer: true }
@@ -37,9 +37,10 @@ class StandardMaster < ApplicationRecord
     result
   end
 
+  # 次のコードを生成するクラスメソッド
   def self.next_code
     max_code = maximum(Arel.sql("CAST(code AS INTEGER)")) || 0
-    format("%04d", max_code + 1)
+    format("%05d", max_code + 1)
   end
 
 end

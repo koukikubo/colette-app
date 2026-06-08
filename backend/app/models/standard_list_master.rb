@@ -3,7 +3,7 @@ class StandardListMaster < ApplicationRecord
 
   # バリデーション（入力チェック）
   with_options presence: true do
-    validates :code, uniqueness: true
+    validates :code, presence: true, uniqueness: true
     validates :label
     validates :position,
               numericality: { only_integer: true }
@@ -13,5 +13,12 @@ class StandardListMaster < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
 
-  
+  def self.next_code_for(standard_master)
+    max_code =
+      standard_master
+      .standard_list_masters
+      .maximum(Arel.sql("CAST(code AS INTEGER)")) || 0
+
+    format("%05d", max_code + 1)
+  end
 end
