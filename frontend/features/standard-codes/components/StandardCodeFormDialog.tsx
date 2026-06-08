@@ -107,7 +107,6 @@ function StandardCodeFormContent({
             id="standard-code-name"
             value={values.name}
             disabled={isSubmitting}
-            placeholder="例: 予約状態"
             onChange={(event) =>
               setValues((current) => ({
                 ...current,
@@ -124,7 +123,6 @@ function StandardCodeFormContent({
             id="standard-code-description"
             value={values.description ?? ""}
             disabled={isSubmitting}
-            placeholder="例: 予約ステータスを管理する基本コードです。"
             onChange={(event) =>
               setValues((current) => ({
                 ...current,
