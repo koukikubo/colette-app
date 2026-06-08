@@ -1,3 +1,5 @@
+const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
+
 export type ApiSuccessResponse<T> = {
   data: T;
   message?: string;
@@ -17,10 +19,33 @@ type ApiFetchOptions = Omit<RequestInit, "body"> & {
   body?: object | FormData;
 };
 
+type CsrfResponse = {
+  status: "success";
+  data: {
+    csrf_token: string;
+  };
+};
+
+async function fetchCsrfToken() {
+  const response = await fetch("/api/v1/csrf", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  const data = (await response.json()) as CsrfResponse;
+
+  return data.data.csrf_token;
+}
+
 export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
   const headers = new Headers(options.headers);
 
   headers.set("Accept", "application/json");
@@ -33,8 +58,17 @@ export async function apiFetch<T>(
     headers.set("Content-Type", "application/json");
   }
 
+  const needsCsrfToken = !SAFE_METHODS.includes(method);
+
+  if (needsCsrfToken && !headers.has("X-CSRF-Token")) {
+    const csrfToken = await fetchCsrfToken();
+
+    headers.set("X-CSRF-Token", csrfToken);
+  }
+
   const response = await fetch(path, {
     ...fetchOptions,
+    method,
     headers,
     credentials: "include",
     body:
