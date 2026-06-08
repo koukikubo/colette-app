@@ -4,7 +4,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
   def index
     render_success(
       data: {
-        standard_list_masters: standard_master.standard_list_masters.ordered.map do |item|
+        standard_list_masters: @standard_master.standard_list_masters.ordered.map do |item|
           Api::V1::StandardListMasterSerializer.new(item).as_json
         end
       }
