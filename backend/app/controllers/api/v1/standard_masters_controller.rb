@@ -60,30 +60,6 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
     )
   end
 
-  def disable
-    standard_master = StandardMaster.find_by!(code: params[:code])
-
-    standard_master.update!(active: false)
-
-    render_success(
-      data: {
-        standard_master: Api::V1::StandardMasterSerializer.new(standard_master).as_json
-      }
-    )
-  end
-
-  def enable
-    standard_master = StandardMaster.find_by!(code: params[:code])
-
-    standard_master.update!(active: true)
-
-    render_success(
-      data: {
-        standard_master: Api::V1::StandardMasterSerializer.new(standard_master).as_json
-      }
-    )
-  end
-
   private
 
   def standard_master_params

@@ -15,6 +15,8 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     standard_list_master =
       @standard_master.standard_list_masters.find(params[:id])
 
+    standard_list_master.update!(standard_list_master_params)
+
     render_success(
       data: {
         standard_list_master:
@@ -24,6 +26,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
       }
     )
   end
+
 
   def create
     standard_list_master =
@@ -47,8 +50,8 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
   end
 
   def update
-    standard_list_master =
-      @standard_master.standard_list_masters.find(params[:id])
+    standard_list_master = 
+      @standard_master.standard_list_masters.find_by!(value: params[:code])
 
     standard_list_master.update!(standard_list_master_params)
 
@@ -61,31 +64,6 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
       }
     )
   end
-
-  def disable
-    standard_list_master = @standard_master.standard_list_masters.find(params[:id])
-
-    standard_list_master.update!(active: false)
-
-    render_success(
-      data: {
-        standard_list_master: Api::V1::StandardListMasterSerializer.new(standard_list_master).as_json
-      }
-    )
-  end
-
-  def enable
-    standard_list_master = @standard_master.standard_list_masters.find(params[:id])
-
-    standard_list_master.update!(active: true)
-
-    render_success(
-      data: {
-        standard_list_master: Api::V1::StandardListMasterSerializer.new(standard_list_master).as_json
-      }
-    )
-  end
-
 
   private
 
