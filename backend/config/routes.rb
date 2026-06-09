@@ -16,20 +16,10 @@ Rails.application.routes.draw do
           get :count
         end
 
-        member do
-          patch :disable
-          patch :enable
-        end
-
         resources :standard_list_masters,
                   path: "items",
                   as: "items",
-                  only: [:index, :show, :create, :update] do
-          member do
-            patch :disable
-            patch :enable
-          end
-        end
+                  only: [:index, :show, :create, :update]
       end 
     end
   end
