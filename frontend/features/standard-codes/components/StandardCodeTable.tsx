@@ -10,40 +10,13 @@ import {
 } from "@/components/ui/table";
 
 import type { StandardCode } from "@/features/standard-codes/types";
-import { Pencil, Ban } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 type StandardCodeTableProps = {
-  /**
-   * 表示対象の基本コード一覧。
-   *
-   * 親コンポーネント側で検索・有効/無効フィルター済みの配列を受け取ります。
-   */
   standardCodes: StandardCode[];
-
-  /**
-   * 現在選択中の基本コード。
-   *
-   * 選択中の行に背景色を付けるために使います。
-   */
   selectedStandardCode: StandardCode | null;
-
-  /**
-   * 基本コード行をクリックした時に実行する関数。
-   *
-   * 親コンポーネント側で selectedStandardCode を更新し、
-   * 紐づく選択肢コード一覧を取得します。
-   */
   onSelect: (standardCode: StandardCode) => void;
-
-  /**
-   * 基本コードを編集する時に実行する関数。
-   */
   onEdit: (standardCode: StandardCode) => void;
-
-  /**
-   * 基本コードを無効化する時に実行する関数。
-   */
-  onDisable: (standardCode: StandardCode) => void;
 };
 
 export function StandardCodeTable({
@@ -51,11 +24,7 @@ export function StandardCodeTable({
   selectedStandardCode,
   onSelect,
   onEdit,
-  onDisable,
 }: StandardCodeTableProps) {
-  /**
-   * 検索・フィルター後に1件も表示対象がない場合の表示です。
-   */
   if (standardCodes.length === 0) {
     return (
       <div className="flex min-h-60 items-center justify-center p-6">
@@ -75,6 +44,7 @@ export function StandardCodeTable({
             <TableHead>名称</TableHead>
             <TableHead>説明</TableHead>
             <TableHead className="w-20 text-right">状態</TableHead>
+            <TableHead className="w-24 text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -134,20 +104,6 @@ export function StandardCodeTable({
                     >
                       <Pencil className="mr-1 h-4 w-4" />
                       編集
-                    </Button>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={!standardCode.active}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDisable(standardCode);
-                      }}
-                    >
-                      <Ban className="mr-1 h-4 w-4" />
-                      無効化
                     </Button>
                   </div>
                 </TableCell>
