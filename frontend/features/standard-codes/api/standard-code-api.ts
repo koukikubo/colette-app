@@ -55,15 +55,6 @@ export function updateStandardCode(
   });
 }
 
-// 基本コードの削除
-export function disableStandardCode(code: string) {
-  return apiFetch<ApiSuccessResponse<null>>(
-    `/api/v1/standard_masters/${code}/disable`,
-    {
-      method: "PATCH",
-    },
-  );
-}
 // 選択肢コード一覧の取得
 export function fetchStandardListCodes(StandardCode: string) {
   return apiFetch<StandardListCodesResponse>(
@@ -104,39 +95,9 @@ export function updateStandardListCode(
   );
 }
 
-// 選択肢コードの削除
-export function disableStandardListCode(StandardCode: string, id: number) {
-  return apiFetch<ApiSuccessResponse<null>>(
-    `/api/v1/standard_masters/${StandardCode}/items/${id}/disable`,
-    {
-      method: "PATCH",
-    },
-  );
-}
-
 // 次の基本コード候補の取得
 export function fetchNextStandardCode() {
   return apiFetch<NextStandardCodeResponse>(
     "/api/v1/standard_masters/next_code",
-  );
-}
-
-// 基本コードの有効化
-export function enableStandardCode(code: string) {
-  return apiFetch<StandardCodeResponse>(
-    `/api/v1/standard_masters/${code}/enable`,
-    {
-      method: "PATCH",
-    },
-  );
-}
-
-// 選択肢コードの有効化
-export function enableStandardListCode(standardCode: string, id: number) {
-  return apiFetch<StandardListCodeResponse>(
-    `/api/v1/standard_masters/${standardCode}/items/${id}/enable`,
-    {
-      method: "PATCH",
-    },
   );
 }
