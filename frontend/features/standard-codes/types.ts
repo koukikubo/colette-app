@@ -20,14 +20,12 @@ export type StandardCode = {
 };
 
 export type StandardCodeFormValues = {
-  code: string;
   name: string;
   description: string | null;
   active: boolean;
 };
 
 export type StandardListCodeFormValues = {
-  code: string;
   label: string;
   description: string | null;
   active: boolean;
