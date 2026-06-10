@@ -20,7 +20,7 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
     standard_master =
       StandardMaster
       .includes(:standard_list_masters)
-      .find_by!(code: params[:code])
+      .find_by!(params[:id])
 
     render_success(
       data: {
@@ -32,7 +32,7 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
   def create
     standard_master = StandardMaster.new(standard_master_params)
 
-    standard_master.code = StandardMaster.next_code
+    standard_master.id = StandardMaster.id
     standard_master.position =
       StandardMaster.maximum(:position).to_i + 1
 
@@ -48,7 +48,7 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
   end
 
   def update
-    standard_master = StandardMaster.find_by!(code: params[:code])
+    standard_master = StandardMaster.find_by!(id: params[:id])
 
     standard_master.update!(standard_master_params)
 
