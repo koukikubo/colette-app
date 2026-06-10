@@ -3,11 +3,12 @@ class StandardMaster < ApplicationRecord
 
   # バリデーション（入力チェック）
   with_options presence: true do
-      validates :code, presence: true, uniqueness: true
-      validates :name
       validates :position,
                 numericality: { only_integer: true }
+      validates :active, inclusion: { in: [true, false] }
+      validates :name
   end
+
   # 共通の検索条件
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
@@ -18,13 +19,9 @@ class StandardMaster < ApplicationRecord
 
     if query.present?
       result = result.where(
-        "code LIKE :q OR name LIKE :q",
+        "name LIKE :q OR description LIKE :q",
         q: "%#{query}%"
       )
-    end
-
-    unless active.nil?
-      result = result.where(active: active)
     end
 
     case active
@@ -35,12 +32,6 @@ class StandardMaster < ApplicationRecord
     end
 
     result
-  end
-
-  # 次のコードを生成するクラスメソッド
-  def self.next_code
-    max_code = maximum(Arel.sql("CAST(code AS INTEGER)")) || 0
-    format("%05d", max_code + 1)
   end
 
 end
