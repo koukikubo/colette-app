@@ -21,6 +21,7 @@ import type {
   StandardListCode,
   StandardListCodeFormValues,
 } from "@/features/standard-codes/types";
+import { ConfirmStandardListCodeSaveDialog } from "@/features/standard-codes/components/Alert/ConfirmStandardListCodeSaveDialog";
 
 type DialogMode = "create" | "edit";
 
@@ -54,7 +55,6 @@ function buildInitialValues(
 ): StandardListCodeFormValues {
   if (mode === "edit" && standardListCode) {
     return {
-      code: standardListCode.code,
       label: standardListCode.label,
       description: standardListCode.description,
       active: standardListCode.active,
@@ -62,7 +62,6 @@ function buildInitialValues(
   }
 
   return {
-    code: "",
     label: "",
     description: null,
     active: true,
@@ -79,102 +78,137 @@ function StandardListCodeFormContent({
   const [values, setValues] = useState<StandardListCodeFormValues>(() =>
     buildInitialValues(mode, standardListCode),
   );
-
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingValues, setPendingValues] =
+    useState<StandardListCodeFormValues | null>(null);
   const isEditMode = mode === "edit";
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    await onSubmit({
-      code: values.code.trim(),
+    setPendingValues({
       label: values.label.trim(),
       description: normalizeNullableText(values.description),
       active: values.active,
     });
+    setConfirmOpen(true);
+  }
+
+  async function handleConfirmSubmit() {
+    if (!pendingValues) return;
+
+    await onSubmit(pendingValues);
+
+    setConfirmOpen(false);
+    setPendingValues(null);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <DialogHeader>
-        <DialogTitle>
-          {isEditMode ? "選択肢コードを編集" : "選択肢コードを追加"}
-        </DialogTitle>
-        <DialogDescription>
-          {selectedStandardCode
-            ? `${selectedStandardCode.name} に紐づく選択肢コードを管理します。`
-            : "基本コードを選択してください。"}
-        </DialogDescription>
-      </DialogHeader>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <DialogHeader>
+          <DialogTitle>
+            {isEditMode ? "選択肢コードを編集" : "選択肢コードを追加"}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedStandardCode
+              ? `${selectedStandardCode.name} に紐づく選択肢コードを管理します。`
+              : "基本コードを選択してください。"}
+          </DialogDescription>
+        </DialogHeader>
 
-      <div className="space-y-4">
-        <div className="rounded-lg border bg-muted/30 p-3">
-          <p className="text-muted-foreground text-xs">対象の基本コード</p>
-          <p className="text-sm font-medium">
-            {selectedStandardCode ? selectedStandardCode.name : "未選択"}
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="standard-list-code-label">表示名</Label>
-          <Input
-            id="standard-list-code-label"
-            value={values.label}
-            disabled={isSubmitting}
-            placeholder="例: 予約済"
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                label: event.target.value,
-              }))
-            }
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="standard-list-code-description">説明</Label>
-          <Textarea
-            id="standard-list-code-description"
-            value={values.description ?? ""}
-            disabled={isSubmitting}
-            placeholder="例: 予約が確定している状態です。"
-            onChange={(event) =>
-              setValues((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div className="space-y-1">
-            <Label htmlFor="standard-list-code-active">有効</Label>
-            <p className="text-muted-foreground text-xs">
-              無効にすると、新規登録時の選択肢として使わない想定です。
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <p className="text-muted-foreground text-xs">対象の基本コード</p>
+            <p className="text-sm font-medium">
+              {selectedStandardCode ? selectedStandardCode.name : "未選択"}
             </p>
           </div>
 
-          <Switch
-            id="standard-list-code-active"
-            checked={values.active}
-            disabled={isSubmitting}
-            onCheckedChange={(checked) =>
-              setValues((current) => ({
-                ...current,
-                active: checked,
-              }))
-            }
-          />
-        </div>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="standard-list-code-label">表示名</Label>
+            <Input
+              id="standard-list-code-label"
+              value={values.label}
+              disabled={isSubmitting}
+              placeholder="例: 予約済"
+              onChange={(event) =>
+                setValues((current) => ({
+                  ...current,
+                  label: event.target.value,
+                }))
+              }
+              required
+            />
+          </div>
 
-      <DialogFooter>
-        <Button type="submit" disabled={isSubmitting || !selectedStandardCode}>
-          {isSubmitting ? "保存中..." : isEditMode ? "更新" : "登録"}
-        </Button>
-      </DialogFooter>
-    </form>
+          <div className="space-y-2">
+            <Label htmlFor="standard-list-code-description">説明</Label>
+            <Textarea
+              id="standard-list-code-description"
+              value={values.description ?? ""}
+              disabled={isSubmitting}
+              placeholder="例: 予約が確定している状態です。"
+              onChange={(event) =>
+                setValues((current) => ({
+                  ...current,
+                  description: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="standard-list-code-active">有効</Label>
+              <p className="text-muted-foreground text-xs">
+                無効にすると、新規登録時の選択肢として使わない想定です。
+              </p>
+            </div>
+
+            <Switch
+              id="standard-list-code-active"
+              checked={values.active}
+              disabled={isSubmitting}
+              onCheckedChange={(checked) =>
+                setValues((current) => ({
+                  ...current,
+                  active: checked,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !selectedStandardCode}
+          >
+            {isSubmitting ? "保存中..." : isEditMode ? "更新" : "登録"}
+          </Button>
+        </DialogFooter>
+      </form>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        ...
+      </form>
+
+      <ConfirmStandardListCodeSaveDialog
+        open={confirmOpen}
+        mode={mode}
+        standardListCode={standardListCode}
+        pendingValues={pendingValues}
+        isSubmitting={isSubmitting}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+
+          if (!open) {
+            setPendingValues(null);
+          }
+        }}
+        onConfirm={handleConfirmSubmit}
+      />
+    </>
   );
 }
 
