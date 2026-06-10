@@ -6,7 +6,6 @@ module Api
         {
           id: resource.id,
           display_code: resource.id.to_s.rjust(5, "0"),
-          code: resource.code,
           label: resource.label,
           description: resource.description,
           position: resource.position,
