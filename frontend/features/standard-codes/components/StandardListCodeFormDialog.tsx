@@ -227,7 +227,7 @@ export function StandardListCodeFormDialog({
         <DialogContent className="sm:max-w-xl">
           <StandardListCodeFormContent
             key={`${mode}-${standardListCode?.id ?? "new"}-${
-              selectedStandardCode?.code ?? "none"
+              selectedStandardCode?.id ?? "none"
             }`}
             mode={mode}
             selectedStandardCode={selectedStandardCode}

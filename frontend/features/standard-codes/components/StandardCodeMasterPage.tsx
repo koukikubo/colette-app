@@ -73,7 +73,7 @@ export function StandardCodeMasterPage() {
     string | null
   >(null);
 
-  const selectedStandardCodeCode = selectedStandardCode?.code ?? null;
+  const selectedStandardCodeId = selectedStandardCode?.id ?? null;
 
   // 変更点: 基本コードの登録・編集モーダル用state
   const [standardCodeDialogOpen, setStandardCodeDialogOpen] = useState(false);
@@ -114,7 +114,7 @@ export function StandardCodeMasterPage() {
         if (firstCode) {
           try {
             const standardListCodeResponse = await fetchStandardListCodes(
-              firstCode.code,
+              firstCode.id,
             );
 
             if (ignored) return;
@@ -152,22 +152,27 @@ export function StandardCodeMasterPage() {
     };
   }, []);
 
-  const loadStandardListCodes = useCallback(async (standardCode: string) => {
-    try {
-      const response = await fetchStandardListCodes(standardCode);
+  const loadStandardListCodes = useCallback(
+    async (standardMasterId: number) => {
+      try {
+        const response = await fetchStandardListCodes(standardMasterId);
 
-      const listCodes = response.data.standard_list_masters;
+        const listCodes = response.data.standard_list_masters;
 
-      setStandardListCodes(listCodes);
-    } catch (error) {
-      console.error(error);
-      setStandardListCodeError(STANDARD_LIST_CODE_FETCH_ERROR_MESSAGE);
-    } finally {
-      setIsLoadingStandardListCodes(false);
-    }
-  }, []);
+        setStandardListCodes(listCodes);
+      } catch (error) {
+        console.error(error);
+        setStandardListCodeError(STANDARD_LIST_CODE_FETCH_ERROR_MESSAGE);
+      } finally {
+        setIsLoadingStandardListCodes(false);
+      }
+    },
+    [],
+  );
 
   const handleReloadStandardCodes = useCallback(async () => {
+    if (!selectedStandardCodeId) return;
+
     setIsLoadingStandardCodes(true);
     setStandardCodeError(null);
 
@@ -177,7 +182,7 @@ export function StandardCodeMasterPage() {
       const codes = response.data.standard_masters;
 
       const nextSelectedStandardCode =
-        codes.find((code) => code.code === selectedStandardCodeCode) ??
+        codes.find((code) => code.id === selectedStandardCodeId) ??
         codes[0] ??
         null;
 
@@ -195,18 +200,18 @@ export function StandardCodeMasterPage() {
       setStandardListCodeError(null);
       setIsLoadingStandardListCodes(true);
 
-      await loadStandardListCodes(nextSelectedStandardCode.code);
+      await loadStandardListCodes(nextSelectedStandardCode.id);
     } catch (error) {
       console.error(error);
       setStandardCodeError(STANDARD_CODE_FETCH_ERROR_MESSAGE);
     } finally {
       setIsLoadingStandardCodes(false);
     }
-  }, [selectedStandardCodeCode, loadStandardListCodes]);
+  }, [selectedStandardCodeId, loadStandardListCodes]);
 
   const handleSelectStandardCode = useCallback(
     (standardCode: StandardCode) => {
-      if (standardCode.code === selectedStandardCodeCode) return;
+      if (standardCode.id === selectedStandardCodeId) return;
 
       setSelectedStandardCode(standardCode);
       setStandardListCodes([]);
@@ -214,21 +219,21 @@ export function StandardCodeMasterPage() {
       setStandardListCodeQuery("");
       setIsLoadingStandardListCodes(true);
 
-      void loadStandardListCodes(standardCode.code);
+      void loadStandardListCodes(standardCode.id);
     },
-    [selectedStandardCodeCode, loadStandardListCodes],
+    [selectedStandardCodeId, loadStandardListCodes],
   );
 
   // 変更点: asyncに変更
   // 理由: 登録・編集・無効化後に再取得完了を待てるようにするため
   const handleReloadStandardListCodes = useCallback(async () => {
-    if (!selectedStandardCodeCode) return;
+    if (!selectedStandardCodeId) return;
 
     setIsLoadingStandardListCodes(true);
     setStandardListCodeError(null);
 
-    await loadStandardListCodes(selectedStandardCodeCode);
-  }, [selectedStandardCodeCode, loadStandardListCodes]);
+    await loadStandardListCodes(selectedStandardCodeId);
+  }, [selectedStandardCodeId, loadStandardListCodes]);
 
   // 変更点: ここから下にCRUD用handlerを移動
   // 理由: handleReloadStandardCodes / handleReloadStandardListCodes を参照するため、
@@ -276,7 +281,7 @@ export function StandardCodeMasterPage() {
         } else {
           if (!editingStandardCode) return;
 
-          await updateStandardCode(editingStandardCode.code, values);
+          await updateStandardCode(editingStandardCode.id, values);
         }
 
         setStandardCodeDialogOpen(false);
@@ -298,12 +303,12 @@ export function StandardCodeMasterPage() {
 
       try {
         if (standardListCodeDialogMode === "create") {
-          await createStandardListCode(selectedStandardCode.code, values);
+          await createStandardListCode(selectedStandardCode.id, values);
         } else {
           if (!editingStandardListCode) return;
 
           await updateStandardListCode(
-            selectedStandardCode.code,
+            selectedStandardCode.id,
             editingStandardListCode.id,
             values,
           );
@@ -332,7 +337,7 @@ export function StandardCodeMasterPage() {
 
     return standardCodes.filter((standardCode) => {
       const matchesQuery =
-        standardCode.code.toLowerCase().includes(query) ||
+        standardCode.display_code.toLowerCase().includes(query) ||
         standardCode.name.toLowerCase().includes(query);
 
       const matchesActive =
@@ -349,7 +354,8 @@ export function StandardCodeMasterPage() {
 
     return standardListCodes.filter((standardListCode) => {
       const matchesQuery =
-        standardListCode.code.toLowerCase().includes(query) ||
+        query === "" ||
+        standardListCode.display_code.toLowerCase().includes(query) ||
         standardListCode.label.toLowerCase().includes(query);
 
       const matchesActive =
