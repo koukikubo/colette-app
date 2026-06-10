@@ -10,9 +10,8 @@ Rails.application.routes.draw do
         get "current", to: "sessions#current"
       end
 
-      resources :standard_masters, only: [:index, :show, :create, :update], param: :code do
+      resources :standard_masters, only: [:index, :show, :create, :update] do
         collection do
-          get :next_code
           get :count
         end
 
