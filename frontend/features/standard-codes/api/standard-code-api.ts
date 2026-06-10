@@ -24,7 +24,7 @@ type StandardListCodeResponse = ApiSuccessResponse<{
 }>;
 
 export type NextStandardCodeResponse = ApiSuccessResponse<{
-  code: string;
+  id: number;
 }>;
 
 // 基本コード一覧の取得
@@ -43,11 +43,8 @@ export function createStandardCode(values: StandardCodeFormValues) {
 }
 
 // 基本コードの更新
-export function updateStandardCode(
-  code: string,
-  values: StandardCodeFormValues,
-) {
-  return apiFetch<StandardCodeResponse>(`/api/v1/standard_masters/${code}`, {
+export function updateStandardCode(id: number, values: StandardCodeFormValues) {
+  return apiFetch<StandardCodeResponse>(`/api/v1/standard_masters/${id}`, {
     method: "PATCH",
     body: {
       standard_master: values,
@@ -56,19 +53,19 @@ export function updateStandardCode(
 }
 
 // 選択肢コード一覧の取得
-export function fetchStandardListCodes(StandardCode: string) {
+export function fetchStandardListCodes(StandardMasterId: number) {
   return apiFetch<StandardListCodesResponse>(
-    `/api/v1/standard_masters/${StandardCode}/items`,
+    `/api/v1/standard_masters/${StandardMasterId}/items`,
   );
 }
 
 // 選択肢コードの詳細取得
 export function createStandardListCode(
-  StandardCode: string,
+  StandardMasterId: number,
   values: StandardListCodeFormValues,
 ) {
   return apiFetch<StandardListCodeResponse>(
-    `/api/v1/standard_masters/${StandardCode}/items`,
+    `/api/v1/standard_masters/${StandardMasterId}/items`,
     {
       method: "POST",
       body: {
@@ -80,12 +77,12 @@ export function createStandardListCode(
 
 // 選択肢コードの更新
 export function updateStandardListCode(
-  StandardCode: string,
+  StandardMasterId: number,
   id: number,
   values: StandardListCodeFormValues,
 ) {
   return apiFetch<StandardListCodeResponse>(
-    `/api/v1/standard_masters/${StandardCode}/items/${id}`,
+    `/api/v1/standard_masters/${StandardMasterId}/items/${id}`,
     {
       method: "PATCH",
       body: {
