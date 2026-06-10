@@ -79,16 +79,19 @@ export function StandardCodeMasterPage() {
   const [standardCodeDialogOpen, setStandardCodeDialogOpen] = useState(false);
   const [standardCodeDialogMode, setStandardCodeDialogMode] =
     useState<DialogMode>("create");
-  const [editingStandardCode, setEditingStandardCode] =
-    useState<StandardCode | null>(null);
 
   // 変更点: 選択肢コードの登録・編集モーダル用state
   const [standardListCodeDialogOpen, setStandardListCodeDialogOpen] =
     useState(false);
+
   const [standardListCodeDialogMode, setStandardListCodeDialogMode] =
     useState<DialogMode>("create");
+
   const [editingStandardListCode, setEditingStandardListCode] =
     useState<StandardListCode | null>(null);
+
+  const [editingStandardCode, setEditingStandardCode] =
+    useState<StandardCode | null>(null);
 
   // 変更点: 登録・更新・無効化の送信中状態を共通管理
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -470,8 +473,6 @@ export function StandardCodeMasterPage() {
                   onSelect={handleSelectStandardCode}
                   // 変更点: 編集ボタン用handlerを渡す
                   onEdit={openEditStandardCodeDialog}
-                  // 変更点: 無効化対象をセットするhandlerを渡す
-                  onDisable={setEditingStandardCode}
                 />
               )}
             </CardContent>
@@ -590,8 +591,6 @@ export function StandardCodeMasterPage() {
                   standardListCodes={filteredStandardListCodes}
                   // 変更点: 編集ボタン用handlerを渡す
                   onEdit={openEditStandardListCodeDialog}
-                  // 変更点: 無効化対象をセットするhandlerを渡す
-                  onDisable={setEditingStandardListCode}
                 />
               )}
             </CardContent>
