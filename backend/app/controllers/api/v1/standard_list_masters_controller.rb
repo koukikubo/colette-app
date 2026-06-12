@@ -32,8 +32,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     standard_list_master =
       @standard_master.standard_list_masters.new(standard_list_master_params)
 
-    standard_list_master.code = StandardListMaster.next_id_for(@standard_master)
-    standard_list_master.position =
+      standard_list_master.position =
       @standard_master.standard_list_masters.maximum(:position).to_i + 1
 
     standard_list_master.save!
@@ -51,8 +50,8 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
 
   def update
     standard_list_master = 
-      @standard_master.standard_list_masters.find_by!(value: params[:id])
-
+      @standard_master.standard_list_masters.find(params[:id])
+      
     standard_list_master.update!(standard_list_master_params)
 
     render_success(
