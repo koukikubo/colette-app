@@ -2,12 +2,15 @@ class StandardMaster < ApplicationRecord
   has_many :standard_list_masters, dependent: :destroy
 
   # バリデーション（入力チェック）
-  with_options presence: true do
-      validates :position,
-                numericality: { only_integer: true }
-      validates :active, inclusion: { in: [true, false] }
-      validates :name
-  end
+  validates :name, presence: true
+  validates :position,
+            presence: true,
+            numericality: { only_integer: true }
+
+  validates :active, inclusion: { in: [true, false] }
+
+  scope :active, -> { where(active: true) }
+  scope :ordered, -> { order(:position, :id) }
 
   # 共通の検索条件
   scope :active, -> { where(active: true) }

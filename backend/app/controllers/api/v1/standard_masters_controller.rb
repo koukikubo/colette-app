@@ -32,7 +32,6 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
   def create
     standard_master = StandardMaster.new(standard_master_params)
 
-    standard_master.id = StandardMaster.id
     standard_master.position =
       StandardMaster.maximum(:position).to_i + 1
 
