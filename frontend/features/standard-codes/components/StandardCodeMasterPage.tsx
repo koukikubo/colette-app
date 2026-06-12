@@ -45,6 +45,28 @@ const STANDARD_CODE_FETCH_ERROR_MESSAGE =
 const STANDARD_LIST_CODE_FETCH_ERROR_MESSAGE =
   "選択肢コード一覧の取得に失敗しました。";
 
+function filterStandardCodes(
+  standardCodes: StandardCode[],
+  queryText: string,
+  activeFilter: ActiveFilter,
+) {
+  const query = queryText.trim().toLowerCase();
+
+  return standardCodes.filter((standardCode) => {
+    const matchesQuery =
+      query === "" ||
+      standardCode.display_code.toLowerCase().includes(query) ||
+      standardCode.name.toLowerCase().includes(query);
+
+    const matchesActive =
+      activeFilter === "all" ||
+      (activeFilter === "active" && standardCode.active) ||
+      (activeFilter === "inactive" && !standardCode.active);
+
+    return matchesQuery && matchesActive;
+  });
+}
+
 export function StandardCodeMasterPage() {
   const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
   const [standardListCodes, setStandardListCodes] = useState<
@@ -209,19 +231,73 @@ export function StandardCodeMasterPage() {
     }
   }, [selectedStandardCodeId, loadStandardListCodes]);
 
-  const handleSelectStandardCode = useCallback(
-    (standardCode: StandardCode) => {
-      if (standardCode.id === selectedStandardCodeId) return;
-
+  const switchSelectedStandardCode = useCallback(
+    (standardCode: StandardCode | null) => {
       setSelectedStandardCode(standardCode);
       setStandardListCodes([]);
       setStandardListCodeError(null);
       setStandardListCodeQuery("");
+
+      if (!standardCode) {
+        setIsLoadingStandardListCodes(false);
+        return;
+      }
+
       setIsLoadingStandardListCodes(true);
 
       void loadStandardListCodes(standardCode.id);
     },
-    [selectedStandardCodeId, loadStandardListCodes],
+    [loadStandardListCodes],
+  );
+
+  const syncSelectedStandardCodeWithFilter = useCallback(
+    (nextQuery: string, nextActiveFilter: ActiveFilter) => {
+      const nextFilteredStandardCodes = filterStandardCodes(
+        standardCodes,
+        nextQuery,
+        nextActiveFilter,
+      );
+
+      const selectedCodeExistsInFilteredCodes =
+        selectedStandardCodeId !== null &&
+        nextFilteredStandardCodes.some(
+          (standardCode) => standardCode.id === selectedStandardCodeId,
+        );
+
+      if (selectedCodeExistsInFilteredCodes) return;
+
+      const nextSelectedStandardCode = nextFilteredStandardCodes[0] ?? null;
+
+      switchSelectedStandardCode(nextSelectedStandardCode);
+    },
+    [standardCodes, selectedStandardCodeId, switchSelectedStandardCode],
+  );
+
+  const handleChangeStandardCodeQuery = useCallback(
+    (value: string) => {
+      setStandardCodeQuery(value);
+
+      syncSelectedStandardCodeWithFilter(value, standardCodeActiveFilter);
+    },
+    [standardCodeActiveFilter, syncSelectedStandardCodeWithFilter],
+  );
+
+  const handleChangeStandardCodeActiveFilter = useCallback(
+    (nextActiveFilter: ActiveFilter) => {
+      setStandardCodeActiveFilter(nextActiveFilter);
+
+      syncSelectedStandardCodeWithFilter(standardCodeQuery, nextActiveFilter);
+    },
+    [standardCodeQuery, syncSelectedStandardCodeWithFilter],
+  );
+
+  const handleSelectStandardCode = useCallback(
+    (standardCode: StandardCode) => {
+      if (standardCode.id === selectedStandardCodeId) return;
+
+      switchSelectedStandardCode(standardCode);
+    },
+    [selectedStandardCodeId, switchSelectedStandardCode],
   );
 
   // 変更点: asyncに変更
@@ -333,20 +409,11 @@ export function StandardCodeMasterPage() {
   );
 
   const filteredStandardCodes = useMemo(() => {
-    const query = standardCodeQuery.trim().toLowerCase();
-
-    return standardCodes.filter((standardCode) => {
-      const matchesQuery =
-        standardCode.display_code.toLowerCase().includes(query) ||
-        standardCode.name.toLowerCase().includes(query);
-
-      const matchesActive =
-        standardCodeActiveFilter === "all" ||
-        (standardCodeActiveFilter === "active" && standardCode.active) ||
-        (standardCodeActiveFilter === "inactive" && !standardCode.active);
-
-      return matchesQuery && matchesActive;
-    });
+    return filterStandardCodes(
+      standardCodes,
+      standardCodeQuery,
+      standardCodeActiveFilter,
+    );
   }, [standardCodes, standardCodeQuery, standardCodeActiveFilter]);
 
   const filteredStandardListCodes = useMemo(() => {
@@ -404,7 +471,9 @@ export function StandardCodeMasterPage() {
               <div className="space-y-2">
                 <Input
                   value={standardCodeQuery}
-                  onChange={(event) => setStandardCodeQuery(event.target.value)}
+                  onChange={(event) =>
+                    handleChangeStandardCodeQuery(event.target.value)
+                  }
                   placeholder="コード・名称で検索"
                 />
 
@@ -427,7 +496,7 @@ export function StandardCodeMasterPage() {
                         ? "default"
                         : "outline"
                     }
-                    onClick={() => setStandardCodeActiveFilter("active")}
+                    onClick={() => handleChangeStandardCodeActiveFilter("all")}
                   >
                     有効
                   </Button>
@@ -439,7 +508,9 @@ export function StandardCodeMasterPage() {
                         ? "default"
                         : "outline"
                     }
-                    onClick={() => setStandardCodeActiveFilter("inactive")}
+                    onClick={() =>
+                      handleChangeStandardCodeActiveFilter("active")
+                    }
                   >
                     無効
                   </Button>
@@ -553,7 +624,9 @@ export function StandardCodeMasterPage() {
                         : "outline"
                     }
                     disabled={!selectedStandardCode}
-                    onClick={() => setStandardListCodeActiveFilter("inactive")}
+                    onClick={() =>
+                      handleChangeStandardCodeActiveFilter("inactive")
+                    }
                   >
                     無効
                   </Button>
