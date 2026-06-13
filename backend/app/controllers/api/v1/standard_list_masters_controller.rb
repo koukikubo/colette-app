@@ -15,8 +15,6 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     standard_list_master =
       @standard_master.standard_list_masters.find(params[:id])
 
-    standard_list_master.update!(standard_list_master_params)
-
     render_success(
       data: {
         standard_list_master:
@@ -51,7 +49,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
   def update
     standard_list_master = 
       @standard_master.standard_list_masters.find(params[:id])
-      
+
     standard_list_master.update!(standard_list_master_params)
 
     render_success(

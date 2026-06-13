@@ -20,7 +20,7 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
     standard_master =
       StandardMaster
       .includes(:standard_list_masters)
-      .find_by!(params[:id])
+      .find(params[:id])
 
     render_success(
       data: {
