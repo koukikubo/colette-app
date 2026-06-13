@@ -450,8 +450,8 @@ export function StandardCodeMasterPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-          <Card className="min-h-160">
+        <div className="grid gap-4 lg:grid-cols-[500px_minmax(0,1fr)] xl:grid-cols-[560px_minmax(0,1fr)]">
+          <Card className="min-h-160 min-w-0">
             <CardHeader className="gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -555,7 +555,7 @@ export function StandardCodeMasterPage() {
             </CardContent>
           </Card>
 
-          <Card className="min-h-160">
+          <Card className="min-h-160 min-w-0">
             <CardHeader className="gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
