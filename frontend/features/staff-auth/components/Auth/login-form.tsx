@@ -3,19 +3,24 @@
 import { cn } from "@/lib/utils";
 
 import { FormEvent, useState } from "react";
-import { loginStaff } from "../../api/staff-auth-api";
+import { loginStaff } from "./api/staff-auth-api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
-import { Button } from "../ui/button";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "../ui/field";
+import { Button } from "../../../../components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../../components/ui/field";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
-import { Input } from "../ui/input";
+} from "../../../../components/ui/select";
+import { Input } from "../../../../components/ui/input";
 import { useAuth } from "../../hooks/use-auth";
 
 type StaffOption = {

@@ -2,12 +2,16 @@ class StandardMaster < ApplicationRecord
   has_many :standard_list_masters, dependent: :destroy
 
   # バリデーション（入力チェック）
-  with_options presence: true do
-      validates :code, uniqueness: true
-      validates :name
-      validates :position,
-                numericality: { only_integer: true }
-  end
+  validates :name, presence: true
+  validates :position,
+            presence: true,
+            numericality: { only_integer: true }
+
+  validates :active, inclusion: { in: [true, false] }
+
+  scope :active, -> { where(active: true) }
+  scope :ordered, -> { order(:position, :id) }
+
   # 共通の検索条件
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
@@ -18,13 +22,9 @@ class StandardMaster < ApplicationRecord
 
     if query.present?
       result = result.where(
-        "code LIKE :q OR name LIKE :q",
+        "name LIKE :q OR description LIKE :q",
         q: "%#{query}%"
       )
-    end
-
-    unless active.nil?
-      result = result.where(active: active)
     end
 
     case active
@@ -35,11 +35,6 @@ class StandardMaster < ApplicationRecord
     end
 
     result
-  end
-
-  def self.next_code
-    max_code = maximum(Arel.sql("CAST(code AS INTEGER)")) || 0
-    format("%04d", max_code + 1)
   end
 
 end

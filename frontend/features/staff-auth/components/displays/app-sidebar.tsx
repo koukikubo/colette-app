@@ -1,18 +1,19 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 
 import {
-  UsersIcon,
-  CameraIcon,
-  FileTextIcon,
-  Settings2Icon,
+  CalendarDaysIcon,
+  LayoutDashboardIcon,
+  MegaphoneIcon,
+  NotebookPenIcon,
   SearchIcon,
+  SettingsIcon,
+  UserRoundIcon,
+  UsersIcon,
 } from "lucide-react";
 
-import { BsFileEarmarkPerson } from "react-icons/bs";
-import { CiBoxList } from "react-icons/ci";
-import { MdFormatListBulletedAdd, MdNotes } from "react-icons/md";
 import {
   Sidebar,
   SidebarContent,
@@ -21,10 +22,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "../ui/sidebar";
+} from "@/components/ui/sidebar";
+
 import { NavDocuments } from "./nav-documents";
 import { NavMain } from "./nav-main";
-import { NavSecondary } from "./nav-secondary";
 import { NavUser } from "./nav-user";
 
 const data = {
@@ -33,97 +34,79 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
+
+  /**
+   * メインメニュー。
+   *
+   * 普段の業務でよく使う画面をここに置きます。
+   */
   navMain: [
     {
+      title: "ダッシュボード",
+      url: "/dashboard",
+      icon: <LayoutDashboardIcon />,
+    },
+    {
       title: "予約一覧",
-      url: "#",
-      icon: <CiBoxList />,
+      url: "/reservations",
+      icon: <CalendarDaysIcon />,
     },
     {
       title: "顧客管理",
-      url: "#",
+      url: "/customers",
       icon: <UsersIcon />,
     },
     {
       title: "予約管理",
-      url: "#",
-      icon: <MdFormatListBulletedAdd />,
+      url: "/reservations/manage",
+      icon: <CalendarDaysIcon />,
     },
     {
       title: "お知らせ",
-      url: "#",
-      icon: <MdNotes />,
+      url: "/announcements",
+      icon: <MegaphoneIcon />,
     },
     {
       title: "顧客ノート",
-      url: "#",
-      icon: <BsFileEarmarkPerson />,
+      url: "/customer-notes",
+      icon: <NotebookPenIcon />,
     },
   ],
-  navClouds: [
+
+  /**
+   * 管理メニュー。
+   *
+   * マスタ系の画面をここにまとめます。
+   * 今回の Issue 37 の画面はここに配置します。
+   */
+  masterMenu: [
     {
-      title: "Capture",
-      icon: <CameraIcon />,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      name: "基本コード・選択肢コード",
+      url: "/standard-codes",
+      icon: <SettingsIcon />,
     },
     {
-      title: "Proposal",
-      icon: <FileTextIcon />,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: <FileTextIcon />,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      name: "担当者マスタ",
+      url: "/staffs",
+      icon: <UserRoundIcon />,
     },
   ],
-  navSecondary: [
-    {
-      title: "管理メニュー",
-      url: "#",
-      icon: <Settings2Icon />,
-    },
-  ],
-  submenu: [
+
+  /**
+   * 検索メニュー。
+   *
+   * 顧客検索・予約検索など、
+   * 将来的に検索専用画面を作る場合はここに置きます。
+   */
+  searchMenu: [
     {
       name: "顧客検索",
-      url: "#",
+      url: "/customers/search",
       icon: <SearchIcon />,
     },
     {
       name: "予約検索",
-      url: "#",
+      url: "/reservations/search",
       icon: <SearchIcon />,
     },
   ],
@@ -139,18 +122,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
+              <Link href="/dashboard">
                 <span className="text-base font-semibold">Colette</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.submenu} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+
+        <NavDocuments title="管理メニュー" items={data.masterMenu} />
+
+        <NavDocuments title="検索メニュー" items={data.searchMenu} />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>

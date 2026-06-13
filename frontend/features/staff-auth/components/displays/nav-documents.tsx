@@ -1,89 +1,54 @@
 "use client";
 
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
+
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  // SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  // useSidebar,
-} from "@/features/staff-auth/components/ui/sidebar";
-// import {
-//   MoreHorizontalIcon,
-//   FolderIcon,
-//   ShareIcon,
-//   Trash2Icon,
-// } from "lucide-react";
+} from "@/components/ui/sidebar";
 
-export function NavDocuments({
-  items,
-}: {
-  items: {
-    name: string;
-    url: string;
-    icon: React.ReactNode;
-  }[];
-}) {
-  // const { isMobile } = useSidebar();
+type NavDocumentItem = {
+  name: string;
+  url: string;
+  icon: React.ReactNode;
+};
 
+type NavDocumentsProps = {
+  /**
+   * サイドバー内のグループ見出し。
+   *
+   * 例:
+   * - 管理メニュー
+   * - 検索
+   * - ドキュメント
+   */
+  title: string;
+
+  /**
+   * グループ内に表示するメニュー一覧。
+   */
+  items: NavDocumentItem[];
+};
+
+export function NavDocuments({ title, items }: NavDocumentsProps) {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Search</SidebarGroupLabel>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+
       <SidebarMenu>
         {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
+          <SidebarMenuItem key={item.url}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              <Link href={item.url}>
                 {item.icon}
                 <span>{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
-            {/* <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction
-                  showOnHover
-                  className="rounded-sm data-[state=open]:bg-accent"
-                >
-                  <MoreHorizontalIcon />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-24 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <FolderIcon />
-                  <span>Open</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <ShareIcon />
-                  <span>Share</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
-                  <Trash2Icon />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> */}
           </SidebarMenuItem>
         ))}
-        {/* <SidebarMenuItem>
-          {/* <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontalIcon className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton> */}
-        {/* </SidebarMenuItem> */}
       </SidebarMenu>
     </SidebarGroup>
   );
