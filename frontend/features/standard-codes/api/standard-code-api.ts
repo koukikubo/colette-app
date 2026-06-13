@@ -91,10 +91,3 @@ export function updateStandardListCode(
     },
   );
 }
-
-// 次の基本コード候補の取得
-export function fetchNextStandardCode() {
-  return apiFetch<NextStandardCodeResponse>(
-    "/api/v1/standard_masters/next_code",
-  );
-}
