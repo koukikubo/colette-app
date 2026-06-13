@@ -2,11 +2,8 @@
 
 import { AppSidebar } from "@/features/staff-auth/components/displays/app-sidebar";
 import { SiteHeader } from "@/features/staff-auth/components/displays/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/features/staff-auth/components/ui/sidebar";
-import { TooltipProvider } from "@/features/staff-auth/components/ui/tooltip";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
