@@ -13,8 +13,8 @@ import { ApiClientError } from "@/lib/api/api-client";
 import {
   fetchCurrentStaff,
   logoutStaff,
-} from "@/features/staff-auth/components/Auth/api/staff-auth-api";
-import type { Staff } from "@/features/staff-auth/components/Auth/types";
+} from "@/features/staff-auth/api/staff-auth-api";
+import type { Staff } from "@/features/staff-auth/types";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -55,7 +55,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setStatus("unauthenticated");
         return;
       }
-      console.warn("[AuthProvider] current staff request failed[AuthProvider] current staff request failed", error);
+
+      console.error(error);
       setStaff(null);
       setStatus("unauthenticated");
     }
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadCurrentStaff() {
       try {
         const response = await fetchCurrentStaff();
-
+        
         if (ignored) return;
 
         setStaff(response.data.staff);
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
-        console.warn("[AuthProvider] current staff request failed", error);
+        console.error(error);
         setStaff(null);
         setStatus("unauthenticated");
       }

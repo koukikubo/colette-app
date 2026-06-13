@@ -1,8 +1,8 @@
 class ApplicationSerializer
   # シリアライザの基底クラス
-  attr_reader :resource
+  attr_reader :record
 
-  def initialize(resource)
-    @resource = resource
+  def initialize(record)
+    @record = record
   end
 end

@@ -10,15 +10,16 @@ Rails.application.routes.draw do
         get "current", to: "sessions#current"
       end
 
-      resources :standard_masters, only: [:index, :show, :create, :update] do
+      resources :standard_masters, only: %i[index show], param: :code do
         collection do
+          get :next_code
           get :count
         end
 
         resources :standard_list_masters,
-                  path: "items",
-                  as: "items",
-                  only: [:index, :show, :create, :update]
+          path: "items",
+          as: "items",
+          only: [:index, :show, :create, :update, :destroy]
       end 
     end
   end

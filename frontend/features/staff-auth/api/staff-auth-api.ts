@@ -6,42 +6,18 @@ import type {
   StaffAuthResponse,
 } from "../types";
 
-type CsrfResponse = {
-  status: "success";
-  data: {
-    csrf_token: string;
-  };
-};
-
-async function fetchCsrfToken() {
-  const response = await apiFetch<CsrfResponse>("/api/v1/csrf", {
-    method: "GET",
-  });
-  return response.data.csrf_token;
-}
-
 // スタッフ認証関連のAPIクライアント関数を定義
-export async function loginStaff(payload: LoginStaffRequest) {
-  const csrfToken = await fetchCsrfToken();
-
+export function loginStaff(payload: LoginStaffRequest) {
   return apiFetch<StaffAuthResponse>("/api/v1/staff/login", {
     method: "POST",
-    headers: {
-      "X-CSRF-Token": csrfToken,
-    },
     body: payload,
   });
 }
 
 // スタッフのログアウトを行うAPIクライアント関数
-export async function logoutStaff() {
-  const csrfToken = await fetchCsrfToken();
-
+export function logoutStaff() {
   return apiFetch<LogoutResponse>("/api/v1/staff/logout", {
     method: "DELETE",
-    headers: {
-      "X-CSRF-Token": csrfToken,
-    },
   });
 }
 

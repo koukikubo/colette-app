@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
-import { Button } from "../../../../components/ui/button";
+import { Button } from "../ui/button";
 
 export function LogoutButton() {
   const { status, logout } = useAuth();
