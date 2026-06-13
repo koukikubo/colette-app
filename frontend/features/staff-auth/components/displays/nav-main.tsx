@@ -7,7 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "@/features/staff-auth/components/ui/sidebar";
 // import { CirclePlusIcon, MailIcon } from "lucide-react";
 
 export function NavMain({

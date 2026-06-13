@@ -2,14 +2,16 @@ class StandardListMaster < ApplicationRecord
   belongs_to :standard_master
 
   # バリデーション（入力チェック）
-  validates :label, presence: true
-  validates :position,
-            presence: true,
-            numericality: { only_integer: true }
-  validates :active, inclusion: { in: [true, false] }
-  
+  with_options presence: true do
+    validates :code, uniqueness: true
+    validates :label
+    validates :position,
+              numericality: { only_integer: true }
+  end
+
   # 共通の検索条件
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
 
+  
 end

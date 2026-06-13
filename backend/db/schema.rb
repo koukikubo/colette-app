@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_040308) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_23_044400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_040308) do
 
   create_table "standard_list_masters", force: :cascade do |t|
     t.boolean "active", default: true, null: false
+    t.string "code", null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.string "label", null: false
@@ -49,18 +50,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_040308) do
     t.bigint "standard_master_id", null: false
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_standard_list_masters_on_active"
+    t.index ["standard_master_id", "code"], name: "index_standard_list_masters_on_master_id_and_code", unique: true
     t.index ["standard_master_id", "position"], name: "index_standard_list_masters_on_master_id_and_position", unique: true
     t.index ["standard_master_id"], name: "index_standard_list_masters_on_standard_master_id"
   end
 
   create_table "standard_masters", force: :cascade do |t|
     t.boolean "active", default: true, null: false
+    t.string "code", null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_standard_masters_on_active"
+    t.index ["code"], name: "index_standard_masters_on_code", unique: true
     t.index ["name"], name: "index_standard_masters_on_name"
     t.index ["position"], name: "index_standard_masters_on_position", unique: true
   end
