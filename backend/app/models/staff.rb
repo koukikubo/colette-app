@@ -8,7 +8,8 @@ class Staff < ApplicationRecord
   validates :login_enabled, inclusion: { in: [true, false] }
   validates :failed_attempts,
             numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  # staff_masterのactive?メソッドを呼び出すためのdelegate
+
+  # staff_masterのactive?メソッドを呼び出すための委譲
   delegate :code,
            :name,
            :role_code,
