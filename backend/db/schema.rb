@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_040308) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_14_071817) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -32,10 +32,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_040308) do
     t.datetime "created_at", null: false
     t.integer "failed_attempts", default: 0, null: false
     t.datetime "last_logged_in_at"
+    t.datetime "locked_at"
     t.boolean "login_enabled", default: true, null: false
     t.string "password_digest", null: false
     t.bigint "staff_master_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["locked_at"], name: "index_staffs_on_locked_at"
     t.index ["staff_master_id"], name: "index_staffs_on_staff_master_id", unique: true
     t.check_constraint "failed_attempts >= 0", name: "check_staffs_failed_attempts_non_negative"
   end
