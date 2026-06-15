@@ -2,7 +2,7 @@ module Api
   module V1
     class StaffSerializer < ApplicationSerializer
       # RailsからNext.jsに送るJSONの形式を定義する（password除外）
-      def as_json
+      def as_json(*)
         {
           id: resource.id,
           staff_master: Api::V1::StaffMasterSerializer.new(resource.staff_master).as_json,

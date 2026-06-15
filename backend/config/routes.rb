@@ -10,6 +10,15 @@ Rails.application.routes.draw do
         get "current", to: "sessions#current"
       end
 
+      resources :staff_masters, only: %i[index show create update] do
+      member do
+        patch :retire
+        patch :restore
+        patch :login_enabled, action: :update_login_enabled
+        patch :reset_failed_attempts
+      end
+    end
+
       resources :standard_masters, only: [:index, :show, :create, :update] do
         collection do
           get :count
