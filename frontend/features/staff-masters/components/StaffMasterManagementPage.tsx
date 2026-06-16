@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { fetchStaffMasters } from "../api/staff-master-api";
 import type { StaffMaster } from "../types";
+import { StaffMasterTable } from "./StaffMasterTable";
 
 type ListMode = "active" | "retired";
 
@@ -133,9 +134,10 @@ export function StaffMasterManagementPage() {
           {displayedStaffMasters.length === 0 ? (
             <EmptyState listMode={listMode} />
           ) : (
-            <pre className="overflow-auto p-6 text-xs">
-              {JSON.stringify(displayedStaffMasters, null, 2)}
-            </pre>
+            <StaffMasterTable
+              staffMasters={displayedStaffMasters}
+              listMode={listMode}
+            />
           )}
         </CardContent>
       </Card>
