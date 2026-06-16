@@ -114,8 +114,20 @@ export function StaffMasterManagementPage() {
 
   const handleUpdated = async () => {
     const response = await fetchStaffMasters();
+    const updatedStaffMasters = response.data.staff_masters;
 
-    setStaffMasters(response.data.staff_masters);
+    setStaffMasters(updatedStaffMasters);
+
+    setEditingStaffMaster((currentStaffMaster) => {
+      if (!currentStaffMaster) {
+        return null;
+      }
+      return (
+        updatedStaffMasters.find(
+          (staffMaster) => staffMaster.id === currentStaffMaster.id,
+        ) ?? null
+      );
+    });
   };
 
   return (

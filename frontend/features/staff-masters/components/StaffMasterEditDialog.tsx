@@ -44,6 +44,7 @@ import {
   type StaffRoleCode,
   type UpdateStaffMasterRequest,
 } from "../types";
+import { ToggleLoginEnabledDialog } from "./ToggleLoginEnabledDialog";
 
 type StaffMasterEditDialogProps = {
   open: boolean;
@@ -84,6 +85,7 @@ export function StaffMasterEditDialog({
   const [apiError, setApiError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginEnabledDialogOpen, setLoginEnabledDialogOpen] = useState(false);
 
   const changes = useMemo<ChangeItem[]>(() => {
     const items: ChangeItem[] = [];
@@ -359,9 +361,18 @@ export function StaffMasterEditDialog({
                 </LoginInfoItem>
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                ログイン可否の変更とロック解除は、専用の確認操作から行います。
-              </p>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!staff || isSubmitting}
+                  onClick={() => setLoginEnabledDialogOpen(true)}
+                >
+                  {staff?.login_enabled
+                    ? "ログインを無効にする"
+                    : "ログインを有効にする"}
+                </Button>
+              </div>
             </section>
 
             {apiError && (
@@ -453,6 +464,13 @@ export function StaffMasterEditDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ToggleLoginEnabledDialog
+        open={loginEnabledDialogOpen}
+        staffMaster={staffMaster}
+        onOpenChange={setLoginEnabledDialogOpen}
+        onUpdated={onUpdated}
+      />
     </>
   );
 }
