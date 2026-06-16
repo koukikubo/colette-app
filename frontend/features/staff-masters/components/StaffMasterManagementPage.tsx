@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchStaffMasters } from "../api/staff-master-api";
 import type { StaffMaster } from "../types";
 import { StaffMasterTable } from "./StaffMasterTable";
+import { StaffMasterCreateDialog } from "./StaffMasterCreateDialog";
 
 type ListMode = "active" | "retired";
 
@@ -19,6 +20,7 @@ export function StaffMasterManagementPage() {
   const [listMode, setListMode] = useState<ListMode>("active");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +102,13 @@ export function StaffMasterManagementPage() {
     );
   }
 
+  const handleCreated = async () => {
+    const response = await fetchStaffMasters();
+
+    setStaffMasters(response.data.staff_masters);
+    setListMode("active");
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader />
@@ -122,7 +131,7 @@ export function StaffMasterManagementPage() {
         </Button>
 
         {listMode === "active" && (
-          <Button type="button">
+          <Button type="button" onClick={() => setCreateDialogOpen(true)}>
             <PlusIcon aria-hidden="true" />
             新規登録
           </Button>
@@ -141,6 +150,12 @@ export function StaffMasterManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      <StaffMasterCreateDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreated={handleCreated}
+      />
     </div>
   );
 }
