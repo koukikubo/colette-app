@@ -140,7 +140,7 @@ export function StaffMasterTable({
                       type="button"
                       size="sm"
                       variant="outline"
-                      onClick={() => onEdit(staffMaster)}
+                      onClick={() => onEdit?.(staffMaster)}
                       aria-label={`${staffMaster.name}を編集する`}
                     >
                       <PencilIcon aria-hidden="true" />

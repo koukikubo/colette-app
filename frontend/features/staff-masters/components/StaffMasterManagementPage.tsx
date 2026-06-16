@@ -12,6 +12,7 @@ import { fetchStaffMasters } from "../api/staff-master-api";
 import type { StaffMaster } from "../types";
 import { StaffMasterTable } from "./StaffMasterTable";
 import { StaffMasterCreateDialog } from "./StaffMasterCreateDialog";
+import { StaffMasterEditDialog } from "./StaffMasterEditDialog";
 
 type ListMode = "active" | "retired";
 
@@ -21,6 +22,8 @@ export function StaffMasterManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingStaffMaster, setEditingStaffMaster] =
+    useState<StaffMaster | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +112,12 @@ export function StaffMasterManagementPage() {
     setListMode("active");
   };
 
+  const handleUpdated = async () => {
+    const response = await fetchStaffMasters();
+
+    setStaffMasters(response.data.staff_masters);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader />
@@ -146,6 +155,7 @@ export function StaffMasterManagementPage() {
             <StaffMasterTable
               staffMasters={displayedStaffMasters}
               listMode={listMode}
+              onEdit={setEditingStaffMaster}
             />
           )}
         </CardContent>
@@ -156,6 +166,20 @@ export function StaffMasterManagementPage() {
         onOpenChange={setCreateDialogOpen}
         onCreated={handleCreated}
       />
+
+      {editingStaffMaster && (
+        <StaffMasterEditDialog
+          key={editingStaffMaster.id}
+          open
+          staffMaster={editingStaffMaster}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setEditingStaffMaster(null);
+            }
+          }}
+          onUpdated={handleUpdated}
+        />
+      )}
     </div>
   );
 }
