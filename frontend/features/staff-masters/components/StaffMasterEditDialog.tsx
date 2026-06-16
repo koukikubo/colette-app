@@ -46,12 +46,14 @@ import {
 } from "../types";
 import { ToggleLoginEnabledDialog } from "./ToggleLoginEnabledDialog";
 import { ResetFailedAttemptsDialog } from "./ResetFailedAttemptsDialog";
+import { RetireStaffDialog } from "./RetireStaffDialog";
 
 type StaffMasterEditDialogProps = {
   open: boolean;
   staffMaster: StaffMaster;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => Promise<void>;
+  onRetired: () => Promise<void>;
 };
 
 type FormValues = {
@@ -74,6 +76,7 @@ export function StaffMasterEditDialog({
   staffMaster,
   onOpenChange,
   onUpdated,
+  onRetired,
 }: StaffMasterEditDialogProps) {
   const [values, setValues] = useState<FormValues>(() => ({
     name: staffMaster.name,
@@ -89,6 +92,8 @@ export function StaffMasterEditDialog({
   const [loginEnabledDialogOpen, setLoginEnabledDialogOpen] = useState(false);
   const [resetFailedAttemptsDialogOpen, setResetFailedAttemptsDialogOpen] =
     useState(false);
+
+  const [retireDialogOpen, setRetireDialogOpen] = useState(false);
 
   const changes = useMemo<ChangeItem[]>(() => {
     const items: ChangeItem[] = [];
@@ -210,8 +215,8 @@ export function StaffMasterEditDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b px-6 py-5 pr-12">
             <DialogTitle>担当者情報の編集</DialogTitle>
 
             <DialogDescription>
@@ -219,195 +224,245 @@ export function StaffMasterEditDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <section className="space-y-4">
-              <div>
-                <h3 className="font-medium">担当者基本情報</h3>
+          <form
+            className="flex min-h-0 flex-1  flex-col "
+            onSubmit={handleSubmit}
+          >
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+              <section className="space-y-4">
+                <div>
+                  <h3 className="font-medium">担当者基本情報</h3>
 
-                <p className="text-sm text-muted-foreground">
-                  担当者名、権限、入社日、メモを変更できます。
-                </p>
-              </div>
+                  <p className="text-sm text-muted-foreground">
+                    担当者名、権限、入社日、メモを変更できます。
+                  </p>
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField id="edit-staff-code" label="担当者コード">
-                  <Input
-                    id="edit-staff-code"
-                    value={staffMaster.code}
-                    readOnly
-                    disabled
-                    className="font-mono"
-                  />
-                </FormField>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField id="edit-staff-code" label="担当者コード">
+                    <Input
+                      id="edit-staff-code"
+                      value={staffMaster.code}
+                      readOnly
+                      disabled
+                      className="font-mono"
+                    />
+                  </FormField>
 
-                <FormField
-                  id="edit-staff-name"
-                  label="担当者名"
-                  required
-                  error={errors.name}
-                >
-                  <Input
+                  <FormField
                     id="edit-staff-name"
-                    value={values.name}
-                    onChange={(event) =>
-                      updateField("name", event.target.value)
-                    }
-                    autoComplete="name"
-                    aria-invalid={Boolean(errors.name)}
-                  />
-                </FormField>
-
-                <FormField
-                  id="edit-staff-role"
-                  label="権限"
-                  required
-                  error={errors.role_code}
-                >
-                  <Select
-                    value={values.role_code}
-                    onValueChange={(value) => {
-                      if (isStaffRoleCode(value)) {
-                        updateField("role_code", value);
-                      }
-                    }}
+                    label="担当者名"
+                    required
+                    error={errors.name}
                   >
-                    <SelectTrigger
-                      id="edit-staff-role"
-                      aria-invalid={Boolean(errors.role_code)}
-                    >
-                      <SelectValue placeholder="権限を選択" />
-                    </SelectTrigger>
+                    <Input
+                      id="edit-staff-name"
+                      value={values.name}
+                      onChange={(event) =>
+                        updateField("name", event.target.value)
+                      }
+                      autoComplete="name"
+                      aria-invalid={Boolean(errors.name)}
+                    />
+                  </FormField>
 
-                    <SelectContent>
-                      {STAFF_ROLE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
+                  <FormField
+                    id="edit-staff-role"
+                    label="権限"
+                    required
+                    error={errors.role_code}
+                  >
+                    <Select
+                      value={values.role_code}
+                      onValueChange={(value) => {
+                        if (isStaffRoleCode(value)) {
+                          updateField("role_code", value);
+                        }
+                      }}
+                    >
+                      <SelectTrigger
+                        id="edit-staff-role"
+                        aria-invalid={Boolean(errors.role_code)}
+                      >
+                        <SelectValue placeholder="権限を選択" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {STAFF_ROLE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+
+                  <FormField
+                    id="edit-employment-started-on"
+                    label="入社日"
+                    required
+                    error={errors.employment_started_on}
+                  >
+                    <Input
+                      id="edit-employment-started-on"
+                      type="date"
+                      value={values.employment_started_on}
+                      onChange={(event) =>
+                        updateField("employment_started_on", event.target.value)
+                      }
+                      aria-invalid={Boolean(errors.employment_started_on)}
+                    />
+                  </FormField>
+                </div>
 
                 <FormField
-                  id="edit-employment-started-on"
-                  label="入社日"
-                  required
-                  error={errors.employment_started_on}
+                  id="edit-staff-memo"
+                  label="メモ"
+                  error={errors.memo}
                 >
-                  <Input
-                    id="edit-employment-started-on"
-                    type="date"
-                    value={values.employment_started_on}
+                  <Textarea
+                    id="edit-staff-memo"
+                    value={values.memo}
                     onChange={(event) =>
-                      updateField("employment_started_on", event.target.value)
+                      updateField("memo", event.target.value)
                     }
-                    aria-invalid={Boolean(errors.employment_started_on)}
+                    rows={4}
+                    placeholder="担当業務や備考を入力"
                   />
                 </FormField>
-              </div>
+              </section>
 
-              <FormField id="edit-staff-memo" label="メモ" error={errors.memo}>
-                <Textarea
-                  id="edit-staff-memo"
-                  value={values.memo}
-                  onChange={(event) => updateField("memo", event.target.value)}
-                  rows={4}
-                  placeholder="担当業務や備考を入力"
-                />
-              </FormField>
-            </section>
+              <Separator />
 
-            <Separator />
+              <section className="space-y-4">
+                <div>
+                  <h3 className="font-medium">ログイン管理情報</h3>
 
-            <section className="space-y-4">
-              <div>
-                <h3 className="font-medium">ログイン管理情報</h3>
+                  <p className="text-sm text-muted-foreground">
+                    ログイン状態とアカウントロック状態を確認できます。
+                  </p>
+                </div>
 
-                <p className="text-sm text-muted-foreground">
-                  ログイン状態とアカウントロック状態を確認できます。
+                <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+                  <LoginInfoItem label="ログイン許可">
+                    {!staff ? (
+                      <Badge variant="outline">未登録</Badge>
+                    ) : staff.login_enabled ? (
+                      <Badge>有効</Badge>
+                    ) : (
+                      <Badge variant="secondary">無効</Badge>
+                    )}
+                  </LoginInfoItem>
+
+                  <LoginInfoItem label="アカウント状態">
+                    {!staff ? (
+                      <Badge variant="outline">未登録</Badge>
+                    ) : staff.locked ? (
+                      <Badge variant="destructive">ロック中</Badge>
+                    ) : (
+                      <Badge variant="outline">正常</Badge>
+                    )}
+                  </LoginInfoItem>
+
+                  <LoginInfoItem label="ログイン失敗回数">
+                    {staff ? `${staff.failed_attempts}回` : "—"}
+                  </LoginInfoItem>
+
+                  <LoginInfoItem label="ロック日時">
+                    {formatDateTime(staff?.locked_at)}
+                  </LoginInfoItem>
+
+                  <LoginInfoItem label="最終ログイン日時">
+                    {staff?.last_logged_in_at
+                      ? formatDateTime(staff.last_logged_in_at)
+                      : "未ログイン"}
+                  </LoginInfoItem>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!staff || isSubmitting}
+                    onClick={() => setLoginEnabledDialogOpen(true)}
+                  >
+                    {staff?.login_enabled
+                      ? "ログインを無効にする"
+                      : "ログインを有効にする"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant={staff?.locked ? "destructive" : "outline"}
+                    disabled={
+                      !staff ||
+                      isSubmitting ||
+                      (!staff.locked && staff.failed_attempts === 0)
+                    }
+                    onClick={() => setResetFailedAttemptsDialogOpen(true)}
+                  >
+                    {staff?.locked ? "ロックを解除" : "失敗回数をリセット"}
+                  </Button>
+                </div>
+              </section>
+
+              {staffMaster.retired_on === null && (
+                <>
+                  <Separator />
+
+                  <section className="space-y-4">
+                    <div>
+                      <h3 className="font-medium">在籍状態</h3>
+
+                      <p className="text-sm text-muted-foreground">
+                        退職日を登録して、この担当者を退職済みへ変更します。
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-4 rounded-lg border border-destructive/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">退職処理</p>
+
+                        <p className="text-sm text-muted-foreground">
+                          担当者情報は削除されず、退職者リストへ移動します。
+                        </p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={isSubmitting}
+                        onClick={() => setRetireDialogOpen(true)}
+                      >
+                        退職処理
+                      </Button>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {apiError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {apiError}
                 </p>
-              </div>
+              )}
+            </div>
 
-              <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
-                <LoginInfoItem label="ログイン許可">
-                  {!staff ? (
-                    <Badge variant="outline">未登録</Badge>
-                  ) : staff.login_enabled ? (
-                    <Badge>有効</Badge>
-                  ) : (
-                    <Badge variant="secondary">無効</Badge>
-                  )}
-                </LoginInfoItem>
-
-                <LoginInfoItem label="アカウント状態">
-                  {!staff ? (
-                    <Badge variant="outline">未登録</Badge>
-                  ) : staff.locked ? (
-                    <Badge variant="destructive">ロック中</Badge>
-                  ) : (
-                    <Badge variant="outline">正常</Badge>
-                  )}
-                </LoginInfoItem>
-
-                <LoginInfoItem label="ログイン失敗回数">
-                  {staff ? `${staff.failed_attempts}回` : "—"}
-                </LoginInfoItem>
-
-                <LoginInfoItem label="ロック日時">
-                  {formatDateTime(staff?.locked_at)}
-                </LoginInfoItem>
-
-                <LoginInfoItem label="最終ログイン日時">
-                  {staff?.last_logged_in_at
-                    ? formatDateTime(staff.last_logged_in_at)
-                    : "未ログイン"}
-                </LoginInfoItem>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!staff || isSubmitting}
-                  onClick={() => setLoginEnabledDialogOpen(true)}
-                >
-                  {staff?.login_enabled
-                    ? "ログインを無効にする"
-                    : "ログインを有効にする"}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant={staff?.locked ? "destructive" : "outline"}
-                  disabled={
-                    !staff ||
-                    isSubmitting ||
-                    (!staff.locked && staff.failed_attempts === 0)
-                  }
-                  onClick={() => setResetFailedAttemptsDialogOpen(true)}
-                >
-                  {staff?.locked ? "ロックを解除" : "失敗回数をリセット"}
-                </Button>
-              </div>
-            </section>
-
-            {apiError && (
-              <p className="text-sm text-destructive" role="alert">
-                {apiError}
-              </p>
-            )}
-
-            <DialogFooter>
+            <DialogFooter className="shrink-0 border-t bg-background px-8 py-5">
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto sm:min-w-28"
                 disabled={isSubmitting}
                 onClick={() => handleDialogOpenChange(false)}
               >
                 キャンセル
               </Button>
-
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                className="w-full sm:w-auto sm:min-w-28"
+                type="submit"
+                disabled={isSubmitting}
+              >
                 確認へ
               </Button>
             </DialogFooter>
@@ -493,6 +548,13 @@ export function StaffMasterEditDialog({
         staffMaster={staffMaster}
         onOpenChange={setResetFailedAttemptsDialogOpen}
         onUpdated={onUpdated}
+      />
+
+      <RetireStaffDialog
+        open={retireDialogOpen}
+        staffMaster={staffMaster}
+        onOpenChange={setRetireDialogOpen}
+        onRetired={onRetired}
       />
     </>
   );

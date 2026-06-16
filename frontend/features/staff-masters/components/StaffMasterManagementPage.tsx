@@ -130,6 +130,14 @@ export function StaffMasterManagementPage() {
     });
   };
 
+  const handleRetired = async () => {
+    const response = await fetchStaffMasters();
+
+    setStaffMasters(response.data.staff_masters);
+    setEditingStaffMaster(null);
+    setListMode("retired");
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader />
@@ -190,6 +198,7 @@ export function StaffMasterManagementPage() {
             }
           }}
           onUpdated={handleUpdated}
+          onRetired={handleRetired}
         />
       )}
     </div>
