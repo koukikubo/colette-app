@@ -45,6 +45,7 @@ import {
   type UpdateStaffMasterRequest,
 } from "../types";
 import { ToggleLoginEnabledDialog } from "./ToggleLoginEnabledDialog";
+import { ResetFailedAttemptsDialog } from "./ResetFailedAttemptsDialog";
 
 type StaffMasterEditDialogProps = {
   open: boolean;
@@ -86,6 +87,8 @@ export function StaffMasterEditDialog({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginEnabledDialogOpen, setLoginEnabledDialogOpen] = useState(false);
+  const [resetFailedAttemptsDialogOpen, setResetFailedAttemptsDialogOpen] =
+    useState(false);
 
   const changes = useMemo<ChangeItem[]>(() => {
     const items: ChangeItem[] = [];
@@ -372,6 +375,19 @@ export function StaffMasterEditDialog({
                     ? "ログインを無効にする"
                     : "ログインを有効にする"}
                 </Button>
+
+                <Button
+                  type="button"
+                  variant={staff?.locked ? "destructive" : "outline"}
+                  disabled={
+                    !staff ||
+                    isSubmitting ||
+                    (!staff.locked && staff.failed_attempts === 0)
+                  }
+                  onClick={() => setResetFailedAttemptsDialogOpen(true)}
+                >
+                  {staff?.locked ? "ロックを解除" : "失敗回数をリセット"}
+                </Button>
               </div>
             </section>
 
@@ -469,6 +485,13 @@ export function StaffMasterEditDialog({
         open={loginEnabledDialogOpen}
         staffMaster={staffMaster}
         onOpenChange={setLoginEnabledDialogOpen}
+        onUpdated={onUpdated}
+      />
+
+      <ResetFailedAttemptsDialog
+        open={resetFailedAttemptsDialogOpen}
+        staffMaster={staffMaster}
+        onOpenChange={setResetFailedAttemptsDialogOpen}
         onUpdated={onUpdated}
       />
     </>
