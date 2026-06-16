@@ -3,7 +3,7 @@ import { proxyRequest } from "@/lib/api/proxy-request";
 
 type RouteContext = {
   params: Promise<{
-    id: number;
+    id: string;
   }>;
 };
 
