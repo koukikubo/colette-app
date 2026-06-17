@@ -7,6 +7,8 @@ export type StaffLoginInfo = {
   login_enabled: boolean;
   failed_attempts: number;
   last_logged_in_at: string | null;
+  locked: boolean;
+  locked_at: string | null;
 };
 
 export type StaffMaster = {
@@ -51,7 +53,6 @@ export type CreateStaffMasterRequest = {
 
 export type UpdateStaffMasterRequest = {
   staff_master: {
-    code?: string;
     name?: string;
     role_code?: StaffRoleCode;
     employment_started_on?: string;

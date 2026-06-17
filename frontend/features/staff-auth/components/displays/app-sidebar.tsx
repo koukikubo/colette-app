@@ -87,7 +87,7 @@ const data = {
     },
     {
       name: "担当者マスタ",
-      url: "/staffs",
+      url: "/staff-masters",
       icon: <UserRoundIcon />,
     },
   ],
