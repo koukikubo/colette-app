@@ -11,13 +11,13 @@ Rails.application.routes.draw do
       end
 
       resources :staff_masters, only: %i[index show create update] do
-      member do
-        patch :retire
-        patch :restore
-        patch :login_enabled, action: :update_login_enabled
-        patch :reset_failed_attempts
+        member do
+          patch :retire
+          patch :restore
+          patch :login_enabled, action: :update_login_enabled
+          patch :reset_failed_attempts
+        end
       end
-    end
 
       resources :standard_masters, only: [:index, :show, :create, :update] do
         collection do
@@ -29,6 +29,12 @@ Rails.application.routes.draw do
                   as: "items",
                   only: [:index, :show, :create, :update]
       end 
+
+      resources :customer, only: [:index, :show, :create, :update]
+        member do
+          patch :hidden
+          patch :restore
+        end
     end
   end
 end
