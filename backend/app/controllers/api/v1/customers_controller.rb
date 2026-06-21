@@ -25,7 +25,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
     customers = filter_by_visibility(customers, visibility)
     customers = customers.where(customer_kind: customer_kind) if customer_kind
-    customers = Customers::SearchQuery.new(
+    customers = ::Customers::SearchQuery.new(
         relation: customers,
         keyword: params[:query]
       ).call
