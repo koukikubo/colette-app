@@ -1,17 +1,22 @@
+import { ApiErrorResponse } from "@/features/customers/types";
+
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
 export type ApiSuccessResponse<T> = {
   data: T;
   message?: string;
+  errors?: string;
 };
 
 export class ApiClientError extends Error {
   status: number;
+  errors: string[];
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, errors: string[] = []) {
     super(message);
     this.name = "ApiClientError";
     this.status = status;
+    this.errors = errors;
   }
 }
 
@@ -76,10 +81,24 @@ export async function apiFetch<T>(
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data: unknown = null;
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+  }
 
   if (!response.ok) {
-    throw new ApiClientError("API request failed", response.status);
+    const errorResponse = data as ApiErrorResponse | null;
+
+    throw new ApiClientError(
+      errorResponse?.message ?? "API response failed",
+      response.status,
+      errorResponse?.errors ?? [],
+    );
   }
 
   return data as T;
