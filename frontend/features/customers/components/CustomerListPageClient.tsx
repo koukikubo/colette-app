@@ -9,11 +9,13 @@ import { fetchCustomers } from "../api/customer-api";
 import type { Customer } from "../types";
 import { CustomerTable } from "./CustomerTable";
 import { CustomerTableSkeleton } from "./CustomerTableSkeleton";
+import { CustomerSearchForm } from "./CustomerSearchForm";
 
 export function CustomerListPageClient() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -25,6 +27,7 @@ export function CustomerListPageClient() {
       try {
         const response = await fetchCustomers({
           visibility: "visible",
+          query: searchQuery || undefined,
         });
 
         if (isCancelled) {
@@ -63,7 +66,7 @@ export function CustomerListPageClient() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [searchQuery]);
 
   return (
     <div className="space-y-6 p-6">
@@ -74,6 +77,12 @@ export function CustomerListPageClient() {
           登録されている顧客情報を確認できます。
         </p>
       </div>
+
+      <CustomerSearchForm
+        initialQuery={searchQuery}
+        isLoading={isLoading}
+        onSearch={setSearchQuery}
+      />
 
       {isLoading && <CustomerTableSkeleton />}
 
