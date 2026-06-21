@@ -53,7 +53,7 @@ class Api::V1::BaseController < ApplicationController
   def render_error(
     message: "An error occurred",
     errors: [],
-    status: :unprocessable_entity
+    status: :unprocessable_content
   )
     render json: {
         status: "error",
@@ -67,7 +67,7 @@ class Api::V1::BaseController < ApplicationController
     render_error(
       message: "CSRFトークンが不正です",
       errors: [error.message],
-      status: :unprocessable_entity
+      status: :unprocessable_content
     )
   end
   

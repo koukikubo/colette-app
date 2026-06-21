@@ -1,10 +1,12 @@
 class Api::V1::CustomersController < Api::V1::BaseController
+  wrap_parameters false
+  
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
 
   before_action :require_staff_login!
   before_action :set_customer,
-                only: %i[show update hide restore]
+                only: %i[show update hidden restore]
 
   rescue_from ActiveRecord::StaleObjectError,
               with: :render_stale_object_error
@@ -74,7 +76,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
     if @customer.hidden_at.present?
       return render_error(
         message: "顧客はすでに非表示です",
-        status: :unprocessable_entity
+        status: :unprocessable_content
       )
     end
 
@@ -94,7 +96,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
     if @customer.hidden_at.nil?
       return render_error(
         message: "顧客はすでに表示中です",
-        status: :unprocessable_entity
+        status: :unprocessable_content
       )
     end
 
@@ -264,7 +266,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
     render_error(
       message: "入力内容に誤りがあります",
       errors: customer.errors.full_messages,
-      status: :unprocessable_entity
+      status: :unprocessable_content
     )
   end
 
