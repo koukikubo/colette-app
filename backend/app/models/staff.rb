@@ -1,5 +1,15 @@
 class Staff < ApplicationRecord
   belongs_to :staff_master
+  has_many :created_customers,
+            class_name: "Customer",
+            foreign_key: :created_by_staff_id,
+            inverse_of: :created_by_staff
+
+  has_many :updated_customers,
+            class_name: "Customer",
+            foreign_key: :updated_by_staff_id,
+            inverse_of: :updated_by_staff
+            
   has_secure_password
 
   MAX_FAILED_ATTEMPTS = 30

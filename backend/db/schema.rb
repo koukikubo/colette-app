@@ -10,9 +10,43 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_14_071817) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_19_232833) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "customers", force: :cascade do |t|
+    t.string "address", limit: 255
+    t.date "birthday"
+    t.string "company_address", limit: 255
+    t.string "company_email", limit: 255
+    t.string "company_name", limit: 100
+    t.string "company_name_kana", limit: 100
+    t.string "company_phone_number", limit: 20
+    t.string "company_postal_code", limit: 7
+    t.datetime "created_at", null: false
+    t.bigint "created_by_staff_id", null: false
+    t.string "customer_kind", limit: 30, default: "individual", null: false
+    t.string "email", limit: 255
+    t.datetime "hidden_at"
+    t.string "kana", limit: 30, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "memo"
+    t.string "name", limit: 30, null: false
+    t.string "phone_number", limit: 20
+    t.string "postal_code", limit: 7
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_staff_id", null: false
+    t.index ["company_name"], name: "index_customers_on_company_name"
+    t.index ["company_name_kana"], name: "index_customers_on_company_name_kana"
+    t.index ["company_phone_number"], name: "index_customers_on_company_phone_number"
+    t.index ["created_by_staff_id"], name: "index_customers_on_created_by_staff_id"
+    t.index ["customer_kind"], name: "index_customers_on_customer_kind"
+    t.index ["hidden_at", "id"], name: "index_customers_on_hidden_at_and_id"
+    t.index ["kana"], name: "index_customers_on_kana"
+    t.index ["name"], name: "index_customers_on_name"
+    t.index ["phone_number"], name: "index_customers_on_phone_number"
+    t.index ["updated_by_staff_id"], name: "index_customers_on_updated_by_staff_id"
+  end
 
   create_table "staff_masters", force: :cascade do |t|
     t.string "code", null: false
@@ -67,6 +101,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_071817) do
     t.index ["position"], name: "index_standard_masters_on_position", unique: true
   end
 
+  add_foreign_key "customers", "staffs", column: "created_by_staff_id"
+  add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
 end

@@ -59,7 +59,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
     if @staff_master.retired?
       return render_error(
         message: "すでに退職済みの担当者です",
-        status: :unprocessable_entity
+        status: :unprocessable_content
       )
     end
 
@@ -74,7 +74,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
     if @staff_master.active?
       return render_error(
         message: "担当者はすでに在籍中です",
-        status: :unprocessable_entity
+        status: :unprocessable_content
       )
     end
 
@@ -151,7 +151,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
 
     render_error(
       message: "担当者のログイン情報が登録されていません",
-      status: :unprocessable_entity
+      status: :unprocessable_content
     )
 
     nil
@@ -176,7 +176,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
     render_error(
       message: "入力内容に誤りがあります",
       errors: record.errors.full_messages,
-      status: :unprocessable_entity
+      status: :unprocessable_content
     )
   end
 
