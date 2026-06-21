@@ -19,7 +19,7 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :standard_masters, only: [:index, :show, :create, :update] do
+      resources :standard_masters, only: %i[index show create update] do
         collection do
           get :count
         end
@@ -27,14 +27,15 @@ Rails.application.routes.draw do
         resources :standard_list_masters,
                   path: "items",
                   as: "items",
-                  only: [:index, :show, :create, :update]
+                  only: %i[index show create update]
       end 
 
-      resources :customer, only: [:index, :show, :create, :update]
+      resources :customers, only: %i[index show create update] do
         member do
           patch :hidden
           patch :restore
         end
+      end
     end
   end
 end
