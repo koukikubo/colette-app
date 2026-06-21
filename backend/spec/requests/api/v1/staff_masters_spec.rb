@@ -271,7 +271,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
       expect(Staff.find_by(staff_master: StaffMaster.find_by(code: "STF100")))
         .to be_nil
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
     end
 
@@ -291,7 +291,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         )
       end.not_to change(StaffMaster, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
       expect(response_body["errors"]).to be_present
     end
@@ -319,6 +319,8 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     before do
       login!
     end
+
+    let(:retired_on) { Date.current }
 
     let!(:target_staff_master) do
       create(
@@ -369,7 +371,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         as: :json
       )
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
 
       expect(target_staff_master.reload.role_code).to eq("operator")
@@ -380,6 +382,8 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     before do
       login!
     end
+
+    let(:retired_on) { Date.current }
 
     let!(:target_staff_master) do
       create(
@@ -394,13 +398,18 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     it "担当者を退職扱いにできる" do
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/retire",
+        params: {
+          staff_master:{
+          retired_on: retired_on.iso8601
+        }
+      },
         headers: authenticated_headers,
         as: :json
       )
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:ok), response.body
       expect(response_body["status"]).to eq("success")
-      expect(target_staff_master.reload.retired_on).to eq(Date.current)
+      expect(target_staff_master.reload.retired_on).to eq(retired_on)
       expect(target_staff_master).to be_retired
     end
 
@@ -409,11 +418,16 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
 
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/retire",
+        params: {
+          staff_master: {
+            retired_on: retired_on.iso8601
+          }
+        },
         headers: authenticated_headers,
         as: :json
       )
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
     end
   end
@@ -455,7 +469,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         as: :json
       )
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
     end
   end
@@ -517,7 +531,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         as: :json
       )
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
     end
   end
@@ -575,7 +589,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         as: :json
       )
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
     end
   end
