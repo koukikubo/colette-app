@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_18_092808) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_19_232833) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -29,6 +29,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_092808) do
     t.string "email", limit: 255
     t.datetime "hidden_at"
     t.string "kana", limit: 30, null: false
+    t.integer "lock_version", default: 0, null: false
     t.text "memo"
     t.string "name", limit: 30, null: false
     t.string "phone_number", limit: 20
