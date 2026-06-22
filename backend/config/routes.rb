@@ -5,6 +5,7 @@ Rails.application.routes.draw do
       get "csrf", to: "csrf#show"
 
       namespace :staff do
+        get "login_options", to: "sessions#login_options"
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
         get "current", to: "sessions#current"
