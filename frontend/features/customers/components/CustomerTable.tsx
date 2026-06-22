@@ -9,7 +9,8 @@ import {
 
 import type { Customer } from "../types";
 import { Button } from "@/components/ui/button";
-import { PencilIcon } from "lucide-react";
+import { EyeIcon, PencilIcon } from "lucide-react";
+import Link from "next/link";
 
 type CustomerTableProps = {
   customers: Customer[];
@@ -36,6 +37,7 @@ function customerKindLabel(customerKind: Customer["customer_kind"]) {
   return customerKind === "corporate" ? "法人" : "個人";
 }
 
+// 顧客一覧ページ
 export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
   return (
     <div className="overflow-hidden rounded-md border">
@@ -49,7 +51,7 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
             <TableHead>メールアドレス</TableHead>
             <TableHead>法人名</TableHead>
             <TableHead className="w-40">最終更新日時</TableHead>
-            <TableHead className="w-24 text-right">操作</TableHead>
+            <TableHead className="w-44 text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -70,6 +72,13 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
 
               <TableCell>{formatDateTime(customer.updated_at)}</TableCell>
               <TableCell className="text-right">
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/customers/${customer.id}`}>
+                    <EyeIcon />
+                    詳細
+                  </Link>
+                </Button>
+
                 <Button
                   type="button"
                   variant="outline"
