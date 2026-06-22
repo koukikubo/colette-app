@@ -2,8 +2,8 @@
 
 import { cn } from "@/lib/utils";
 
-import { FormEvent, useState } from "react";
-import { loginStaff } from "./api/staff-auth-api";
+import { FormEvent, useEffect, useState } from "react";
+import { fetchStaffLoginOptions, loginStaff } from "./api/staff-auth-api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 import { Button } from "../../../../components/ui/button";
@@ -13,6 +13,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "../../../../components/ui/field";
+
 import {
   Select,
   SelectContent,
@@ -20,25 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../../components/ui/select";
+
 import { Input } from "../../../../components/ui/input";
 import { useAuth } from "../../hooks/use-auth";
+import { Staff } from "./types";
 
-type StaffOption = {
-  id: number;
-  name: string;
-};
+type LoginFormProps = React.ComponentProps<"div">;
 
-type LoginFormProps = React.ComponentProps<"div"> & {
-  staffOptions?: StaffOption[];
-};
-
-const temporaryStaffOptions: StaffOption[] = [{ id: 1, name: "オーナー" }];
-
-export function LoginForm({
-  className,
-  staffOptions = temporaryStaffOptions,
-  ...props
-}: LoginFormProps) {
+export function LoginForm({ className, ...props }: LoginFormProps) {
   const router = useRouter();
 
   const [staffId, setStaffId] = useState("");
@@ -46,6 +36,46 @@ export function LoginForm({
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { refreshCurrentStaff } = useAuth();
+
+  const [staffOptions, setStaffOptions] = useState<Staff[]>([]);
+  const [isLoadingStaffOptions, setIsLoadingStaffOptions] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadStaffOptions() {
+      try {
+        const response = await fetchStaffLoginOptions();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setStaffOptions(response.data.staffs);
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        if (error instanceof ApiClientError) {
+          setErrorMessage(error.message);
+          return;
+        }
+
+        setErrorMessage("ログイン可能な担当者を取得できませんでした。");
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingStaffOptions(false);
+        }
+      }
+    }
+
+    void loadStaffOptions();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,15 +135,28 @@ export function LoginForm({
             <Select
               value={staffId}
               onValueChange={setStaffId}
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                isLoadingStaffOptions ||
+                staffOptions.length === 0
+              }
             >
               <SelectTrigger id="staff-id" className="w-full">
-                <SelectValue placeholder="担当者を選択してください" />
+                <SelectValue
+                  placeholder={
+                    isLoadingStaffOptions
+                      ? "担当者を読み込み中..."
+                      : staffOptions.length === 0
+                        ? "ログイン可能な担当者がいません"
+                        : "担当者を選択してください"
+                  }
+                />
               </SelectTrigger>
+
               <SelectContent>
                 {staffOptions.map((staff) => (
                   <SelectItem key={staff.id} value={String(staff.id)}>
-                    {staff.name}
+                    {staff.staff_master.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -139,7 +182,15 @@ export function LoginForm({
           ) : null}
 
           <Field>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                isSubmitting ||
+                isLoadingStaffOptions ||
+                staffOptions.length === 0
+              }
+            >
               {isSubmitting ? "ログイン中..." : "ログイン"}
             </Button>
           </Field>
