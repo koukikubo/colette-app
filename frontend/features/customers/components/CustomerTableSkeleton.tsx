@@ -56,6 +56,10 @@ export function CustomerTableSkeleton() {
               <TableCell>
                 <Skeleton className="h-5 w-32" />
               </TableCell>
+
+              <TableCell>
+                <Skeleton className="ml-auto h-8 w-16" />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

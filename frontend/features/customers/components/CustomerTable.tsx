@@ -8,9 +8,12 @@ import {
 } from "@/components/ui/table";
 
 import type { Customer } from "../types";
+import { Button } from "@/components/ui/button";
+import { PencilIcon } from "lucide-react";
 
 type CustomerTableProps = {
   customers: Customer[];
+  onEdit: (customer: Customer) => void;
 };
 
 function formatDateTime(value: string) {
@@ -33,7 +36,7 @@ function customerKindLabel(customerKind: Customer["customer_kind"]) {
   return customerKind === "corporate" ? "法人" : "個人";
 }
 
-export function CustomerTable({ customers }: CustomerTableProps) {
+export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
   return (
     <div className="overflow-hidden rounded-md border">
       <Table>
@@ -46,6 +49,7 @@ export function CustomerTable({ customers }: CustomerTableProps) {
             <TableHead>メールアドレス</TableHead>
             <TableHead>法人名</TableHead>
             <TableHead className="w-40">最終更新日時</TableHead>
+            <TableHead className="w-24 text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -65,6 +69,18 @@ export function CustomerTable({ customers }: CustomerTableProps) {
               <TableCell>{customer.company_name ?? "-"}</TableCell>
 
               <TableCell>{formatDateTime(customer.updated_at)}</TableCell>
+              <TableCell className="text-right">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(customer)}
+                  aria-label={`${customer.name}を編集`}
+                >
+                  <PencilIcon />
+                  編集
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
