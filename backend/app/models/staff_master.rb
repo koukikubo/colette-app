@@ -1,6 +1,8 @@
 class StaffMaster < ApplicationRecord
   has_one :staff, dependent: :destroy
   ROLE_CODES = %w[owner operator viewer].freeze
+  before_validation :assign_code, on: :create
+
 
   # コード、名前、役割コード、雇用開始日は必須であることをバリデーション
   validates :name, presence: true
@@ -18,11 +20,11 @@ class StaffMaster < ApplicationRecord
   scope :retired, -> { where.not(retired_on: nil) }
   scope :ordered, -> { order(:id) }
 
-  # 退職していないかどうかを判断するメソッド
+  # 退職していないか。雇用開始日前の担当者も表示しない。
   def active?
-    retired_on.blank?
+    employment_started_on <= Date.current &&
+      (retired_on.nil? || retired_on >= Date.current)
   end
-
   # 退職しているかどうかを判断するメソッド
   def retired?
     retired_on.present?
@@ -40,4 +42,28 @@ class StaffMaster < ApplicationRecord
       "は雇用開始日以降の日付を指定してください"
     )
   end
+
+  def assign_code
+    return if code.present?
+
+    max_number =
+      self.class.pick(
+        Arel.sql(
+          <<~SQL.squish
+            COALESCE(
+              MAX(
+                NULLIF(
+                  REGEXP_REPLACE(code, '[^0-9]', '', 'g'),
+                  ''
+                )::integer
+              ),
+              0
+            )
+          SQL
+        )
+      ).to_i
+
+    self.code = format("%05d", max_number + 1)
+  end
+  
 end
