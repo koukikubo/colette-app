@@ -206,6 +206,7 @@ export function CustomerListPageClient() {
           open={formDialogOpen}
           mode={formMode}
           customer={selectedCustomer}
+          allowVisibilityChange={false}
           onOpenChange={handleFormDialogOpenChange}
           onCompleted={handleCustomerFormCompleted}
         />

@@ -24,6 +24,8 @@ import {
 import type { Customer } from "../types";
 import { CustomerForm } from "./CustomerForm";
 import { CustomerFormConfirmDialog } from "./CustomerFormConfirmDialog";
+import { CustomerVisibilitySection } from "./CustomerVisibilitySection";
+import { CustomerVisibilityDialog } from "./CustomerVisibilityDialog";
 
 export type CustomerFormMode = "create" | "edit";
 
@@ -31,6 +33,7 @@ type CustomerFormDialogProps = {
   open: boolean;
   mode: CustomerFormMode;
   customer: Customer | null;
+  allowVisibilityChange: boolean;
   onOpenChange: (open: boolean) => void;
   onCompleted: () => void | Promise<void>;
 };
@@ -56,6 +59,7 @@ export function CustomerFormDialog({
   customer,
   onOpenChange,
   onCompleted,
+  allowVisibilityChange,
 }: CustomerFormDialogProps) {
   const [values, setValues] = useState<CustomerFormValues>(() =>
     createInitialFormValues(mode, customer),
@@ -65,6 +69,9 @@ export function CustomerFormDialog({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = mode === "edit";
+
+  // 非表示確認画面の状態管理
+  const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
 
   function handleRequestConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -123,6 +130,14 @@ export function CustomerFormDialog({
     onOpenChange(nextOpen);
   }
 
+  async function handleVisibilityCompleted() {
+    setVisibilityDialogOpen(false);
+
+    await onCompleted();
+
+    onOpenChange(false);
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -147,6 +162,15 @@ export function CustomerFormDialog({
             onChange={setValues}
             onSubmit={handleRequestConfirm}
           />
+
+          {isEdit && customer && (
+            <CustomerVisibilitySection
+              customer={customer}
+              allowVisibilityChange={allowVisibilityChange}
+              disabled={isSubmitting}
+              onRequestChange={() => setVisibilityDialogOpen(true)}
+            />
+          )}
 
           <DialogFooter>
             <Button
@@ -175,6 +199,16 @@ export function CustomerFormDialog({
           void handleConfirm();
         }}
       />
+
+      {customer && (
+        <CustomerVisibilityDialog
+          open={visibilityDialogOpen}
+          customer={customer}
+          onOpenChange={setVisibilityDialogOpen}
+          onCompleted={handleVisibilityCompleted}
+          onError={setErrors}
+        />
+      )}
     </>
   );
 }

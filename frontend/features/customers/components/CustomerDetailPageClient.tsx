@@ -403,7 +403,7 @@ export function CustomerDetailPageClient({
           open={editDialogOpen}
           mode="edit"
           customer={customer}
-          // allowVisibilityChange
+          allowVisibilityChange={true}
           onOpenChange={setEditDialogOpen}
           onCompleted={handleEditCompleted}
         />
