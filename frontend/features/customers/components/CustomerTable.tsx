@@ -8,9 +8,13 @@ import {
 } from "@/components/ui/table";
 
 import type { Customer } from "../types";
+import { Button } from "@/components/ui/button";
+import { EyeIcon, PencilIcon } from "lucide-react";
+import Link from "next/link";
 
 type CustomerTableProps = {
   customers: Customer[];
+  onEdit: (customer: Customer) => void;
 };
 
 function formatDateTime(value: string) {
@@ -33,7 +37,8 @@ function customerKindLabel(customerKind: Customer["customer_kind"]) {
   return customerKind === "corporate" ? "法人" : "個人";
 }
 
-export function CustomerTable({ customers }: CustomerTableProps) {
+// 顧客一覧ページ
+export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
   return (
     <div className="overflow-hidden rounded-md border">
       <Table>
@@ -46,6 +51,7 @@ export function CustomerTable({ customers }: CustomerTableProps) {
             <TableHead>メールアドレス</TableHead>
             <TableHead>法人名</TableHead>
             <TableHead className="w-40">最終更新日時</TableHead>
+            <TableHead className="w-44 text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -65,6 +71,25 @@ export function CustomerTable({ customers }: CustomerTableProps) {
               <TableCell>{customer.company_name ?? "-"}</TableCell>
 
               <TableCell>{formatDateTime(customer.updated_at)}</TableCell>
+              <TableCell className="text-right">
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/customers/${customer.id}`}>
+                    <EyeIcon />
+                    詳細
+                  </Link>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(customer)}
+                  aria-label={`${customer.name}を編集`}
+                >
+                  <PencilIcon />
+                  編集
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

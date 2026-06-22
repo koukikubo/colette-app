@@ -12,6 +12,12 @@ import { CustomerTableSkeleton } from "./CustomerTableSkeleton";
 import { CustomerSearchForm } from "./CustomerSearchForm";
 import { CustomerActiveFilters } from "./CustomerActiveFilters";
 import { CustomerFilterValues } from "./CustomerFilterPopover";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import {
+  CustomerFormDialog,
+  type CustomerFormMode,
+} from "./CustomerFormDialog";
 
 export function CustomerListPageClient() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -23,10 +29,15 @@ export function CustomerListPageClient() {
     visibility: "visible",
   });
 
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  );
+  const formMode: CustomerFormMode = selectedCustomer ? "edit" : "create";
+  const [reloadKey, setReloadKey] = useState(0);
+
   const visibility = filters.visibility ?? "visible";
-
   const customerKind = filters.customer_kind;
-
   const appliedQuery = filters.query;
 
   useEffect(() => {
@@ -79,7 +90,7 @@ export function CustomerListPageClient() {
     return () => {
       isCancelled = true;
     };
-  }, [visibility, customerKind, appliedQuery]);
+  }, [visibility, customerKind, appliedQuery, reloadKey]);
 
   function handleSearch() {
     const normalizedQuery = queryInput.trim();
@@ -129,6 +140,28 @@ export function CustomerListPageClient() {
     });
   }
 
+  function handleOpenCreateDialog() {
+    setSelectedCustomer(null);
+    setFormDialogOpen(true);
+  }
+
+  function handleOpenEditDialog(customer: Customer) {
+    setSelectedCustomer(customer);
+    setFormDialogOpen(true);
+  }
+
+  function handleFormDialogOpenChange(nextOpen: boolean) {
+    setFormDialogOpen(nextOpen);
+
+    if (!nextOpen) {
+      setSelectedCustomer(null);
+    }
+  }
+
+  function handleCustomerFormCompleted() {
+    setReloadKey((current) => current + 1);
+  }
+
   const hasSearchConditions =
     Boolean(filters.query) || visibility !== "visible" || Boolean(customerKind);
 
@@ -141,6 +174,11 @@ export function CustomerListPageClient() {
           登録されている顧客情報を確認できます。
         </p>
       </div>
+
+      <Button type="button" onClick={handleOpenCreateDialog}>
+        <PlusIcon />
+        顧客を登録
+      </Button>
 
       <CustomerSearchForm
         value={queryInput}
@@ -161,6 +199,18 @@ export function CustomerListPageClient() {
         onClearCustomerKind={handleClearCustomerKind}
         onClearAll={handleClearAll}
       />
+
+      {formDialogOpen && (
+        <CustomerFormDialog
+          key={selectedCustomer ? `edit-${selectedCustomer.id}` : "create"}
+          open={formDialogOpen}
+          mode={formMode}
+          customer={selectedCustomer}
+          allowVisibilityChange={false}
+          onOpenChange={handleFormDialogOpenChange}
+          onCompleted={handleCustomerFormCompleted}
+        />
+      )}
 
       {isLoading && <CustomerTableSkeleton />}
 
@@ -189,7 +239,7 @@ export function CustomerListPageClient() {
       )}
 
       {!isLoading && !errorMessage && customers.length > 0 && (
-        <CustomerTable customers={customers} />
+        <CustomerTable customers={customers} onEdit={handleOpenEditDialog} />
       )}
     </div>
   );
