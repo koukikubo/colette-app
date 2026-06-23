@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_19_232833) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_23_225743) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,6 +46,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_19_232833) do
     t.index ["name"], name: "index_customers_on_name"
     t.index ["phone_number"], name: "index_customers_on_phone_number"
     t.index ["updated_by_staff_id"], name: "index_customers_on_updated_by_staff_id"
+  end
+
+  create_table "restaurant_tables", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.integer "capacity", null: false
+    t.string "code", limit: 20, null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_staff_id", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.text "memo"
+    t.string "name", limit: 100, null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "restaurant_table_type_id", null: false
+    t.integer "sequence_number", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_staff_id", null: false
+    t.index ["code"], name: "index_restaurant_tables_on_code", unique: true
+    t.index ["created_by_staff_id"], name: "index_restaurant_tables_on_created_by_staff_id"
+    t.index ["restaurant_table_type_id", "sequence_number"], name: "idx_restaurant_tables_type_and_sequence", unique: true
+    t.index ["updated_by_staff_id"], name: "index_restaurant_tables_on_updated_by_staff_id"
+    t.check_constraint "\"position\" >= 0", name: "check_restaurant_tables_position_non_negative"
+    t.check_constraint "capacity > 0", name: "check_restaurant_tables_capacity_positive"
+    t.check_constraint "char_length(btrim(code::text)) > 0", name: "check_restaurant_tables_code_not_blank"
+    t.check_constraint "char_length(btrim(name::text)) > 0", name: "check_restaurant_tables_name_not_blank"
+    t.check_constraint "sequence_number > 0", name: "check_restaurant_tables_sequence_positive"
   end
 
   create_table "staff_masters", force: :cascade do |t|
@@ -103,6 +128,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_19_232833) do
 
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
+  add_foreign_key "restaurant_tables", "staffs", column: "created_by_staff_id"
+  add_foreign_key "restaurant_tables", "staffs", column: "updated_by_staff_id"
+  add_foreign_key "restaurant_tables", "standard_list_masters", column: "restaurant_table_type_id"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
 end
