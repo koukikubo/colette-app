@@ -1,10 +1,5 @@
 import { proxyRequest } from "@/lib/api/proxy-request";
-
-type RouteContext = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+import { RouteContext } from "@/app/api/v1/route-context";
 
 export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params;

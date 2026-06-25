@@ -1,4 +1,4 @@
-export type CustomerRouteContext = {
+export type RouteContext = {
   params: Promise<{
     id: string;
   }>;

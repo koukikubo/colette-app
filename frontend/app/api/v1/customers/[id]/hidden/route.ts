@@ -1,8 +1,8 @@
 import { proxyRequest } from "@/lib/api/proxy-request";
-import { CustomerRouteContext } from "../route-context";
+import { RouteContext } from "../../../route-context";
 
 // 顧客を非表示にする
-export async function PATCH(request: Request, context: CustomerRouteContext) {
+export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   return proxyRequest(
