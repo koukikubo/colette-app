@@ -411,24 +411,6 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(response_body["status"]).to eq("error")
       expect(response_body["errors"]).to be_present
     end
-
-    it "customerパラメータがない場合は400を返す" do
-      expect do
-        post(
-          "/api/v1/customers",
-          params: {
-            name: "不正なリクエスト"
-          },
-          headers: authenticated_headers,
-          as: :json
-        )
-      end.not_to change(Customer, :count)
-
-      expect(response).to have_http_status(:bad_request)
-      expect(response_body["status"]).to eq("error")
-      expect(response_body["message"])
-        .to eq("リクエストパラメータが不正です")
-    end
   end
 
   describe "PATCH /api/v1/customers/:id" do

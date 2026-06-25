@@ -1,5 +1,4 @@
 class Api::V1::CustomersController < Api::V1::BaseController
-  wrap_parameters false
   
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
