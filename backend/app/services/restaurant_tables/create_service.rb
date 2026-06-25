@@ -58,13 +58,17 @@ module RestaurantTables
       StandardListMaster
         .joins(:standard_master)
         .where(
+          standard_list_masters: {
+            active: true
+          }
+        )
+        .where(
           standard_masters: {
             system_key:
               RESTAURANT_TABLE_TYPE_MASTER_KEY,
             active: true
-          }
-        )
-        .where(active: true)
+            }
+          )
         .lock
         .find(attributes[:restaurant_table_type_id])
     end
