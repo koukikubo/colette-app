@@ -33,6 +33,7 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
   end
 
   def create
+    restaurant_table =
       RestaurantTables::CreateService.call(
         attributes: restaurant_table_create_params,
         current_staff: current_staff
@@ -70,6 +71,7 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
   
 
   def restaurant_table_create_params
+    permitted_params =
       params.expect(
         restaurant_table: %i[
           restaurant_table_type_id
@@ -80,13 +82,14 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
           memo
         ]
       )
-      if permitted_params[
+
+    if permitted_params[
+      :restaurant_table_type_id
+    ].blank?
+      raise ActionController::ParameterMissing.new(
         :restaurant_table_type_id
-      ].blank?
-        raise ActionController::ParameterMissing.new(
-          :restaurant_table_type_id
-        )
-      end
+      )
+    end
 
     permitted_params
   end
