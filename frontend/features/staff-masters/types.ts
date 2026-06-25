@@ -38,7 +38,6 @@ export type ApiSuccessResponse<T> = {
 
 export type CreateStaffMasterRequest = {
   staff_master: {
-    code: string;
     name: string;
     role_code: StaffRoleCode;
     employment_started_on: string;

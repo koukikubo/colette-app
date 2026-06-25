@@ -51,7 +51,6 @@ type StaffMasterCreateDialogProps = {
 };
 
 type FormValues = {
-  code: string;
   name: string;
   role_code: StaffRoleCode;
   employment_started_on: string;
@@ -64,7 +63,6 @@ type FormValues = {
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 const INITIAL_VALUES: FormValues = {
-  code: "",
   name: "",
   role_code: "operator",
   employment_started_on: "",
@@ -139,7 +137,6 @@ export function StaffMasterCreateDialog({
   const handleConfirmCreate = async () => {
     const payload: CreateStaffMasterRequest = {
       staff_master: {
-        code: values.code.trim(),
         name: values.name.trim(),
         role_code: values.role_code,
         employment_started_on: values.employment_started_on,
@@ -195,21 +192,13 @@ export function StaffMasterCreateDialog({
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  id="staff-code"
-                  label="担当者コード"
-                  required
-                  error={errors.code}
-                >
+                <FormField id="staff-code" label="担当者コード">
                   <Input
                     id="staff-code"
-                    value={values.code}
-                    onChange={(event) =>
-                      updateField("code", event.target.value)
-                    }
-                    autoComplete="off"
-                    aria-invalid={Boolean(errors.code)}
-                    placeholder="STF002"
+                    value="登録時に自動採番されます"
+                    readOnly
+                    tabIndex={-1}
+                    className="bg-muted text-muted-foreground"
                   />
                 </FormField>
 
@@ -225,7 +214,6 @@ export function StaffMasterCreateDialog({
                     onChange={(event) =>
                       updateField("name", event.target.value)
                     }
-                    autoComplete="name"
                     aria-invalid={Boolean(errors.name)}
                     placeholder="山田 太郎"
                   />
@@ -316,7 +304,6 @@ export function StaffMasterCreateDialog({
                     onChange={(event) =>
                       updateField("password", event.target.value)
                     }
-                    autoComplete="new-password"
                     aria-invalid={Boolean(errors.password)}
                   />
                 </FormField>
@@ -334,7 +321,6 @@ export function StaffMasterCreateDialog({
                     onChange={(event) =>
                       updateField("password_confirmation", event.target.value)
                     }
-                    autoComplete="new-password"
                     aria-invalid={Boolean(errors.password_confirmation)}
                   />
                 </FormField>
@@ -404,7 +390,7 @@ export function StaffMasterCreateDialog({
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
             <dt className="text-muted-foreground">担当者コード</dt>
-            <dd className="font-mono font-medium">{values.code.trim()}</dd>
+            <dd className="font-mono font-medium">登録時に自動採番</dd>
 
             <dt className="text-muted-foreground">担当者名</dt>
             <dd>{values.name.trim()}</dd>
@@ -488,10 +474,6 @@ function FormField({
 
 function validateForm(values: FormValues): FormErrors {
   const errors: FormErrors = {};
-
-  if (!values.code.trim()) {
-    errors.code = "担当者コードを入力してください。";
-  }
 
   if (!values.name.trim()) {
     errors.name = "担当者名を入力してください。";

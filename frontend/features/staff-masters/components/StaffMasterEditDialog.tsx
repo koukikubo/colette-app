@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-
 import { Loader2Icon } from "lucide-react";
 
 import {
@@ -47,6 +46,7 @@ import {
 import { ToggleLoginEnabledDialog } from "./ToggleLoginEnabledDialog";
 import { ResetFailedAttemptsDialog } from "./ResetFailedAttemptsDialog";
 import { RetireStaffDialog } from "./RetireStaffDialog";
+import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 
 type StaffMasterEditDialogProps = {
   open: boolean;
@@ -78,6 +78,13 @@ export function StaffMasterEditDialog({
   onUpdated,
   onRetired,
 }: StaffMasterEditDialogProps) {
+  const { staff: currentStaff } = useAuth();
+
+  const staff = staffMaster.staff;
+
+  const cannotDisableOwnLogin =
+    currentStaff?.id === staff?.id && staff?.login_enabled === true;
+
   const [values, setValues] = useState<FormValues>(() => ({
     name: staffMaster.name,
     role_code: staffMaster.role_code,
@@ -92,7 +99,6 @@ export function StaffMasterEditDialog({
   const [loginEnabledDialogOpen, setLoginEnabledDialogOpen] = useState(false);
   const [resetFailedAttemptsDialogOpen, setResetFailedAttemptsDialogOpen] =
     useState(false);
-
   const [retireDialogOpen, setRetireDialogOpen] = useState(false);
 
   const changes = useMemo<ChangeItem[]>(() => {
@@ -209,8 +215,6 @@ export function StaffMasterEditDialog({
       setIsSubmitting(false);
     }
   };
-
-  const staff = staffMaster.staff;
 
   return (
     <>
@@ -378,31 +382,38 @@ export function StaffMasterEditDialog({
                       : "未ログイン"}
                   </LoginInfoItem>
                 </div>
+                <div className="space-y-2">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!staff || isSubmitting || cannotDisableOwnLogin}
+                      onClick={() => setLoginEnabledDialogOpen(true)}
+                    >
+                      {staff?.login_enabled
+                        ? "ログインを無効にする"
+                        : "ログインを有効にする"}
+                    </Button>
 
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!staff || isSubmitting}
-                    onClick={() => setLoginEnabledDialogOpen(true)}
-                  >
-                    {staff?.login_enabled
-                      ? "ログインを無効にする"
-                      : "ログインを有効にする"}
-                  </Button>
+                    <Button
+                      type="button"
+                      variant={staff?.locked ? "destructive" : "outline"}
+                      disabled={
+                        !staff ||
+                        isSubmitting ||
+                        (!staff.locked && staff.failed_attempts === 0)
+                      }
+                      onClick={() => setResetFailedAttemptsDialogOpen(true)}
+                    >
+                      {staff?.locked ? "ロックを解除" : "失敗回数をリセット"}
+                    </Button>
+                  </div>
 
-                  <Button
-                    type="button"
-                    variant={staff?.locked ? "destructive" : "outline"}
-                    disabled={
-                      !staff ||
-                      isSubmitting ||
-                      (!staff.locked && staff.failed_attempts === 0)
-                    }
-                    onClick={() => setResetFailedAttemptsDialogOpen(true)}
-                  >
-                    {staff?.locked ? "ロックを解除" : "失敗回数をリセット"}
-                  </Button>
+                  {cannotDisableOwnLogin && (
+                    <p className="text-right text-sm text-muted-foreground">
+                      現在ログインしている担当者自身のログインは無効にできません。
+                    </p>
+                  )}
                 </div>
               </section>
 

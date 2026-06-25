@@ -31,3 +31,11 @@ export type LogoutResponse = {
     message: string;
   };
 };
+
+// ログイン画面のスタッフを返す
+export type StaffLoginOptionsResponse = {
+  status: "success";
+  data: {
+    staffs: Staff[];
+  };
+};

@@ -55,6 +55,22 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
     )
   end
 
+  def login_options
+    staffs =
+      Staff
+        .includes(:staff_master)
+        .select(&:login_allowed?)
+
+    render json: {
+      status: "success",
+      data: {
+        staffs: staffs.map do |staff|
+          Api::V1::StaffSerializer.new(staff).as_json
+        end
+      }
+    }, status: :ok
+  end
+
   private
 
   def valid_password?(staff)
