@@ -1,16 +1,16 @@
 module Api
   module V1
-      class RestaurantSerializer < ApplicationSerializer
-        def as_json
+      class RestaurantTableSerializer < ApplicationSerializer
+        def as_json(*)
           {
             id: resource.id,
 
             # 席種
             restaurant_table_type_id: resource.restaurant_table_type_id,
-            restaurant_table_type:
+            restaurant_table_type: 
               serialize_restaurant_table_type(
-                resource.restaurant_table_type
-              ),
+              resource.restaurant_table_type
+            ),
 
             # 席情報
             sequence_number: resource.sequence_number,
@@ -44,9 +44,11 @@ module Api
         def serialize_restaurant_table_type(table_type)
           return nil if table_type.nil?
 
-          Api::V1::StandardListMasterSerializer
-            .new(table_type)
-            .as_json
+          {
+            id: table_type.id,
+            code: table_type.code,
+            label: table_type.label
+          }
         end
 
         # 登録者・更新者の表示に必要な情報だけを返す。
