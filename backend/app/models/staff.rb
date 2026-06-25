@@ -9,7 +9,19 @@ class Staff < ApplicationRecord
             class_name: "Customer",
             foreign_key: :updated_by_staff_id,
             inverse_of: :updated_by_staff
-            
+
+  has_many :created_restaurant_tables,
+            class_name: "RestaurantTable",
+            foreign_key: :created_by_staff_id,
+            inverse_of: :created_by_staff,
+            dependent: :restrict_with_error
+
+  has_many :updated_restaurant_tables,
+            class_name: "RestaurantTable",
+            foreign_key: :updated_by_staff_id,
+            inverse_of: :updated_by_staff,
+            dependent: :restrict_with_error
+
   has_secure_password
 
   MAX_FAILED_ATTEMPTS = 30

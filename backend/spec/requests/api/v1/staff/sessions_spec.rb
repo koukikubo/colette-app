@@ -92,7 +92,7 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
       body = response_body
 
       expect(body["status"]).to eq("error")
-      expect(body["message"]).to eq("ログイン情報が正しくありません")
+      expect(body["message"]).to eq("パスワードが正しくありません。ログインが許可されていない可能性があります。")
     end
 
     it "パスワードが不正な場合、failed_attemptsを1増やすこと" do
