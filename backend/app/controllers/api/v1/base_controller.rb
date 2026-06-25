@@ -5,7 +5,10 @@ class Api::V1::BaseController < ApplicationController
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
   rescue_from ActionController::InvalidAuthenticityToken,
             with: :render_invalid_authenticity_token
-  # 本番環境用の例外処理
+  rescue_from ActiveRecord::RecordInvalid,
+            with: :render_record_invalid
+  
+            # 本番環境用の例外処理
   # rescue_from StandardError, with: :render_internal_server_error
 
 
@@ -30,6 +33,10 @@ class Api::V1::BaseController < ApplicationController
       message: "ログインが必要です",
       status: :unauthorized
     )
+  end
+
+  def render_record_invalid(error)
+    render_validation_error(error.record)
   end
 
   # 正常系JSONレスポンス統一
@@ -89,5 +96,13 @@ class Api::V1::BaseController < ApplicationController
       errors: [error.message],
       status: :internal_server_error
     )    
+  end
+
+  def render_validation_error(record)
+    render_error(
+      message: "入力内容に誤りがあります",
+      errors: record.errors.full_messages,
+      status: :unprocessable_content
+    )
   end
 end
