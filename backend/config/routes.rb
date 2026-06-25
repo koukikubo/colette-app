@@ -36,6 +36,10 @@ Rails.application.routes.draw do
           patch :restore
         end
       end
+
+      resources :restaurant_tables, only: %i[index show create update] do
+        
+      end
     end
   end
 end
