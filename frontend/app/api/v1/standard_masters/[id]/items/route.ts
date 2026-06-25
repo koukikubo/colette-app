@@ -1,11 +1,6 @@
 import { type NextRequest } from "next/server";
 import { proxyRequest } from "@/lib/api/proxy-request";
-
-type RouteContext = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+import { RouteContext } from "@/app/api/v1/route-context";
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
