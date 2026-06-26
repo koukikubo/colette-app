@@ -7,6 +7,7 @@ import { fetchRestaurantTables } from "@/features/restaurant-tables/api/restaura
 
 import type { RestaurantTable } from "@/features/restaurant-tables/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RestaurantTableTable } from "./RestaurantTableTable";
 
 export function RestaurantTableMasterPage() {
   const [restaurantTables, setRestaurantTables] = React.useState<
@@ -79,7 +80,6 @@ export function RestaurantTableMasterPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         )}
-
         {!isLoading && error && (
           <div className="flex gap-3 p-6">
             <CircleAlert
@@ -96,7 +96,6 @@ export function RestaurantTableMasterPage() {
             </div>
           </div>
         )}
-
         {!isLoading && !error && !hasRestaurantTables && (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
             <div className="mb-4 rounded-full bg-muted p-3">
@@ -113,14 +112,9 @@ export function RestaurantTableMasterPage() {
             </p>
           </div>
         )}
-
         {!isLoading && !error && hasRestaurantTables && (
-          <div className="p-6">
-            <pre className="overflow-x-auto text-xs">
-              {JSON.stringify(restaurantTables, null, 2)}
-            </pre>
-          </div>
-        )}
+          <RestaurantTableTable restaurantTables={restaurantTables} />
+        )}{" "}
       </div>
     </div>
   );
