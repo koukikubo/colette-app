@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 
 import {
+  Armchair,
   CalendarDaysIcon,
   LayoutDashboardIcon,
   MegaphoneIcon,
@@ -89,6 +90,11 @@ const data = {
       name: "担当者マスタ",
       url: "/staff-masters",
       icon: <UserRoundIcon />,
+    },
+    {
+      name: "予約テーブルマスタ",
+      url: "/restaurant-masters",
+      icon: <Armchair />,
     },
   ],
 
