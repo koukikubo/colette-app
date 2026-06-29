@@ -1,6 +1,6 @@
 FactoryBot.define do
-  factory :restaurant_table do
-    association :restaurant_table_type,
+  factory :restaurant_master do
+    association :restaurant_master_type,
                 factory: :standard_list_master
 
     association :created_by_staff,

@@ -1,7 +1,7 @@
-class Api::V1::RestaurantTablesController < Api::V1::BaseController
+class Api::V1::RestaurantMastersController < Api::V1::BaseController
 
   before_action :require_staff_login!
-  before_action :set_restaurant_table,
+  before_action :set_restaurant_master,
                 only: %i[show update]
 
   rescue_from ActiveRecord::StaleObjectError,
@@ -10,10 +10,10 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
               with: :render_registration_conflict
 
   def index
-    restaurant_tables =
-      RestaurantTable
+    restaurant_masters =
+      RestaurantMaster
         .includes(
-          :restaurant_table_type,
+          :restaurant_master_type,
           created_by_staff: :staff_master,
           updated_by_staff: :staff_master
         )
@@ -21,47 +21,47 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
 
     render_success(
       data: {
-        restaurant_tables: restaurant_tables.map do |restaurant_table|
-          serialize_restaurant_table(restaurant_table)
+        restaurant_masters: restaurant_masters.map do |restaurant_master|
+          serialize_restaurant_master(restaurant_master)
         end
       }
     )
   end
 
   def show
-    render_restaurant_table(@restaurant_table)
+    render_restaurant_master(@restaurant_master)
   end
 
   def create
-    restaurant_table =
-      RestaurantTables::CreateService.call(
-        attributes: restaurant_table_create_params,
+    restaurant_master =
+      RestaurantMasters::CreateService.call(
+        attributes: restaurant_master_create_params,
         current_staff: current_staff
       )
-      render_restaurant_table(
-      restaurant_table,
+      render_restaurant_master(
+      restaurant_master,
       status: :created
     )
   end
 
   def update
-    @restaurant_table.assign_attributes(
-      restaurant_table_update_params
+    @restaurant_master.assign_attributes(
+      restaurant_master_update_params
     )
 
-    @restaurant_table.updated_by_staff = current_staff
-    @restaurant_table.save!
+    @restaurant_master.updated_by_staff = current_staff
+    @restaurant_master.save!
 
-    render_restaurant_table(@restaurant_table)
+    render_restaurant_master(@restaurant_master)
   end
 
   private
 
-  def set_restaurant_table
-    @restaurant_table =
-      RestaurantTable
+  def set_restaurant_master
+    @restaurant_master =
+      RestaurantMaster
         .includes(
-          :restaurant_table_type,
+          :restaurant_master_type,
           created_by_staff: :staff_master,
           updated_by_staff: :staff_master
         )
@@ -70,11 +70,11 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
 
   
 
-  def restaurant_table_create_params
+  def restaurant_master_create_params
     permitted_params =
       params.expect(
-        restaurant_table: %i[
-          restaurant_table_type_id
+        restaurant_master: %i[
+          restaurant_master_type_id
           name
           capacity
           active
@@ -84,20 +84,20 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
       )
 
     if permitted_params[
-      :restaurant_table_type_id
+      :restaurant_master_type_id
     ].blank?
       raise ActionController::ParameterMissing.new(
-        :restaurant_table_type_id
+        :restaurant_master_type_id
       )
     end
 
     permitted_params
   end
 
-  def restaurant_table_update_params
+  def restaurant_master_update_params
     permitted_params =
       params.expect(
-        restaurant_table: %i[
+        restaurant_master: %i[
           name
           capacity
           active
@@ -115,20 +115,20 @@ class Api::V1::RestaurantTablesController < Api::V1::BaseController
     permitted_params
   end
 
-  def serialize_restaurant_table(restaurant_table)
-    Api::V1::RestaurantTableSerializer
-      .new(restaurant_table)
+  def serialize_restaurant_master(restaurant_master)
+    Api::V1::RestaurantMasterSerializer
+      .new(restaurant_master)
       .as_json
   end
 
-  def render_restaurant_table(
-    restaurant_table,
+  def render_restaurant_master(
+    restaurant_master,
     status: :ok
   )
     render_success(
       data: {
-        restaurant_table:
-          serialize_restaurant_table(restaurant_table)
+        restaurant_master:
+          serialize_restaurant_master(restaurant_master)
       },
       status: status
     )

@@ -10,14 +10,14 @@ class Staff < ApplicationRecord
             foreign_key: :updated_by_staff_id,
             inverse_of: :updated_by_staff
 
-  has_many :created_restaurant_tables,
-            class_name: "RestaurantTable",
+  has_many :created_restaurant_masters,
+            class_name: "RestaurantMaster",
             foreign_key: :created_by_staff_id,
             inverse_of: :created_by_staff,
             dependent: :restrict_with_error
 
-  has_many :updated_restaurant_tables,
-            class_name: "RestaurantTable",
+  has_many :updated_restaurant_masters,
+            class_name: "RestaurantMaster",
             foreign_key: :updated_by_staff_id,
             inverse_of: :updated_by_staff,
             dependent: :restrict_with_error

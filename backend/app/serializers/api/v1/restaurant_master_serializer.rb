@@ -1,15 +1,15 @@
 module Api
   module V1
-      class RestaurantTableSerializer < ApplicationSerializer
+      class RestaurantMasterSerializer < ApplicationSerializer
         def as_json(*)
           {
             id: resource.id,
 
             # 席種
-            restaurant_table_type_id: resource.restaurant_table_type_id,
-            restaurant_table_type: 
-              serialize_restaurant_table_type(
-              resource.restaurant_table_type
+            restaurant_master_type_id: resource.restaurant_master_type_id,
+            restaurant_master_type: 
+              serialize_restaurant_master_type(
+              resource.restaurant_master_type
             ),
 
             # 席情報
@@ -41,7 +41,7 @@ module Api
         #
         # 既存のStandardListMasterSerializerを使用することで、
         # 基本コード選択肢のレスポンス形式を統一する。
-        def serialize_restaurant_table_type(table_type)
+        def serialize_restaurant_master_type(table_type)
           return nil if table_type.nil?
 
           {

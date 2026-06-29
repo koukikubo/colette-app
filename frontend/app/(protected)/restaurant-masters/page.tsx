@@ -1,5 +1,5 @@
-import { RestaurantTableMasterPage } from "@/features/restaurant-tables/components/RestaurantTableMasterPage";
+import { RestaurantMasterMasterPage } from "@/features/restaurant-masters/components/RestaurantMasterPage";
 
-export default function RestaurantTablesPage() {
-  return <RestaurantTableMasterPage />;
+export default function RestaurantMasterPage() {
+  return <RestaurantMasterMasterPage />;
 }

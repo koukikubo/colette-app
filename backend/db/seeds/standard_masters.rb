@@ -33,7 +33,7 @@ standard_master_seeds = [
     ]
   },
   {
-    system_key: "restaurant_table_type",
+    system_key: "restaurant_master_type",
     name: "予約席種",
     description: "予約テーブルマスタで使用する席種",
     position: 2,

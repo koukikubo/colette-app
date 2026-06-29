@@ -1,7 +1,7 @@
 import { proxyRequest } from "@/lib/api/proxy-request";
 import { RouteContext } from "../../route-context";
 
-const RESTAURANT_TABLES_API_PATH = "/api/v1/restaurant_tables";
+const restaurant_masterS_API_PATH = "/api/v1/restaurant_masters";
 
 // 顧客詳細を取得する
 export async function GET(request: Request, context: RouteContext) {
@@ -9,7 +9,7 @@ export async function GET(request: Request, context: RouteContext) {
 
   return proxyRequest(
     request,
-    `${RESTAURANT_TABLES_API_PATH}/${encodeURIComponent(id)}`,
+    `${restaurant_masterS_API_PATH}/${encodeURIComponent(id)}`,
   );
 }
 
@@ -19,6 +19,6 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   return proxyRequest(
     request,
-    `${RESTAURANT_TABLES_API_PATH}/${encodeURIComponent(id)}`,
+    `${restaurant_masterS_API_PATH}/${encodeURIComponent(id)}`,
   );
 }

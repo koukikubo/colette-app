@@ -11,15 +11,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import type { RestaurantTable } from "@/features/restaurant-tables/types";
+import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 
-type RestaurantTableTableProps = {
-  restaurantTables: RestaurantTable[];
+type RestaurantMasterTableProps = {
+  RestaurantMasters: RestaurantMaster[];
 };
 
-export function RestaurantTableTable({
-  restaurantTables,
-}: RestaurantTableTableProps) {
+export function RestaurantMasterTable({
+  RestaurantMasters,
+}: RestaurantMasterTableProps) {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -36,33 +36,33 @@ export function RestaurantTableTable({
         </TableHeader>
 
         <TableBody>
-          {restaurantTables.map((restaurantTable) => (
-            <TableRow key={restaurantTable.id}>
+          {RestaurantMasters.map((RestaurantMaster) => (
+            <TableRow key={RestaurantMaster.id}>
               <TableCell className="font-mono font-medium">
-                {restaurantTable.code}
+                {RestaurantMaster.code}
               </TableCell>
 
               <TableCell className="font-medium">
-                {restaurantTable.name}
+                {RestaurantMaster.name}
               </TableCell>
 
               <TableCell>
-                {restaurantTable.restaurant_table_type.label}
+                {RestaurantMaster.restaurant_master_type.label}
               </TableCell>
 
               <TableCell className="text-right">
-                {restaurantTable.capacity}名
+                {RestaurantMaster.capacity}名
               </TableCell>
 
               <TableCell className="text-right">
-                {restaurantTable.position}
+                {RestaurantMaster.position}
               </TableCell>
 
               <TableCell>
                 <Badge
-                  variant={restaurantTable.active ? "default" : "secondary"}
+                  variant={RestaurantMaster.active ? "default" : "secondary"}
                 >
-                  {restaurantTable.active ? "有効" : "無効"}
+                  {RestaurantMaster.active ? "有効" : "無効"}
                 </Badge>
               </TableCell>
 
@@ -73,7 +73,7 @@ export function RestaurantTableTable({
                     variant="outline"
                     size="icon"
                     disabled
-                    aria-label={`${restaurantTable.name}の詳細を表示`}
+                    aria-label={`${RestaurantMaster.name}の詳細を表示`}
                   >
                     <Eye className="size-4" aria-hidden="true" />
                   </Button>
@@ -83,7 +83,7 @@ export function RestaurantTableTable({
                     variant="outline"
                     size="icon"
                     disabled
-                    aria-label={`${restaurantTable.name}を編集`}
+                    aria-label={`${RestaurantMaster.name}を編集`}
                   >
                     <Pencil className="size-4" aria-hidden="true" />
                   </Button>

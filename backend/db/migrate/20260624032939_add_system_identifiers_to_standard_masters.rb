@@ -1,7 +1,7 @@
 class AddSystemIdentifiersToStandardMasters < ActiveRecord::Migration[8.1]
   def change
     # 基本コードの用途をアプリケーションから識別する固定キー。
-    # 例：restaurant_table_type
+    # 例：restaurant_master_type
     add_column :standard_masters,
                 :system_key,
                 :string

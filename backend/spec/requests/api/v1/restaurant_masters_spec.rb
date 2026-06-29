@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Api::V1::RestaurantTables", type: :request do
+RSpec.describe "Api::V1::RestaurantMasters", type: :request do
   let(:login_password) { "Password123!" }
 
   let!(:login_staff_master) do
@@ -30,10 +30,10 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
   end
 
   # 予約席種の親マスタ
-  let!(:restaurant_table_type_master) do
+  let!(:restaurant_master_type_master) do
     create(
       :standard_master,
-      system_key: "restaurant_table_type",
+      system_key: "restaurant_master_type",
       name: "予約席種",
       active: true,
       position: 1
@@ -44,7 +44,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
   let!(:table_type) do
     create(
       :standard_list_master,
-      standard_master: restaurant_table_type_master,
+      standard_master: restaurant_master_type_master,
       code: "T",
       label: "テーブル席",
       active: true,
@@ -56,7 +56,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
   let!(:counter_type) do
     create(
       :standard_list_master,
-      standard_master: restaurant_table_type_master,
+      standard_master: restaurant_master_type_master,
       code: "C",
       label: "カウンター席",
       active: true,
@@ -118,7 +118,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       fetch_csrf_token
   end
 
-  def create_restaurant_table!(
+  def create_restaurant_master!(
     type: table_type,
     sequence_number:,
     code:,
@@ -131,8 +131,8 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     memo: nil
   )
     create(
-      :restaurant_table,
-      restaurant_table_type: type,
+      :restaurant_master,
+      restaurant_master_type: type,
       sequence_number: sequence_number,
       code: code,
       name: name,
@@ -147,7 +147,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
   describe "認証" do
     it "未ログインの場合は401を返す" do
-      get "/api/v1/restaurant_tables"
+      get "/api/v1/restaurant_masters"
 
       expect(response)
         .to have_http_status(:unauthorized)
@@ -160,13 +160,13 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
   end
 
-  describe "GET /api/v1/restaurant_tables" do
+  describe "GET /api/v1/restaurant_masters" do
     before do
       login!
     end
 
     let!(:first_table) do
-      create_restaurant_table!(
+      create_restaurant_master!(
         sequence_number: 1,
         code: "T01",
         name: "テーブル1",
@@ -175,7 +175,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
 
     let!(:second_table) do
-      create_restaurant_table!(
+      create_restaurant_master!(
         sequence_number: 2,
         code: "T02",
         name: "テーブル2",
@@ -184,7 +184,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
 
     let!(:third_table) do
-      create_restaurant_table!(
+      create_restaurant_master!(
         type: counter_type,
         sequence_number: 1,
         code: "C01",
@@ -194,7 +194,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
 
     it "席一覧を取得できる" do
-      get "/api/v1/restaurant_tables"
+      get "/api/v1/restaurant_masters"
 
       expect(response)
         .to have_http_status(:ok)
@@ -202,24 +202,24 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response_body["status"])
         .to eq("success")
 
-      restaurant_tables =
+      restaurant_masters =
         response_body.dig(
           "data",
-          "restaurant_tables"
+          "restaurant_masters"
         )
 
-      expect(restaurant_tables.length)
+      expect(restaurant_masters.length)
         .to eq(3)
     end
 
     it "positionとIDの昇順で取得する" do
-      get "/api/v1/restaurant_tables"
+      get "/api/v1/restaurant_masters"
 
       ids =
         response_body
-          .dig("data", "restaurant_tables")
-          .map { |restaurant_table|
-            restaurant_table["id"]
+          .dig("data", "restaurant_masters")
+          .map { |restaurant_master|
+            restaurant_master["id"]
           }
 
       expect(ids).to eq(
@@ -232,59 +232,59 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
 
     it "席種と担当者情報を取得できる" do
-      get "/api/v1/restaurant_tables"
+      get "/api/v1/restaurant_masters"
 
-      restaurant_table =
+      restaurant_master =
         response_body
-          .dig("data", "restaurant_tables")
+          .dig("data", "restaurant_masters")
           .find { |item|
             item["id"] == first_table.id
           }
 
       expect(
-        restaurant_table["restaurant_table_type_id"]
+        restaurant_master["restaurant_master_type_id"]
       ).to eq(table_type.id)
 
       expect(
-        restaurant_table.dig(
-          "restaurant_table_type",
+        restaurant_master.dig(
+          "restaurant_master_type",
           "code"
         )
       ).to eq("T")
 
       expect(
-        restaurant_table.dig(
-          "restaurant_table_type",
+        restaurant_master.dig(
+          "restaurant_master_type",
           "label"
         )
       ).to eq("テーブル席")
 
       expect(
-        restaurant_table.dig(
+        restaurant_master.dig(
           "created_by_staff",
           "id"
         )
       ).to eq(other_staff.id)
 
       expect(
-        restaurant_table.dig(
+        restaurant_master.dig(
           "updated_by_staff",
           "id"
         )
       ).to eq(other_staff.id)
 
-      expect(restaurant_table["lock_version"])
+      expect(restaurant_master["lock_version"])
         .to eq(first_table.lock_version)
     end
   end
 
-  describe "GET /api/v1/restaurant_tables/:id" do
+  describe "GET /api/v1/restaurant_masters/:id" do
     before do
       login!
     end
 
-    let!(:restaurant_table) do
-      create_restaurant_table!(
+    let!(:restaurant_master) do
+      create_restaurant_master!(
         sequence_number: 1,
         code: "T01",
         name: "詳細確認テーブル",
@@ -295,8 +295,8 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
     it "指定した席を取得できる" do
       get(
-        "/api/v1/restaurant_tables/" \
-        "#{restaurant_table.id}"
+        "/api/v1/restaurant_masters/" \
+        "#{restaurant_master.id}"
       )
 
       expect(response)
@@ -305,30 +305,30 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response_body["status"])
         .to eq("success")
 
-      response_restaurant_table =
+      response_restaurant_master =
         response_body.dig(
           "data",
-          "restaurant_table"
+          "restaurant_master"
         )
 
-      expect(response_restaurant_table["id"])
-        .to eq(restaurant_table.id)
+      expect(response_restaurant_master["id"])
+        .to eq(restaurant_master.id)
 
-      expect(response_restaurant_table["code"])
+      expect(response_restaurant_master["code"])
         .to eq("T01")
 
-      expect(response_restaurant_table["name"])
+      expect(response_restaurant_master["name"])
         .to eq("詳細確認テーブル")
 
-      expect(response_restaurant_table["capacity"])
+      expect(response_restaurant_master["capacity"])
         .to eq(4)
 
-      expect(response_restaurant_table["memo"])
+      expect(response_restaurant_master["memo"])
         .to eq("詳細確認用")
     end
 
     it "存在しないIDの場合は404を返す" do
-      get "/api/v1/restaurant_tables/999999"
+      get "/api/v1/restaurant_masters/999999"
 
       expect(response)
         .to have_http_status(:not_found)
@@ -341,15 +341,15 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
   end
 
-  describe "POST /api/v1/restaurant_tables" do
+  describe "POST /api/v1/restaurant_masters" do
     before do
       login!
     end
 
     let(:valid_params) do
       {
-        restaurant_table: {
-          restaurant_table_type_id: table_type.id,
+        restaurant_master: {
+          restaurant_master_type_id: table_type.id,
           name: " 窓側テーブル ",
           capacity: 4,
           active: true,
@@ -362,12 +362,12 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     it "席を登録できる" do
       expect do
         post(
-          "/api/v1/restaurant_tables",
+          "/api/v1/restaurant_masters",
           params: valid_params,
           headers: authenticated_headers,
           as: :json
         )
-      end.to change(RestaurantTable, :count).by(1)
+      end.to change(RestaurantMaster, :count).by(1)
 
       expect(response)
         .to have_http_status(:created)
@@ -375,39 +375,39 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response_body["status"])
         .to eq("success")
 
-      restaurant_table =
-        RestaurantTable.order(:id).last
+      restaurant_master =
+        RestaurantMaster.order(:id).last
 
-      expect(restaurant_table.name)
+      expect(restaurant_master.name)
         .to eq("窓側テーブル")
 
-      expect(restaurant_table.capacity)
+      expect(restaurant_master.capacity)
         .to eq(4)
 
-      expect(restaurant_table.memo)
+      expect(restaurant_master.memo)
         .to eq("窓側の席")
     end
 
     it "テーブル席の1件目にT01を採番する" do
       post(
-        "/api/v1/restaurant_tables",
+        "/api/v1/restaurant_masters",
         params: valid_params,
         headers: authenticated_headers,
         as: :json
       )
 
-      restaurant_table =
-        RestaurantTable.order(:id).last
+      restaurant_master =
+        RestaurantMaster.order(:id).last
 
-      expect(restaurant_table.code)
+      expect(restaurant_master.code)
         .to eq("T01")
 
-      expect(restaurant_table.sequence_number)
+      expect(restaurant_master.sequence_number)
         .to eq(1)
     end
 
     it "テーブル席の2件目にT02を採番する" do
-      create_restaurant_table!(
+      create_restaurant_master!(
         sequence_number: 1,
         code: "T01",
         name: "既存テーブル",
@@ -415,24 +415,24 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       )
 
       post(
-        "/api/v1/restaurant_tables",
+        "/api/v1/restaurant_masters",
         params: valid_params,
         headers: authenticated_headers,
         as: :json
       )
 
-      restaurant_table =
-        RestaurantTable.order(:id).last
+      restaurant_master =
+        RestaurantMaster.order(:id).last
 
-      expect(restaurant_table.code)
+      expect(restaurant_master.code)
         .to eq("T02")
 
-      expect(restaurant_table.sequence_number)
+      expect(restaurant_master.sequence_number)
         .to eq(2)
     end
 
     it "席種ごとに連番を分けて採番する" do
-      create_restaurant_table!(
+      create_restaurant_master!(
         sequence_number: 1,
         code: "T01",
         name: "既存テーブル",
@@ -441,52 +441,52 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
       counter_params =
         valid_params.deep_merge(
-          restaurant_table: {
-            restaurant_table_type_id:
+          restaurant_master: {
+            restaurant_master_type_id:
               counter_type.id,
             name: "カウンター1"
           }
         )
 
       post(
-        "/api/v1/restaurant_tables",
+        "/api/v1/restaurant_masters",
         params: counter_params,
         headers: authenticated_headers,
         as: :json
       )
 
-      restaurant_table =
-        RestaurantTable.order(:id).last
+      restaurant_master =
+        RestaurantMaster.order(:id).last
 
-      expect(restaurant_table.code)
+      expect(restaurant_master.code)
         .to eq("C01")
 
-      expect(restaurant_table.sequence_number)
+      expect(restaurant_master.sequence_number)
         .to eq(1)
     end
 
     it "認証中の担当者を作成者と更新者に設定する" do
       post(
-        "/api/v1/restaurant_tables",
+        "/api/v1/restaurant_masters",
         params: valid_params,
         headers: authenticated_headers,
         as: :json
       )
 
-      restaurant_table =
-        RestaurantTable.order(:id).last
+      restaurant_master =
+        RestaurantMaster.order(:id).last
 
-      expect(restaurant_table.created_by_staff)
+      expect(restaurant_master.created_by_staff)
         .to eq(login_staff)
 
-      expect(restaurant_table.updated_by_staff)
+      expect(restaurant_master.updated_by_staff)
         .to eq(login_staff)
     end
 
     it "クライアントから送られた自動生成項目を採用しない" do
       spoofed_params =
         valid_params.deep_merge(
-          restaurant_table: {
+          restaurant_master: {
             code: "X99",
             sequence_number: 99,
             created_by_staff_id: other_staff.id,
@@ -495,7 +495,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
         )
 
       post(
-        "/api/v1/restaurant_tables",
+        "/api/v1/restaurant_masters",
         params: spoofed_params,
         headers: authenticated_headers,
         as: :json
@@ -504,38 +504,38 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response)
         .to have_http_status(:created)
 
-      restaurant_table =
-        RestaurantTable.order(:id).last
+      restaurant_master =
+        RestaurantMaster.order(:id).last
 
-      expect(restaurant_table.code)
+      expect(restaurant_master.code)
         .to eq("T01")
 
-      expect(restaurant_table.sequence_number)
+      expect(restaurant_master.sequence_number)
         .to eq(1)
 
-      expect(restaurant_table.created_by_staff)
+      expect(restaurant_master.created_by_staff)
         .to eq(login_staff)
 
-      expect(restaurant_table.updated_by_staff)
+      expect(restaurant_master.updated_by_staff)
         .to eq(login_staff)
     end
 
     it "席種IDがない場合は400を返す" do
       invalid_params =
         valid_params.deep_merge(
-          restaurant_table: {
-            restaurant_table_type_id: nil
+          restaurant_master: {
+            restaurant_master_type_id: nil
           }
         )
 
       expect do
         post(
-          "/api/v1/restaurant_tables",
+          "/api/v1/restaurant_masters",
           params: invalid_params,
           headers: authenticated_headers,
           as: :json
         )
-      end.not_to change(RestaurantTable, :count)
+      end.not_to change(RestaurantMaster, :count)
 
       expect(response)
         .to have_http_status(:bad_request)
@@ -547,19 +547,19 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     it "存在しない席種の場合は404を返す" do
       invalid_params =
         valid_params.deep_merge(
-          restaurant_table: {
-            restaurant_table_type_id: 999999
+          restaurant_master: {
+            restaurant_master_type_id: 999999
           }
         )
 
       expect do
         post(
-          "/api/v1/restaurant_tables",
+          "/api/v1/restaurant_masters",
           params: invalid_params,
           headers: authenticated_headers,
           as: :json
         )
-      end.not_to change(RestaurantTable, :count)
+      end.not_to change(RestaurantMaster, :count)
 
       expect(response)
         .to have_http_status(:not_found)
@@ -590,20 +590,20 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
       invalid_params =
         valid_params.deep_merge(
-          restaurant_table: {
-            restaurant_table_type_id:
+          restaurant_master: {
+            restaurant_master_type_id:
               reservation_route.id
           }
         )
 
       expect do
         post(
-          "/api/v1/restaurant_tables",
+          "/api/v1/restaurant_masters",
           params: invalid_params,
           headers: authenticated_headers,
           as: :json
         )
-      end.not_to change(RestaurantTable, :count)
+      end.not_to change(RestaurantMaster, :count)
 
       expect(response)
         .to have_http_status(:not_found)
@@ -614,7 +614,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
         create(
           :standard_list_master,
           standard_master:
-            restaurant_table_type_master,
+            restaurant_master_type_master,
           code: "Z",
           label: "無効席種",
           active: false,
@@ -627,8 +627,8 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
       invalid_params =
         valid_params.deep_merge(
-          restaurant_table: {
-            restaurant_table_type_id:
+          restaurant_master: {
+            restaurant_master_type_id:
               inactive_type.id
           }
         )
@@ -636,8 +636,8 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       # ② リクエストに無効席種のIDが入っているか
       expect(
         invalid_params.dig(
-          :restaurant_table,
-          :restaurant_table_type_id
+          :restaurant_master,
+          :restaurant_master_type_id
         )
       ).to eq(inactive_type.id)
 
@@ -652,7 +652,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
           )
           .where(
             standard_masters: {
-              system_key: "restaurant_table_type",
+              system_key: "restaurant_master_type",
               active: true
             }
           )
@@ -663,12 +663,12 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
       expect do
         post(
-          "/api/v1/restaurant_tables",
+          "/api/v1/restaurant_masters",
           params: invalid_params,
           headers: authenticated_headers,
           as: :json
         )
-      end.not_to change(RestaurantTable, :count)
+      end.not_to change(RestaurantMaster, :count)
 
       expect(response)
         .to have_http_status(:not_found)
@@ -677,7 +677,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     it "不正な属性の場合は登録せず422を返す" do
       invalid_params =
         valid_params.deep_merge(
-          restaurant_table: {
+          restaurant_master: {
             name: " ",
             capacity: 0
           }
@@ -685,12 +685,12 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
       expect do
         post(
-          "/api/v1/restaurant_tables",
+          "/api/v1/restaurant_masters",
           params: invalid_params,
           headers: authenticated_headers,
           as: :json
         )
-      end.not_to change(RestaurantTable, :count)
+      end.not_to change(RestaurantMaster, :count)
 
       expect(response)
         .to have_http_status(
@@ -708,13 +708,13 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
     end
   end
 
-  describe "PATCH /api/v1/restaurant_tables/:id" do
+  describe "PATCH /api/v1/restaurant_masters/:id" do
     before do
       login!
     end
 
-    let!(:restaurant_table) do
-      create_restaurant_table!(
+    let!(:restaurant_master) do
+      create_restaurant_master!(
         sequence_number: 1,
         code: "T01",
         name: "更新前テーブル",
@@ -725,17 +725,17 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
 
     it "席情報を更新できる" do
       patch(
-        "/api/v1/restaurant_tables/" \
-        "#{restaurant_table.id}",
+        "/api/v1/restaurant_masters/" \
+        "#{restaurant_master.id}",
         params: {
-          restaurant_table: {
+          restaurant_master: {
             name: "更新後テーブル",
             capacity: 6,
             active: false,
             position: 20,
             memo: "更新しました",
             lock_version:
-              restaurant_table.lock_version
+              restaurant_master.lock_version
           }
         },
         headers: authenticated_headers,
@@ -748,47 +748,47 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response_body["status"])
         .to eq("success")
 
-      restaurant_table.reload
+      restaurant_master.reload
 
-      expect(restaurant_table.name)
+      expect(restaurant_master.name)
         .to eq("更新後テーブル")
 
-      expect(restaurant_table.capacity)
+      expect(restaurant_master.capacity)
         .to eq(6)
 
-      expect(restaurant_table.active)
+      expect(restaurant_master.active)
         .to be(false)
 
-      expect(restaurant_table.position)
+      expect(restaurant_master.position)
         .to eq(20)
 
-      expect(restaurant_table.memo)
+      expect(restaurant_master.memo)
         .to eq("更新しました")
 
-      expect(restaurant_table.updated_by_staff)
+      expect(restaurant_master.updated_by_staff)
         .to eq(login_staff)
     end
 
     it "席種・コード・連番・作成担当者を変更しない" do
       original_type =
-        restaurant_table.restaurant_table_type
+        restaurant_master.restaurant_master_type
 
       original_code =
-        restaurant_table.code
+        restaurant_master.code
 
       original_sequence_number =
-        restaurant_table.sequence_number
+        restaurant_master.sequence_number
 
       original_created_by_staff =
-        restaurant_table.created_by_staff
+        restaurant_master.created_by_staff
 
       patch(
-        "/api/v1/restaurant_tables/" \
-        "#{restaurant_table.id}",
+        "/api/v1/restaurant_masters/" \
+        "#{restaurant_master.id}",
         params: {
-          restaurant_table: {
+          restaurant_master: {
             name: "更新後テーブル",
-            restaurant_table_type_id:
+            restaurant_master_type_id:
               counter_type.id,
             code: "C99",
             sequence_number: 99,
@@ -797,7 +797,7 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
             updated_by_staff_id:
               other_staff.id,
             lock_version:
-              restaurant_table.lock_version
+              restaurant_master.lock_version
           }
         },
         headers: authenticated_headers,
@@ -807,34 +807,34 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response)
         .to have_http_status(:ok)
 
-      restaurant_table.reload
+      restaurant_master.reload
 
       expect(
-        restaurant_table.restaurant_table_type
+        restaurant_master.restaurant_master_type
       ).to eq(original_type)
 
-      expect(restaurant_table.code)
+      expect(restaurant_master.code)
         .to eq(original_code)
 
-      expect(restaurant_table.sequence_number)
+      expect(restaurant_master.sequence_number)
         .to eq(original_sequence_number)
 
-      expect(restaurant_table.created_by_staff)
+      expect(restaurant_master.created_by_staff)
         .to eq(original_created_by_staff)
 
-      expect(restaurant_table.updated_by_staff)
+      expect(restaurant_master.updated_by_staff)
         .to eq(login_staff)
     end
 
     it "不正な属性の場合は更新せず422を返す" do
       patch(
-        "/api/v1/restaurant_tables/" \
-        "#{restaurant_table.id}",
+        "/api/v1/restaurant_masters/" \
+        "#{restaurant_master.id}",
         params: {
-          restaurant_table: {
+          restaurant_master: {
             capacity: 0,
             lock_version:
-              restaurant_table.lock_version
+              restaurant_master.lock_version
           }
         },
         headers: authenticated_headers,
@@ -849,16 +849,16 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response_body["status"])
         .to eq("error")
 
-      expect(restaurant_table.reload.capacity)
+      expect(restaurant_master.reload.capacity)
         .to eq(4)
     end
 
     it "lock_versionがない場合は400を返す" do
       patch(
-        "/api/v1/restaurant_tables/" \
-        "#{restaurant_table.id}",
+        "/api/v1/restaurant_masters/" \
+        "#{restaurant_master.id}",
         params: {
-          restaurant_table: {
+          restaurant_master: {
             name: "更新後テーブル"
           }
         },
@@ -872,23 +872,23 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
       expect(response_body["status"])
         .to eq("error")
 
-      expect(restaurant_table.reload.name)
+      expect(restaurant_master.reload.name)
         .to eq("更新前テーブル")
     end
 
     it "古いlock_versionの場合は409を返す" do
       stale_lock_version =
-        restaurant_table.lock_version
+        restaurant_master.lock_version
 
-      restaurant_table.update!(
+      restaurant_master.update!(
         memo: "別の担当者による更新"
       )
 
       patch(
-        "/api/v1/restaurant_tables/" \
-        "#{restaurant_table.id}",
+        "/api/v1/restaurant_masters/" \
+        "#{restaurant_master.id}",
         params: {
-          restaurant_table: {
+          restaurant_master: {
             name: "競合更新",
             lock_version: stale_lock_version
           }
@@ -908,20 +908,20 @@ RSpec.describe "Api::V1::RestaurantTables", type: :request do
           "席情報は別の担当者によって更新されています"
         )
 
-      restaurant_table.reload
+      restaurant_master.reload
 
-      expect(restaurant_table.name)
+      expect(restaurant_master.name)
         .to eq("更新前テーブル")
 
-      expect(restaurant_table.memo)
+      expect(restaurant_master.memo)
         .to eq("別の担当者による更新")
     end
 
     it "存在しないIDの場合は404を返す" do
       patch(
-        "/api/v1/restaurant_tables/999999",
+        "/api/v1/restaurant_masters/999999",
         params: {
-          restaurant_table: {
+          restaurant_master: {
             name: "更新後テーブル",
             lock_version: 0
           }

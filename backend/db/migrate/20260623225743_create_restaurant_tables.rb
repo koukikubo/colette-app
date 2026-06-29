@@ -1,8 +1,8 @@
-class CreateRestaurantTables < ActiveRecord::Migration[8.1]
+class CreateRestaurantMasters < ActiveRecord::Migration[8.1]
   def change
-    create_table :restaurant_tables do |t|
+    create_table :restaurant_masters do |t|
       # 席種を表す基本コードの選択肢を参照する。
-      t.references :restaurant_table_type,
+      t.references :restaurant_master_type,
                     null: false,
                     foreign_key: {
                       to_table: :standard_list_masters
@@ -73,7 +73,7 @@ class CreateRestaurantTables < ActiveRecord::Migration[8.1]
     end
 
     # T01などの完成済み席コードを重複不可にする。
-    add_index :restaurant_tables,
+    add_index :restaurant_masters,
               :code,
               unique: true
 
@@ -85,37 +85,37 @@ class CreateRestaurantTables < ActiveRecord::Migration[8.1]
     #
     # 不許可：
     # テーブル席の1番が2件
-    add_index :restaurant_tables,
+    add_index :restaurant_masters,
               [
-                :restaurant_table_type_id,
+                :restaurant_master_type_id,
                 :sequence_number
               ],
               unique: true,
-              name: "idx_restaurant_tables_type_and_sequence"
+              name: "idx_restaurant_masters_type_and_sequence"
 
     # 席種内の連番は1以上に限定する。
-    add_check_constraint :restaurant_tables,
+    add_check_constraint :restaurant_masters,
                           "sequence_number > 0",
-                          name: "check_restaurant_tables_sequence_positive"
+                          name: "check_restaurant_masters_sequence_positive"
 
     # 定員は1名以上に限定する。
-    add_check_constraint :restaurant_tables,
+    add_check_constraint :restaurant_masters,
                           "capacity > 0",
-                          name: "check_restaurant_tables_capacity_positive"
+                          name: "check_restaurant_masters_capacity_positive"
 
     # 表示順には負数を設定できないようにする。
-    add_check_constraint :restaurant_tables,
+    add_check_constraint :restaurant_masters,
                           "position >= 0",
-                          name: "check_restaurant_tables_position_non_negative"
+                          name: "check_restaurant_masters_position_non_negative"
 
     # NOT NULLだけでは空文字を防げないため、空白のみのcodeを拒否する。
-    add_check_constraint :restaurant_tables,
+    add_check_constraint :restaurant_masters,
                           "char_length(btrim(code)) > 0",
-                          name: "check_restaurant_tables_code_not_blank"
+                          name: "check_restaurant_masters_code_not_blank"
 
     # 空白のみの表示名を拒否する。
-    add_check_constraint :restaurant_tables,
+    add_check_constraint :restaurant_masters,
                           "char_length(btrim(name)) > 0",
-                          name: "check_restaurant_tables_name_not_blank"
+                          name: "check_restaurant_masters_name_not_blank"
   end
 end

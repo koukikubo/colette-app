@@ -3,38 +3,69 @@ import * as React from "react";
 import { Armchair, CircleAlert, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { fetchRestaurantTables } from "@/features/restaurant-tables/api/restaurant-tables-api";
+import { fetchRestaurantMasters } from "@/features/restaurant-masters/api/restaurant-masters-api";
 
-import type { RestaurantTable } from "@/features/restaurant-tables/types";
+import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RestaurantTableTable } from "./RestaurantTableTable";
+import { StandardListCode } from "@/features/standard-codes/types";
+import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
+import { RestaurantMasterTable } from "./RestaurantMasterTable";
 
-export function RestaurantTableMasterPage() {
-  const [restaurantTables, setRestaurantTables] = React.useState<
-    RestaurantTable[]
+const restaurant_master_TYPE_MASTER_NAME = "予約席種";
+
+export function RestaurantMasterMasterPage() {
+  const [RestaurantMasters, setRestaurantMasters] = React.useState<
+    RestaurantMaster[]
   >([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const hasRestaurantTables = restaurantTables.length > 0;
+  const hasRestaurantMasters = RestaurantMasters.length > 0;
+  const [RestaurantMasterTypes, setRestaurantMasterTypes] = React.useState<
+    StandardListCode[]
+  >([]);
 
   React.useEffect(() => {
     let cancelled = false;
 
-    void fetchRestaurantTables()
-      .then((response) => {
+    void Promise.all([fetchRestaurantMasters(), fetchStandardCodes()])
+      .then(([RestaurantMastersResponse, standardCodesResponse]) => {
         if (cancelled) return;
 
-        setRestaurantTables(response.data.restaurant_tables);
+        const RestaurantMasterTypeMaster =
+          standardCodesResponse.data.standard_masters.find(
+            (standardMaster) =>
+              standardMaster.name === restaurant_master_TYPE_MASTER_NAME &&
+              standardMaster.active,
+          );
+
+        if (!RestaurantMasterTypeMaster) {
+          throw new Error("予約席種マスタが見つかりません。");
+        }
+
+        const activeRestaurantMasterTypes = (
+          RestaurantMasterTypeMaster.items ?? []
+        ).filter((item) => item.active);
+
+        if (activeRestaurantMasterTypes.length === 0) {
+          throw new Error("有効な予約席種が登録されていません。");
+        }
+
+        setRestaurantMasters(RestaurantMastersResponse.data.restaurant_masters);
+
+        setRestaurantMasterTypes(activeRestaurantMasterTypes);
       })
       .catch((caughtError: unknown) => {
         if (cancelled) return;
 
-        console.error("席マスタ一覧の取得に失敗しました。", caughtError);
+        console.error(
+          "席マスタ画面の初期データ取得に失敗しました。",
+          caughtError,
+        );
 
         setError(
           caughtError instanceof Error
             ? caughtError.message
-            : "席マスタ一覧の取得に失敗しました。",
+            : "席マスタ画面の初期データ取得に失敗しました。",
         );
       })
       .finally(() => {
@@ -96,7 +127,7 @@ export function RestaurantTableMasterPage() {
             </div>
           </div>
         )}
-        {!isLoading && !error && !hasRestaurantTables && (
+        {!isLoading && !error && !hasRestaurantMasters && (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
             <div className="mb-4 rounded-full bg-muted p-3">
               <Armchair
@@ -112,9 +143,18 @@ export function RestaurantTableMasterPage() {
             </p>
           </div>
         )}
-        {!isLoading && !error && hasRestaurantTables && (
-          <RestaurantTableTable restaurantTables={restaurantTables} />
-        )}{" "}
+        {!isLoading && !error && hasRestaurantMasters && (
+          <>
+            <RestaurantMasterTable RestaurantMasters={RestaurantMasters} />
+
+            <div className="border-t px-6 py-4 text-sm text-muted-foreground">
+              取得した席種：
+              {RestaurantMasterTypes.map((tableType) => tableType.label).join(
+                "、",
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
-# backend/app/services/restaurant_tables/create_service.rb
+# backend/app/services/restaurant_masters/create_service.rb
 
-module RestaurantTables
+module RestaurantMasters
   class CreateService
     # 基本コードマスタから「予約席種」を特定するためのキー
-    RESTAURANT_TABLE_TYPE_MASTER_KEY =
-      "restaurant_table_type".freeze
+    RESTAURANT_MASTER_TYPE_MASTER_KEY =
+      "restaurant_master_type".freeze
 
     # Controllerから呼び出すためのクラスメソッド
     def self.call(attributes:, current_staff:)
@@ -24,18 +24,18 @@ module RestaurantTables
     end
 
     def call
-      RestaurantTable.transaction do
+      RestaurantMaster.transaction do
         # 対象の席種を取得し、同時登録を防ぐためにロックする
-        table_type = lock_restaurant_table_type!
+        table_type = lock_restaurant_master_type!
 
         # 席種ごとの次の連番を取得する
         sequence_number =
           next_sequence_number(table_type)
 
-        # 席情報を保存し、保存したRestaurantTableを返す
-        RestaurantTable.create!(
+        # 席情報を保存し、保存したRestaurantMasterを返す
+        RestaurantMaster.create!(
           editable_attributes.merge(
-            restaurant_table_type: table_type,
+            restaurant_master_type: table_type,
             sequence_number: sequence_number,
             code: build_code(
               table_type: table_type,
@@ -54,7 +54,7 @@ module RestaurantTables
 
     # 指定された席種が、
     # 有効な「予約席種」の選択肢であることを確認してロックする
-    def lock_restaurant_table_type!
+    def lock_restaurant_master_type!
       StandardListMaster
         .joins(:standard_master)
         .where(
@@ -65,19 +65,19 @@ module RestaurantTables
         .where(
           standard_masters: {
             system_key:
-              RESTAURANT_TABLE_TYPE_MASTER_KEY,
+              RESTAURANT_MASTER_TYPE_MASTER_KEY,
             active: true
             }
           )
         .lock
-        .find(attributes[:restaurant_table_type_id])
+        .find(attributes[:restaurant_master_type_id])
     end
 
     # 同じ席種に登録されている最大連番へ1を加える
     def next_sequence_number(table_type)
-      RestaurantTable
+      RestaurantMaster
         .where(
-          restaurant_table_type_id: table_type.id
+          restaurant_master_type_id: table_type.id
         )
         .maximum(:sequence_number)
         .to_i + 1
