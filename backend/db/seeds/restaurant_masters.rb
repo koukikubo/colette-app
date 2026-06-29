@@ -1,5 +1,5 @@
 
-table_type_master_key = "restaurant_masters_type"
+table_type_master_key = "restaurant_master_type"
 
 seed_staff =
   Staff
@@ -45,7 +45,7 @@ table_type =
 counter_seats =
   (1..16).map do |number|
     {
-      restaurant_masters_type: counter_type,
+      restaurant_master_type: counter_type,
       name: "カウンター#{number}",
       capacity: 1,
       active: true,
@@ -56,7 +56,7 @@ counter_seats =
 
 table_seats = [
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "菊",
     capacity: 4,
     active: true,
@@ -64,7 +64,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "梅",
     capacity: 4,
     active: true,
@@ -72,7 +72,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "A",
     capacity: 4,
     active: true,
@@ -80,7 +80,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "B",
     capacity: 2,
     active: true,
@@ -88,7 +88,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "C",
     capacity: 4,
     active: true,
@@ -96,7 +96,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "D",
     capacity: 2,
     active: true,
@@ -104,7 +104,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "竹",
     capacity: 4,
     active: true,
@@ -112,7 +112,7 @@ table_seats = [
     memo: nil
   },
   {
-    restaurant_masters_type: table_type,
+    restaurant_master_type: table_type,
     name: "松",
     capacity: 6,
     active: true,
@@ -123,17 +123,17 @@ table_seats = [
 
 ActiveRecord::Base.transaction do
   (counter_seats + table_seats).each do |seat|
-    table_type = seat.fetch(:restaurant_masters_type)
+    table_type = seat.fetch(:restaurant_master_type)
     name = seat.fetch(:name)
 
     next if RestaurantMaster.exists?(
-      restaurant_masters_type: table_type,
+      restaurant_master_type: table_type,
       name: name
     )
 
     RestaurantMasters::CreateService.call(
       attributes: {
-        restaurant_masters_type_id: table_type.id,
+        restaurant_master_type_id: table_type.id,
         name: name,
         capacity: seat.fetch(:capacity),
         active: seat.fetch(:active),
