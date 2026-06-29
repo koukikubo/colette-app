@@ -1,9 +1,7 @@
 class Api::V1::RestaurantMastersController < Api::V1::BaseController
-
   before_action :require_staff_login!
   before_action :set_restaurant_master,
                 only: %i[show update]
-
   rescue_from ActiveRecord::StaleObjectError,
               with: :render_stale_object_error
   rescue_from ActiveRecord::RecordNotUnique,
@@ -101,7 +99,6 @@ class Api::V1::RestaurantMastersController < Api::V1::BaseController
           name
           capacity
           active
-          position
           memo
           lock_version
         ]

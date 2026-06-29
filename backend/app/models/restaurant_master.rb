@@ -65,8 +65,14 @@ class RestaurantMaster < ApplicationRecord
   before_validation :normalize_editable_attributes
 
   scope :active, -> { where(active: true) }
-  scope :ordered, -> { order(:position, :id) }
-
+  scope :ordered, lambda {
+    joins(:restaurant_master_type)
+      .order(
+        "standard_list_masters.code ASC",
+        sequence_number: :asc
+      )
+  }
+  
   private
 
   def normalize_editable_attributes

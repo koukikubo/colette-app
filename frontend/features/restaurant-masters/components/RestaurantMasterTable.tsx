@@ -29,7 +29,6 @@ export function RestaurantMasterTable({
             <TableHead>席名</TableHead>
             <TableHead>席種</TableHead>
             <TableHead className="text-right">定員</TableHead>
-            <TableHead className="text-right">表示順</TableHead>
             <TableHead>状態</TableHead>
             <TableHead className="text-right">操作</TableHead>
           </TableRow>
@@ -52,10 +51,6 @@ export function RestaurantMasterTable({
 
               <TableCell className="text-right">
                 {RestaurantMaster.capacity}名
-              </TableCell>
-
-              <TableCell className="text-right">
-                {RestaurantMaster.position}
               </TableCell>
 
               <TableCell>
