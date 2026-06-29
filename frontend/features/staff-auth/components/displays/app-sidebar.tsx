@@ -47,11 +47,11 @@ const data = {
       url: "/dashboard",
       icon: <LayoutDashboardIcon />,
     },
-    {
-      title: "予約一覧",
-      url: "/reservations",
-      icon: <CalendarDaysIcon />,
-    },
+    // {
+    //   title: "予約一覧",
+    //   url: "/reservation",
+    //   icon: <CalendarDaysIcon />,
+    // },
     {
       title: "顧客管理",
       url: "/customers",
@@ -59,7 +59,7 @@ const data = {
     },
     {
       title: "予約管理",
-      url: "/reservations/manage",
+      url: "/reservations",
       icon: <CalendarDaysIcon />,
     },
     {
