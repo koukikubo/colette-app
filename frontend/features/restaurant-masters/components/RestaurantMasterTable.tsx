@@ -1,4 +1,4 @@
-import { Eye, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,12 @@ import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 
 type RestaurantMasterTableProps = {
   RestaurantMasters: RestaurantMaster[];
+  onEdit: (restaurantMaster: RestaurantMaster) => void;
 };
 
 export function RestaurantMasterTable({
   RestaurantMasters,
+  onEdit,
 }: RestaurantMasterTableProps) {
   return (
     <div className="overflow-x-auto">
@@ -67,17 +69,7 @@ export function RestaurantMasterTable({
                     type="button"
                     variant="outline"
                     size="icon"
-                    disabled
-                    aria-label={`${RestaurantMaster.name}の詳細を表示`}
-                  >
-                    <Eye className="size-4" aria-hidden="true" />
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    disabled
+                    onClick={() => onEdit(RestaurantMaster)}
                     aria-label={`${RestaurantMaster.name}を編集`}
                   >
                     <Pencil className="size-4" aria-hidden="true" />
