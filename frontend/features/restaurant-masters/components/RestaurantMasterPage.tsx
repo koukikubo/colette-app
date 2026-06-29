@@ -12,6 +12,7 @@ import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-
 import { RestaurantMasterTable } from "./RestaurantMasterTable";
 import { useState } from "react";
 import { RestaurantMasterCreateDialog } from "./RestaurantMasterCreateDialog";
+import { RestaurantMasterEditDialog } from "./RestaurantMasterEditDialog";
 
 const RESTAURANT_MASTER_TYPE_NAME = "予約席種";
 
@@ -25,9 +26,14 @@ export function RestaurantMasterMasterPage() {
   const [RestaurantMasterTypes, setRestaurantMasterTypes] = React.useState<
     StandardListCode[]
   >([]);
+  const [editingRestaurantMaster, setEditingRestaurantMaster] =
+    React.useState<RestaurantMaster | null>(null);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  function handleEdit(restaurantMaster: RestaurantMaster) {
+    setEditingRestaurantMaster(restaurantMaster);
+  }
   React.useEffect(() => {
     let cancelled = false;
 
@@ -87,7 +93,17 @@ export function RestaurantMasterMasterPage() {
 
     setRestaurantMasters(response.data.restaurant_masters);
   }
-
+  function handleUpdatedRestaurantMaster(
+    updatedRestaurantMaster: RestaurantMaster,
+  ) {
+    setRestaurantMasters((currentRestaurantMasters) =>
+      currentRestaurantMasters.map((restaurantMaster) =>
+        restaurantMaster.id === updatedRestaurantMaster.id
+          ? updatedRestaurantMaster
+          : restaurantMaster,
+      ),
+    );
+  }
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -159,7 +175,10 @@ export function RestaurantMasterMasterPage() {
         )}
         {!isLoading && !error && hasRestaurantMasters && (
           <>
-            <RestaurantMasterTable RestaurantMasters={RestaurantMasters} />
+            <RestaurantMasterTable
+              RestaurantMasters={RestaurantMasters}
+              onEdit={handleEdit}
+            />
 
             <div className="border-t px-6 py-4 text-sm text-muted-foreground">
               取得した席種：
@@ -170,6 +189,19 @@ export function RestaurantMasterMasterPage() {
           </>
         )}
       </div>
+      {editingRestaurantMaster ? (
+        <RestaurantMasterEditDialog
+          key={editingRestaurantMaster.id}
+          open
+          restaurantMaster={editingRestaurantMaster}
+          onUpdated={handleUpdatedRestaurantMaster}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setEditingRestaurantMaster(null);
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
