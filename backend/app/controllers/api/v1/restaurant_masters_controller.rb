@@ -76,7 +76,6 @@ class Api::V1::RestaurantMastersController < Api::V1::BaseController
           name
           capacity
           active
-          position
           memo
         ]
       )

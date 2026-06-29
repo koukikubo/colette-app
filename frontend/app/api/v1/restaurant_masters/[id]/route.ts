@@ -13,7 +13,6 @@ export async function GET(request: Request, context: RouteContext) {
   );
 }
 
-// 顧客情報を更新する
 export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
 

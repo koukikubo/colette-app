@@ -24,7 +24,6 @@ export type RestaurantMaster = {
   name: string;
   capacity: number;
   active: boolean;
-  position: number;
   memo: string | null;
 
   lock_version: number;
@@ -59,7 +58,6 @@ export type CreateRestaurantMasterAttributes = {
   name: string;
   capacity: number;
   active: boolean;
-  position: number;
   memo: string | null;
 };
 
@@ -73,7 +71,6 @@ export type UpdateRestaurantMasterAttributes = {
   name?: string;
   capacity?: number;
   active?: boolean;
-  position?: number;
   memo?: string | null;
   lock_version: number;
 };

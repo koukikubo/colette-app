@@ -107,7 +107,6 @@ export function RestaurantMasterCreateDialog({
           name: name.trim(),
           capacity: capacityNumber,
           active,
-          position: positionNumber,
           memo: memo.trim() || null,
         },
       });
