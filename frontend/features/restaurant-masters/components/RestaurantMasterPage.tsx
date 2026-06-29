@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Armchair, CircleAlert, Plus } from "lucide-react";
+import { Armchair, CircleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { fetchRestaurantMasters } from "@/features/restaurant-masters/api/restaurant-masters-api";
@@ -10,8 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StandardListCode } from "@/features/standard-codes/types";
 import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
 import { RestaurantMasterTable } from "./RestaurantMasterTable";
+import { useState } from "react";
+import { RestaurantMasterCreateDialog } from "./RestaurantMasterCreateDialog";
 
-const restaurant_master_TYPE_MASTER_NAME = "予約席種";
+const RESTAURANT_MASTER_TYPE_NAME = "予約席種";
 
 export function RestaurantMasterMasterPage() {
   const [RestaurantMasters, setRestaurantMasters] = React.useState<
@@ -24,6 +26,8 @@ export function RestaurantMasterMasterPage() {
     StandardListCode[]
   >([]);
 
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   React.useEffect(() => {
     let cancelled = false;
 
@@ -34,7 +38,7 @@ export function RestaurantMasterMasterPage() {
         const RestaurantMasterTypeMaster =
           standardCodesResponse.data.standard_masters.find(
             (standardMaster) =>
-              standardMaster.name === restaurant_master_TYPE_MASTER_NAME &&
+              standardMaster.name === RESTAURANT_MASTER_TYPE_NAME &&
               standardMaster.active,
           );
 
@@ -78,6 +82,11 @@ export function RestaurantMasterMasterPage() {
       cancelled = true;
     };
   }, []);
+  async function refreshRestaurantMasters(): Promise<void> {
+    const response = await fetchRestaurantMasters();
+
+    setRestaurantMasters(response.data.restaurant_masters);
+  }
 
   return (
     <div className="space-y-6">
@@ -92,10 +101,15 @@ export function RestaurantMasterMasterPage() {
           </p>
         </div>
 
-        <Button type="button">
-          <Plus className="size-4" />
-          席を登録
+        <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
+          テーブルを登録
         </Button>
+        <RestaurantMasterCreateDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          tableTypeOptions={RestaurantMasterTypes}
+          onCreated={refreshRestaurantMasters}
+        />
       </div>
 
       <div className="rounded-lg border bg-card" aria-live="polite">
