@@ -31,3 +31,16 @@ export type LogoutResponse = {
     message: string;
   };
 };
+
+export type StaffOption = {
+  id: number;
+  code: string;
+  name: string;
+};
+
+export type StaffLoginOptionsResponse = {
+  status: "success";
+  data: {
+    staff_options: StaffOption[];
+  };
+};
