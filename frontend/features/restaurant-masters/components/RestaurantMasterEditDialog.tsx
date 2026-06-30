@@ -14,9 +14,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
-import type { RestaurantMaster } from "@/features/restaurant-masters/types";
+import type {
+  PendingRestaurantMasterValues,
+  RestaurantMaster,
+} from "@/features/restaurant-masters/types";
 import { ApiClientError } from "@/lib/api/api-client";
 import { updateRestaurantMaster } from "../api/restaurant-masters-api";
+import { ConfirmRestaurantMasterSaveDialog } from "./ConfirmRestaurantMasterSaveDialog";
 
 type RestaurantMasterEditDialogProps = {
   open: boolean;
@@ -38,20 +42,37 @@ export function RestaurantMasterEditDialog({
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingValues, setPendingValues] =
+    useState<PendingRestaurantMasterValues | null>(null);
+
   function handleOpenChange(nextOpen: boolean) {
     if (isSubmitting) return;
+
+    if (!nextOpen) {
+      setConfirmOpen(false);
+      setPendingValues(null);
+    }
 
     onOpenChange(nextOpen);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErrorMessage("");
 
-    if (!name.trim()) {
-      setErrorMessage("席名を入力してください。");
-      return;
-    }
+    const values: PendingRestaurantMasterValues = {
+      name: name.trim(),
+      capacity: Number(capacity),
+      active,
+      memo: memo.trim() || null,
+    };
+
+    setPendingValues(values);
+    setConfirmOpen(true);
+  }
+
+  async function handleConfirmSubmit() {
+    if (!pendingValues || isSubmitting) return;
 
     const capacityNumber = Number(capacity);
 
@@ -74,6 +95,9 @@ export function RestaurantMasterEditDialog({
       });
 
       onUpdated(response.data.restaurant_master);
+
+      setConfirmOpen(false);
+      setPendingValues(null);
       onOpenChange(false);
     } catch (error) {
       if (error instanceof ApiClientError) {
@@ -159,7 +183,42 @@ export function RestaurantMasterEditDialog({
                 </p>
               </div>
 
-              <Switch checked={active} onCheckedChange={setActive} />
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div className="space-y-1">
+                  <label
+                    htmlFor="edit-restaurant-master-active"
+                    className="text-sm font-medium"
+                  >
+                    有効
+                  </label>
+
+                  <p className="text-xs text-muted-foreground">
+                    無効にすると、予約登録時の席候補として使用できなくなります。
+                  </p>
+                </div>
+
+                <Switch
+                  id="edit-restaurant-master-active"
+                  checked={active}
+                  disabled={isSubmitting}
+                  onCheckedChange={setActive}
+                />
+
+                <ConfirmRestaurantMasterSaveDialog
+                  open={confirmOpen}
+                  restaurantMaster={restaurantMaster}
+                  pendingValues={pendingValues}
+                  isSubmitting={isSubmitting}
+                  onOpenChange={(nextOpen) => {
+                    setConfirmOpen(nextOpen);
+
+                    if (!nextOpen) {
+                      setPendingValues(null);
+                    }
+                  }}
+                  onConfirm={handleConfirmSubmit}
+                />
+              </div>
             </div>
 
             <div className="grid gap-2">
