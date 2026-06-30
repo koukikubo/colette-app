@@ -79,3 +79,11 @@ export type UpdateRestaurantMasterAttributes = {
 export type UpdateRestaurantMasterRequest = {
   restaurant_master: UpdateRestaurantMasterAttributes;
 };
+
+// 更新用
+export type PendingRestaurantMasterValues = {
+  name: string;
+  capacity: number;
+  active: boolean;
+  memo: string | null;
+};
