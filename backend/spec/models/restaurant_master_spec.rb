@@ -1,10 +1,10 @@
 require "rails_helper"
 
-RSpec.describe RestaurantTable, type: :model do
-  let(:restaurant_table_type_master) do
+RSpec.describe RestaurantMaster, type: :model do
+  let(:restaurant_master_type_master) do
     create(
       :standard_master,
-      system_key: "restaurant_table_type",
+      system_key: "restaurant_master_type",
       name: "予約席種",
       active: true
     )
@@ -13,7 +13,7 @@ RSpec.describe RestaurantTable, type: :model do
   let(:table_type) do
     create(
       :standard_list_master,
-      standard_master: restaurant_table_type_master,
+      standard_master: restaurant_master_type_master,
       code: "T",
       label: "テーブル席",
       active: true
@@ -24,11 +24,11 @@ RSpec.describe RestaurantTable, type: :model do
     create(:staff)
   end
 
-  def build_restaurant_table(attributes = {})
+  def build_restaurant_master(attributes = {})
     build(
-      :restaurant_table,
+      :restaurant_master,
       {
-        restaurant_table_type: table_type,
+        restaurant_master_type: table_type,
         created_by_staff: staff,
         updated_by_staff: staff
       }.merge(attributes)
@@ -37,90 +37,90 @@ RSpec.describe RestaurantTable, type: :model do
 
   describe "バリデーション" do
     it "有効な属性の場合は登録できる" do
-      restaurant_table = build_restaurant_table
+      restaurant_master = build_restaurant_master
 
-      expect(restaurant_table).to be_valid
+      expect(restaurant_master).to be_valid
     end
 
     it "席名がない場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(name: nil)
+      restaurant_master =
+        build_restaurant_master(name: nil)
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:name]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:name]).to be_present
     end
 
     it "席名が空白の場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(name: "   ")
+      restaurant_master =
+        build_restaurant_master(name: "   ")
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:name]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:name]).to be_present
     end
 
     it "定員がない場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(capacity: nil)
+      restaurant_master =
+        build_restaurant_master(capacity: nil)
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:capacity]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:capacity]).to be_present
     end
 
     it "定員が0の場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(capacity: 0)
+      restaurant_master =
+        build_restaurant_master(capacity: 0)
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:capacity]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:capacity]).to be_present
     end
 
     it "定員が負数の場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(capacity: -1)
+      restaurant_master =
+        build_restaurant_master(capacity: -1)
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:capacity]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:capacity]).to be_present
     end
 
     it "表示順が負数の場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(position: -1)
+      restaurant_master =
+        build_restaurant_master(position: -1)
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:position]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:position]).to be_present
     end
 
     it "連番が0の場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(sequence_number: 0)
+      restaurant_master =
+        build_restaurant_master(sequence_number: 0)
 
-      expect(restaurant_table).not_to be_valid
+      expect(restaurant_master).not_to be_valid
 
       expect(
-        restaurant_table.errors[:sequence_number]
+        restaurant_master.errors[:sequence_number]
       ).to be_present
     end
 
     it "席コードがない場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(code: nil)
+      restaurant_master =
+        build_restaurant_master(code: nil)
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:code]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:code]).to be_present
     end
 
     it "席コードが不正な形式の場合は無効である" do
-      restaurant_table =
-        build_restaurant_table(code: "table-01")
+      restaurant_master =
+        build_restaurant_master(code: "table-01")
 
-      expect(restaurant_table).not_to be_valid
-      expect(restaurant_table.errors[:code]).to be_present
+      expect(restaurant_master).not_to be_valid
+      expect(restaurant_master.errors[:code]).to be_present
     end
 
     it "席コードが重複する場合は無効である" do
       create(
-        :restaurant_table,
-        restaurant_table_type: table_type,
+        :restaurant_master,
+        restaurant_master_type: table_type,
         created_by_staff: staff,
         updated_by_staff: staff,
         code: "T01",
@@ -128,7 +128,7 @@ RSpec.describe RestaurantTable, type: :model do
       )
 
       duplicated_table =
-        build_restaurant_table(
+        build_restaurant_master(
           code: "T01",
           sequence_number: 2
         )
@@ -139,8 +139,8 @@ RSpec.describe RestaurantTable, type: :model do
 
     it "同じ席種内で連番が重複する場合は無効である" do
       create(
-        :restaurant_table,
-        restaurant_table_type: table_type,
+        :restaurant_master,
+        restaurant_master_type: table_type,
         created_by_staff: staff,
         updated_by_staff: staff,
         code: "T01",
@@ -148,7 +148,7 @@ RSpec.describe RestaurantTable, type: :model do
       )
 
       duplicated_table =
-        build_restaurant_table(
+        build_restaurant_master(
           code: "T02",
           sequence_number: 1
         )
@@ -165,15 +165,15 @@ RSpec.describe RestaurantTable, type: :model do
         create(
           :standard_list_master,
           standard_master:
-            restaurant_table_type_master,
+            restaurant_master_type_master,
           code: "C",
           label: "カウンター席",
           active: true
         )
 
       create(
-        :restaurant_table,
-        restaurant_table_type: table_type,
+        :restaurant_master,
+        restaurant_master_type: table_type,
         created_by_staff: staff,
         updated_by_staff: staff,
         code: "T01",
@@ -181,8 +181,8 @@ RSpec.describe RestaurantTable, type: :model do
       )
 
       counter_table =
-        build_restaurant_table(
-          restaurant_table_type: counter_type,
+        build_restaurant_master(
+          restaurant_master_type: counter_type,
           code: "C01",
           sequence_number: 1
         )
@@ -196,8 +196,8 @@ RSpec.describe RestaurantTable, type: :model do
       it "有効な席だけを取得する" do
         active_table =
           create(
-            :restaurant_table,
-            restaurant_table_type: table_type,
+            :restaurant_master,
+            restaurant_master_type: table_type,
             created_by_staff: staff,
             updated_by_staff: staff,
             active: true
@@ -205,8 +205,8 @@ RSpec.describe RestaurantTable, type: :model do
 
         inactive_table =
           create(
-            :restaurant_table,
-            restaurant_table_type: table_type,
+            :restaurant_master,
+            restaurant_master_type: table_type,
             created_by_staff: staff,
             updated_by_staff: staff,
             active: false
@@ -224,8 +224,8 @@ RSpec.describe RestaurantTable, type: :model do
       it "表示順とIDの順で取得する" do
         third_table =
           create(
-            :restaurant_table,
-            restaurant_table_type: table_type,
+            :restaurant_master,
+            restaurant_master_type: table_type,
             created_by_staff: staff,
             updated_by_staff: staff,
             position: 30
@@ -233,8 +233,8 @@ RSpec.describe RestaurantTable, type: :model do
 
         first_table =
           create(
-            :restaurant_table,
-            restaurant_table_type: table_type,
+            :restaurant_master,
+            restaurant_master_type: table_type,
             created_by_staff: staff,
             updated_by_staff: staff,
             position: 10
@@ -242,8 +242,8 @@ RSpec.describe RestaurantTable, type: :model do
 
         second_table =
           create(
-            :restaurant_table,
-            restaurant_table_type: table_type,
+            :restaurant_master,
+            restaurant_master_type: table_type,
             created_by_staff: staff,
             updated_by_staff: staff,
             position: 20

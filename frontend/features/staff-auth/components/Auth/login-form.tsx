@@ -22,21 +22,15 @@ import {
 } from "../../../../components/ui/select";
 import { Input } from "../../../../components/ui/input";
 import { useAuth } from "../../hooks/use-auth";
-
-type StaffOption = {
-  id: number;
-  name: string;
-};
+import { StaffOption } from "./types";
 
 type LoginFormProps = React.ComponentProps<"div"> & {
-  staffOptions?: StaffOption[];
+  staffOptions: StaffOption[];
 };
-
-const temporaryStaffOptions: StaffOption[] = [{ id: 1, name: "オーナー" }];
 
 export function LoginForm({
   className,
-  staffOptions = temporaryStaffOptions,
+  staffOptions,
   ...props
 }: LoginFormProps) {
   const router = useRouter();
@@ -105,7 +99,7 @@ export function LoginForm({
             <Select
               value={staffId}
               onValueChange={setStaffId}
-              disabled={isSubmitting}
+              disabled={isSubmitting || staffOptions.length === 0}
             >
               <SelectTrigger id="staff-id" className="w-full">
                 <SelectValue placeholder="担当者を選択してください" />
@@ -113,6 +107,7 @@ export function LoginForm({
               <SelectContent>
                 {staffOptions.map((staff) => (
                   <SelectItem key={staff.id} value={String(staff.id)}>
+                    {staff.code}
                     {staff.name}
                   </SelectItem>
                 ))}

@@ -1,17 +1,58 @@
 # frozen_string_literal: true
 
-owner_master = StaffMaster.find_or_create_by!(code: "STF001") do |master|
-  master.name = "オーナー"
-  master.role_code = "owner"
-  master.employment_started_on = Date.current
-  master.memo = "初期オーナーアカウント"
+default_password =
+  ENV.fetch("SEED_STAFF_PASSWORD", "password")
+
+staff_definitions = [
+  {
+    code: "00001",
+    name: "店主",
+    role_code: "owner",
+    memo: "初期店主アカウント"
+  },
+  {
+    code: "00002",
+    name: "登録担当",
+    role_code: "operator",
+    memo: "照会・登録を行う初期担当者"
+  },
+  {
+    code: "00003",
+    name: "照会担当",
+    role_code: "viewer",
+    memo: "照会のみを行う初期担当者"
+  }
+].freeze
+
+StaffMaster.transaction do
+  staff_definitions.each do |attributes|
+    staff_master =
+      StaffMaster.find_or_initialize_by(
+        code: attributes.fetch(:code)
+      )
+
+    staff_master.assign_attributes(
+      name: attributes.fetch(:name),
+      role_code: attributes.fetch(:role_code),
+      employment_started_on: Date.current,
+      retired_on: nil,
+      memo: attributes.fetch(:memo)
+    )
+
+    staff_master.save!
+
+    staff =
+      Staff.find_or_initialize_by(
+        staff_master: staff_master
+      )
+
+    staff.assign_attributes(
+      password: default_password,
+      password_confirmation: default_password,
+      login_enabled: true,
+      failed_attempts: 0
+    )
+
+    staff.save!
+  end
 end
-
-owner_staff = Staff.find_or_initialize_by(staff_master: owner_master)
-
-owner_staff.password = "password"
-owner_staff.password_confirmation = "password"
-owner_staff.login_enabled = true
-owner_staff.failed_attempts = 0
-
-owner_staff.save!

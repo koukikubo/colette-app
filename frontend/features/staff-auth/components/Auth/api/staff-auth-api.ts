@@ -4,6 +4,7 @@ import type {
   LoginStaffRequest,
   LogoutResponse,
   StaffAuthResponse,
+  StaffLoginOptionsResponse,
 } from "../types";
 
 type CsrfResponse = {
@@ -50,4 +51,9 @@ export function fetchCurrentStaff() {
   return apiFetch<StaffAuthResponse>("/api/v1/staff/current", {
     method: "GET",
   });
+}
+
+// ログイン画面に表示する担当者候補を取得する
+export function fetchStaffLoginOptions() {
+  return apiFetch<StaffLoginOptionsResponse>("/api/v1/staff/login_options");
 }

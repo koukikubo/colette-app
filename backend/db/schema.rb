@@ -48,7 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_032939) do
     t.index ["updated_by_staff_id"], name: "index_customers_on_updated_by_staff_id"
   end
 
-  create_table "restaurant_tables", force: :cascade do |t|
+  create_table "restaurant_masters", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.integer "capacity", null: false
     t.string "code", limit: 20, null: false
@@ -58,19 +58,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_032939) do
     t.text "memo"
     t.string "name", limit: 100, null: false
     t.integer "position", default: 0, null: false
-    t.bigint "restaurant_table_type_id", null: false
+    t.bigint "restaurant_master_type_id", null: false
     t.integer "sequence_number", null: false
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
-    t.index ["code"], name: "index_restaurant_tables_on_code", unique: true
-    t.index ["created_by_staff_id"], name: "index_restaurant_tables_on_created_by_staff_id"
-    t.index ["restaurant_table_type_id", "sequence_number"], name: "idx_restaurant_tables_type_and_sequence", unique: true
-    t.index ["updated_by_staff_id"], name: "index_restaurant_tables_on_updated_by_staff_id"
-    t.check_constraint "\"position\" >= 0", name: "check_restaurant_tables_position_non_negative"
-    t.check_constraint "capacity > 0", name: "check_restaurant_tables_capacity_positive"
-    t.check_constraint "char_length(btrim(code::text)) > 0", name: "check_restaurant_tables_code_not_blank"
-    t.check_constraint "char_length(btrim(name::text)) > 0", name: "check_restaurant_tables_name_not_blank"
-    t.check_constraint "sequence_number > 0", name: "check_restaurant_tables_sequence_positive"
+    t.index ["code"], name: "index_restaurant_masters_on_code", unique: true
+    t.index ["created_by_staff_id"], name: "index_restaurant_masters_on_created_by_staff_id"
+    t.index ["restaurant_master_type_id", "sequence_number"], name: "idx_restaurant_masters_type_and_sequence", unique: true
+    t.index ["updated_by_staff_id"], name: "index_restaurant_masters_on_updated_by_staff_id"
+    t.check_constraint "\"position\" >= 0", name: "check_restaurant_masters_position_non_negative"
+    t.check_constraint "capacity > 0", name: "check_restaurant_masters_capacity_positive"
+    t.check_constraint "char_length(btrim(code::text)) > 0", name: "check_restaurant_masters_code_not_blank"
+    t.check_constraint "char_length(btrim(name::text)) > 0", name: "check_restaurant_masters_name_not_blank"
+    t.check_constraint "sequence_number > 0", name: "check_restaurant_masters_sequence_positive"
   end
 
   create_table "staff_masters", force: :cascade do |t|
@@ -132,9 +132,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_032939) do
 
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
-  add_foreign_key "restaurant_tables", "staffs", column: "created_by_staff_id"
-  add_foreign_key "restaurant_tables", "staffs", column: "updated_by_staff_id"
-  add_foreign_key "restaurant_tables", "standard_list_masters", column: "restaurant_table_type_id"
+  add_foreign_key "restaurant_masters", "staffs", column: "created_by_staff_id"
+  add_foreign_key "restaurant_masters", "staffs", column: "updated_by_staff_id"
+  add_foreign_key "restaurant_masters", "standard_list_masters", column: "restaurant_master_type_id"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
 end

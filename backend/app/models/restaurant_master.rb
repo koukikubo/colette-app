@@ -1,23 +1,23 @@
-class RestaurantTable < ApplicationRecord
+class RestaurantMaster < ApplicationRecord
   CODE_FORMAT = /\A[A-Z]+\d{2,}\z/
 
-  belongs_to :restaurant_table_type,
+  belongs_to :restaurant_master_type,
               class_name: "StandardListMaster",
-              foreign_key: :restaurant_table_type_id,
-              inverse_of: :restaurant_tables
+              foreign_key: :restaurant_master_type_id,
+              inverse_of: :restaurant_masters
 
   belongs_to :created_by_staff,
               class_name: "Staff",
               foreign_key: :created_by_staff_id,
-              inverse_of: :created_restaurant_tables
+              inverse_of: :created_restaurant_masters
 
   belongs_to :updated_by_staff,
               class_name: "Staff",
               foreign_key: :updated_by_staff_id,
-              inverse_of: :updated_restaurant_tables
+              inverse_of: :updated_restaurant_masters
 
   # 登録後は変更不可
-  attr_readonly :restaurant_table_type_id,
+  attr_readonly :restaurant_master_type_id,
                 :sequence_number,
                 :code
 
@@ -38,7 +38,7 @@ class RestaurantTable < ApplicationRecord
               greater_than: 0
             },
             uniqueness: {
-              scope: :restaurant_table_type_id
+              scope: :restaurant_master_type_id
             }
 
   validates :name,
@@ -65,8 +65,14 @@ class RestaurantTable < ApplicationRecord
   before_validation :normalize_editable_attributes
 
   scope :active, -> { where(active: true) }
-  scope :ordered, -> { order(:position, :id) }
-
+  scope :ordered, lambda {
+    joins(:restaurant_master_type)
+      .order(
+        "standard_list_masters.code ASC",
+        sequence_number: :asc
+      )
+  }
+  
   private
 
   def normalize_editable_attributes

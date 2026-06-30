@@ -1,10 +1,10 @@
 class StandardListMaster < ApplicationRecord
   belongs_to :standard_master
 
-  has_many :restaurant_tables,
-            class_name: "RestaurantTable",
-            foreign_key: :restaurant_table_type_id,
-            inverse_of: :restaurant_table_type,
+  has_many :restaurant_masters,
+            class_name: "RestaurantMaster",
+            foreign_key: :restaurant_master_type_id,
+            inverse_of: :restaurant_master_type,
             dependent: :restrict_with_error
             
   # バリデーション（入力チェック）
