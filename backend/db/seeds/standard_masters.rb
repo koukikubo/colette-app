@@ -51,8 +51,37 @@ standard_master_seeds = [
         position: 2
       }
     ]
+  },
+  {
+    system_key: "reservation_status",
+    name: "予約状態",
+    description: "予約の進行状態を管理する",
+    position: 3,
+    items: [
+      {
+        code: "confirmed",
+        label: "予約確定",
+        position: 1
+      },
+      {
+        code: "seated",
+        label: "来店済み",
+        position: 2
+      },
+      {
+        code: "completed",
+        label: "対応完了",
+        position: 3
+      },
+      {
+        code: "canceled",
+        label: "取消",
+        position: 4
+      }
+    ]
   }
 ]
+
 
 standard_master_seeds.each do |master_seed|
   standard_master =
