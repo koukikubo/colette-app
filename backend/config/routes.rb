@@ -39,7 +39,9 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :restaurant_masters, only: %i[index show create update] do
+      resources :restaurant_masters, only: %i[index show create update]
+
+      resources :reservations, only: %i[index show create update] do
         
       end
     end
