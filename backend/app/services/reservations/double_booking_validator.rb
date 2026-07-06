@@ -1,0 +1,79 @@
+module Reservations
+  class DoubleBookingValidator
+    # reservation: Reservationオブジェクト
+    def self.call(reservation:, restaurant_master_ids:)
+      new(
+        reservation: reservation,
+        restaurant_master_ids: restaurant_master_ids
+      ).call
+    end
+    # restaurant_master_idsから来た値を整理するために、initializeで配列化・空白除去・整数化・重複除去を行う
+    def initialize(reservation:, restaurant_master_ids:)
+      @reservation = reservation
+      @restaurant_master_ids =
+        Array(restaurant_master_ids)
+          .reject(&:blank?)
+          .map(&:to_i)
+          .uniq
+    end
+
+    def call
+      # restaurant_master_idsが空の場合はバリデーションをスキップ
+      return if restaurant_master_ids.blank?
+
+      validate_restaurant_masters_exist!
+      validate_restaurant_masters_active!
+      validate_no_double_booking!
+    end
+
+    private
+
+    attr_reader :reservation, :restaurant_master_ids
+    # restaurant_master_idsに存在しないIDが含まれていないかを検証する
+    def validate_restaurant_masters_exist!
+      found_count =
+        RestaurantMaster
+          .where(id: restaurant_master_ids)
+          .count
+
+      return if found_count == restaurant_master_ids.size
+
+      raise ActiveRecord::RecordNotFound,
+            "存在しない予約席が含まれています"
+    end
+    # restaurant_master_idsに無効な席が含まれていないかを検証する
+    def validate_restaurant_masters_active!
+      inactive_exists =
+        RestaurantMaster
+          .where(id: restaurant_master_ids)
+          .where(active: false)
+          .exists?
+
+      return unless inactive_exists
+
+      raise ActiveRecord::RecordInvalid,
+            Reservation.new.tap { |r| r.errors.add(:base, "無効な予約席が含まれています") }
+    end
+    # restaurant_master_idsに重複予約がないかを検証する
+    def validate_no_double_booking!
+      duplicated_exists =
+        Reservation
+          .joins(:reservation_tables)
+          .where(reservation_tables: {
+            restaurant_master_id: restaurant_master_ids
+          })
+          .where(canceled_at: nil)
+          .where(
+            "reservations.starts_at < :ends_at AND reservations.ends_at > :starts_at",
+            starts_at: reservation.starts_at,
+            ends_at: reservation.ends_at
+          )
+          .exists?
+
+      return unless duplicated_exists
+
+      raise ActiveRecord::RecordInvalid,
+            Reservation.new.tap { |r| r.errors.add(:base, "指定された席は同じ時間帯に予約済みです") }
+    end
+  end
+end
