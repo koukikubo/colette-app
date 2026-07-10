@@ -1,5 +1,5 @@
 class Reservation < ApplicationRecord
-belongs_to :customer,
+  belongs_to :customer,
             optional: true
 
   belongs_to :requested_restaurant_master_type,
@@ -38,7 +38,7 @@ belongs_to :customer,
 
   validates :reservation_phone_number,
             presence: true,
-            length: { maximum: 20 },
+            length: { maximum: 20 }
 
   validates :starts_at,
             presence: true
@@ -54,10 +54,10 @@ belongs_to :customer,
             }
 
   validate :ends_at_must_be_after_starts_at
-end
 
-# 検索に使用するスコープ
-scope :ordered, -> { order(:starts_at, :id) }
+
+  # 検索に使用するスコープ
+  scope :ordered, -> { order(:starts_at, :id) }
 
   scope :on_date, lambda { |date|
     target_date = date.to_date
@@ -73,14 +73,20 @@ scope :ordered, -> { order(:starts_at, :id) }
   # 予約名または電話番号で検索するスコープ
   scope :search_by_keyword, lambda { |keyword|
     normalized_keyword = keyword.to_s.strip
+    normalized_phone = normalized_keyword.gsub(/[^\d]/, "")
 
     if normalized_keyword.blank?
       all
-    else
+    elsif normalized_phone.present?
       where(
         "reservation_name ILIKE :keyword OR reservation_phone_number LIKE :phone",
         keyword: "%#{sanitize_sql_like(normalized_keyword)}%",
-        phone: "%#{normalized_keyword.gsub(/[^\d]/, '')}%"
+        phone: "%#{normalized_phone}%"
+      )
+    else
+      where(
+        "reservation_name ILIKE :keyword",
+        keyword: "%#{sanitize_sql_like(normalized_keyword)}%"
       )
     end
   }
@@ -93,3 +99,4 @@ scope :ordered, -> { order(:starts_at, :id) }
 
     errors.add(:ends_at, "must be after starts_at")
   end
+end
