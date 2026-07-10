@@ -84,5 +84,11 @@ module Reservations
       reservation.created_by_staff = current_staff
       reservation.updated_by_staff = current_staff
     end
+
+    def assign_restaurant_masters!(reservation:, restaurant_master_ids:)
+      return if restaurant_master_ids.nil?
+
+      reservation.restaurant_master_ids = restaurant_master_ids
+    end
   end
 end
