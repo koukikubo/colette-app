@@ -1,6 +1,7 @@
 class Api::V1::ReservationsController < Api::V1::BaseController
+  before_action :require_staff_login!, only: %i[create update]
   before_action :set_reservation, only: %i[show update]
-
+  
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
   reservation_name
