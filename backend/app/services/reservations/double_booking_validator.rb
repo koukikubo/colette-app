@@ -54,15 +54,13 @@ module Reservations
       raise ActiveRecord::RecordInvalid,
             Reservation.new.tap { |r| r.errors.add(:base, "無効な予約席が含まれています") }
     end
+
     # restaurant_master_idsに重複予約がないかを検証する
     def validate_no_double_booking!
+      return if reservation.starts_at.blank? || reservation.ends_at.blank?
+
       duplicated_exists =
-        Reservation
-          .joins(:reservation_tables)
-          .where(reservation_tables: {
-            restaurant_master_id: restaurant_master_ids
-          })
-          .where(canceled_at: nil)
+        double_booking_scope
           .where(
             "reservations.starts_at < :ends_at AND reservations.ends_at > :starts_at",
             starts_at: reservation.starts_at,
@@ -74,6 +72,22 @@ module Reservations
 
       raise ActiveRecord::RecordInvalid,
             Reservation.new.tap { |r| r.errors.add(:base, "指定された席は同じ時間帯に予約済みです") }
+    end
+    # reservationとrestaurant_master_idsに基づいて、重複予約の可能性があるReservationのスコープを返す
+    def double_booking_scope
+      scope =
+        Reservation
+          .joins(:reservation_tables)
+          .where(
+            reservation_tables: {
+              restaurant_master_id: restaurant_master_ids
+            }
+          )
+          .where(canceled_at: nil)
+      # reservationが新規作成の場合は、全ての既存予約を対象とする
+      return scope if reservation.new_record?
+      # reservationが既存の予約の場合は、自身を除外する
+      scope.where.not(reservations: { id: reservation.id })
     end
   end
 end
