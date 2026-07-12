@@ -212,7 +212,7 @@ RSpec.describe "Api::V1::RestaurantMasters", type: :request do
         .to eq(3)
     end
 
-    it "positionとIDの昇順で取得する" do
+    it "席種コードと連番の昇順で取得する" do
       get "/api/v1/restaurant_masters"
 
       ids =
@@ -222,11 +222,12 @@ RSpec.describe "Api::V1::RestaurantMasters", type: :request do
             restaurant_master["id"]
           }
 
+      
       expect(ids).to eq(
         [
+          third_table.id,
           first_table.id,
-          second_table.id,
-          third_table.id
+          second_table.id
         ]
       )
     end
@@ -758,9 +759,6 @@ RSpec.describe "Api::V1::RestaurantMasters", type: :request do
 
       expect(restaurant_master.active)
         .to be(false)
-
-      expect(restaurant_master.position)
-        .to eq(20)
 
       expect(restaurant_master.memo)
         .to eq("更新しました")

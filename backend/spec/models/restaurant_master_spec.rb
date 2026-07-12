@@ -221,7 +221,7 @@ RSpec.describe RestaurantMaster, type: :model do
     end
 
     describe ".ordered" do
-      it "表示順とIDの順で取得する" do
+      it "席種コードと連番で取得する" do
         third_table =
           create(
             :restaurant_master,
@@ -248,12 +248,14 @@ RSpec.describe RestaurantMaster, type: :model do
             updated_by_staff: staff,
             position: 20
           )
+        # 期待値はposition順ではなく、sequence_number順
+        ids = described_class.ordered.map(&:id)
 
-        expect(described_class.ordered).to eq(
+        expect(ids).to eq(
           [
-            first_table,
-            second_table,
-            third_table
+            third_table.id,
+            first_table.id,
+            second_table.id
           ]
         )
       end

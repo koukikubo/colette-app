@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_032939) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_07_234327) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,6 +46,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_032939) do
     t.index ["name"], name: "index_customers_on_name"
     t.index ["phone_number"], name: "index_customers_on_phone_number"
     t.index ["updated_by_staff_id"], name: "index_customers_on_updated_by_staff_id"
+  end
+
+  create_table "reservation_tables", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "reservation_id", null: false
+    t.bigint "restaurant_master_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reservation_id", "restaurant_master_id"], name: "idx_reservation_tables_unique_assignment", unique: true
+    t.index ["reservation_id"], name: "index_reservation_tables_on_reservation_id"
+    t.index ["restaurant_master_id"], name: "index_reservation_tables_on_restaurant_master_id"
+  end
+
+  create_table "reservations", force: :cascade do |t|
+    t.text "allergy_note"
+    t.datetime "canceled_at"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_staff_id", null: false
+    t.bigint "customer_id"
+    t.datetime "details_confirmed_at"
+    t.text "disliked_food_note"
+    t.datetime "ends_at", null: false
+    t.text "favorite_drink_note"
+    t.integer "guest_count", null: false
+    t.text "internal_memo"
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "menu_type_id"
+    t.bigint "occasion_id"
+    t.text "preferred_food_note"
+    t.text "request_note"
+    t.bigint "requested_restaurant_master_type_id", null: false
+    t.string "reservation_name", limit: 50, null: false
+    t.string "reservation_phone_number", limit: 20, null: false
+    t.bigint "reservation_route_id"
+    t.bigint "reservation_status_id", null: false
+    t.datetime "starts_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_staff_id", null: false
+    t.index ["canceled_at"], name: "index_reservations_on_canceled_at"
+    t.index ["created_by_staff_id"], name: "index_reservations_on_created_by_staff_id"
+    t.index ["customer_id"], name: "index_reservations_on_customer_id"
+    t.index ["menu_type_id"], name: "index_reservations_on_menu_type_id"
+    t.index ["occasion_id"], name: "index_reservations_on_occasion_id"
+    t.index ["requested_restaurant_master_type_id"], name: "idx_reservations_on_requested_table_type_id"
+    t.index ["reservation_route_id"], name: "index_reservations_on_reservation_route_id"
+    t.index ["reservation_status_id"], name: "index_reservations_on_reservation_status_id"
+    t.index ["starts_at"], name: "index_reservations_on_starts_at"
+    t.index ["updated_by_staff_id"], name: "index_reservations_on_updated_by_staff_id"
+    t.check_constraint "char_length(btrim(reservation_name::text)) > 0", name: "check_reservations_name_not_blank"
+    t.check_constraint "char_length(btrim(reservation_phone_number::text)) > 0", name: "check_reservations_phone_not_blank"
+    t.check_constraint "ends_at > starts_at", name: "check_reservations_ends_at_after_starts_at"
+    t.check_constraint "guest_count > 0", name: "check_reservations_guest_count_positive"
+    t.check_constraint "lock_version >= 0", name: "check_reservations_lock_version_non_negative"
   end
 
   create_table "restaurant_masters", force: :cascade do |t|
@@ -132,6 +184,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_032939) do
 
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
+  add_foreign_key "reservation_tables", "reservations"
+  add_foreign_key "reservation_tables", "restaurant_masters"
+  add_foreign_key "reservations", "customers"
+  add_foreign_key "reservations", "staffs", column: "created_by_staff_id"
+  add_foreign_key "reservations", "staffs", column: "updated_by_staff_id"
+  add_foreign_key "reservations", "standard_list_masters", column: "menu_type_id"
+  add_foreign_key "reservations", "standard_list_masters", column: "occasion_id"
+  add_foreign_key "reservations", "standard_list_masters", column: "requested_restaurant_master_type_id"
+  add_foreign_key "reservations", "standard_list_masters", column: "reservation_route_id"
+  add_foreign_key "reservations", "standard_list_masters", column: "reservation_status_id"
   add_foreign_key "restaurant_masters", "staffs", column: "created_by_staff_id"
   add_foreign_key "restaurant_masters", "staffs", column: "updated_by_staff_id"
   add_foreign_key "restaurant_masters", "standard_list_masters", column: "restaurant_master_type_id"
