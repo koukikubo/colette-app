@@ -414,6 +414,207 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/reservations/:id/cancel" do
+    let!(:reservation) do
+      create(
+        :reservation,
+        reservation_name: "キャンセル対象",
+        reservation_phone_number: "09011112222",
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        requested_restaurant_master_type: table_type,
+        reservation_status: confirmed_status,
+        created_by_staff: staff,
+        updated_by_staff: staff,
+        canceled_at: nil
+      )
+    end
+
+    it "予約をキャンセルできる" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/cancel",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      reservation.reload
+
+      expect(reservation.canceled_at).to be_present
+      expect(reservation.updated_by_staff).to eq(staff)
+    end
+
+    it "キャンセル済み予約は再度キャンセルできない" do
+      reservation.update!(
+        canceled_at: Time.current
+      )
+
+      original_canceled_at = reservation.canceled_at
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/cancel",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(reservation.reload.canceled_at).to eq(original_canceled_at)
+    end
+
+    it "lock_versionがない場合はキャンセルできない" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/cancel",
+        params: {
+          reservation: {}
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(reservation.reload.canceled_at).to be_nil
+    end
+
+    it "存在しない予約の場合は404を返す" do
+      patch(
+        "/api/v1/reservations/999999999/cancel",
+        params: {
+          reservation: {
+            lock_version: 0
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+  
+  describe "PATCH /api/v1/reservations/:id/restore" do
+    let!(:reservation) do
+      create(
+        :reservation,
+        :canceled,
+        reservation_name: "復元対象",
+        reservation_phone_number: "09011112222",
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        requested_restaurant_master_type: table_type,
+        reservation_status: canceled_status,
+        created_by_staff: staff,
+        updated_by_staff: staff
+      )
+    end
+
+    before do
+      reservation.restaurant_masters << restaurant_master
+    end
+
+    it "キャンセル済み予約を復元できる" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/restore",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      reservation.reload
+
+      expect(reservation.canceled_at).to be_nil
+      expect(reservation.updated_by_staff).to eq(staff)
+    end
+
+    it "キャンセルされていない予約は復元できない" do
+      reservation.update!(
+        canceled_at: nil,
+        reservation_status: confirmed_status
+      )
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/restore",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "復元時に二重予約となる場合は復元できない" do
+      conflicting_reservation =
+        create(
+          :reservation,
+          reservation_name: "競合予約",
+          reservation_phone_number: "09099998888",
+          starts_at: reservation.starts_at,
+          ends_at: reservation.ends_at,
+          requested_restaurant_master_type: table_type,
+          reservation_status: confirmed_status,
+          created_by_staff: staff,
+          updated_by_staff: staff,
+          canceled_at: nil
+        )
+
+      conflicting_reservation.restaurant_masters << restaurant_master
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/restore",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(reservation.reload.canceled_at).to be_present
+    end
+
+    it "lock_versionがない場合は復元できない" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/restore",
+        params: {
+          reservation: {}
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(reservation.reload.canceled_at).to be_present
+    end
+
+    it "存在しない予約の場合は404を返す" do
+      patch(
+        "/api/v1/reservations/999999999/restore",
+        params: {
+          reservation: {
+            lock_version: 0
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   def login_as_staff(staff)
     post "/api/v1/staff/login", params: {
       staff: {

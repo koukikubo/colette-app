@@ -1,6 +1,6 @@
 class Api::V1::ReservationsController < Api::V1::BaseController
-  before_action :require_staff_login!, only: %i[create update]
-  before_action :set_reservation, only: %i[show update]
+  before_action :require_staff_login!, only: %i[create update cancel restore]
+  before_action :set_reservation, only: %i[show update cancel restore]
   
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
@@ -76,6 +76,52 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     render_reservation(reservation)
   end
 
+  def cancel
+    @reservation.lock_version = required_lock_version
+
+    if @reservation.canceled_at.present?
+      return render_error(
+        message: "この予約はすでにキャンセル済みです。",
+        status: :unprocessable_content
+      )
+    end
+
+    @reservation.canceled_at = Time.current
+    @reservation.updated_by_staff = current_staff
+
+    if @reservation.save
+      render_reservation(@reservation)
+    else
+      render_validation_error(@reservation)
+    end
+  end
+
+  def restore
+    @reservation.lock_version = required_lock_version
+
+    if @reservation.canceled_at.nil?
+      return render_error(
+        message: "キャンセルされた予約はキャンセルされてません。",
+        status: :unprocessable_content
+      )
+    end
+
+    @reservation.canceled_at = nil
+    @reservation.updated_by_staff = current_staff
+
+    # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
+    Reservations::DoubleBookingValidator.call(
+      reservation: @reservation,
+      restaurant_master_ids: @reservation.restaurant_master_ids
+    )
+
+    if @reservation.save
+      render_reservation(@reservation)
+    else
+      render_validation_error(@reservation)
+    end
+  end
+
   private
 
   def set_reservation
@@ -134,10 +180,16 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   def render_reservation(reservation, status: :ok)
     render_success(
       data: {
-        reservation: Api::V1::ReservationSerializer.new(reservation).as_json
+        reservation: Api::V1::ReservationSerializer
+        .new(reservation)
+        .as_json
       },
       status: status
     )
+  end
+
+  def required_lock_version
+    params.require(:reservation).require(:lock_version)
   end
 
 end
