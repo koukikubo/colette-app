@@ -42,7 +42,10 @@ Rails.application.routes.draw do
       resources :restaurant_masters, only: %i[index show create update]
 
       resources :reservations, only: %i[index show create update] do
-        
+        member do
+          patch :cancel
+          patch :restore
+        end
       end
     end
   end
