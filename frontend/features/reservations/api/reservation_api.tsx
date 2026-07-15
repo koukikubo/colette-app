@@ -3,9 +3,7 @@ import { ReservationListParams, ReservationListResponse } from "../type";
 
 const RESERVATIONS_PATH = "/api/v1/reservations";
 
-/**
- * 予約一覧APIのURLを生成する。
- */
+// 予約一覧APIのURLを生成する。
 function buildReservationsPath(params: ReservationListParams = {}): string {
   const searchParams = new URLSearchParams();
 
@@ -20,9 +18,7 @@ function buildReservationsPath(params: ReservationListParams = {}): string {
     : RESERVATIONS_PATH;
 }
 
-/**
- * 指定日の予約一覧を取得する。
- */
+// 指定日の予約一覧を取得する。
 export function fetchReservations(
   params: ReservationListParams = {},
   signal?: AbortSignal,
