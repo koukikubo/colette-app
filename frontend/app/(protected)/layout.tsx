@@ -10,13 +10,9 @@ import { useEffect } from "react";
 
 type ReservationsLayoutProps = {
   children: React.ReactNode;
-  modal: React.ReactNode;
 };
 
-export default function ProtectedLayout({
-  children,
-  modal,
-}: ReservationsLayoutProps) {
+export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
   const router = useRouter();
   const { status } = useAuth();
 
@@ -58,7 +54,6 @@ export default function ProtectedLayout({
         <SidebarInset>
           <SiteHeader />
           {children}
-          {modal}
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
