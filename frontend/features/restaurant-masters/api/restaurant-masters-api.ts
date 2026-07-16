@@ -7,11 +7,11 @@ import type {
   UpdateRestaurantMasterRequest,
 } from "../types";
 
-const restaurant_masterS_API_PATH = "/api/v1/restaurant_masters";
+const RESTAURANT_MASTERS_API_API_PATH = "/api/v1/restaurant_masters";
 
 /*席マスタ一覧を取得する*/
 export function fetchRestaurantMasters(signal?: AbortSignal) {
-  return apiFetch<RestaurantMastersResponse>(restaurant_masterS_API_PATH, {
+  return apiFetch<RestaurantMastersResponse>(RESTAURANT_MASTERS_API_API_PATH, {
     method: "GET",
     cache: "no-store",
     signal,
@@ -23,7 +23,7 @@ export function fetchRestaurantMaster(id: number | string) {
   const encodedId = encodeURIComponent(String(id));
 
   return apiFetch<RestaurantMasterResponse>(
-    `${restaurant_masterS_API_PATH}/${encodedId}`,
+    `${RESTAURANT_MASTERS_API_API_PATH}/${encodedId}`,
     {
       method: "GET",
     },
@@ -32,7 +32,7 @@ export function fetchRestaurantMaster(id: number | string) {
 
 /*席マスタを登録する*/
 export function createRestaurantMaster(payload: CreateRestaurantMasterRequest) {
-  return apiFetch<RestaurantMasterResponse>(restaurant_masterS_API_PATH, {
+  return apiFetch<RestaurantMasterResponse>(RESTAURANT_MASTERS_API_API_PATH, {
     method: "POST",
     body: payload,
   });
@@ -46,7 +46,7 @@ export function updateRestaurantMaster(
   const encodedId = encodeURIComponent(String(id));
 
   return apiFetch<RestaurantMasterResponse>(
-    `${restaurant_masterS_API_PATH}/${encodedId}`,
+    `${RESTAURANT_MASTERS_API_API_PATH}/${encodedId}`,
     {
       method: "PATCH",
       body: payload,
