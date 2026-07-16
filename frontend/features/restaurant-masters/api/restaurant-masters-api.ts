@@ -10,9 +10,11 @@ import type {
 const restaurant_masterS_API_PATH = "/api/v1/restaurant_masters";
 
 /*席マスタ一覧を取得する*/
-export function fetchRestaurantMasters() {
+export function fetchRestaurantMasters(signal?: AbortSignal) {
   return apiFetch<RestaurantMastersResponse>(restaurant_masterS_API_PATH, {
     method: "GET",
+    cache: "no-store",
+    signal,
   });
 }
 
