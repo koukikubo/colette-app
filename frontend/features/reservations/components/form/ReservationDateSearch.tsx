@@ -31,7 +31,7 @@ export function ReservationDateSearch({
       date,
     });
 
-    router.push(`/reservation?${searchParams.toString()}`);
+    router.push(`/reservations?${searchParams.toString()}`);
   };
 
   const moveToPreviousDay = () => {
