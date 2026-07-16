@@ -19,17 +19,15 @@ export default async function ReservationsPage({
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">予約一覧</h1>
+        <Link
+          href="/reservations/new"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium"
+        >
+          新規予約
+        </Link>
       </div>
-      <Link
-        href="/reservations/new"
-        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium"
-      >
-        新規予約
-      </Link>
+
       <div className="space-y-2">
-        <p className="text-muted-foreground mt-1 text-sm">
-          対象日：{targetDate}
-        </p>
         <ReservationDateSearch targetDate={targetDate} />
       </div>
       <ReservationListPage targetDate={targetDate} />
