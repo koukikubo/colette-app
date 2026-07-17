@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ApiClientError } from "@/lib/api/api-client";
 import { Reservation } from "@/features/reservations/type";
 import { fetchReservations } from "@/features/reservations/api/reservation_api";
+import { fetchRestaurantMasters } from "@/features/restaurant-masters/api/restaurant-masters-api";
+import { RestaurantMaster } from "@/features/restaurant-masters/types";
+import {
+  buildReservationTableRows,
+  findUnassignedReservations,
+} from "@/features/reservations/utils/reservation-table-rows";
 
 type ReservationListPageProps = {
   targetDate: string;
@@ -12,25 +18,34 @@ type ReservationListPageProps = {
 
 export function ReservationListPage({ targetDate }: ReservationListPageProps) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [restaurantMasters, setRestaurantMasters] = useState<
+    RestaurantMaster[]
+  >([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    async function loadReservations() {
+    async function loadReservationData() {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const response = await fetchReservations(
-          {
-            date: targetDate,
-          },
-          controller.signal,
-        );
+        const [reservationsResponse, restaurantMastersResponse] =
+          await Promise.all([
+            fetchReservations(
+              {
+                date: targetDate,
+              },
+              controller.signal,
+            ),
+            fetchRestaurantMasters(controller.signal),
+          ]);
 
-        setReservations(response.data.reservations);
+        setReservations(reservationsResponse.data.reservations);
+        setRestaurantMasters(restaurantMastersResponse.data.restaurant_masters);
       } catch (error) {
         if (controller.signal.aborted) {
           return;
@@ -48,17 +63,27 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
       }
     }
 
-    void loadReservations();
+    void loadReservationData();
 
     return () => {
       controller.abort();
     };
   }, [targetDate]);
 
+  const tableRows = useMemo(
+    () => buildReservationTableRows(restaurantMasters, reservations),
+    [restaurantMasters, reservations],
+  );
+
+  const unassignedReservations = useMemo(
+    () => findUnassignedReservations(reservations),
+    [reservations],
+  );
+
   if (isLoading) {
     return (
       <p className="text-muted-foreground text-sm">
-        予約一覧を読み込んでいます...
+        予約状況を読み込んでいます...
       </p>
     );
   }
@@ -74,19 +99,61 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
     );
   }
 
+  return (
+    <div>
+      {tableRows.map((row) => (
+        <section
+          key={row.restaurantMaster.id}
+          className="rounded-lg border p-4 md:grid-cols-[180px_1fr]"
+        >
+          <div>
+            <p className="font-medium">{row.restaurantMaster.name}</p>
+
+            <p className="text-muted-foreground text-sm">
+              {row.restaurantMaster.code}
+              {" / "}
+              定員{row.restaurantMaster.capacity}名
+            </p>
+          </div>
+
+          <ReservationRowContent reservations={row.reservations} />
+        </section>
+      ))}
+
+      {unassignedReservations.length > 0 ? (
+        <section className="grid gap-3 rounded-lg border border-dashed p-4 md:grid-cols-[180px_1fr]">
+          <div>
+            <p className="font-medium">席未割当</p>
+
+            <p className="text-muted-foreground text-sm">実テーブル未確定</p>
+          </div>
+
+          <ReservationRowContent reservations={unassignedReservations} />
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+type ReservationRowContentProps = {
+  reservations: Reservation[];
+};
+
+function ReservationRowContent({ reservations }: ReservationRowContentProps) {
   if (reservations.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        この日の予約はありません。
-      </p>
+      <p className="text-muted-foreground self-center text-sm">予約なし</p>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {reservations.map((reservation) => (
-        <article key={reservation.id} className="rounded-lg border p-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <article
+          key={reservation.id}
+          className="bg-muted/40 rounded-md border p-3"
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="font-medium">{reservation.reservation_name}</p>
 
             <p className="text-muted-foreground text-sm">
@@ -94,19 +161,10 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
             </p>
           </div>
 
-          <p className="text-muted-foreground mt-2 text-sm">
+          <p className="text-muted-foreground mt-1 text-sm">
             {formatReservationTime(reservation.starts_at)}
             {" 〜 "}
             {formatReservationTime(reservation.ends_at)}
-          </p>
-
-          <p className="text-muted-foreground mt-1 text-sm">
-            席：
-            {reservation.restaurant_masters.length > 0
-              ? reservation.restaurant_masters
-                  .map((restaurantMaster) => restaurantMaster.name)
-                  .join("、")
-              : "未割当"}
           </p>
         </article>
       ))}
