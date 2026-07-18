@@ -53,6 +53,21 @@ export function ReservationTimeline({
     timelineEndMinutes,
     TIMELINE_INTERVAL_MINUTES,
   );
+  // 基本コードマスタ順でテーブルを表示するため、席マスタの連番順でソートする。
+  const sortedTableRows = [...tableRows].sort((firstRow, secondRow) => {
+    const typeDifference =
+      firstRow.restaurantMaster.restaurant_master_type_id -
+      secondRow.restaurantMaster.restaurant_master_type_id;
+
+    if (typeDifference !== 0) {
+      return typeDifference;
+    }
+
+    return (
+      firstRow.restaurantMaster.sequence_number -
+      secondRow.restaurantMaster.sequence_number
+    );
+  });
 
   return (
     <div className="overflow-hidden rounded-lg border">
@@ -61,17 +76,16 @@ export function ReservationTimeline({
         <div
           className="min-w-max"
           style={{
-            width: `${totalWidthPx}px`,
+            minWidth: `${totalWidthPx}px`,
           }}
         >
           <TimelineHeader
             hourLabels={hourLabels}
-            timelineWidthPx={timelineWidthPx}
             timelineStartMinutes={timelineStartMinutes}
             timelineEndMinutes={timelineEndMinutes}
           />
 
-          {tableRows.map((row) => (
+          {sortedTableRows.map((row) => (
             <ReservationTimelineRow
               key={row.restaurantMaster.id}
               label={row.restaurantMaster.name}
@@ -116,7 +130,6 @@ export function ReservationTimeline({
 
 type TimelineHeaderProps = {
   hourLabels: number[];
-  timelineWidthPx: number;
   timelineStartMinutes: number;
   timelineEndMinutes: number;
 };
@@ -124,7 +137,6 @@ type TimelineHeaderProps = {
 // タイムライン上部の時間目盛りを表示する。同じ180px幅の空白領域を設ける。
 function TimelineHeader({
   hourLabels,
-  timelineWidthPx,
   timelineStartMinutes,
   timelineEndMinutes,
 }: TimelineHeaderProps) {
@@ -136,12 +148,7 @@ function TimelineHeader({
         <p className="text-sm font-medium">席</p>
       </div>
 
-      <div
-        className="bg-muted/30 relative h-12"
-        style={{
-          width: `${timelineWidthPx}px`,
-        }}
-      >
+      <div className="bg-muted/30 relative h-12 w-full">
         {hourLabels.map((hour, index) => {
           const leftPercentage =
             ((hour - timelineStartMinutes) / durationMinutes) * 100;
