@@ -11,6 +11,7 @@ import {
   buildReservationTableRows,
   findUnassignedReservations,
 } from "@/features/reservations/utils/reservation-table-rows";
+import { ReservationTimeline } from "./ReservationTimeline";
 
 type ReservationListPageProps = {
   targetDate: string;
@@ -101,24 +102,11 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   return (
     <div>
-      {tableRows.map((row) => (
-        <section
-          key={row.restaurantMaster.id}
-          className="rounded-lg border p-4 md:grid-cols-[180px_1fr]"
-        >
-          <div>
-            <p className="font-medium">{row.restaurantMaster.name}</p>
-
-            <p className="text-muted-foreground text-sm">
-              {row.restaurantMaster.code}
-              {" / "}
-              定員{row.restaurantMaster.capacity}名
-            </p>
-          </div>
-
-          <ReservationRowContent reservations={row.reservations} />
-        </section>
-      ))}
+      <ReservationTimeline
+        tableRows={tableRows}
+        unassignedReservations={unassignedReservations}
+        targetDate={targetDate}
+      />
 
       {unassignedReservations.length > 0 ? (
         <section className="grid gap-3 rounded-lg border border-dashed p-4 md:grid-cols-[180px_1fr]">
