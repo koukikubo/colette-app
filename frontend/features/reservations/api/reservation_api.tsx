@@ -1,5 +1,11 @@
 import { apiFetch } from "@/lib/api/api-client";
-import { ReservationListParams, ReservationListResponse } from "../type";
+
+import type {
+  ReservationCreateRequest,
+  ReservationListParams,
+  ReservationListResponse,
+  ReservationResponse,
+} from "../type";
 
 const RESERVATIONS_PATH = "/api/v1/reservations";
 
@@ -26,5 +32,13 @@ export function fetchReservations(
   return apiFetch<ReservationListResponse>(buildReservationsPath(params), {
     cache: "no-store",
     signal,
+  });
+}
+
+// 予約を登録する。
+export function createReservation(payload: ReservationCreateRequest) {
+  return apiFetch<ReservationResponse>(RESERVATIONS_PATH, {
+    method: "POST",
+    body: payload,
   });
 }
