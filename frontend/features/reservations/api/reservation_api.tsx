@@ -1,11 +1,10 @@
 import { apiFetch } from "@/lib/api/api-client";
-
 import type {
   ReservationCreateRequest,
   ReservationListParams,
   ReservationListResponse,
   ReservationResponse,
-} from "../type";
+} from "../types";
 
 const RESERVATIONS_PATH = "/api/v1/reservations";
 
