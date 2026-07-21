@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiClientError } from "@/lib/api/api-client";
-import { Reservation } from "@/features/reservations/type";
+import { Reservation } from "@/features/reservations/types";
 import { fetchReservations } from "@/features/reservations/api/reservation_api";
 import { fetchRestaurantMasters } from "@/features/restaurant-masters/api/restaurant-masters-api";
 import { RestaurantMaster } from "@/features/restaurant-masters/types";

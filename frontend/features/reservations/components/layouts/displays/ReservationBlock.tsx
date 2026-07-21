@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { Reservation } from "@/features/reservations/type";
+import type { Reservation } from "@/features/reservations/types";
 
 type ReservationBlockProps = {
   reservation: Reservation;

@@ -1,4 +1,4 @@
-import type { Reservation } from "@/features/reservations/type";
+import type { Reservation } from "@/features/reservations/types";
 
 import { ReservationBlock } from "./ReservationBlock";
 

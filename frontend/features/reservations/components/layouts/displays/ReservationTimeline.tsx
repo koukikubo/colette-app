@@ -1,4 +1,4 @@
-import type { Reservation } from "@/features/reservations/type";
+import type { Reservation } from "@/features/reservations/types";
 import { ReservationTimelineRow } from "./ReservationTimelineRow";
 import { ReservationTableRow } from "@/features/restaurant-masters/types";
 

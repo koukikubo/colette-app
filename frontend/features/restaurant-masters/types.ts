@@ -1,4 +1,4 @@
-import { Reservation } from "../reservations/type";
+import { Reservation } from "../reservations/types";
 
 // タイムライン用に表示するための型
 export type ReservationTableRow = {

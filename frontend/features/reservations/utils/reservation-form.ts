@@ -2,7 +2,7 @@ import type {
   ReservationAttributes,
   ReservationCreateRequest,
   ReservationFormValues,
-} from "../type";
+} from "../types";
 
 type BuildNewReservationFormValuesParams = {
   targetDate: string;
@@ -39,7 +39,9 @@ export function buildNewReservationFormValues({
 function nullableValue(value: string): string | null {
   const normalizedValue = value.trim();
 
-  return normalizedValue.length > 0 ? normalizedValue : null;
+  return normalizedValue.length > 0
+    ? normalizedValue
+    : null;
 }
 
 function toReservationAttributes(
@@ -52,7 +54,8 @@ function toReservationAttributes(
   return {
     customer_id: values.customer_id,
     reservation_name: values.reservation_name.trim(),
-    reservation_phone_number: values.reservation_phone_number.trim(),
+    reservation_phone_number:
+      values.reservation_phone_number.trim(),
 
     starts_at: values.starts_at,
     ends_at: values.ends_at,
@@ -60,16 +63,22 @@ function toReservationAttributes(
 
     requested_restaurant_master_type_id:
       values.requested_restaurant_master_type_id,
-    restaurant_master_ids: [...values.restaurant_master_ids],
+
+    restaurant_master_ids: [
+      ...values.restaurant_master_ids,
+    ],
 
     reservation_route_id: values.reservation_route_id,
     menu_type_id: values.menu_type_id,
     occasion_id: values.occasion_id,
 
     allergy_note: nullableValue(values.allergy_note),
-    disliked_food_note: nullableValue(values.disliked_food_note),
-    preferred_food_note: nullableValue(values.preferred_food_note),
-    favorite_drink_note: nullableValue(values.favorite_drink_note),
+    disliked_food_note:
+      nullableValue(values.disliked_food_note),
+    preferred_food_note:
+      nullableValue(values.preferred_food_note),
+    favorite_drink_note:
+      nullableValue(values.favorite_drink_note),
     request_note: nullableValue(values.request_note),
     internal_memo: nullableValue(values.internal_memo),
   };
