@@ -1,11 +1,19 @@
-export default function NewReservationPage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold">予約登録</h1>
+"use client";
 
-      <p className="text-muted-foreground mt-2 text-sm">
-        予約登録フォームは次のステップで実装します。
-      </p>
-    </div>
+import { ReservationForm } from "@/features/reservations/components/form/ReservationFormContainer";
+import { ReservationFormValues } from "@/features/reservations/types";
+import { buildNewReservationFormValues } from "@/features/reservations/utils/reservation-form";
+import { useState } from "react";
+
+type ReservationFormContainerProps = {
+  targetDate: string;
+};
+
+export default function NewReservationPage({
+  targetDate,
+}: ReservationFormContainerProps) {
+  const [values, setValues] = useState<ReservationFormValues>(() =>
+    buildNewReservationFormValues({ targetDate }),
   );
+  return <ReservationForm values={values} onChange={setValues} />;
 }
