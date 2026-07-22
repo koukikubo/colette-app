@@ -1,6 +1,8 @@
-import type { ReservationTableRow, RestaurantMaster } from "@/features/restaurant-masters/types";
-import { Reservation } from "../type";
-
+import type {
+  ReservationTableRow,
+  RestaurantMaster,
+} from "@/features/restaurant-masters/types";
+import { Reservation } from "../types";
 
 // 有効な席マスタごとに、割り当て済み予約をまとめる。
 // 予約が存在しない席もタイムラインに表示する必要があるため、
@@ -15,9 +17,7 @@ export function buildReservationTableRows(
     .map((restaurantMaster) => ({
       restaurantMaster,
       reservations: reservations.filter((reservation) =>
-        reservation.restaurant_master_ids.includes(
-          restaurantMaster.id,
-        ),
+        reservation.restaurant_master_ids.includes(restaurantMaster.id),
       ),
     }));
 }
@@ -31,15 +31,13 @@ function compareRestaurantMasters(
   right: RestaurantMaster,
 ): number {
   const typeComparison =
-    left.restaurant_master_type_id -
-    right.restaurant_master_type_id;
+    left.restaurant_master_type_id - right.restaurant_master_type_id;
 
   if (typeComparison !== 0) {
     return typeComparison;
   }
 
-  const sequenceComparison =
-    left.sequence_number - right.sequence_number;
+  const sequenceComparison = left.sequence_number - right.sequence_number;
 
   if (sequenceComparison !== 0) {
     return sequenceComparison;
@@ -54,7 +52,6 @@ export function findUnassignedReservations(
   reservations: Reservation[],
 ): Reservation[] {
   return reservations.filter(
-    (reservation) =>
-      reservation.restaurant_master_ids.length === 0,
+    (reservation) => reservation.restaurant_master_ids.length === 0,
   );
 }
