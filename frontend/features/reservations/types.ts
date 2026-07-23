@@ -98,7 +98,7 @@ export type Reservation = {
   updated_at: string;
 };
 
-// フォームで入力中の値
+// 予約Form全体で使用する入力中の値
 export type ReservationFormValues = {
   customer_id: number | null;
   reservation_name: string;
