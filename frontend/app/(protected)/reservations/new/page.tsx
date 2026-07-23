@@ -1,19 +1,17 @@
-"use client";
+import { NewReservationFormContainer } from "@/features/reservations/components/form/NewReservationFormContainer";
+import { resolveReservationDate } from "@/features/reservations/utils/reservation-date";
 
-import { ReservationForm } from "@/features/reservations/components/form/ReservationFormContainer";
-import { ReservationFormValues } from "@/features/reservations/types";
-import { buildNewReservationFormValues } from "@/features/reservations/utils/reservation-form";
-import { useState } from "react";
-
-type ReservationFormContainerProps = {
-  targetDate: string;
+// 新規予約ページがURLから受け取る検索条件
+type NewReservationPageProps = {
+  searchParams: Promise<{
+    date?: string | string[];
+  }>;
 };
 
-export default function NewReservationPage({
-  targetDate,
-}: ReservationFormContainerProps) {
-  const [values, setValues] = useState<ReservationFormValues>(() =>
-    buildNewReservationFormValues({ targetDate }),
-  );
-  return <ReservationForm values={values} onChange={setValues} />;
+export default async function NewReservationPage({
+  searchParams,
+}: NewReservationPageProps) {
+  const parameters = await searchParams;
+  const targetDate = resolveReservationDate(parameters.date);
+  return <NewReservationFormContainer targetDate={targetDate} />;
 }
