@@ -16,8 +16,8 @@ export function buildNewReservationFormValues({
     reservation_name: "",
     reservation_phone_number: "",
 
-    starts_at: `${targetDate}T18:00`,
-    ends_at: `${targetDate}T20:00`,
+    starts_at: `${targetDate}T17:00`,
+    ends_at: `${targetDate}T19:00`,
     guest_count: 2,
 
     requested_restaurant_master_type_id: null,
