@@ -43,12 +43,30 @@ export function NewReservationFormContainer(
     standardCodes.find(
       (standardCode) => standardCode.system_key === "restaurant_master_type",
     )?.items ?? [];
+
+  const reservationRoutes =
+    standardCodes.find(
+      (standardCode) => standardCode.system_key === "reservation_route",
+    )?.items ?? [];
+
+  const menuTypes =
+    standardCodes.find(
+      (standardCode) => standardCode.system_key === "reservation_menu_type",
+    )?.items ?? [];
+  const reservationOccasion =
+    standardCodes.find(
+      (standardCode) => standardCode.system_key === "reservation_occasion",
+    )?.items ?? [];
+
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
     <ReservationForm
       values={values}
       onChange={setValues}
       requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
+      reservationRoutes={reservationRoutes}
+      menuTypes={menuTypes}
+      reservationOccasion={reservationOccasion}
     />
   );
 }
