@@ -8,6 +8,7 @@ type BuildNewReservationFormValuesParams = {
   targetDate: string;
 };
 
+// 新規予約フォームを開いた直後の入力値を、対象日から作成する。
 export function buildNewReservationFormValues({
   targetDate,
 }: BuildNewReservationFormValuesParams): ReservationFormValues {
@@ -36,12 +37,15 @@ export function buildNewReservationFormValues({
   };
 }
 
+// textareaなどの文字列を整形し、空欄ならRailsへnullとして送る。
 function nullableValue(value: string): string | null {
   const normalizedValue = value.trim();
 
   return normalizedValue.length > 0 ? normalizedValue : null;
 }
 
+// フォーム入力値をRailsへ送信できる予約属性へ変換する。
+// 送信前に必須項目を確認し、文字列の整形・空欄のnull変換を行う。
 function toReservationAttributes(
   values: ReservationFormValues,
 ): ReservationAttributes {
@@ -75,6 +79,7 @@ function toReservationAttributes(
   };
 }
 
+// Railsの予約登録APIが受け取る { reservation: { ... } } 形式のリクエストを作成する。
 export function buildCreateReservationRequest(
   values: ReservationFormValues,
 ): ReservationCreateRequest {
