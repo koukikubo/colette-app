@@ -1,7 +1,9 @@
 import { ApiErrorResponse } from "@/features/customers/types";
 
+// CSRFトークンが不要な、安全なHTTPメソッド。
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
+// apiFetchで成功時に返すAPIレスポンスの共通形式。
 export type ApiSuccessResponse<T> = {
   data: T;
   message?: string;
@@ -19,7 +21,8 @@ export class ApiClientError extends Error {
     this.errors = errors;
   }
 }
-
+// fetchの設定に、オブジェクトまたはFormDataを本文として渡せるようにした型。
+// オブジェクトはapiFetch内でJSON文字列へ変換する。
 type ApiFetchOptions = Omit<RequestInit, "body"> & {
   body?: object | FormData;
 };
@@ -31,6 +34,7 @@ type CsrfResponse = {
   };
 };
 
+// Railsへの更新系リクエストで使用するCSRFトークンを取得する。
 async function fetchCsrfToken() {
   const response = await fetch("/api/v1/csrf", {
     method: "GET",
@@ -46,6 +50,8 @@ async function fetchCsrfToken() {
   return data.data.csrf_token;
 }
 
+// Next.jsのAPI Proxy経由でRails APIを呼び出す共通関数。
+// JSON変換・CSRFトークン付与・エラーレスポンスの例外化をまとめて行う。
 export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
@@ -54,15 +60,15 @@ export async function apiFetch<T>(
   const headers = new Headers(options.headers);
 
   headers.set("Accept", "application/json");
-
+  // bodyだけを取り出し、残りのfetch設定を分ける。
   const { body, ...fetchOptions } = options;
-
+  // FormDataの場合はJSONへ変換せず、そのまま送信する。
   const isFormData = body instanceof FormData;
-
+  // オブジェクトをJSONとして送る場合のみContent-Typeを設定する。
   if (body !== undefined && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
-
+  // POST・PATCH・DELETEなどの更新系リクエストにはCSRFトークンを付与する。
   const needsCsrfToken = !SAFE_METHODS.includes(method);
 
   if (needsCsrfToken && !headers.has("X-CSRF-Token")) {
@@ -76,6 +82,8 @@ export async function apiFetch<T>(
     method,
     headers,
     credentials: "include",
+    // オブジェクトのbodyはJSON文字列へ変換して送信する。
+    // FormDataはファイル送信などで使用するため変換しない。
     body:
       body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
   });
