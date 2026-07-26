@@ -172,13 +172,18 @@ export type ReservationListParams = {
   date?: string;
 };
 
-// 予約1件取得・登録・更新APIのdata部分
-export type ReservationData = {
+// 予約一覧APIのdata部分
+export type ReservationListData = {
   reservations: Reservation[];
 };
 
+// 予約1件取得・登録・更新APIのdata部分
+export type ReservationData = {
+  reservation: Reservation;
+};
+
 // 予約一覧API全体のレスポンス
-export type ReservationListResponse = ApiSuccessResponse<ReservationData>;
+export type ReservationListResponse = ApiSuccessResponse<ReservationListData>;
 
 // 予約詳細・登録・更新API全体のレスポンス
 export type ReservationResponse = ApiSuccessResponse<ReservationData>;
