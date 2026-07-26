@@ -3,6 +3,7 @@ import type {
   ReservationCreateRequest,
   ReservationListParams,
   ReservationListResponse,
+  ReservationResponse,
 } from "../types";
 
 const RESERVATIONS_PATH = "/api/v1/reservations";
@@ -35,7 +36,7 @@ export function fetchReservations(
 
 // 予約を登録する。
 export function createReservation(payload: ReservationCreateRequest) {
-  return apiFetch<ReservationListResponse>(RESERVATIONS_PATH, {
+  return apiFetch<ReservationResponse>(RESERVATIONS_PATH, {
     method: "POST",
     body: payload,
   });
