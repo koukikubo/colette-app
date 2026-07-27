@@ -13,28 +13,44 @@ type ReservationFormProps = {
   menuTypes: StandardListCode[];
   reservationOccasion: StandardListCode[];
   onSubmit: () => void;
+  errorMessage: string | null;
 };
 
-export function ReservationForm(props: ReservationFormProps) {
+export function ReservationForm({
+  values,
+  onChange,
+  requestedRestaurantMasterTypes,
+  reservationRoutes,
+  menuTypes,
+  reservationOccasion,
+  onSubmit,
+  errorMessage,
+}: ReservationFormProps) {
   return (
     // このコンポーネントは予約フォームの入力欄を表示する
+
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        props.onSubmit();
+        onSubmit();
       }}
     >
+      {errorMessage && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
       {/* まずは予約者名の入力欄だけ作る */}
       <label htmlFor="reservation-name">予約者名</label>
       <input
         // 親が管理している現在の予約者名を表示する
         id="reservation-name"
         name="reservation_name"
-        value={props.values.reservation_name}
+        value={values.reservation_name}
         onChange={(e) => {
-          props.onChange({
+          onChange({
             // フォームの現在値は親コンポーネントから受け取る
-            ...props.values,
+            ...values,
 
             // 予約者名だけを新しい入力内容へ変更する
             reservation_name: e.target.value,
@@ -48,11 +64,11 @@ export function ReservationForm(props: ReservationFormProps) {
         id="reservation-phone-number"
         name="reservation_phone_number"
         type="tel"
-        value={props.values.reservation_phone_number}
+        value={values.reservation_phone_number}
         onChange={(e) => {
-          props.onChange({
+          onChange({
             // フォームの現在値は親コンポーネントから受け取る
-            ...props.values,
+            ...values,
 
             // 電話番号だけを新しい入力内容へ変更する
             reservation_phone_number: e.target.value,
@@ -66,11 +82,11 @@ export function ReservationForm(props: ReservationFormProps) {
         id="starts_at"
         name="starts_at"
         type="datetime-local"
-        value={props.values.starts_at}
+        value={values.starts_at}
         onChange={(e) => {
-          props.onChange({
+          onChange({
             // フォームの現在値は親コンポーネントから受け取る
-            ...props.values,
+            ...values,
 
             // 予約開始時刻だけを新しい入力内容へ変更する
             starts_at: e.target.value,
@@ -84,11 +100,11 @@ export function ReservationForm(props: ReservationFormProps) {
         id="ends_at"
         name="ends_at"
         type="datetime-local"
-        value={props.values.ends_at}
+        value={values.ends_at}
         onChange={(e) => {
-          props.onChange({
+          onChange({
             // フォームの現在値は親コンポーネントから受け取る
-            ...props.values,
+            ...values,
 
             // 予約終了時刻だけを新しい入力内容へ変更する
             ends_at: e.target.value,
@@ -104,11 +120,11 @@ export function ReservationForm(props: ReservationFormProps) {
         type="number"
         min={1}
         step={1}
-        value={props.values.guest_count}
+        value={values.guest_count}
         onChange={(e) => {
-          props.onChange({
+          onChange({
             // フォームの現在値は親コンポーネントから受け取る
-            ...props.values,
+            ...values,
 
             // 予約人数だけを新しい入力内容へ変更する
             guest_count: Number(e.target.value),
@@ -121,10 +137,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <select
         id="requested_restaurant_master_type_id"
         name="requested_restaurant_master_type_id"
-        value={props.values.requested_restaurant_master_type_id ?? ""}
+        value={values.requested_restaurant_master_type_id ?? ""}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             requested_restaurant_master_type_id:
               // optionのvalueはHTML上で文字列になるためnumberに変換。
               e.target.value === "" ? null : Number(e.target.value),
@@ -133,7 +149,7 @@ export function ReservationForm(props: ReservationFormProps) {
       >
         <option value="">選択してください</option>
 
-        {props.requestedRestaurantMasterTypes.map((mT) => (
+        {requestedRestaurantMasterTypes.map((mT) => (
           <option key={mT.id} value={mT.id}>
             {mT.label}
           </option>
@@ -146,10 +162,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <select
         id="reservation_route_id"
         name="reservation_route_id"
-        value={props.values.reservation_route_id ?? ""}
+        value={values.reservation_route_id ?? ""}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             reservation_route_id:
               // optionのvalueはHTML上で文字列になるためnumberに変換。
               e.target.value === "" ? null : Number(e.target.value),
@@ -158,7 +174,7 @@ export function ReservationForm(props: ReservationFormProps) {
       >
         <option value="">選択してください</option>
 
-        {props.reservationRoutes.map((rR) => (
+        {reservationRoutes.map((rR) => (
           <option key={rR.id} value={rR.id}>
             {rR.label}
           </option>
@@ -170,10 +186,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <select
         id="menu_type_id"
         name="menu_type_id"
-        value={props.values.menu_type_id ?? ""}
+        value={values.menu_type_id ?? ""}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             menu_type_id:
               // optionのvalueはHTML上で文字列になるためnumberに変換。
               e.target.value === "" ? null : Number(e.target.value),
@@ -182,7 +198,7 @@ export function ReservationForm(props: ReservationFormProps) {
       >
         <option value="">選択してください</option>
 
-        {props.menuTypes.map((mT) => (
+        {menuTypes.map((mT) => (
           <option key={mT.id} value={mT.id}>
             {mT.label}
           </option>
@@ -194,10 +210,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <select
         id="occasion_id"
         name="occasion_id"
-        value={props.values.occasion_id ?? ""}
+        value={values.occasion_id ?? ""}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             occasion_id:
               // optionのvalueはHTML上で文字列になるためnumberに変換。
               e.target.value === "" ? null : Number(e.target.value),
@@ -206,7 +222,7 @@ export function ReservationForm(props: ReservationFormProps) {
       >
         <option value="">選択してください</option>
 
-        {props.reservationOccasion.map((rO) => (
+        {reservationOccasion.map((rO) => (
           <option key={rO.id} value={rO.id}>
             {rO.label}
           </option>
@@ -218,10 +234,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <textarea
         id="allergy_note"
         name="allergy_note"
-        value={props.values.allergy_note}
+        value={values.allergy_note}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             allergy_note: e.target.value,
           });
         }}
@@ -232,10 +248,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <textarea
         id="disliked_food_note"
         name="disliked_food_note"
-        value={props.values.disliked_food_note}
+        value={values.disliked_food_note}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             disliked_food_note: e.target.value,
           });
         }}
@@ -246,10 +262,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <textarea
         id="preferred_food_note"
         name="preferred_food_note"
-        value={props.values.preferred_food_note}
+        value={values.preferred_food_note}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             preferred_food_note: e.target.value,
           });
         }}
@@ -260,10 +276,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <textarea
         id="favorite_drink_note"
         name="favorite_drink_note"
-        value={props.values.favorite_drink_note}
+        value={values.favorite_drink_note}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             favorite_drink_note: e.target.value,
           });
         }}
@@ -274,10 +290,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <textarea
         id="request_note"
         name="request_note"
-        value={props.values.request_note}
+        value={values.request_note}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             request_note: e.target.value,
           });
         }}
@@ -288,10 +304,10 @@ export function ReservationForm(props: ReservationFormProps) {
       <textarea
         id="internal_memo"
         name="internal_memo"
-        value={props.values.internal_memo}
+        value={values.internal_memo}
         onChange={(e) => {
-          props.onChange({
-            ...props.values,
+          onChange({
+            ...values,
             internal_memo: e.target.value,
           });
         }}
