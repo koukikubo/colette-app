@@ -48,7 +48,7 @@ export type Reservation = {
   // 予約時間・人数
   starts_at: string;
   ends_at: string;
-  guest_count: string;
+  guest_count: number;
 
   // 希望席種
   requested_restaurant_master_type_id: number;
