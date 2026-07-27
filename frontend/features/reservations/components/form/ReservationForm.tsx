@@ -12,12 +12,18 @@ type ReservationFormProps = {
   reservationRoutes: StandardListCode[];
   menuTypes: StandardListCode[];
   reservationOccasion: StandardListCode[];
+  onSubmit: () => void;
 };
 
 export function ReservationForm(props: ReservationFormProps) {
   return (
     // このコンポーネントは予約フォームの入力欄を表示する
-    <form>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        props.onSubmit();
+      }}
+    >
       {/* まずは予約者名の入力欄だけ作る */}
       <label htmlFor="reservation-name">予約者名</label>
       <input
@@ -290,6 +296,7 @@ export function ReservationForm(props: ReservationFormProps) {
           });
         }}
       />
+      <button type="submit">登録する</button>
     </form>
   );
 }

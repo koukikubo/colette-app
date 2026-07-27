@@ -7,7 +7,7 @@ import type { StandardCode } from "@/features/standard-codes/types";
 import type { ReservationFormValues } from "../../types";
 import { buildNewReservationFormValues } from "../../utils/reservation-form";
 import { ReservationForm } from "./ReservationForm";
-
+import { buildCreateReservationRequest } from "../../utils/reservation-form";
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
   // 初期日時を作るための対象日
@@ -58,6 +58,11 @@ export function NewReservationFormContainer(
       (standardCode) => standardCode.system_key === "reservation_occasion",
     )?.items ?? [];
 
+  function handleSubmit() {
+    const request = buildCreateReservationRequest(values);
+
+    console.log(request);
+  }
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
     <ReservationForm
@@ -67,6 +72,7 @@ export function NewReservationFormContainer(
       reservationRoutes={reservationRoutes}
       menuTypes={menuTypes}
       reservationOccasion={reservationOccasion}
+      onSubmit={handleSubmit}
     />
   );
 }
