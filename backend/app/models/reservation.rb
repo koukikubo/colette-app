@@ -1,58 +1,45 @@
 class Reservation < ApplicationRecord
   belongs_to :customer,
             optional: true
-
   belongs_to :requested_restaurant_master_type,
             class_name: "StandardListMaster"
-
   belongs_to :reservation_status,
             class_name: "StandardListMaster"
-
   belongs_to :reservation_route,
             class_name: "StandardListMaster",
             optional: true
-
   belongs_to :menu_type,
             class_name: "StandardListMaster",
             optional: true
-
   belongs_to :occasion,
             class_name: "StandardListMaster",
             optional: true
-
   belongs_to :created_by_staff,
             class_name: "Staff"
-
   belongs_to :updated_by_staff,
             class_name: "Staff"
-
   has_many :reservation_tables,
           dependent: :destroy
-
   has_many :restaurant_masters,
           through: :reservation_tables
 
+  # 入力チェック
   validates :reservation_name,
             presence: true,
             length: { maximum: 50 }
-
   validates :reservation_phone_number,
             presence: true,
             length: { maximum: 20 }
-
   validates :starts_at,
             presence: true
-
   validates :ends_at,
             presence: true
-
   validates :guest_count,
             presence: true,
             numericality: {
               only_integer: true,
               greater_than: 0
             }
-
   validate :ends_at_must_be_after_starts_at
 
 
