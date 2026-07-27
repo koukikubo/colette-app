@@ -5,9 +5,14 @@ import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-
 import type { StandardCode } from "@/features/standard-codes/types";
 
 import type { ReservationFormValues } from "../../types";
-import { buildNewReservationFormValues } from "../../utils/reservation-form";
+import {
+  buildNewReservationFormValues,
+  buildCreateReservationRequest,
+} from "../../utils/reservation-form";
 import { ReservationForm } from "./ReservationForm";
-import { buildCreateReservationRequest } from "../../utils/reservation-form";
+import { createReservation } from "../../api/reservation_api";
+import { ApiClientError } from "@/lib/api/api-client";
+
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
   // 初期日時を作るための対象日
@@ -24,7 +29,7 @@ export function NewReservationFormContainer(
     return buildNewReservationFormValues({ targetDate });
   });
   const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
-
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   useEffect(() => {
     // 全体を非同期関数にせずにloadStandardCodesだけを非同期に変更
     async function loadStandardCodes() {
@@ -58,10 +63,22 @@ export function NewReservationFormContainer(
       (standardCode) => standardCode.system_key === "reservation_occasion",
     )?.items ?? [];
 
-  function handleSubmit() {
-    const request = buildCreateReservationRequest(values);
+  // 予約登録APIを呼び出す
+  async function handleSubmit() {
+    setErrorMessage(null);
+    try {
+      const request = buildCreateReservationRequest(values);
 
-    console.log(request);
+      const response = await createReservation(request);
+      console.log(response);
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        setErrorMessage(error.message);
+        return;
+      }
+      // 失敗したらエラーメッセージを表示する
+      setErrorMessage("予約の登録中に予期しないエラーが発生しました。");
+    }
   }
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
@@ -73,11 +90,9 @@ export function NewReservationFormContainer(
       menuTypes={menuTypes}
       reservationOccasion={reservationOccasion}
       onSubmit={handleSubmit}
+      errorMessage={errorMessage}
     />
   );
 }
 
-// 登録ボタンが押されたらRails送信用データへ変換する
-// 予約登録APIを呼び出す
-// 成功したら対象日の予約一覧へ戻る
-// 失敗したらエラーメッセージを表示する
+// 成功したら対象日の予約一覧へ戻る （未実装）
