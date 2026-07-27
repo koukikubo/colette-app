@@ -12,6 +12,7 @@ import {
 import { ReservationForm } from "./ReservationForm";
 import { createReservation } from "../../api/reservation_api";
 import { ApiClientError } from "@/lib/api/api-client";
+import { useRouter } from "next/navigation";
 
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
@@ -23,6 +24,7 @@ type NewReservationFormContainerProps = {
 export function NewReservationFormContainer(
   props: NewReservationFormContainerProps,
 ) {
+  const router = useRouter();
   const targetDate = props.targetDate;
   // 対象日から初期値を作り、入力中の値として管理する
   const [values, setValues] = useState<ReservationFormValues>(() => {
@@ -69,8 +71,9 @@ export function NewReservationFormContainer(
     try {
       const request = buildCreateReservationRequest(values);
 
-      const response = await createReservation(request);
-      console.log(response);
+      await createReservation(request);
+      // 成功したら対象日の予約一覧へ戻る
+      router.push(`/reservations?date=${targetDate}`);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setErrorMessage(error.message);
@@ -94,5 +97,3 @@ export function NewReservationFormContainer(
     />
   );
 }
-
-// 成功したら対象日の予約一覧へ戻る （未実装）
