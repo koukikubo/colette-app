@@ -1,6 +1,9 @@
 // 状態管理やAPI通信はこのファイルでは行わない
+import { Customer } from "@/features/customers/types";
 import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
+
+import { CustomerKeywordSearch } from "@/features/customers/components/CustomerKeywordSearch";
 
 // 親コンポーネントから受け取るデータの形を定義する
 type ReservationFormProps = {
@@ -15,6 +18,14 @@ type ReservationFormProps = {
   onSubmit: () => void;
   errorMessage: string | null;
   isSubmitting: boolean;
+  customerQuery: string;
+  customers: Customer[];
+  isCustomerSearching: boolean;
+  customerSearchError: string | null;
+  onCustomerQueryChange: (value: string) => void;
+  onCustomerSearch: () => void;
+  onCustomerSelect: (customer: Customer) => void;
+  hasSearchedCustomers: boolean;
 };
 
 export function ReservationForm({
@@ -27,16 +38,62 @@ export function ReservationForm({
   onSubmit,
   errorMessage,
   isSubmitting,
+  customerQuery,
+  customers,
+  isCustomerSearching,
+  customerSearchError,
+  onCustomerQueryChange,
+  onCustomerSearch,
+  onCustomerSelect,
+  hasSearchedCustomers,
 }: ReservationFormProps) {
   return (
     // このコンポーネントは予約フォームの入力欄を表示する
-
     <form
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
       }}
     >
+      <CustomerKeywordSearch
+        value={customerQuery}
+        isLoading={isCustomerSearching}
+        placeholder="氏名・カナ・電話番号で検索"
+        onValueChange={onCustomerQueryChange}
+        onSearch={onCustomerSearch}
+      />
+      {customerSearchError && (
+        <p className="text-sm text-destructive">{customerSearchError}</p>
+      )}
+      {hasSearchedCustomers &&
+        !isCustomerSearching &&
+        customers.length === 0 &&
+        !customerSearchError && (
+          <p className="text-sm text-muted-foreground">
+            該当する顧客が見つかりませんでした。
+          </p>
+        )}
+
+      {customers.length > 0 && (
+        <ul className="rounded-md border">
+          {customers.map((customer) => (
+            <li key={customer.id} className="border-b last:border-b-0">
+              <button
+                type="button"
+                className="w-full px-3 py-2 text-left hover:bg-muted"
+                onClick={() => onCustomerSelect(customer)}
+              >
+                <span>{customer.name}</span>
+                {customer.phone_number && (
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    （{customer.phone_number}）
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {errorMessage && (
         <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {errorMessage}
