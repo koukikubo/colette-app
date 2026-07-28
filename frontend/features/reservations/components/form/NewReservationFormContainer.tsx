@@ -74,6 +74,7 @@ export function NewReservationFormContainer(
 
     setCustomerQuery(customer.name);
     clearCustomers();
+    setHasSearchedCustomers(false);
   }
 
   useEffect(() => {
