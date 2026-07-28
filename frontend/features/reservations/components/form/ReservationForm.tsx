@@ -1,5 +1,5 @@
 // 状態管理やAPI通信はこのファイルでは行わない
-import { Customer } from "@/features/customers/types";
+import type { Customer } from "@/features/customers/types";
 import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
 
