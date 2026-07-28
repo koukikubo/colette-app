@@ -32,6 +32,7 @@ export function NewReservationFormContainer(
   });
   const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     // 全体を非同期関数にせずにloadStandardCodesだけを非同期に変更
     async function loadStandardCodes() {
@@ -67,7 +68,11 @@ export function NewReservationFormContainer(
 
   // 予約登録APIを呼び出す
   async function handleSubmit() {
+    if (isSubmitting) return;
+
     setErrorMessage(null);
+    setIsSubmitting(true);
+
     try {
       const request = buildCreateReservationRequest(values);
 
@@ -81,6 +86,8 @@ export function NewReservationFormContainer(
       }
       // 失敗したらエラーメッセージを表示する
       setErrorMessage("予約の登録中に予期しないエラーが発生しました。");
+    } finally {
+      setIsSubmitting(false);
     }
   }
   // 入力値と変更用の関数をReservationFormへ渡す
@@ -94,6 +101,7 @@ export function NewReservationFormContainer(
       reservationOccasion={reservationOccasion}
       onSubmit={handleSubmit}
       errorMessage={errorMessage}
+      isSubmitting={isSubmitting}
     />
   );
 }

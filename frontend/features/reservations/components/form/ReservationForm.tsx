@@ -14,6 +14,7 @@ type ReservationFormProps = {
   reservationOccasion: StandardListCode[];
   onSubmit: () => void;
   errorMessage: string | null;
+  isSubmitting: boolean | null;
 };
 
 export function ReservationForm({
@@ -25,6 +26,7 @@ export function ReservationForm({
   reservationOccasion,
   onSubmit,
   errorMessage,
+  isSubmitting,
 }: ReservationFormProps) {
   return (
     // このコンポーネントは予約フォームの入力欄を表示する
@@ -312,7 +314,8 @@ export function ReservationForm({
           });
         }}
       />
-      <button type="submit">登録する</button>
+
+      <button type="submit"> {isSubmitting ? "登録中…" : "登録する"}</button>
     </form>
   );
 }
