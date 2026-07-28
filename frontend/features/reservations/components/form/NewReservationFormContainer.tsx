@@ -14,6 +14,9 @@ import { createReservation } from "../../api/reservation_api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 
+import { useCustomerSearch } from "@/features/customers/hooks/useCustomerSearch";
+import type { Customer } from "@/features/customers/types";
+
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
   // 初期日時を作るための対象日
@@ -33,6 +36,46 @@ export function NewReservationFormContainer(
   const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [hasSearchedCustomers, setHasSearchedCustomers] = useState(false);
+  // 顧客検索用
+  const {
+    customers,
+    isSearching: isCustomerSearching,
+    errorMessage: customerSearchError,
+    searchCustomers,
+    clearCustomers,
+  } = useCustomerSearch();
+
+  async function handleCustomerSearch() {
+    const query = customerQuery.trim();
+
+    // これは入力値の妥当性チェックではなく、空の検索通信を防ぐための制御です。
+    if (!query) {
+      clearCustomers();
+      setHasSearchedCustomers(false);
+      return;
+    }
+    setHasSearchedCustomers(true);
+
+    await searchCustomers({
+      visibility: "visible",
+      query,
+    });
+  }
+
+  function handleCustomerSelect(customer: Customer) {
+    setValues((currentValues) => ({
+      ...currentValues,
+      customer_id: customer.id,
+      reservation_name: customer.name,
+      reservation_phone_number: customer.phone_number ?? "",
+    }));
+
+    setCustomerQuery(customer.name);
+    clearCustomers();
+  }
+
   useEffect(() => {
     // 全体を非同期関数にせずにloadStandardCodesだけを非同期に変更
     async function loadStandardCodes() {
@@ -102,6 +145,14 @@ export function NewReservationFormContainer(
       onSubmit={handleSubmit}
       errorMessage={errorMessage}
       isSubmitting={isSubmitting}
+      customerQuery={customerQuery}
+      customers={customers}
+      isCustomerSearching={isCustomerSearching}
+      customerSearchError={customerSearchError}
+      onCustomerQueryChange={setCustomerQuery}
+      onCustomerSearch={handleCustomerSearch}
+      onCustomerSelect={handleCustomerSelect}
+      hasSearchedCustomers={hasSearchedCustomers}
     />
   );
 }
