@@ -49,10 +49,6 @@ function nullableValue(value: string): string | null {
 function toReservationAttributes(
   values: ReservationFormValues,
 ): ReservationAttributes {
-  if (values.requested_restaurant_master_type_id === null) {
-    throw new Error("希望席種を選択してください。");
-  }
-
   return {
     customer_id: values.customer_id,
     reservation_name: values.reservation_name.trim(),
