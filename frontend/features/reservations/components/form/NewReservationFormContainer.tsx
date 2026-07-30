@@ -72,7 +72,7 @@ export function NewReservationFormContainer(
       reservation_phone_number: customer.phone_number ?? "",
     }));
 
-    setCustomerQuery(customer.name);
+    setCustomerQuery("");
     clearCustomers();
     setHasSearchedCustomers(false);
   }
