@@ -1,0 +1,11 @@
+ja:
+  activerecord:
+    attributes:
+      reservation:
+        reservation_name: "予約者名"
+    errors:
+      models:
+        reservation:
+          attributes:
+            reservation_name:
+              blank: "を入力してください"
