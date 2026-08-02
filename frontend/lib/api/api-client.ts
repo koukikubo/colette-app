@@ -1,5 +1,3 @@
-import { ApiErrorResponse } from "@/features/customers/types";
-
 // CSRFトークンが不要な、安全なHTTPメソッド。
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
@@ -9,12 +7,18 @@ export type ApiSuccessResponse<T> = {
   message?: string;
   errors?: string;
 };
-
+export type ApiFieldErrors = Record<string, string[]>;
+export type ApiErrorDetails = string[] | ApiFieldErrors;
+export type ApiErrorResponse = {
+  status: "error";
+  message: string;
+  errors: ApiErrorDetails;
+};
 export class ApiClientError extends Error {
   status: number;
-  errors: string[];
+  errors: ApiErrorDetails;
 
-  constructor(message: string, status: number, errors: string[] = []) {
+  constructor(message: string, status: number, errors: ApiErrorDetails = []) {
     super(message);
     this.name = "ApiClientError";
     this.status = status;

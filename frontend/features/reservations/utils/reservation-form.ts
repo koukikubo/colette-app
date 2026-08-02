@@ -16,7 +16,7 @@ export function buildNewReservationFormValues({
     customer_id: null,
     reservation_name: "",
     reservation_phone_number: "",
-
+    reservation_status_id: null,
     starts_at: `${targetDate}T17:00`,
     ends_at: `${targetDate}T19:00`,
     guest_count: 2,
@@ -53,7 +53,7 @@ function toReservationAttributes(
     customer_id: values.customer_id,
     reservation_name: values.reservation_name.trim(),
     reservation_phone_number: values.reservation_phone_number.trim(),
-
+    reservation_status_id: values.reservation_status_id,
     starts_at: values.starts_at,
     ends_at: values.ends_at,
     guest_count: values.guest_count,

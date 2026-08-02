@@ -4,6 +4,8 @@ import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
 
 import { CustomerKeywordSearch } from "@/features/customers/components/CustomerKeywordSearch";
+import { Input } from "@/components/ui/input";
+import { ApiFieldErrors } from "@/lib/api/api-client";
 
 // 親コンポーネントから受け取るデータの形を定義する
 type ReservationFormProps = {
@@ -15,7 +17,9 @@ type ReservationFormProps = {
   reservationRoutes: StandardListCode[];
   menuTypes: StandardListCode[];
   reservationOccasion: StandardListCode[];
+  reservationStatuses: StandardListCode[];
   onSubmit: () => void;
+
   errorMessage: string | null;
   isSubmitting: boolean;
   customerQuery: string;
@@ -26,6 +30,8 @@ type ReservationFormProps = {
   onCustomerSearch: () => void;
   onCustomerSelect: (customer: Customer) => void;
   hasSearchedCustomers: boolean;
+  fieldErrors: ApiFieldErrors;
+  onClearFieldError: (fieldName: string) => void;
 };
 
 export function ReservationForm({
@@ -35,6 +41,7 @@ export function ReservationForm({
   reservationRoutes,
   menuTypes,
   reservationOccasion,
+  reservationStatuses,
   onSubmit,
   errorMessage,
   isSubmitting,
@@ -46,6 +53,8 @@ export function ReservationForm({
   onCustomerSearch,
   onCustomerSelect,
   hasSearchedCustomers,
+  fieldErrors,
+  onClearFieldError,
 }: ReservationFormProps) {
   return (
     // このコンポーネントは予約フォームの入力欄を表示する
@@ -101,12 +110,13 @@ export function ReservationForm({
       )}
       {/* まずは予約者名の入力欄だけ作る */}
       <label htmlFor="reservation-name">予約者名</label>
-      <input
+      <Input
         // 親が管理している現在の予約者名を表示する
         id="reservation-name"
         name="reservation_name"
         value={values.reservation_name}
         onChange={(e) => {
+          onClearFieldError("reservation_name");
           onChange({
             // フォームの現在値は親コンポーネントから受け取る
             ...values,
@@ -116,6 +126,11 @@ export function ReservationForm({
           });
         }}
       />
+      {fieldErrors.reservation_name?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
       {/* 予約者の電話番号を入力する */}
       <label htmlFor="reservation-phone-number">電話番号</label>
       <input
@@ -125,6 +140,7 @@ export function ReservationForm({
         type="tel"
         value={values.reservation_phone_number}
         onChange={(e) => {
+          onClearFieldError("reservation_phone_number");
           onChange({
             // フォームの現在値は親コンポーネントから受け取る
             ...values,
@@ -134,6 +150,11 @@ export function ReservationForm({
           });
         }}
       />
+      {fieldErrors.reservation_phone_number?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
       {/* 予約の開始日時を入力する */}
       <label htmlFor="starts_at">予約開始日時</label>
       <input
@@ -143,6 +164,7 @@ export function ReservationForm({
         type="datetime-local"
         value={values.starts_at}
         onChange={(e) => {
+          onClearFieldError("starts_at");
           onChange({
             // フォームの現在値は親コンポーネントから受け取る
             ...values,
@@ -152,6 +174,11 @@ export function ReservationForm({
           });
         }}
       />
+      {fieldErrors.starts_at?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
       {/* 予約の終了日時を入力する */}
       <label htmlFor="ends_at">予約終了日時</label>
       <input
@@ -161,6 +188,7 @@ export function ReservationForm({
         type="datetime-local"
         value={values.ends_at}
         onChange={(e) => {
+          onClearFieldError("ends_at");
           onChange({
             // フォームの現在値は親コンポーネントから受け取る
             ...values,
@@ -170,6 +198,11 @@ export function ReservationForm({
           });
         }}
       />
+      {fieldErrors.ends_at?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
       {/* 予約人数を入力する */}
       <label htmlFor="guest_count">人数</label>
       <input
@@ -181,6 +214,7 @@ export function ReservationForm({
         step={1}
         value={values.guest_count}
         onChange={(e) => {
+          onClearFieldError("guest_count");
           onChange({
             // フォームの現在値は親コンポーネントから受け取る
             ...values,
@@ -190,9 +224,15 @@ export function ReservationForm({
           });
         }}
       />
+
+      {fieldErrors.guest_count?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
+
       {/* 希望席種を選択する */}
       <label htmlFor="requested_restaurant_master_type_id">希望席種</label>
-
       <select
         id="requested_restaurant_master_type_id"
         name="requested_restaurant_master_type_id"
@@ -207,7 +247,6 @@ export function ReservationForm({
         }}
       >
         <option value="">選択してください</option>
-
         {requestedRestaurantMasterTypes.map((mT) => (
           <option key={mT.id} value={mT.id}>
             {mT.label}
@@ -215,9 +254,14 @@ export function ReservationForm({
         ))}
       </select>
 
+      {fieldErrors.requested_restaurant_master_type?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
+
       {/* 予約経路を選択する */}
       <label htmlFor="reservation_route_id">予約経路</label>
-
       <select
         id="reservation_route_id"
         name="reservation_route_id"
@@ -271,6 +315,7 @@ export function ReservationForm({
         name="occasion_id"
         value={values.occasion_id ?? ""}
         onChange={(e) => {
+          onClearFieldError("occasion");
           onChange({
             ...values,
             occasion_id:
@@ -287,6 +332,37 @@ export function ReservationForm({
           </option>
         ))}
       </select>
+
+      <label htmlFor="reservation_status_id">予約状況</label>
+      <select
+        id="reservation_status_id"
+        name="reservation_status_id"
+        value={values.reservation_status_id ?? ""}
+        onChange={(e) => {
+          onClearFieldError("reservation_status");
+
+          onChange({
+            ...values,
+            reservation_status_id:
+              // optionのvalueはHTML上で文字列になるためnumberに変換。
+              e.target.value === "" ? null : Number(e.target.value),
+          });
+        }}
+      >
+        <option value="">選択してください</option>
+
+        {reservationStatuses.map((rS) => (
+          <option key={rS.id} value={rS.id}>
+            {rS.label}
+          </option>
+        ))}
+      </select>
+
+      {fieldErrors.reservation_status?.map((message) => (
+        <p key={message} className="mt-1 text-sm text-destructive">
+          {message}
+        </p>
+      ))}
 
       <label htmlFor="allergy_note">アレルギー</label>
 
@@ -330,7 +406,7 @@ export function ReservationForm({
         }}
       />
 
-      <label htmlFor="disliked_food_note">好きなドリンク</label>
+      <label htmlFor="favorite_drink_note">好きなドリンク</label>
 
       <textarea
         id="favorite_drink_note"

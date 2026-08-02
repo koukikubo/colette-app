@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 
 import { useCustomerSearch } from "@/features/customers/hooks/useCustomerSearch";
 import type { Customer } from "@/features/customers/types";
+import { useFieldErrors } from "@/hooks/useFieldErrors";
 
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
@@ -38,6 +39,9 @@ export function NewReservationFormContainer(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerQuery, setCustomerQuery] = useState("");
   const [hasSearchedCustomers, setHasSearchedCustomers] = useState(false);
+  const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
+    useFieldErrors();
+
   // 顧客検索用
   const {
     customers,
@@ -109,12 +113,17 @@ export function NewReservationFormContainer(
     standardCodes.find(
       (standardCode) => standardCode.system_key === "reservation_occasion",
     )?.items ?? [];
+  const reservationStatuses =
+    standardCodes.find(
+      (standardCode) => standardCode.system_key === "reservation_status",
+    )?.items ?? [];
 
   // 予約登録APIを呼び出す
   async function handleSubmit() {
     if (isSubmitting) return;
 
     setErrorMessage(null);
+    clearAllFieldErrors();
     setIsSubmitting(true);
 
     try {
@@ -126,6 +135,10 @@ export function NewReservationFormContainer(
     } catch (error) {
       if (error instanceof ApiClientError) {
         setErrorMessage(error.message);
+
+        if (error.status === 422 && !Array.isArray(error.errors)) {
+          setFieldErrors(error.errors);
+        }
         return;
       }
       // 失敗したらエラーメッセージを表示する
@@ -143,6 +156,7 @@ export function NewReservationFormContainer(
       reservationRoutes={reservationRoutes}
       menuTypes={menuTypes}
       reservationOccasion={reservationOccasion}
+      reservationStatuses={reservationStatuses}
       onSubmit={handleSubmit}
       errorMessage={errorMessage}
       isSubmitting={isSubmitting}
@@ -154,6 +168,8 @@ export function NewReservationFormContainer(
       onCustomerSearch={handleCustomerSearch}
       onCustomerSelect={handleCustomerSelect}
       hasSearchedCustomers={hasSearchedCustomers}
+      fieldErrors={fieldErrors}
+      onClearFieldError={clearFieldError}
     />
   );
 }

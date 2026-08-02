@@ -107,7 +107,7 @@ export type ReservationFormValues = {
   starts_at: string;
   ends_at: string;
   guest_count: number;
-
+  reservation_status_id: number | null;
   // 入力中は未選択にできる
   requested_restaurant_master_type_id: number | null;
   restaurant_master_ids: number[];
@@ -138,7 +138,7 @@ export type ReservationAttributes = {
   // Railsへ送信する時は選択必須
   requested_restaurant_master_type_id: number | null;
   restaurant_master_ids: number[];
-
+  reservation_status_id: number | null;
   reservation_route_id: number | null;
   menu_type_id: number | null;
   occasion_id: number | null;
