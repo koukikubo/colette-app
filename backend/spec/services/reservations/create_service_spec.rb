@@ -56,7 +56,8 @@ RSpec.describe Reservations::CreateService do
       starts_at: starts_at,
       ends_at: ends_at,
       guest_count: 2,
-      requested_restaurant_master_type_id: table_type.id
+      requested_restaurant_master_type_id: table_type.id,
+      reservation_status_id: confirmed_status.id
     }
   end
 
@@ -74,14 +75,23 @@ RSpec.describe Reservations::CreateService do
       expect(reservation.customer).to be_nil
     end
 
-    it "予約ステータスにconfirmedを自動設定する" do
+    it "指定された予約ステータスを設定する" do
       reservation =
         described_class.call(
-          attributes: base_attributes,
+          attributes: base_attributes.merge(reservation_status_id: confirmed_status.id),
           current_staff: staff
         )
 
       expect(reservation.reservation_status).to eq(confirmed_status)
+    end
+
+    let(:pending_status) do
+      create(
+        :standard_list_master,
+        standard_master: reservation_status_master,
+        code: "pending",
+        label: "仮予約"
+      )
     end
 
     it "作成者と更新者にcurrent_staffを設定する" do
