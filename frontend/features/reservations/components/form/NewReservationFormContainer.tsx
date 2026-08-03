@@ -69,6 +69,10 @@ export function NewReservationFormContainer(
   }
 
   function handleCustomerSelect(customer: Customer) {
+    // 顧客選択時に「残っていたエラー表示」をクリアする
+    clearFieldError("reservation_name");
+    clearFieldError("reservation_phone_number");
+
     setValues((currentValues) => ({
       ...currentValues,
       customer_id: customer.id,
@@ -147,6 +151,14 @@ export function NewReservationFormContainer(
       setIsSubmitting(false);
     }
   }
+
+  function handleCustomerClear() {
+    setValues((currentValues) => ({
+      ...currentValues,
+      customer_id: null,
+    }));
+  }
+
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
     <ReservationForm
@@ -170,6 +182,7 @@ export function NewReservationFormContainer(
       hasSearchedCustomers={hasSearchedCustomers}
       fieldErrors={fieldErrors}
       onClearFieldError={clearFieldError}
+      onCustomerClear={handleCustomerClear}
     />
   );
 }
