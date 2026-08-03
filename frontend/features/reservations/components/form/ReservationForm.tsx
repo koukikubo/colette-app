@@ -58,6 +58,7 @@ type ReservationFormProps = {
   fieldErrors: ApiFieldErrors;
   onClearFieldError: (fieldName: string) => void;
   onCustomerClear: () => void;
+  selectedCustomerHasNoPhone: boolean;
 };
 
 type FieldErrorProps = {
@@ -147,6 +148,7 @@ export function ReservationForm({
   fieldErrors,
   onClearFieldError,
   onCustomerClear,
+  selectedCustomerHasNoPhone,
 }: ReservationFormProps) {
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
@@ -233,9 +235,20 @@ export function ReservationForm({
             </div>
 
             {values.customer_id !== null && (
-              <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
-                <CheckIcon className="size-4" />
-                既存顧客を選択しています
+              <div>
+                <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
+                  <CheckIcon className="size-4" />
+                  <span>{values.reservation_name}さんを選択しています</span>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onCustomerClear}
+                >
+                  顧客選択を解除
+                </Button>
               </div>
             )}
 
@@ -291,6 +304,15 @@ export function ReservationForm({
                     });
                   }}
                 />
+                {values.customer_id !== null &&
+                  selectedCustomerHasNoPhone &&
+                  !values.reservation_phone_number && (
+                    <p className="text-sm text-muted-foreground" role="status">
+                      この顧客には電話番号が登録されていません。
+                      <br />
+                      今回の連絡先を入力してください。
+                    </p>
+                  )}
                 <FieldError messages={fieldErrors.reservation_phone_number} />
               </div>
             </div>
