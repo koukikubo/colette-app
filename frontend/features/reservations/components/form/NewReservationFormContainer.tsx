@@ -42,6 +42,8 @@ export function NewReservationFormContainer(
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
 
+  const [selectedCustomerHasNoPhone, setSelectedCustomerHasNoPhone] =
+    useState(false);
   // 顧客検索用
   const {
     customers,
@@ -72,6 +74,8 @@ export function NewReservationFormContainer(
     // 顧客選択時に「残っていたエラー表示」をクリアする
     clearFieldError("reservation_name");
     clearFieldError("reservation_phone_number");
+
+    setSelectedCustomerHasNoPhone(!customer.phone_number);
 
     setValues((currentValues) => ({
       ...currentValues,
@@ -153,6 +157,8 @@ export function NewReservationFormContainer(
   }
   // 顧客選択を解除する関数
   function handleCustomerClear() {
+    setSelectedCustomerHasNoPhone(false);
+
     setValues((currentValues) => ({
       ...currentValues,
       customer_id: null,
@@ -183,6 +189,7 @@ export function NewReservationFormContainer(
       fieldErrors={fieldErrors}
       onClearFieldError={clearFieldError}
       onCustomerClear={handleCustomerClear}
+      selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
     />
   );
 }
