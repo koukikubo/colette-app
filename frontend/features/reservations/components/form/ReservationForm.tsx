@@ -159,16 +159,6 @@ export function ReservationForm({
           onSubmit();
         }}
       >
-        <header className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">予約管理</p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            新しい予約を登録
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            顧客情報と予約内容を入力して登録してください。
-          </p>
-        </header>
-
         {errorMessage && (
           <Alert variant="destructive">
             <AlertDescription>{errorMessage}</AlertDescription>
@@ -225,7 +215,8 @@ export function ReservationForm({
                       >
                         <span className="font-medium">{customer.name}</span>
                         <span className="text-sm text-muted-foreground">
-                          {customer.phone_number ?? "電話番号なし"}
+                          {customer.phone_number ??
+                            "電話番号は登録されていません。"}
                         </span>
                       </button>
                     </li>

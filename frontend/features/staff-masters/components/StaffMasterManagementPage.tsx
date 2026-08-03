@@ -90,7 +90,6 @@ export function StaffMasterManagementPage() {
   if (errorMessage) {
     return (
       <div className="space-y-6">
-        <PageHeader />
         <Card>
           <CardContent className="flex min-h-48 flex-col items-center justify-center gap-4">
             <AlertCircleIcon
@@ -152,8 +151,6 @@ export function StaffMasterManagementPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader />
-
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button
           type="button"
@@ -228,20 +225,6 @@ export function StaffMasterManagementPage() {
           onRestored={handleRestored}
         />
       )}
-    </div>
-  );
-}
-
-function PageHeader() {
-  return (
-    <div className="space-y-1">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">担当者マスタ</h1>
-
-        <p className="text-sm text-muted-foreground">
-          担当者の基本情報、権限、ログイン状態を管理します。
-        </p>
-      </div>
     </div>
   );
 }

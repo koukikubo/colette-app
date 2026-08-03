@@ -441,15 +441,6 @@ export function StandardCodeMasterPage() {
     // 理由: 画面本体の外にDialogを並べて配置するため
     <>
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            基本コード・選択肢コードマスタ
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            予約ステータス、来店経路、席種など、システム内で使用する共通選択肢を管理します。
-          </p>
-        </div>
-
         <div className="grid gap-4 lg:grid-cols-[500px_minmax(0,1fr)] xl:grid-cols-[560px_minmax(0,1fr)]">
           <Card className="min-h-160 min-w-0">
             <CardHeader className="gap-3">
