@@ -3,15 +3,41 @@ import type { Customer } from "@/features/customers/types";
 import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
 
+import {
+  CalendarClockIcon,
+  CheckIcon,
+  LoaderCircleIcon,
+  NotebookPenIcon,
+  UserRoundIcon,
+  UsersIcon,
+  UtensilsIcon,
+} from "lucide-react";
+
 import { CustomerKeywordSearch } from "@/features/customers/components/CustomerKeywordSearch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiFieldErrors } from "@/lib/api/api-client";
 
-// 親コンポーネントから受け取るデータの形を定義する
 type ReservationFormProps = {
-  // 現在のフォーム入力値
   values: ReservationFormValues;
-  // 入力内容を変更するときに親コンポーネントから受け取る関数
   onChange: (newValues: ReservationFormValues) => void;
   requestedRestaurantMasterTypes: StandardListCode[];
   reservationRoutes: StandardListCode[];
@@ -19,7 +45,6 @@ type ReservationFormProps = {
   reservationOccasion: StandardListCode[];
   reservationStatuses: StandardListCode[];
   onSubmit: () => void;
-
   errorMessage: string | null;
   isSubmitting: boolean;
   customerQuery: string;
@@ -33,6 +58,71 @@ type ReservationFormProps = {
   fieldErrors: ApiFieldErrors;
   onClearFieldError: (fieldName: string) => void;
 };
+
+type FieldErrorProps = {
+  messages?: string[];
+};
+
+type CodeSelectProps = {
+  id: string;
+  value: number | null;
+  options: StandardListCode[];
+  placeholder?: string;
+  hasError?: boolean;
+  onValueChange: (value: number | null) => void;
+};
+
+const EMPTY_SELECT_VALUE = "__none__";
+
+function FieldError({ messages }: FieldErrorProps) {
+  if (!messages?.length) return null;
+
+  return (
+    <div className="space-y-1" role="alert">
+      {messages.map((message) => (
+        <p key={message} className="text-sm text-destructive">
+          {message}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function CodeSelect({
+  id,
+  value,
+  options,
+  placeholder = "選択してください",
+  hasError = false,
+  onValueChange,
+}: CodeSelectProps) {
+  return (
+    <Select
+      value={value === null ? EMPTY_SELECT_VALUE : String(value)}
+      onValueChange={(nextValue) => {
+        onValueChange(
+          nextValue === EMPTY_SELECT_VALUE ? null : Number(nextValue),
+        );
+      }}
+    >
+      <SelectTrigger
+        id={id}
+        className="h-10 w-full bg-background"
+        aria-invalid={hasError}
+      >
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent position="popper">
+        <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
+        {options.map((option) => (
+          <SelectItem key={option.id} value={String(option.id)}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 export function ReservationForm({
   values,
@@ -57,401 +147,458 @@ export function ReservationForm({
   onClearFieldError,
 }: ReservationFormProps) {
   return (
-    // このコンポーネントは予約フォームの入力欄を表示する
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
-    >
-      <CustomerKeywordSearch
-        value={customerQuery}
-        isLoading={isCustomerSearching}
-        placeholder="氏名・カナ・電話番号で検索"
-        onValueChange={onCustomerQueryChange}
-        onSearch={onCustomerSearch}
-      />
-      {customerSearchError && (
-        <p className="text-sm text-destructive">{customerSearchError}</p>
-      )}
-      {hasSearchedCustomers &&
-        !isCustomerSearching &&
-        customers.length === 0 &&
-        !customerSearchError && (
+    <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
+      <form
+        className="mx-auto flex w-full max-w-5xl flex-col gap-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <header className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">予約管理</p>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            新しい予約を登録
+          </h1>
           <p className="text-sm text-muted-foreground">
-            該当する顧客が見つかりませんでした。
+            顧客情報と予約内容を入力して登録してください。
           </p>
+        </header>
+
+        {errorMessage && (
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
         )}
 
-      {customers.length > 0 && (
-        <ul className="rounded-md border">
-          {customers.map((customer) => (
-            <li key={customer.id} className="border-b last:border-b-0">
-              <button
-                type="button"
-                className="w-full px-3 py-2 text-left hover:bg-muted"
-                onClick={() => onCustomerSelect(customer)}
-              >
-                <span>{customer.name}</span>
-                {customer.phone_number && (
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    （{customer.phone_number}）
-                  </span>
+        <Card className="shadow-sm">
+          <CardHeader className="border-b">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <UserRoundIcon className="size-4" />
+              </div>
+              <div>
+                <CardTitle>予約者情報</CardTitle>
+                <CardDescription>
+                  既存顧客を検索するか、予約者情報を直接入力します。
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5 pt-1">
+            <div className="space-y-2 rounded-xl border bg-muted/30 p-4">
+              <Label>顧客を検索</Label>
+              <CustomerKeywordSearch
+                value={customerQuery}
+                isLoading={isCustomerSearching}
+                placeholder="氏名・カナ・電話番号で検索"
+                onValueChange={onCustomerQueryChange}
+                onSearch={onCustomerSearch}
+              />
+
+              {customerSearchError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {customerSearchError}
+                </p>
+              )}
+              {hasSearchedCustomers &&
+                !isCustomerSearching &&
+                customers.length === 0 &&
+                !customerSearchError && (
+                  <p className="text-sm text-muted-foreground">
+                    該当する顧客が見つかりませんでした。
+                  </p>
                 )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {errorMessage && (
-        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      )}
-      {/* まずは予約者名の入力欄だけ作る */}
-      <label htmlFor="reservation-name">予約者名</label>
-      <Input
-        // 親が管理している現在の予約者名を表示する
-        id="reservation-name"
-        name="reservation_name"
-        value={values.reservation_name}
-        onChange={(e) => {
-          onClearFieldError("reservation_name");
-          onChange({
-            // フォームの現在値は親コンポーネントから受け取る
-            ...values,
 
-            // 予約者名だけを新しい入力内容へ変更する
-            reservation_name: e.target.value,
-          });
-        }}
-      />
-      {fieldErrors.reservation_name?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
-      {/* 予約者の電話番号を入力する */}
-      <label htmlFor="reservation-phone-number">電話番号</label>
-      <input
-        // 親が管理している現在の電話番号を表示する
-        id="reservation-phone-number"
-        name="reservation_phone_number"
-        type="tel"
-        value={values.reservation_phone_number}
-        onChange={(e) => {
-          onClearFieldError("reservation_phone_number");
-          onChange({
-            // フォームの現在値は親コンポーネントから受け取る
-            ...values,
+              {customers.length > 0 && (
+                <ul className="overflow-hidden rounded-lg border bg-background shadow-sm">
+                  {customers.map((customer) => (
+                    <li key={customer.id} className="border-b last:border-b-0">
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                        onClick={() => onCustomerSelect(customer)}
+                      >
+                        <span className="font-medium">{customer.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {customer.phone_number ?? "電話番号なし"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-            // 電話番号だけを新しい入力内容へ変更する
-            reservation_phone_number: e.target.value,
-          });
-        }}
-      />
-      {fieldErrors.reservation_phone_number?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
-      {/* 予約の開始日時を入力する */}
-      <label htmlFor="starts_at">予約開始日時</label>
-      <input
-        // 親が管理している現在の予約開始時刻を表示する
-        id="starts_at"
-        name="starts_at"
-        type="datetime-local"
-        value={values.starts_at}
-        onChange={(e) => {
-          onClearFieldError("starts_at");
-          onChange({
-            // フォームの現在値は親コンポーネントから受け取る
-            ...values,
+            {values.customer_id !== null && (
+              <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
+                <CheckIcon className="size-4" />
+                既存顧客を選択しています
+              </div>
+            )}
 
-            // 予約開始時刻だけを新しい入力内容へ変更する
-            starts_at: e.target.value,
-          });
-        }}
-      />
-      {fieldErrors.starts_at?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
-      {/* 予約の終了日時を入力する */}
-      <label htmlFor="ends_at">予約終了日時</label>
-      <input
-        // 親が管理している現在の予約終了時刻を表示する
-        id="ends_at"
-        name="ends_at"
-        type="datetime-local"
-        value={values.ends_at}
-        onChange={(e) => {
-          onClearFieldError("ends_at");
-          onChange({
-            // フォームの現在値は親コンポーネントから受け取る
-            ...values,
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="reservation-name">
+                  予約者名
+                  <span className="text-destructive" aria-hidden="true">
+                    ＊
+                  </span>
+                  <span className="sr-only">必須</span>
+                </Label>
+                <Input
+                  id="reservation-name"
+                  name="reservation_name"
+                  className="h-10"
+                  value={values.reservation_name}
+                  aria-invalid={Boolean(fieldErrors.reservation_name?.length)}
+                  onChange={(event) => {
+                    onClearFieldError("reservation_name");
+                    onChange({
+                      ...values,
+                      reservation_name: event.target.value,
+                    });
+                  }}
+                />
+                <FieldError messages={fieldErrors.reservation_name} />
+              </div>
 
-            // 予約終了時刻だけを新しい入力内容へ変更する
-            ends_at: e.target.value,
-          });
-        }}
-      />
-      {fieldErrors.ends_at?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
-      {/* 予約人数を入力する */}
-      <label htmlFor="guest_count">人数</label>
-      <input
-        // 親が管理している現在の予約人数を表示する
-        id="guest_count"
-        name="guest_count"
-        type="number"
-        min={1}
-        step={1}
-        value={values.guest_count}
-        onChange={(e) => {
-          onClearFieldError("guest_count");
-          onChange({
-            // フォームの現在値は親コンポーネントから受け取る
-            ...values,
+              <div className="space-y-2">
+                <Label htmlFor="reservation-phone-number">
+                  電話番号
+                  <span className="text-destructive" aria-hidden="true">
+                    ＊
+                  </span>
+                  <span className="sr-only">必須</span>
+                </Label>
+                <Input
+                  id="reservation-phone-number"
+                  name="reservation_phone_number"
+                  type="tel"
+                  className="h-10"
+                  value={values.reservation_phone_number}
+                  aria-invalid={Boolean(
+                    fieldErrors.reservation_phone_number?.length,
+                  )}
+                  onChange={(event) => {
+                    onClearFieldError("reservation_phone_number");
+                    onChange({
+                      ...values,
+                      reservation_phone_number: event.target.value,
+                    });
+                  }}
+                />
+                <FieldError messages={fieldErrors.reservation_phone_number} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            // 予約人数だけを新しい入力内容へ変更する
-            guest_count: Number(e.target.value),
-          });
-        }}
-      />
+        <Card className="shadow-sm">
+          <CardHeader className="border-b">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <CalendarClockIcon className="size-4" />
+              </div>
+              <div>
+                <CardTitle>日時・人数</CardTitle>
+                <CardDescription>
+                  予約の開始・終了時刻と来店人数を設定します。
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-5 pt-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="starts_at">
+                予約開始日時
+                <span className="text-destructive" aria-hidden="true">
+                  ＊
+                </span>
+                <span className="sr-only">必須</span>
+              </Label>
+              <Input
+                id="starts_at"
+                name="starts_at"
+                type="datetime-local"
+                className="h-10"
+                value={values.starts_at}
+                aria-invalid={Boolean(fieldErrors.starts_at?.length)}
+                onChange={(event) => {
+                  onClearFieldError("starts_at");
+                  onChange({ ...values, starts_at: event.target.value });
+                }}
+              />
+              <FieldError messages={fieldErrors.starts_at} />
+            </div>
 
-      {fieldErrors.guest_count?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
+            <div className="space-y-2">
+              <Label htmlFor="ends_at">
+                予約終了日時
+                <span className="text-destructive" aria-hidden="true">
+                  ＊
+                </span>
+                <span className="sr-only">必須</span>
+              </Label>
+              <Input
+                id="ends_at"
+                name="ends_at"
+                type="datetime-local"
+                className="h-10"
+                value={values.ends_at}
+                aria-invalid={Boolean(fieldErrors.ends_at?.length)}
+                onChange={(event) => {
+                  onClearFieldError("ends_at");
+                  onChange({ ...values, ends_at: event.target.value });
+                }}
+              />
+              <FieldError messages={fieldErrors.ends_at} />
+            </div>
 
-      {/* 希望席種を選択する */}
-      <label htmlFor="requested_restaurant_master_type_id">希望席種</label>
-      <select
-        id="requested_restaurant_master_type_id"
-        name="requested_restaurant_master_type_id"
-        value={values.requested_restaurant_master_type_id ?? ""}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            requested_restaurant_master_type_id:
-              // optionのvalueはHTML上で文字列になるためnumberに変換。
-              e.target.value === "" ? null : Number(e.target.value),
-          });
-        }}
-      >
-        <option value="">選択してください</option>
-        {requestedRestaurantMasterTypes.map((mT) => (
-          <option key={mT.id} value={mT.id}>
-            {mT.label}
-          </option>
-        ))}
-      </select>
+            <div className="space-y-2 md:col-span-2 lg:col-span-1">
+              <Label htmlFor="guest_count">
+                <UsersIcon className="size-4 text-muted-foreground" />
+                人数
+                <span className="text-destructive" aria-hidden="true">
+                  ＊
+                </span>
+                <span className="sr-only">必須</span>
+              </Label>
+              <Input
+                id="guest_count"
+                name="guest_count"
+                type="number"
+                min={1}
+                step={1}
+                className="h-10"
+                value={values.guest_count}
+                aria-invalid={Boolean(fieldErrors.guest_count?.length)}
+                onChange={(event) => {
+                  onClearFieldError("guest_count");
+                  onChange({
+                    ...values,
+                    guest_count: Number(event.target.value),
+                  });
+                }}
+              />
+              <FieldError messages={fieldErrors.guest_count} />
+            </div>
+          </CardContent>
+        </Card>
 
-      {fieldErrors.requested_restaurant_master_type?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
+        <Card className="shadow-sm">
+          <CardHeader className="border-b">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <UtensilsIcon className="size-4" />
+              </div>
+              <div>
+                <CardTitle>予約内容</CardTitle>
+                <CardDescription>
+                  席種やメニュー、予約経路などを選択します。
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-5 pt-1 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="requested_restaurant_master_type_id">
+                希望席種
+                <span className="text-destructive" aria-hidden="true">
+                  ＊
+                </span>
+                <span className="sr-only">必須</span>
+              </Label>
+              <CodeSelect
+                id="requested_restaurant_master_type_id"
+                value={values.requested_restaurant_master_type_id}
+                options={requestedRestaurantMasterTypes}
+                hasError={Boolean(
+                  fieldErrors.requested_restaurant_master_type?.length,
+                )}
+                onValueChange={(value) => {
+                  onClearFieldError("requested_restaurant_master_type");
+                  onChange({
+                    ...values,
+                    requested_restaurant_master_type_id: value,
+                  });
+                }}
+              />
+              <FieldError
+                messages={fieldErrors.requested_restaurant_master_type}
+              />
+            </div>
 
-      {/* 予約経路を選択する */}
-      <label htmlFor="reservation_route_id">予約経路</label>
-      <select
-        id="reservation_route_id"
-        name="reservation_route_id"
-        value={values.reservation_route_id ?? ""}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            reservation_route_id:
-              // optionのvalueはHTML上で文字列になるためnumberに変換。
-              e.target.value === "" ? null : Number(e.target.value),
-          });
-        }}
-      >
-        <option value="">選択してください</option>
+            <div className="space-y-2">
+              <Label htmlFor="reservation_status_id">
+                予約状況
+                <span className="text-destructive" aria-hidden="true">
+                  ＊
+                </span>
+                <span className="sr-only">必須</span>
+              </Label>
+              <CodeSelect
+                id="reservation_status_id"
+                value={values.reservation_status_id}
+                options={reservationStatuses}
+                hasError={Boolean(fieldErrors.reservation_status?.length)}
+                onValueChange={(value) => {
+                  onClearFieldError("reservation_status");
+                  onChange({ ...values, reservation_status_id: value });
+                }}
+              />
+              <FieldError messages={fieldErrors.reservation_status} />
+            </div>
 
-        {reservationRoutes.map((rR) => (
-          <option key={rR.id} value={rR.id}>
-            {rR.label}
-          </option>
-        ))}
-      </select>
-      {/* メニュータイプを選択する */}
-      <label htmlFor="menu_type_id">メニュー</label>
+            <div className="space-y-2">
+              <Label htmlFor="reservation_route_id">予約経路</Label>
+              <CodeSelect
+                id="reservation_route_id"
+                value={values.reservation_route_id}
+                options={reservationRoutes}
+                onValueChange={(value) =>
+                  onChange({ ...values, reservation_route_id: value })
+                }
+              />
+            </div>
 
-      <select
-        id="menu_type_id"
-        name="menu_type_id"
-        value={values.menu_type_id ?? ""}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            menu_type_id:
-              // optionのvalueはHTML上で文字列になるためnumberに変換。
-              e.target.value === "" ? null : Number(e.target.value),
-          });
-        }}
-      >
-        <option value="">選択してください</option>
+            <div className="space-y-2">
+              <Label htmlFor="menu_type_id">メニュー</Label>
+              <CodeSelect
+                id="menu_type_id"
+                value={values.menu_type_id}
+                options={menuTypes}
+                onValueChange={(value) =>
+                  onChange({ ...values, menu_type_id: value })
+                }
+              />
+            </div>
 
-        {menuTypes.map((mT) => (
-          <option key={mT.id} value={mT.id}>
-            {mT.label}
-          </option>
-        ))}
-      </select>
-      {/* 利用目的を選択する */}
-      <label htmlFor="occasion_id">利用目的</label>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="occasion_id">利用目的</Label>
+              <CodeSelect
+                id="occasion_id"
+                value={values.occasion_id}
+                options={reservationOccasion}
+                hasError={Boolean(fieldErrors.occasion?.length)}
+                onValueChange={(value) => {
+                  onClearFieldError("occasion");
+                  onChange({ ...values, occasion_id: value });
+                }}
+              />
+              <FieldError messages={fieldErrors.occasion} />
+            </div>
+          </CardContent>
+        </Card>
 
-      <select
-        id="occasion_id"
-        name="occasion_id"
-        value={values.occasion_id ?? ""}
-        onChange={(e) => {
-          onClearFieldError("occasion");
-          onChange({
-            ...values,
-            occasion_id:
-              // optionのvalueはHTML上で文字列になるためnumberに変換。
-              e.target.value === "" ? null : Number(e.target.value),
-          });
-        }}
-      >
-        <option value="">選択してください</option>
+        <Card className="shadow-sm">
+          <CardHeader className="border-b">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <NotebookPenIcon className="size-4" />
+              </div>
+              <div>
+                <CardTitle>ご要望・メモ</CardTitle>
+                <CardDescription>
+                  食材の好みやお客様からの要望、店舗内の共有事項を記録します。
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-5 pt-1 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="allergy_note">アレルギー</Label>
+              <Textarea
+                id="allergy_note"
+                name="allergy_note"
+                placeholder="例：甲殻類アレルギー"
+                value={values.allergy_note}
+                onChange={(event) =>
+                  onChange({ ...values, allergy_note: event.target.value })
+                }
+              />
+            </div>
 
-        {reservationOccasion.map((rO) => (
-          <option key={rO.id} value={rO.id}>
-            {rO.label}
-          </option>
-        ))}
-      </select>
+            <div className="space-y-2">
+              <Label htmlFor="disliked_food_note">苦手食材</Label>
+              <Textarea
+                id="disliked_food_note"
+                name="disliked_food_note"
+                placeholder="例：パクチー、辛いもの"
+                value={values.disliked_food_note}
+                onChange={(event) =>
+                  onChange({ ...values, disliked_food_note: event.target.value })
+                }
+              />
+            </div>
 
-      <label htmlFor="reservation_status_id">予約状況</label>
-      <select
-        id="reservation_status_id"
-        name="reservation_status_id"
-        value={values.reservation_status_id ?? ""}
-        onChange={(e) => {
-          onClearFieldError("reservation_status");
+            <div className="space-y-2">
+              <Label htmlFor="preferred_food_note">希望食材</Label>
+              <Textarea
+                id="preferred_food_note"
+                name="preferred_food_note"
+                value={values.preferred_food_note}
+                onChange={(event) =>
+                  onChange({ ...values, preferred_food_note: event.target.value })
+                }
+              />
+            </div>
 
-          onChange({
-            ...values,
-            reservation_status_id:
-              // optionのvalueはHTML上で文字列になるためnumberに変換。
-              e.target.value === "" ? null : Number(e.target.value),
-          });
-        }}
-      >
-        <option value="">選択してください</option>
+            <div className="space-y-2">
+              <Label htmlFor="favorite_drink_note">好きなドリンク</Label>
+              <Textarea
+                id="favorite_drink_note"
+                name="favorite_drink_note"
+                value={values.favorite_drink_note}
+                onChange={(event) =>
+                  onChange({ ...values, favorite_drink_note: event.target.value })
+                }
+              />
+            </div>
 
-        {reservationStatuses.map((rS) => (
-          <option key={rS.id} value={rS.id}>
-            {rS.label}
-          </option>
-        ))}
-      </select>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="request_note">お客様からの要望</Label>
+              <Textarea
+                id="request_note"
+                name="request_note"
+                className="min-h-20"
+                placeholder="席の希望や記念日の対応など"
+                value={values.request_note}
+                onChange={(event) =>
+                  onChange({ ...values, request_note: event.target.value })
+                }
+              />
+            </div>
 
-      {fieldErrors.reservation_status?.map((message) => (
-        <p key={message} className="mt-1 text-sm text-destructive">
-          {message}
-        </p>
-      ))}
-
-      <label htmlFor="allergy_note">アレルギー</label>
-
-      <textarea
-        id="allergy_note"
-        name="allergy_note"
-        value={values.allergy_note}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            allergy_note: e.target.value,
-          });
-        }}
-      />
-
-      <label htmlFor="disliked_food_note">苦手食材</label>
-
-      <textarea
-        id="disliked_food_note"
-        name="disliked_food_note"
-        value={values.disliked_food_note}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            disliked_food_note: e.target.value,
-          });
-        }}
-      />
-
-      <label htmlFor="preferred_food_note">希望食材</label>
-
-      <textarea
-        id="preferred_food_note"
-        name="preferred_food_note"
-        value={values.preferred_food_note}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            preferred_food_note: e.target.value,
-          });
-        }}
-      />
-
-      <label htmlFor="favorite_drink_note">好きなドリンク</label>
-
-      <textarea
-        id="favorite_drink_note"
-        name="favorite_drink_note"
-        value={values.favorite_drink_note}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            favorite_drink_note: e.target.value,
-          });
-        }}
-      />
-
-      <label htmlFor="request_note">お客様からの要望</label>
-
-      <textarea
-        id="request_note"
-        name="request_note"
-        value={values.request_note}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            request_note: e.target.value,
-          });
-        }}
-      />
-
-      <label htmlFor="internal_memo">店舗メモ</label>
-
-      <textarea
-        id="internal_memo"
-        name="internal_memo"
-        value={values.internal_memo}
-        onChange={(e) => {
-          onChange({
-            ...values,
-            internal_memo: e.target.value,
-          });
-        }}
-      />
-
-      <button type="submit" disabled={isSubmitting}>
-        {" "}
-        {isSubmitting ? "登録中…" : "登録する"}
-      </button>
-    </form>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="internal_memo">店舗メモ</Label>
+              <Textarea
+                id="internal_memo"
+                name="internal_memo"
+                className="min-h-24 bg-muted/30"
+                placeholder="スタッフ間で共有する内容を入力"
+                value={values.internal_memo}
+                onChange={(event) =>
+                  onChange({ ...values, internal_memo: event.target.value })
+                }
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="justify-end gap-3">
+            <Button
+              type="submit"
+              size="lg"
+              className="min-w-32"
+              disabled={isSubmitting}
+            >
+              {isSubmitting && (
+                <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
+              )}
+              {isSubmitting ? "登録中…" : "予約を登録"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+    </main>
   );
 }
