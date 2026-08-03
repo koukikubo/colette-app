@@ -151,7 +151,7 @@ export function NewReservationFormContainer(
       setIsSubmitting(false);
     }
   }
-
+  // 顧客選択を解除する関数
   function handleCustomerClear() {
     setValues((currentValues) => ({
       ...currentValues,

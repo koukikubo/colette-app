@@ -57,6 +57,7 @@ type ReservationFormProps = {
   hasSearchedCustomers: boolean;
   fieldErrors: ApiFieldErrors;
   onClearFieldError: (fieldName: string) => void;
+  onCustomerClear: () => void;
 };
 
 type FieldErrorProps = {
@@ -145,6 +146,7 @@ export function ReservationForm({
   hasSearchedCustomers,
   fieldErrors,
   onClearFieldError,
+  onCustomerClear,
 }: ReservationFormProps) {
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
@@ -251,6 +253,7 @@ export function ReservationForm({
                   name="reservation_name"
                   className="h-10"
                   value={values.reservation_name}
+                  readOnly={values.customer_id !== null}
                   aria-invalid={Boolean(fieldErrors.reservation_name?.length)}
                   onChange={(event) => {
                     onClearFieldError("reservation_name");
@@ -527,7 +530,10 @@ export function ReservationForm({
                 placeholder="例：パクチー、辛いもの"
                 value={values.disliked_food_note}
                 onChange={(event) =>
-                  onChange({ ...values, disliked_food_note: event.target.value })
+                  onChange({
+                    ...values,
+                    disliked_food_note: event.target.value,
+                  })
                 }
               />
             </div>
@@ -539,7 +545,10 @@ export function ReservationForm({
                 name="preferred_food_note"
                 value={values.preferred_food_note}
                 onChange={(event) =>
-                  onChange({ ...values, preferred_food_note: event.target.value })
+                  onChange({
+                    ...values,
+                    preferred_food_note: event.target.value,
+                  })
                 }
               />
             </div>
@@ -551,7 +560,10 @@ export function ReservationForm({
                 name="favorite_drink_note"
                 value={values.favorite_drink_note}
                 onChange={(event) =>
-                  onChange({ ...values, favorite_drink_note: event.target.value })
+                  onChange({
+                    ...values,
+                    favorite_drink_note: event.target.value,
+                  })
                 }
               />
             </div>
