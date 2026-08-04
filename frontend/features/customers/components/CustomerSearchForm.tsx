@@ -1,18 +1,15 @@
 "use client";
 
 // import { type FormEvent, useState } from "react";
-import { SearchIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 import type { CustomerKind, CustomerVisibility } from "../types";
 
-import {
-  CustomerFilterPopover,
-  CustomerFilterValues,
-} from "./CustomerFilterPopover";
-import { FormEvent } from "react";
+import { CustomerFilterPopover } from "./CustomerFilterPopover";
+import type { CustomerFilterValues } from "./CustomerFilterPopover";
+import { CustomerKeywordSearch } from "./CustomerKeywordSearch";
 
 type CustomerSearchFormProps = {
   initialQuery?: string;
@@ -38,28 +35,15 @@ export function CustomerSearchForm({
   onClear,
   onApplyFilters,
 }: CustomerSearchFormProps) {
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSearch();
-  }
   return (
-    <form className="flex flex-col gap-2 sm:flex-row" onSubmit={handleSubmit}>
-      <div className="flex-1">
-        <Input
-          type="search"
-          value={value}
-          onChange={(event) => onValueChange(event.target.value)}
-          placeholder="氏名・カナ・電話番号・メール・法人名で検索"
-          aria-label="顧客検索キーワード"
-        />
-      </div>
-
+    <div className="flex flex-col gap-2 sm:flex-row">
       <div className="flex gap-2">
-        <Button type="submit" disabled={isLoading}>
-          <SearchIcon />
-          検索
-        </Button>
-
+        <CustomerKeywordSearch
+          value={value}
+          isLoading={isLoading}
+          onValueChange={onValueChange}
+          onSearch={onSearch}
+        />
         <Button
           type="button"
           variant="outline"
@@ -77,6 +61,6 @@ export function CustomerSearchForm({
           onApply={onApplyFilters}
         />
       </div>
-    </form>
+    </div>
   );
 }

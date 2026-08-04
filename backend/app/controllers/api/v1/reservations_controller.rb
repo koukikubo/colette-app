@@ -6,6 +6,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   customer_id
   reservation_name
   reservation_phone_number
+  reservation_status_id
   starts_at
   ends_at
   guest_count

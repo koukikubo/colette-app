@@ -166,7 +166,9 @@ export function CustomerDetailPageClient({
           }
 
           const details =
-            error.errors.length > 0 ? ` ${error.errors.join(" / ")}` : "";
+            error.errorMessages.length > 0
+              ? ` ${error.errorMessages.join(" / ")}`
+              : "";
 
           setErrorMessage(
             `顧客情報を取得できませんでした。` +

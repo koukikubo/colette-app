@@ -19,7 +19,6 @@ module Reservations
         reservation = Reservation.new(reservation_attributes)
 
         apply_customer_to_reservation(reservation)
-        apply_default_status(reservation)
         apply_staff(reservation)
 
         Reservations::DoubleBookingValidator.call(
@@ -66,18 +65,6 @@ module Reservations
       if reservation.reservation_phone_number.blank?
         reservation.reservation_phone_number = customer.phone_number
       end
-    end
-
-    def apply_default_status(reservation)
-      reservation.reservation_status =
-        StandardListMaster
-          .joins(:standard_master)
-          .find_by!(
-            code: "confirmed",
-            standard_master: {
-              system_key: "reservation_status"
-            }
-          )
     end
 
     def apply_staff(reservation)

@@ -1,0 +1,39 @@
+ja:
+  activerecord:
+    attributes:
+      reservation:
+        reservation_name: "予約者名"
+        reservation_phone_number: "電話番号"
+        starts_at: "予約開始日時"
+        ends_at: "予約終了日時"
+        guest_count: "人数"
+        requested_restaurant_master_type: "希望席種"
+        reservation_status: "予約状況"
+
+    errors:
+      models:
+        reservation:
+          attributes:
+            reservation_name:
+              blank: "を入力してください"
+              too_long: "は%{count}文字以内で入力してください"
+
+            reservation_phone_number:
+              blank: "を入力してください"
+              too_long: "は%{count}文字以内で入力してください"
+
+            starts_at:
+              blank: "を入力してください"
+
+            ends_at:
+              blank: "を入力してください"
+
+            guest_count:
+              blank: "を入力してください"
+              not_an_integer: "は整数で入力してください"
+              greater_than: "%{count}より大きい値を入力してください"
+
+            requested_restaurant_master_type:
+              required: "を選択してください"
+            reservation_status:
+              required: "を選択してください"

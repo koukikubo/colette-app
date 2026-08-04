@@ -112,6 +112,10 @@ module Api
 
         {
           id: restaurant_master.id,
+          restaurant_master_type_id:
+            restaurant_master.restaurant_master_type_id,
+          sequence_number:
+            restaurant_master.sequence_number,
           code: restaurant_master.code,
           name: restaurant_master.name,
           capacity: restaurant_master.capacity,

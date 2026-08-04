@@ -5,6 +5,7 @@ module Api
       def as_json
         {
           id: resource.id,
+          system_key: resource.system_key,
           display_code: resource.id.to_s.rjust(5, "0"),
           name: resource.name,
           description: resource.description,

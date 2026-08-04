@@ -101,7 +101,7 @@ class Api::V1::BaseController < ApplicationController
   def render_validation_error(record)
     render_error(
       message: "入力内容に誤りがあります",
-      errors: record.errors.full_messages,
+      errors: record.errors.to_hash(full_messages: true),
       status: :unprocessable_content
     )
   end

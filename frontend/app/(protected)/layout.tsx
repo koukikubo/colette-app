@@ -8,11 +8,11 @@ import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function ProtectedLayout({
-  children,
-}: {
+type ReservationsLayoutProps = {
   children: React.ReactNode;
-}) {
+};
+
+export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
   const router = useRouter();
   const { status } = useAuth();
 

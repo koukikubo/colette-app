@@ -107,16 +107,6 @@ export function RestaurantMasterMasterPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            席マスタ管理
-          </h1>
-
-          <p className="mt-1 text-sm text-muted-foreground">
-            店舗で使用する席・テーブルを管理します。
-          </p>
-        </div>
-
         <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
           テーブルを登録
         </Button>
@@ -179,13 +169,6 @@ export function RestaurantMasterMasterPage() {
               RestaurantMasters={RestaurantMasters}
               onEdit={handleEdit}
             />
-
-            <div className="border-t px-6 py-4 text-sm text-muted-foreground">
-              取得した席種：
-              {RestaurantMasterTypes.map((tableType) => tableType.label).join(
-                "、",
-              )}
-            </div>
           </>
         )}
       </div>

@@ -1,3 +1,11 @@
+import { Reservation } from "../reservations/types";
+
+// タイムライン用に表示するための型
+export type ReservationTableRow = {
+  restaurantMaster: RestaurantMaster;
+  reservations: Reservation[];
+};
+
 /*席種として返される基本コード情報*/
 export type RestaurantMasterType = {
   id: number;

@@ -47,11 +47,6 @@ const data = {
       url: "/dashboard",
       icon: <LayoutDashboardIcon />,
     },
-    // {
-    //   title: "予約一覧",
-    //   url: "/reservation",
-    //   icon: <CalendarDaysIcon />,
-    // },
     {
       title: "顧客管理",
       url: "/customers",

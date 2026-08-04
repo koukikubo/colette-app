@@ -237,7 +237,9 @@ RSpec.describe "Api::V1::Reservations", type: :request do
             guest_count: 2,
             requested_restaurant_master_type_id: table_type.id,
             reservation_route_id: phone_route.id,
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [restaurant_master.id],
+            reservation_status_id: confirmed_status.id
+
           }
         },
         headers: csrf_headers
@@ -258,6 +260,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
           ends_at: reservation_time(Time.zone.today, 20),
           guest_count: 2,
           requested_restaurant_master_type_id: table_type.id,
+          reservation_status_id: confirmed_status.id,
           restaurant_master_ids: []
         }
       },
@@ -299,12 +302,36 @@ RSpec.describe "Api::V1::Reservations", type: :request do
             ends_at: reservation_time(Time.zone.today, 20),
             guest_count: 2,
             requested_restaurant_master_type_id: table_type.id,
+            reservation_status_id: confirmed_status.id,
             restaurant_master_ids: [restaurant_master.id]
           }
         }
       end.not_to change(Reservation, :count)
 
       expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "予約ステータスが未選択の場合は作成できない" do
+      expect do
+        post "/api/v1/reservations", params: {
+          reservation: {
+            reservation_name: "山田 太郎",
+            reservation_phone_number: "09011112222",
+            starts_at: reservation_time(Time.zone.today, 18),
+            ends_at: reservation_time(Time.zone.today, 20),
+            guest_count: 2,
+            requested_restaurant_master_type_id: table_type.id,
+            restaurant_master_ids: []
+          }
+        },
+        headers: csrf_headers
+      end.not_to change(Reservation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(
+        response.parsed_body.dig("errors", "reservation_status")
+      ).to be_present
     end
   end
 

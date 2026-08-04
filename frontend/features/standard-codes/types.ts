@@ -9,6 +9,7 @@ export type StandardListCode = {
 
 export type StandardCode = {
   id: number;
+  system_key: string;
   display_code: string;
   name: string;
   description: string | null;

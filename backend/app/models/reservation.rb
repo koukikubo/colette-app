@@ -32,6 +32,7 @@ class Reservation < ApplicationRecord
   has_many :restaurant_masters,
           through: :reservation_tables
 
+  # 入力チェック
   validates :reservation_name,
             presence: true,
             length: { maximum: 50 }

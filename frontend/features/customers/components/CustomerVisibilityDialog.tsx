@@ -67,7 +67,11 @@ export function CustomerVisibilityDialog({
           return;
         }
 
-        onError(error.errors.length > 0 ? error.errors : [error.message]);
+        onError(
+          error.errorMessages.length > 0
+            ? error.errorMessages
+            : [error.message],
+        );
 
         return;
       }
