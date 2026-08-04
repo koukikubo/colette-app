@@ -66,7 +66,9 @@ export function CustomerListPageClient() {
 
         if (error instanceof ApiClientError) {
           const details =
-            error.errors.length > 0 ? ` ${error.errors.join(" / ")}` : "";
+            error.errorMessages.length > 0
+              ? ` ${error.errorMessages.join(" / ")}`
+              : "";
 
           setErrorMessage(
             `顧客一覧を取得できませんでした。` +

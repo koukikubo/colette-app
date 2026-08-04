@@ -65,7 +65,11 @@ export function CustomerCreateDialog({
       await onCompleted();
     } catch (error) {
       if (error instanceof ApiClientError) {
-        setErrors(error.errors.length > 0 ? error.errors : [error.message]);
+        setErrors(
+          error.errorMessages.length > 0
+            ? error.errorMessages
+            : [error.message],
+        );
       } else {
         setErrors(["顧客の登録中に予期しないエラーが発生しました。"]);
       }

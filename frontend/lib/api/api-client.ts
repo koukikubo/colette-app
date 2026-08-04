@@ -14,6 +14,8 @@ export type ApiErrorResponse = {
   message: string;
   errors: ApiErrorDetails;
 };
+
+// APIクライアントのエラーを表す例外クラス。
 export class ApiClientError extends Error {
   status: number;
   errors: ApiErrorDetails;
@@ -23,6 +25,12 @@ export class ApiClientError extends Error {
     this.name = "ApiClientError";
     this.status = status;
     this.errors = errors;
+  }
+  // errorsが配列かオブジェクトかに関わらず、すべてのエラーメッセージを1つの配列として返す。
+  get errorMessages(): string[] {
+    return Array.isArray(this.errors)
+      ? this.errors
+      : Object.values(this.errors).flat();
   }
 }
 // fetchの設定に、オブジェクトまたはFormDataを本文として渡せるようにした型。
