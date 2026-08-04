@@ -1,7 +1,7 @@
 class Reservation < ApplicationRecord
   belongs_to :customer,
             optional: true
-            
+
   belongs_to :requested_restaurant_master_type,
             class_name: "StandardListMaster"
 
@@ -53,7 +53,7 @@ class Reservation < ApplicationRecord
               only_integer: true,
               greater_than: 0
             }
-            
+
   validate :ends_at_must_be_after_starts_at
 
 

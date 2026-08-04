@@ -19,6 +19,6 @@ module Backend
     config.middleware.use config.session_store, config.session_options
     config.i18n.default_locale = :ja
     config.i18n.available_locales = %i[ja]
-    
+
   end
 end
