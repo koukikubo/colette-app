@@ -56,6 +56,26 @@ class Reservation < ApplicationRecord
 
   validate :ends_at_must_be_after_starts_at
 
+  validates :requested_restaurant_master_type,
+          standard_list_category: {
+            system_key: "restaurant_master_type"
+          }
+
+  validates :reservation_status,
+            standard_list_category: true
+
+  validates :reservation_route,
+            standard_list_category: true
+
+  validates :menu_type,
+            standard_list_category: {
+              system_key: "reservation_menu_type"
+            }
+
+  validates :occasion,
+            standard_list_category: {
+              system_key: "reservation_occasion"
+            }
 
   # 検索に使用するスコープ
   scope :ordered, -> { order(:starts_at, :id) }
