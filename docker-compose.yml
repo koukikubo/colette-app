@@ -2,40 +2,61 @@ services:
   frontend:
     image: node:22.15.0
     container_name: colette_frontend
+    init: true
     tty: true
     working_dir: /frontend
+
     volumes:
       - ./frontend:/frontend
       - frontend_node_modules:/frontend/node_modules
     ports:
       - "3010:3000"
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install --no-audit --no-fund &&
+      exec npm run dev -- --hostname 0.0.0.0"
 
   backend:
     image: ruby:3.4.4
     container_name: colette_backend
+    init: true
     tty: true
     working_dir: /backend
+
     volumes:
       - ./backend:/backend
       - backend_bundle:/usr/local/bundle
+
     ports:
       - "3011:3000"
     depends_on:
-      - db
-    command: sh -c "bundle install && rails db:prepare && rails s -b 0.0.0.0"
+      db:
+        condition: service_healthy
 
+    command: >
+      sh -c "rm -f tmp/pids/server.pid &&
+              (bundle check || bundle install) &&
+              bin/rails db:prepare &&
+              exec bin/rails server -b 0.0.0.0"
   db:
     image: postgres:17.4
     container_name: colette_db
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: colette_development
+
     ports:
       - "5434:5432"
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d colette_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
 volumes:
   postgres_data:
