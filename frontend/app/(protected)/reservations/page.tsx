@@ -18,7 +18,6 @@ export default async function ReservationsPage({
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">予約一覧</h1>
         <Link
           href={`/reservations/new?date=${targetDate}`}
           className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium"
