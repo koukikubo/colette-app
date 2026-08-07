@@ -207,9 +207,23 @@ RSpec.describe Reservation, type: :model do
       reservation = described_class.new(
         valid_attributes.merge(updated_by_staff: nil)
       )
-
+    
       expect(reservation).to be_invalid
       expect(reservation.errors[:updated_by_staff]).to be_present
+    end
+
+    it "reservation_statusに別カテゴリの選択肢は指定できない" do
+      reservation = described_class.new(
+        valid_attributes.merge(
+          reservation_status: table_type
+        )
+      )
+
+      expect(reservation).to be_invalid
+
+      expect(
+        reservation.errors.details[:reservation_status]
+      ).to include(error: :invalid_category)
     end
   end
 
