@@ -1,4 +1,7 @@
 class Reservation < ApplicationRecord
+  OPENING_HOUR = 17
+  LAST_RESERVATION_START_HOUR = 21
+
   belongs_to :customer,
             optional: true
 
@@ -47,14 +50,15 @@ class Reservation < ApplicationRecord
   validates :ends_at,
             presence: true
 
+  validate :ends_at_must_be_after_starts_at
+  validate :reservation_time_must_be_within_business_hours
+
   validates :guest_count,
             presence: true,
             numericality: {
               only_integer: true,
               greater_than: 0
             }
-
-  validate :ends_at_must_be_after_starts_at
 
   validates :requested_restaurant_master_type,
           standard_list_category: {
@@ -76,6 +80,7 @@ class Reservation < ApplicationRecord
             standard_list_category: {
               system_key: "reservation_occasion"
             }
+
 
   # 検索に使用するスコープ
   scope :ordered, -> { order(:starts_at, :id) }
@@ -120,4 +125,35 @@ class Reservation < ApplicationRecord
 
     errors.add(:ends_at, "must be after starts_at")
   end
+
+  def reservation_time_must_be_within_business_hours
+    return if starts_at.blank? || ends_at.blank?
+
+    reservation_date = starts_at.in_time_zone.to_date
+
+    opening_at = Time.zone.local(
+      reservation_date.year,
+      reservation_date.month,
+      reservation_date.day,
+      OPENING_HOUR
+    )
+
+    last_start_at = Time.zone.local(
+      reservation_date.year,
+      reservation_date.month,
+      reservation_date.day,
+      LAST_RESERVATION_START_HOUR
+    )
+
+    closing_at = reservation_date.next_day.beginning_of_day
+    # 予約開始時間が営業時間外の場合はエラーにする（17:00~21:00）
+    unless starts_at.between?(opening_at, last_start_at)
+      errors.add(:starts_at, :outside_business_hours)
+    end
+
+    if ends_at > closing_at
+      errors.add(:ends_at, :outside_business_hours)
+    end
+  end
+
 end
