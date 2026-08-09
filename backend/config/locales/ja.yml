@@ -9,8 +9,13 @@ ja:
         guest_count: "人数"
         requested_restaurant_master_type: "希望席種"
         reservation_status: "予約状況"
+        reservation_route: "予約経路"
+        menu_type: "メニュー"
+        occasion: "利用目的"
 
     errors:
+      messages:
+        invalid_category: "は正しい種類の選択肢を選んでください"
       models:
         reservation:
           attributes:
@@ -24,9 +29,11 @@ ja:
 
             starts_at:
               blank: "を入力してください"
+              outside_business_hours: "は17:00から21:00の間で指定してください"
 
             ends_at:
               blank: "を入力してください"
+              outside_business_hours: "は17:00から21:00の間で指定してください"
 
             guest_count:
               blank: "を入力してください"

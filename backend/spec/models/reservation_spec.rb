@@ -176,6 +176,86 @@ RSpec.describe Reservation, type: :model do
       expect(reservation.errors[:ends_at]).to be_present
     end
 
+    describe "営業時間のバリデーション" do
+      it "17:00開始の予約は有効である" do
+        reservation = described_class.new(
+          valid_attributes.merge(
+            starts_at: reservation_time(Time.zone.today, 17),
+            ends_at: reservation_time(Time.zone.today, 19)
+          )
+        )
+
+        expect(reservation).to be_valid
+      end
+
+      it "21:00開始かつ24:00終了の予約は有効である" do
+        reservation = described_class.new(
+          valid_attributes.merge(
+            starts_at: reservation_time(Time.zone.today, 21),
+            ends_at: reservation_time(Time.zone.tomorrow, 0)
+          )
+        )
+
+        expect(reservation).to be_valid
+      end
+
+      it "17:00より前に開始する予約は無効である" do
+        reservation = described_class.new(
+          valid_attributes.merge(
+            starts_at: reservation_time(Time.zone.today, 16, 59),
+            ends_at: reservation_time(Time.zone.today, 19)
+          )
+        )
+
+        expect(reservation).to be_invalid
+        expect(
+          reservation.errors.details[:starts_at]
+        ).to include(error: :outside_business_hours)
+      end
+
+      it "21:00より後に開始する予約は無効である" do
+        reservation = described_class.new(
+          valid_attributes.merge(
+            starts_at: reservation_time(Time.zone.today, 21, 1),
+            ends_at: reservation_time(Time.zone.today, 23)
+          )
+        )
+
+        expect(reservation).to be_invalid
+        expect(
+          reservation.errors.details[:starts_at]
+        ).to include(error: :outside_business_hours)
+      end
+
+      it "22:00開始の予約は無効である" do
+        reservation = described_class.new(
+          valid_attributes.merge(
+            starts_at: reservation_time(Time.zone.today, 22),
+            ends_at: reservation_time(Time.zone.tomorrow, 0)
+          )
+        )
+
+        expect(reservation).to be_invalid
+        expect(
+          reservation.errors.details[:starts_at]
+        ).to include(error: :outside_business_hours)
+      end
+
+      it "24:00より後に終了する予約は無効である" do
+        reservation = described_class.new(
+          valid_attributes.merge(
+            starts_at: reservation_time(Time.zone.today, 21),
+            ends_at: reservation_time(Time.zone.tomorrow, 0, 1)
+          )
+        )
+
+        expect(reservation).to be_invalid
+        expect(
+          reservation.errors.details[:ends_at]
+        ).to include(error: :outside_business_hours)
+      end
+    end
+
     it "requested_restaurant_master_typeが必須である" do
       reservation = described_class.new(
         valid_attributes.merge(requested_restaurant_master_type: nil)
@@ -207,9 +287,22 @@ RSpec.describe Reservation, type: :model do
       reservation = described_class.new(
         valid_attributes.merge(updated_by_staff: nil)
       )
-
       expect(reservation).to be_invalid
       expect(reservation.errors[:updated_by_staff]).to be_present
+    end
+
+    it "reservation_statusに別カテゴリの選択肢は指定できない" do
+      reservation = described_class.new(
+        valid_attributes.merge(
+          reservation_status: table_type
+        )
+      )
+
+      expect(reservation).to be_invalid
+
+      expect(
+        reservation.errors.details[:reservation_status]
+      ).to include(error: :invalid_category)
     end
   end
 
@@ -348,3 +441,4 @@ RSpec.describe Reservation, type: :model do
     )
   end
 end
+

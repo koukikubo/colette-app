@@ -101,30 +101,23 @@ export function NewReservationFormContainer(
     void loadStandardCodes();
   }, []);
 
+  function findActiveStandardListCodes(systemKey: string) {
+    const standardCode = standardCodes.find(
+      (code) => code.system_key === systemKey && code.active,
+    );
+
+    return standardCode?.items?.filter((item) => item.active) ?? [];
+  }
   // standardCodes から system_key が restaurant_master_typeを探す
   const requestedRestaurantMasterTypes =
     // 見つかったアイテムを取得する。なければ空を返す。
-    standardCodes.find(
-      (standardCode) => standardCode.system_key === "restaurant_master_type",
-    )?.items ?? [];
-
-  const reservationRoutes =
-    standardCodes.find(
-      (standardCode) => standardCode.system_key === "reservation_route",
-    )?.items ?? [];
-
-  const menuTypes =
-    standardCodes.find(
-      (standardCode) => standardCode.system_key === "reservation_menu_type",
-    )?.items ?? [];
-  const reservationOccasion =
-    standardCodes.find(
-      (standardCode) => standardCode.system_key === "reservation_occasion",
-    )?.items ?? [];
-  const reservationStatuses =
-    standardCodes.find(
-      (standardCode) => standardCode.system_key === "reservation_status",
-    )?.items ?? [];
+    findActiveStandardListCodes("restaurant_master_type");
+  const reservationRoutes = findActiveStandardListCodes("reservation_route");
+  const menuTypes = findActiveStandardListCodes("reservation_menu_type");
+  const reservationOccasion = findActiveStandardListCodes(
+    "reservation_occasion",
+  );
+  const reservationStatuses = findActiveStandardListCodes("reservation_status");
 
   // 予約登録APIを呼び出す
   async function handleSubmit() {
