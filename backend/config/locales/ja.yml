@@ -29,9 +29,11 @@ ja:
 
             starts_at:
               blank: "を入力してください"
+              outside_business_hours: "は17:00から21:00の間で指定してください"
 
             ends_at:
               blank: "を入力してください"
+              outside_business_hours: "は17:00から21:00の間で指定してください"
 
             guest_count:
               blank: "を入力してください"
@@ -42,10 +44,3 @@ ja:
               required: "を選択してください"
             reservation_status:
               required: "を選択してください"
-            starts_at:
-              blank: "を入力してください"
-              outside_business_hours: "は17:00から21:00の間で指定してください"
-
-            ends_at:
-              blank: "を入力してください"
-              outside_business_hours: "は24:00までに指定してください"

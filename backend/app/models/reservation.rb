@@ -155,5 +155,4 @@ class Reservation < ApplicationRecord
       errors.add(:ends_at, :outside_business_hours)
     end
   end
-
 end

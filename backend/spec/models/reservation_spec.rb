@@ -287,7 +287,6 @@ RSpec.describe Reservation, type: :model do
       reservation = described_class.new(
         valid_attributes.merge(updated_by_staff: nil)
       )
-    
       expect(reservation).to be_invalid
       expect(reservation.errors[:updated_by_staff]).to be_present
     end
