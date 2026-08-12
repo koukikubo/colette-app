@@ -28,8 +28,10 @@ export type NextStandardCodeResponse = ApiSuccessResponse<{
 }>;
 
 // 基本コード一覧の取得
-export function fetchStandardCodes() {
-  return apiFetch<StandardCodesResponse>("/api/v1/standard_masters");
+export function fetchStandardCodes(signal?: AbortSignal) {
+  return apiFetch<StandardCodesResponse>("/api/v1/standard_masters", {
+    signal,
+  });
 }
 
 // 基本コードの詳細取得
