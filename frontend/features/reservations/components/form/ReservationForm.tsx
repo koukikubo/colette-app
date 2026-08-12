@@ -48,6 +48,8 @@ type ReservationFormProps = {
   onSubmit: () => void;
   errorMessage: string | null;
   isSubmitting: boolean;
+  submitLabel?: string;
+  submittingLabel?: string;
   customerQuery: string;
   customers: Customer[];
   isCustomerSearching: boolean;
@@ -139,6 +141,8 @@ export function ReservationForm({
   onSubmit,
   errorMessage,
   isSubmitting,
+  submitLabel = "予約を登録",
+  submittingLabel = "登録中…",
   customerQuery,
   customers,
   isCustomerSearching,
@@ -622,7 +626,7 @@ export function ReservationForm({
               {isSubmitting && (
                 <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
               )}
-              {isSubmitting ? "登録中…" : "予約を登録"}
+              {isSubmitting ? submittingLabel : submitLabel}
             </Button>
           </CardFooter>
         </Card>
