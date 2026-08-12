@@ -7,6 +7,11 @@ import type { Reservation, ReservationFormValues } from "../../types";
 import { buildEditReservationFormValues } from "../../utils/reservation-form";
 import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
 
+import { useReservationCustomer } from "../../hooks/useReservationCustomer";
+import { useFieldErrors } from "@/hooks/useFieldErrors";
+
+import { ReservationForm } from "./ReservationForm";
+
 type EditReservationFormContentProps = {
   reservation: Reservation;
 };
@@ -15,11 +20,33 @@ type EditReservationFormContentProps = {
 function EditReservationFormContent({
   reservation,
 }: EditReservationFormContentProps) {
-  const [values] = useState<ReservationFormValues>(() =>
+  const [values, setValues] = useState<ReservationFormValues>(() =>
     buildEditReservationFormValues(reservation),
   );
 
   const [lockVersion] = useState(reservation.lock_version);
+  const [submitErrorMessage] = useState<string | null>(null);
+  const [isSubmitting] = useState(false);
+
+  const { fieldErrors, clearFieldError } = useFieldErrors();
+  const {
+    customerQuery,
+    customers,
+    isCustomerSearching,
+    customerSearchError,
+    hasSearchedCustomers,
+    selectedCustomerHasNoPhone,
+    setCustomerQuery,
+    handleCustomerSearch,
+    handleCustomerSelect,
+    handleCustomerClear,
+  } = useReservationCustomer({
+    setValues,
+    clearFieldError,
+    initialCustomerHasNoPhone:
+      reservation.customer_id !== null && !reservation.reservation_phone_number,
+  });
+
   const {
     requestedRestaurantMasterTypes,
     reservationRoutes,
@@ -42,15 +69,32 @@ function EditReservationFormContent({
   }
 
   return (
-    <div className="p-6">
-      <p>編集対象の予約：{values.reservation_name}</p>
-      <p>現在のlock_version：{lockVersion}</p>
-      <p>予約状況の選択肢：{reservationStatuses.length}件</p>
-      <p>予約経路の選択肢：{reservationRoutes.length}件</p>
-      <p>メニューの選択肢：{menuTypes.length}件</p>
-      <p>利用目的の選択肢：{reservationOccasions.length}件</p>
-      <p>希望席種の選択肢：{requestedRestaurantMasterTypes.length}件</p>
-    </div>
+    <ReservationForm
+      values={values}
+      onChange={setValues}
+      requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
+      reservationRoutes={reservationRoutes}
+      menuTypes={menuTypes}
+      reservationOccasion={reservationOccasions}
+      reservationStatuses={reservationStatuses}
+      onSubmit={() => {}}
+      errorMessage={submitErrorMessage}
+      isSubmitting={isSubmitting}
+      submitLabel="予約を更新"
+      submittingLabel="更新中…"
+      customerQuery={customerQuery}
+      customers={customers}
+      isCustomerSearching={isCustomerSearching}
+      customerSearchError={customerSearchError}
+      onCustomerQueryChange={setCustomerQuery}
+      onCustomerSearch={handleCustomerSearch}
+      onCustomerSelect={handleCustomerSelect}
+      hasSearchedCustomers={hasSearchedCustomers}
+      fieldErrors={fieldErrors}
+      onClearFieldError={clearFieldError}
+      onCustomerClear={handleCustomerClear}
+      selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+    />
   );
 }
 
