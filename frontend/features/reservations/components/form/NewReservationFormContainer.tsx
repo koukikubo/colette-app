@@ -46,6 +46,7 @@ export function NewReservationFormContainer(
     menuTypes,
     reservationOccasions,
     reservationStatuses,
+    // restaurantMasters,
   } = useReservationFormOptions();
 
   const [selectedCustomerHasNoPhone, setSelectedCustomerHasNoPhone] =
@@ -58,6 +59,10 @@ export function NewReservationFormContainer(
     searchCustomers,
     clearCustomers,
   } = useCustomerSearch();
+
+  // const activeRestaurantMasters = restaurantMasters.filter(
+  //   (restaurantMaster) => restaurantMaster.active,
+  // );
 
   async function handleCustomerSearch() {
     const query = customerQuery.trim();
@@ -159,6 +164,7 @@ export function NewReservationFormContainer(
       onClearFieldError={clearFieldError}
       onCustomerClear={handleCustomerClear}
       selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+      // restaurantMasters={activeRestaurantMasters}
     />
   );
 }

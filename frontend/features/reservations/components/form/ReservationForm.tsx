@@ -2,6 +2,7 @@
 import type { Customer } from "@/features/customers/types";
 import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
+// import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 
 import {
   CalendarClockIcon,
@@ -59,6 +60,7 @@ type ReservationFormProps = {
   onClearFieldError: (fieldName: string) => void;
   onCustomerClear: () => void;
   selectedCustomerHasNoPhone: boolean;
+  // restaurantMasters: RestaurantMaster[];
 };
 
 type FieldErrorProps = {
@@ -149,6 +151,7 @@ export function ReservationForm({
   onClearFieldError,
   onCustomerClear,
   selectedCustomerHasNoPhone,
+  // restaurantMasters,
 }: ReservationFormProps) {
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
