@@ -1,8 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-
-import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
-import type { StandardCode } from "@/features/standard-codes/types";
+import { useState } from "react";
+import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
 
 import type { ReservationFormValues } from "../../types";
 import {
@@ -34,13 +32,21 @@ export function NewReservationFormContainer(
   const [values, setValues] = useState<ReservationFormValues>(() => {
     return buildNewReservationFormValues({ targetDate });
   });
-  const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerQuery, setCustomerQuery] = useState("");
   const [hasSearchedCustomers, setHasSearchedCustomers] = useState(false);
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
+
+  // 新規・編集フォームで共通利用するマスタ選択肢を取得する。
+  const {
+    requestedRestaurantMasterTypes,
+    reservationRoutes,
+    menuTypes,
+    reservationOccasions,
+    reservationStatuses,
+  } = useReservationFormOptions();
 
   const [selectedCustomerHasNoPhone, setSelectedCustomerHasNoPhone] =
     useState(false);
@@ -89,36 +95,6 @@ export function NewReservationFormContainer(
     setHasSearchedCustomers(false);
   }
 
-  useEffect(() => {
-    // 全体を非同期関数にせずにloadStandardCodesだけを非同期に変更
-    async function loadStandardCodes() {
-      // 次に基本コードマスタ取得APIを呼び出す
-      const response = await fetchStandardCodes();
-
-      setStandardCodes(response.data.standard_masters);
-    }
-
-    void loadStandardCodes();
-  }, []);
-
-  function findActiveStandardListCodes(systemKey: string) {
-    const standardCode = standardCodes.find(
-      (code) => code.system_key === systemKey && code.active,
-    );
-
-    return standardCode?.items?.filter((item) => item.active) ?? [];
-  }
-  // standardCodes から system_key が restaurant_master_typeを探す
-  const requestedRestaurantMasterTypes =
-    // 見つかったアイテムを取得する。なければ空を返す。
-    findActiveStandardListCodes("restaurant_master_type");
-  const reservationRoutes = findActiveStandardListCodes("reservation_route");
-  const menuTypes = findActiveStandardListCodes("reservation_menu_type");
-  const reservationOccasion = findActiveStandardListCodes(
-    "reservation_occasion",
-  );
-  const reservationStatuses = findActiveStandardListCodes("reservation_status");
-
   // 予約登録APIを呼び出す
   async function handleSubmit() {
     if (isSubmitting) return;
@@ -166,7 +142,7 @@ export function NewReservationFormContainer(
       requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
       reservationRoutes={reservationRoutes}
       menuTypes={menuTypes}
-      reservationOccasion={reservationOccasion}
+      reservationOccasion={reservationOccasions}
       reservationStatuses={reservationStatuses}
       onSubmit={handleSubmit}
       errorMessage={errorMessage}
