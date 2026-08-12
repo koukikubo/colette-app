@@ -1,3 +1,6 @@
+import { notFound } from "next/navigation";
+import { EditReservationFormContainer } from "@/features/reservations/components/form/EditReservationFormContainer";
+
 type EditReservationPageProps = {
   params: Promise<{
     id: string;
@@ -8,11 +11,12 @@ export default async function EditReservationPage({
   params,
 }: EditReservationPageProps) {
   const { id } = await params;
+  const reservationId = Number(id);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold">予約編集</h1>
-      <p className="mt-2 text-sm text-muted-foreground">予約ID：{id}</p>
-    </div>
-  );
+  // 予約IDが整数でない場合や0以下の場合は404ページを表示する
+  if (!Number.isInteger(reservationId) || reservationId <= 0) {
+    notFound();
+  }
+
+  return <EditReservationFormContainer reservationId={reservationId} />;
 }
