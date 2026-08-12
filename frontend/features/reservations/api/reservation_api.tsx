@@ -41,3 +41,11 @@ export function createReservation(payload: ReservationCreateRequest) {
     body: payload,
   });
 }
+
+// 指定されたIDの予約を1件取得する。
+export function fetchReservation(id: number, signal?: AbortSignal) {
+  return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}`, {
+    cache: "no-store",
+    signal,
+  });
+}
