@@ -72,3 +72,30 @@ export function addDaysToReservationDate(
 
   return `${nextYear}-${nextMonth}-${nextDay}`;
 }
+
+// APIから取得した予約日時をdatetime-local用の形式へ変換する。
+export function formatReservationDateTimeLocal(value: string): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
+  const parts = formatter.formatToParts(new Date(value));
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  const minute = parts.find((part) => part.type === "minute")?.value;
+
+  if (!year || !month || !day || !hour || !minute) {
+    throw new Error("予約日時を変換できませんでした。");
+  }
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
