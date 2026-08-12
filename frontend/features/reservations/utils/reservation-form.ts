@@ -1,8 +1,11 @@
 import type {
+  Reservation,
   ReservationAttributes,
   ReservationCreateRequest,
   ReservationFormValues,
 } from "../types";
+
+import { formatReservationDateTimeLocal } from "./reservation-date";
 
 type BuildNewReservationFormValuesParams = {
   targetDate: string;
@@ -34,6 +37,37 @@ export function buildNewReservationFormValues({
     favorite_drink_note: "",
     request_note: "",
     internal_memo: "",
+  };
+}
+
+// APIから取得した予約を編集フォームで扱える入力値へ変換する。
+export function buildEditReservationFormValues(
+  reservation: Reservation,
+): ReservationFormValues {
+  return {
+    customer_id: reservation.customer_id,
+    reservation_name: reservation.reservation_name,
+    reservation_phone_number: reservation.reservation_phone_number,
+
+    starts_at: formatReservationDateTimeLocal(reservation.starts_at),
+    ends_at: formatReservationDateTimeLocal(reservation.ends_at),
+    guest_count: reservation.guest_count,
+
+    requested_restaurant_master_type_id:
+      reservation.requested_restaurant_master_type_id,
+    restaurant_master_ids: [...reservation.restaurant_master_ids],
+
+    reservation_status_id: reservation.reservation_status_id,
+    reservation_route_id: reservation.reservation_route_id,
+    menu_type_id: reservation.menu_type_id,
+    occasion_id: reservation.occasion_id,
+
+    allergy_note: reservation.allergy_note ?? "",
+    disliked_food_note: reservation.disliked_food_note ?? "",
+    preferred_food_note: reservation.preferred_food_note ?? "",
+    favorite_drink_note: reservation.favorite_drink_note ?? "",
+    request_note: reservation.request_note ?? "",
+    internal_memo: reservation.internal_memo ?? "",
   };
 }
 
