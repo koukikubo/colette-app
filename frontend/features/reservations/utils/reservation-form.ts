@@ -3,6 +3,7 @@ import type {
   ReservationAttributes,
   ReservationCreateRequest,
   ReservationFormValues,
+  ReservationUpdateRequest,
 } from "../types";
 
 import { formatReservationDateTimeLocal } from "./reservation-date";
@@ -115,5 +116,18 @@ export function buildCreateReservationRequest(
 ): ReservationCreateRequest {
   return {
     reservation: toReservationAttributes(values),
+  };
+}
+
+// Railsの予約更新APIへ送る入力値と楽観ロック番号をまとめる。
+export function buildUpdateReservationRequest(
+  values: ReservationFormValues,
+  lockVersion: number,
+): ReservationUpdateRequest {
+  return {
+    reservation: {
+      ...toReservationAttributes(values),
+      lock_version: lockVersion,
+    },
   };
 }
