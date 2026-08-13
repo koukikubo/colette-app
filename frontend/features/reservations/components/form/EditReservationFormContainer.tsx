@@ -144,6 +144,13 @@ function EditReservationFormContent({
 
       <ReservationUpdateConfirmDialog
         open={confirmOpen}
+        reservation={reservation}
+        values={values}
+        requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
+        reservationRoutes={reservationRoutes}
+        menuTypes={menuTypes}
+        reservationOccasions={reservationOccasions}
+        reservationStatuses={reservationStatuses}
         isSubmitting={isSubmitting}
         onOpenChange={setConfirmOpen}
         onConfirm={handleSubmit}
