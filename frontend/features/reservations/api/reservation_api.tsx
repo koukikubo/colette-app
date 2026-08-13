@@ -4,6 +4,7 @@ import type {
   ReservationListParams,
   ReservationListResponse,
   ReservationResponse,
+  ReservationUpdateRequest,
 } from "../types";
 
 const RESERVATIONS_PATH = "/api/v1/reservations";
@@ -47,5 +48,16 @@ export function fetchReservation(id: number, signal?: AbortSignal) {
   return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}`, {
     cache: "no-store",
     signal,
+  });
+}
+
+// 指定されたIDの予約を更新する。
+export function updateReservation(
+  id: number,
+  payload: ReservationUpdateRequest,
+) {
+  return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}`, {
+    method: "PATCH",
+    body: payload,
   });
 }
