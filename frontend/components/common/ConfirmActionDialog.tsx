@@ -22,6 +22,7 @@ type ConfirmActionDialogProps = {
   cancelLabel?: string;
   isSubmitting?: boolean;
   children?: ReactNode;
+  confirmDisabled?: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void | Promise<void>;
 };
@@ -36,6 +37,7 @@ export function ConfirmActionDialog({
   cancelLabel = "戻って修正する",
   isSubmitting = false,
   children,
+  confirmDisabled = false,
   onOpenChange,
   onConfirm,
 }: ConfirmActionDialogProps) {
@@ -64,7 +66,7 @@ export function ConfirmActionDialog({
 
           <Button
             type="button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || confirmDisabled}
             onClick={() => {
               void onConfirm();
             }}
