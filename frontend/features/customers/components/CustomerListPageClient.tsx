@@ -169,14 +169,6 @@ export function CustomerListPageClient() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">顧客管理</h1>
-
-        <p className="mt-1 text-sm text-muted-foreground">
-          登録されている顧客情報を確認できます。
-        </p>
-      </div>
-
       <Button type="button" onClick={handleOpenCreateDialog}>
         <PlusIcon />
         顧客を登録
