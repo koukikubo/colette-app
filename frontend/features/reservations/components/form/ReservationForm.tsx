@@ -62,6 +62,8 @@ type ReservationFormProps = {
   onClearFieldError: (fieldName: string) => void;
   onCustomerClear: () => void;
   selectedCustomerHasNoPhone: boolean;
+  cancelLabel?: string;
+  onCancel?: () => void;
   // restaurantMasters: RestaurantMaster[];
 };
 
@@ -155,6 +157,8 @@ export function ReservationForm({
   onClearFieldError,
   onCustomerClear,
   selectedCustomerHasNoPhone,
+  cancelLabel,
+  onCancel,
   // restaurantMasters,
 }: ReservationFormProps) {
   return (
@@ -616,7 +620,20 @@ export function ReservationForm({
               />
             </div>
           </CardContent>
+
           <CardFooter className="justify-end gap-3">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                disabled={isSubmitting}
+                onClick={onCancel}
+              >
+                {cancelLabel ?? "戻る"}
+              </Button>
+            )}
+
             <Button
               type="submit"
               size="lg"

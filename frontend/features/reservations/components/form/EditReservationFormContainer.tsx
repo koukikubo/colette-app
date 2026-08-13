@@ -17,7 +17,9 @@ import { useReservationCustomer } from "../../hooks/useReservationCustomer";
 import { useFieldErrors } from "@/hooks/useFieldErrors";
 
 import { ReservationForm } from "./ReservationForm";
-import { ReservationUpdateConfirmDialog } from "../details/ReservationUpdateConfirmDialog";
+import { ReservationUpdateConfirmDialog } from "../dialogs/ReservationUpdateConfirmDialog";
+import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 
 type EditReservationFormContentProps = {
   reservation: Reservation;
@@ -69,6 +71,16 @@ function EditReservationFormContent({
     isLoading: isOptionsLoading,
     errorMessage: optionsErrorMessage,
   } = useReservationFormOptions();
+
+  const initialValues = buildEditReservationFormValues(reservation);
+  const isDirty = JSON.stringify(values) !== JSON.stringify(initialValues);
+  const {
+    discardDialogOpen,
+    requestNavigation,
+    confirmDiscard,
+    handleDiscardDialogOpenChange,
+  } = useUnsavedChangesGuard(isDirty);
+
   // 編集した予約内容をRailsの更新APIへ送信する。
   async function handleSubmit() {
     // 二重クリックによる重複送信を防ぐ。
@@ -140,6 +152,12 @@ function EditReservationFormContent({
         onClearFieldError={clearFieldError}
         onCustomerClear={handleCustomerClear}
         selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+        cancelLabel="閉じる"
+        onCancel={() => {
+          requestNavigation(() => {
+            router.push(`/reservations/${reservation.id}`);
+          });
+        }}
       />
 
       <ReservationUpdateConfirmDialog
@@ -154,6 +172,12 @@ function EditReservationFormContent({
         isSubmitting={isSubmitting}
         onOpenChange={setConfirmOpen}
         onConfirm={handleSubmit}
+      />
+
+      <ConfirmDiscardChangesDialog
+        open={discardDialogOpen}
+        onOpenChange={handleDiscardDialogOpenChange}
+        onConfirm={confirmDiscard}
       />
     </>
   );
