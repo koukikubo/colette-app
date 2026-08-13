@@ -7,6 +7,8 @@ class Api::V1::BaseController < ApplicationController
             with: :render_invalid_authenticity_token
   rescue_from ActiveRecord::RecordInvalid,
             with: :render_record_invalid
+  rescue_from ActiveRecord::StaleObjectError,
+            with: :render_stale_object_error
   
             # 本番環境用の例外処理
   # rescue_from StandardError, with: :render_internal_server_error
@@ -96,6 +98,17 @@ class Api::V1::BaseController < ApplicationController
       errors: [error.message],
       status: :internal_server_error
     )    
+  end
+
+  # 楽観ロックにより更新が競合した場合のレスポンス
+  def render_stale_object_error(_error)
+    render_error(
+      message: "データは別の担当者によって更新されています",
+      errors: [
+        "最新情報を再取得してから、もう一度操作してください"
+      ],
+      status: :conflict
+    )
   end
 
   def render_validation_error(record)

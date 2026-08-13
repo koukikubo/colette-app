@@ -2,8 +2,6 @@ class Api::V1::RestaurantMastersController < Api::V1::BaseController
   before_action :require_staff_login!
   before_action :set_restaurant_master,
                 only: %i[show update]
-  rescue_from ActiveRecord::StaleObjectError,
-              with: :render_stale_object_error
   rescue_from ActiveRecord::RecordNotUnique,
               with: :render_registration_conflict
 
@@ -132,18 +130,6 @@ class Api::V1::RestaurantMastersController < Api::V1::BaseController
 
 
   # エラー系
-
-  def render_stale_object_error(_error)
-    render_error(
-      message:
-        "席情報は別の担当者によって更新されています",
-      errors: [
-        "最新の席情報を再取得してから、もう一度操作してください"
-      ],
-      status: :conflict
-    )
-  end
-
   def render_registration_conflict(_error)
     render_error(
       message: "席コードの登録が競合しました",
