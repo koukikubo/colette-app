@@ -1,16 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { updateReservation } from "../../api/reservation_api";
+import { ApiClientError } from "@/lib/api/api-client";
 
 import { useReservation } from "../../hooks/useReservation";
 import type { Reservation, ReservationFormValues } from "../../types";
-import { buildEditReservationFormValues } from "../../utils/reservation-form";
+import {
+  buildEditReservationFormValues,
+  buildUpdateReservationRequest,
+} from "../../utils/reservation-form";
 import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
 
 import { useReservationCustomer } from "../../hooks/useReservationCustomer";
 import { useFieldErrors } from "@/hooks/useFieldErrors";
 
 import { ReservationForm } from "./ReservationForm";
+import { ReservationUpdateConfirmDialog } from "../details/ReservationUpdateConfirmDialog";
 
 type EditReservationFormContentProps = {
   reservation: Reservation;
@@ -20,15 +27,21 @@ type EditReservationFormContentProps = {
 function EditReservationFormContent({
   reservation,
 }: EditReservationFormContentProps) {
+  const router = useRouter();
   const [values, setValues] = useState<ReservationFormValues>(() =>
     buildEditReservationFormValues(reservation),
   );
 
   const [lockVersion] = useState(reservation.lock_version);
-  const [submitErrorMessage] = useState<string | null>(null);
-  const [isSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(
+    null,
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { fieldErrors, clearFieldError } = useFieldErrors();
+  const { fieldErrors, clearFieldError, setFieldErrors, clearAllFieldErrors } =
+    useFieldErrors();
+
   const {
     customerQuery,
     customers,
@@ -56,6 +69,38 @@ function EditReservationFormContent({
     isLoading: isOptionsLoading,
     errorMessage: optionsErrorMessage,
   } = useReservationFormOptions();
+  // 編集した予約内容をRailsの更新APIへ送信する。
+  async function handleSubmit() {
+    // 二重クリックによる重複送信を防ぐ。
+    if (isSubmitting) return;
+
+    setSubmitErrorMessage(null);
+    clearAllFieldErrors();
+    setIsSubmitting(true);
+
+    try {
+      const request = buildUpdateReservationRequest(values, lockVersion);
+
+      await updateReservation(reservation.id, request);
+
+      // 更新した予約の詳細ページへ戻る。
+      router.push(`/reservations/${reservation.id}`);
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        setSubmitErrorMessage(error.message);
+
+        if (error.status === 422 && !Array.isArray(error.errors)) {
+          setFieldErrors(error.errors);
+        }
+
+        return;
+      }
+
+      setSubmitErrorMessage("予約の更新中に予期しないエラーが発生しました。");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
   if (isOptionsLoading) {
     return <p className="p-6">フォームの選択肢を読み込んでいます。</p>;
   }
@@ -69,32 +114,41 @@ function EditReservationFormContent({
   }
 
   return (
-    <ReservationForm
-      values={values}
-      onChange={setValues}
-      requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
-      reservationRoutes={reservationRoutes}
-      menuTypes={menuTypes}
-      reservationOccasion={reservationOccasions}
-      reservationStatuses={reservationStatuses}
-      onSubmit={() => {}}
-      errorMessage={submitErrorMessage}
-      isSubmitting={isSubmitting}
-      submitLabel="予約を更新"
-      submittingLabel="更新中…"
-      customerQuery={customerQuery}
-      customers={customers}
-      isCustomerSearching={isCustomerSearching}
-      customerSearchError={customerSearchError}
-      onCustomerQueryChange={setCustomerQuery}
-      onCustomerSearch={handleCustomerSearch}
-      onCustomerSelect={handleCustomerSelect}
-      hasSearchedCustomers={hasSearchedCustomers}
-      fieldErrors={fieldErrors}
-      onClearFieldError={clearFieldError}
-      onCustomerClear={handleCustomerClear}
-      selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
-    />
+    <>
+      <ReservationForm
+        values={values}
+        onChange={setValues}
+        requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
+        reservationRoutes={reservationRoutes}
+        menuTypes={menuTypes}
+        reservationOccasion={reservationOccasions}
+        reservationStatuses={reservationStatuses}
+        onSubmit={() => setConfirmOpen(true)}
+        errorMessage={submitErrorMessage}
+        isSubmitting={isSubmitting}
+        submitLabel="予約を更新"
+        submittingLabel="更新中…"
+        customerQuery={customerQuery}
+        customers={customers}
+        isCustomerSearching={isCustomerSearching}
+        customerSearchError={customerSearchError}
+        onCustomerQueryChange={setCustomerQuery}
+        onCustomerSearch={handleCustomerSearch}
+        onCustomerSelect={handleCustomerSelect}
+        hasSearchedCustomers={hasSearchedCustomers}
+        fieldErrors={fieldErrors}
+        onClearFieldError={clearFieldError}
+        onCustomerClear={handleCustomerClear}
+        selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+      />
+
+      <ReservationUpdateConfirmDialog
+        open={confirmOpen}
+        isSubmitting={isSubmitting}
+        onOpenChange={setConfirmOpen}
+        onConfirm={handleSubmit}
+      />
+    </>
   );
 }
 
