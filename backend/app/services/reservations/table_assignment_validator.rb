@@ -1,5 +1,7 @@
 module Reservations
-  class DoubleBookingValidator
+  # 予約へ実テーブルを割り当てる際に、席マスタの状態や予約状況を検証する。
+  # 複数の登録・更新処理で同じ割り当てルールを適用するため、Serviceとして共通化している。
+  class TableAssignmentValidator
     # reservation: Reservationオブジェクト
     def self.call(reservation:, restaurant_master_ids:)
       new(

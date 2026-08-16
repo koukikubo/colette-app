@@ -25,7 +25,7 @@ module Reservations
         apply_customer_to_reservation
         apply_staff
 
-        Reservations::DoubleBookingValidator.call(
+        Reservations::TableAssignmentValidator.call(
           reservation: reservation,
           restaurant_master_ids: restaurant_master_ids
         )
@@ -47,7 +47,7 @@ module Reservations
     def reservation_attributes
       attributes.except(:restaurant_master_ids)
     end
-    
+
     # 実テーブルIDを配列として整形する。未送信と空配列の意味を分けるため、キーがない場合はnilを返す
     def extract_restaurant_master_ids
       return nil unless attributes.key?(:restaurant_master_ids)

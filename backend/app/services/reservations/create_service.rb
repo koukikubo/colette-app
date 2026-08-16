@@ -21,7 +21,7 @@ module Reservations
         apply_customer_to_reservation(reservation)
         apply_staff(reservation)
 
-        Reservations::DoubleBookingValidator.call(
+        Reservations::TableAssignmentValidator.call(
           reservation: reservation,
           restaurant_master_ids: restaurant_master_ids
         )
