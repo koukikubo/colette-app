@@ -690,53 +690,53 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     end
 
     it "存在しない予約の場合は404を返す" do
-        patch(
-          "/api/v1/reservations/999999999/restore",
-          params: {
-            reservation: {
-              lock_version: 0
-            }
-          },
-          headers: csrf_headers
-        )
-
-        expect(response).to have_http_status(:not_found)
-      end
-    end
-
-    def login_as_staff(staff)
-      post "/api/v1/staff/login", params: {
-        staff: {
-          staff_id: staff.id,
-          password: "password"
-        }
-      },
-      headers: csrf_headers
-    end
-
-    def csrf_headers
-      get "/api/v1/csrf"
-
-      json = JSON.parse(response.body)
-
-      token =
-        json.dig("data", "csrf_token") ||
-        json.dig("data", "token") ||
-        json["csrf_token"] ||
-        json["token"]
-
-      {
-        "X-CSRF-Token" => token
-      }
-    end
-
-    def reservation_time(date, hour, min = 0)
-      Time.zone.local(
-        date.year,
-        date.month,
-        date.day,
-        hour,
-        min
+      patch(
+        "/api/v1/reservations/999999999/restore",
+        params: {
+          reservation: {
+            lock_version: 0
+          }
+        },
+        headers: csrf_headers
       )
+
+      expect(response).to have_http_status(:not_found)
     end
+  end
+
+  def login_as_staff(staff)
+    post "/api/v1/staff/login", params: {
+      staff: {
+        staff_id: staff.id,
+        password: "password"
+      }
+    },
+    headers: csrf_headers
+  end
+
+  def csrf_headers
+    get "/api/v1/csrf"
+
+    json = JSON.parse(response.body)
+
+    token =
+      json.dig("data", "csrf_token") ||
+      json.dig("data", "token") ||
+      json["csrf_token"] ||
+      json["token"]
+
+    {
+      "X-CSRF-Token" => token
+    }
+  end
+
+  def reservation_time(date, hour, min = 0)
+    Time.zone.local(
+      date.year,
+      date.month,
+      date.day,
+      hour,
+      min
+    )
+  end
 end
