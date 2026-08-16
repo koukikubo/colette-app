@@ -1,0 +1,29 @@
+{
+  "name": "Colette Backend",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "backend",
+  "workspaceFolder": "/backend",
+  "shutdownAction": "none",
+  "overrideCommand": false,
+  "customizations": {
+    "vscode": {
+      "extensions": ["Shopify.ruby-lsp"],
+      "settings": {
+        "[ruby]": {
+          "editor.defaultFormatter": "Shopify.ruby-lsp",
+          "editor.formatOnSave": true,
+          "editor.formatOnType": true,
+          "editor.tabSize": 2,
+          "editor.insertSpaces": true
+        },
+        "rubyLsp.formatter": "rubocop",
+        "rubyLsp.pullDiagnosticsOn": "save",
+        "files.watcherExclude": {
+          "**/.git/objects/**": true,
+          "**/log/**": true,
+          "**/tmp/**": true
+        }
+      }
+    }
+  }
+}
