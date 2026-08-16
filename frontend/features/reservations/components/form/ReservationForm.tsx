@@ -2,6 +2,7 @@
 import type { Customer } from "@/features/customers/types";
 import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
+// import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 
 import {
   CalendarClockIcon,
@@ -47,6 +48,8 @@ type ReservationFormProps = {
   onSubmit: () => void;
   errorMessage: string | null;
   isSubmitting: boolean;
+  submitLabel?: string;
+  submittingLabel?: string;
   customerQuery: string;
   customers: Customer[];
   isCustomerSearching: boolean;
@@ -59,6 +62,9 @@ type ReservationFormProps = {
   onClearFieldError: (fieldName: string) => void;
   onCustomerClear: () => void;
   selectedCustomerHasNoPhone: boolean;
+  cancelLabel?: string;
+  onCancel?: () => void;
+  // restaurantMasters: RestaurantMaster[];
 };
 
 type FieldErrorProps = {
@@ -137,6 +143,8 @@ export function ReservationForm({
   onSubmit,
   errorMessage,
   isSubmitting,
+  submitLabel = "予約を登録",
+  submittingLabel = "登録中…",
   customerQuery,
   customers,
   isCustomerSearching,
@@ -149,6 +157,9 @@ export function ReservationForm({
   onClearFieldError,
   onCustomerClear,
   selectedCustomerHasNoPhone,
+  cancelLabel,
+  onCancel,
+  // restaurantMasters,
 }: ReservationFormProps) {
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
@@ -609,7 +620,20 @@ export function ReservationForm({
               />
             </div>
           </CardContent>
+
           <CardFooter className="justify-end gap-3">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                disabled={isSubmitting}
+                onClick={onCancel}
+              >
+                {cancelLabel ?? "戻る"}
+              </Button>
+            )}
+
             <Button
               type="submit"
               size="lg"
@@ -619,7 +643,7 @@ export function ReservationForm({
               {isSubmitting && (
                 <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
               )}
-              {isSubmitting ? "登録中…" : "予約を登録"}
+              {isSubmitting ? submittingLabel : submitLabel}
             </Button>
           </CardFooter>
         </Card>

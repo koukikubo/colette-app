@@ -1,8 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-
-import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
-import type { StandardCode } from "@/features/standard-codes/types";
+import { useState } from "react";
+import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
 
 import type { ReservationFormValues } from "../../types";
 import {
@@ -14,9 +12,8 @@ import { createReservation } from "../../api/reservation_api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 
-import { useCustomerSearch } from "@/features/customers/hooks/useCustomerSearch";
-import type { Customer } from "@/features/customers/types";
 import { useFieldErrors } from "@/hooks/useFieldErrors";
+import { useReservationCustomer } from "../../hooks/useReservationCustomer";
 
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
@@ -34,90 +31,35 @@ export function NewReservationFormContainer(
   const [values, setValues] = useState<ReservationFormValues>(() => {
     return buildNewReservationFormValues({ targetDate });
   });
-  const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customerQuery, setCustomerQuery] = useState("");
-  const [hasSearchedCustomers, setHasSearchedCustomers] = useState(false);
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
-
-  const [selectedCustomerHasNoPhone, setSelectedCustomerHasNoPhone] =
-    useState(false);
-  // 顧客検索用
   const {
+    customerQuery,
     customers,
-    isSearching: isCustomerSearching,
-    errorMessage: customerSearchError,
-    searchCustomers,
-    clearCustomers,
-  } = useCustomerSearch();
+    isCustomerSearching,
+    customerSearchError,
+    hasSearchedCustomers,
+    selectedCustomerHasNoPhone,
+    setCustomerQuery,
+    handleCustomerSearch,
+    handleCustomerSelect,
+    handleCustomerClear,
+  } = useReservationCustomer({
+    setValues,
+    clearFieldError,
+  });
 
-  async function handleCustomerSearch() {
-    const query = customerQuery.trim();
-
-    // これは入力値の妥当性チェックではなく、空の検索通信を防ぐための制御です。
-    if (!query) {
-      clearCustomers();
-      setHasSearchedCustomers(false);
-      return;
-    }
-    setHasSearchedCustomers(true);
-
-    await searchCustomers({
-      visibility: "visible",
-      query,
-    });
-  }
-
-  function handleCustomerSelect(customer: Customer) {
-    // 顧客選択時に「残っていたエラー表示」をクリアする
-    clearFieldError("reservation_name");
-    clearFieldError("reservation_phone_number");
-
-    setSelectedCustomerHasNoPhone(!customer.phone_number);
-
-    setValues((currentValues) => ({
-      ...currentValues,
-      customer_id: customer.id,
-      reservation_name: customer.name,
-      reservation_phone_number: customer.phone_number ?? "",
-    }));
-
-    setCustomerQuery("");
-    clearCustomers();
-    setHasSearchedCustomers(false);
-  }
-
-  useEffect(() => {
-    // 全体を非同期関数にせずにloadStandardCodesだけを非同期に変更
-    async function loadStandardCodes() {
-      // 次に基本コードマスタ取得APIを呼び出す
-      const response = await fetchStandardCodes();
-
-      setStandardCodes(response.data.standard_masters);
-    }
-
-    void loadStandardCodes();
-  }, []);
-
-  function findActiveStandardListCodes(systemKey: string) {
-    const standardCode = standardCodes.find(
-      (code) => code.system_key === systemKey && code.active,
-    );
-
-    return standardCode?.items?.filter((item) => item.active) ?? [];
-  }
-  // standardCodes から system_key が restaurant_master_typeを探す
-  const requestedRestaurantMasterTypes =
-    // 見つかったアイテムを取得する。なければ空を返す。
-    findActiveStandardListCodes("restaurant_master_type");
-  const reservationRoutes = findActiveStandardListCodes("reservation_route");
-  const menuTypes = findActiveStandardListCodes("reservation_menu_type");
-  const reservationOccasion = findActiveStandardListCodes(
-    "reservation_occasion",
-  );
-  const reservationStatuses = findActiveStandardListCodes("reservation_status");
+  // 新規・編集フォームで共通利用するマスタ選択肢を取得する。
+  const {
+    requestedRestaurantMasterTypes,
+    reservationRoutes,
+    menuTypes,
+    reservationOccasions,
+    reservationStatuses,
+    // restaurantMasters,
+  } = useReservationFormOptions();
 
   // 予約登録APIを呼び出す
   async function handleSubmit() {
@@ -148,15 +90,6 @@ export function NewReservationFormContainer(
       setIsSubmitting(false);
     }
   }
-  // 顧客選択を解除する関数
-  function handleCustomerClear() {
-    setSelectedCustomerHasNoPhone(false);
-
-    setValues((currentValues) => ({
-      ...currentValues,
-      customer_id: null,
-    }));
-  }
 
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
@@ -166,7 +99,7 @@ export function NewReservationFormContainer(
       requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
       reservationRoutes={reservationRoutes}
       menuTypes={menuTypes}
-      reservationOccasion={reservationOccasion}
+      reservationOccasion={reservationOccasions}
       reservationStatuses={reservationStatuses}
       onSubmit={handleSubmit}
       errorMessage={errorMessage}
@@ -183,6 +116,7 @@ export function NewReservationFormContainer(
       onClearFieldError={clearFieldError}
       onCustomerClear={handleCustomerClear}
       selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+      // restaurantMasters={activeRestaurantMasters}
     />
   );
 }

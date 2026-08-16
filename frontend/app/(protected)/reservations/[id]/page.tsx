@@ -1,3 +1,7 @@
+import { notFound } from "next/navigation";
+
+import { ReservationDetailContainer } from "@/features/reservations/components/details/ReservationDetailContainer";
+
 type ReservationDetailPageProps = {
   params: Promise<{
     id: string;
@@ -8,12 +12,12 @@ export default async function ReservationDetailPage({
   params,
 }: ReservationDetailPageProps) {
   const { id } = await params;
+  const reservationId = Number(id);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold">予約詳細</h1>
+  // URLの予約IDが正の整数でなければ、APIを呼ばずに404を表示する。
+  if (!Number.isInteger(reservationId) || reservationId <= 0) {
+    notFound();
+  }
 
-      <p className="text-muted-foreground mt-2 text-sm">予約ID：{id}</p>
-    </div>
-  );
+  return <ReservationDetailContainer reservationId={reservationId} />;
 }

@@ -1,14 +1,10 @@
 class Api::V1::CustomersController < Api::V1::BaseController
-  
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
 
   before_action :require_staff_login!
   before_action :set_customer,
                 only: %i[show update hidden restore]
-
-  rescue_from ActiveRecord::StaleObjectError,
-              with: :render_stale_object_error
 
   def index
     visibility = params[:visibility].presence || "visible"
@@ -128,7 +124,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
   def customer_update_params
     permitted_params = params.expect(
-      customer: customer_attributes + [:lock_version]
+      customer: customer_attributes + [ :lock_version ]
     )
 
     if permitted_params[:lock_version].nil?
@@ -160,7 +156,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
   def required_lock_version
     permitted_params = params.expect(
-      customer: [:lock_version]
+      customer: [ :lock_version ]
     )
 
     lock_version = permitted_params[:lock_version]
@@ -266,16 +262,6 @@ class Api::V1::CustomersController < Api::V1::BaseController
       message: "入力内容に誤りがあります",
       errors: customer.errors.full_messages,
       status: :unprocessable_content
-    )
-  end
-
-  def render_stale_object_error(_error)
-    render_error(
-      message: "顧客情報は別の担当者によって更新されています",
-      errors: [
-        "最新の顧客情報を再取得してから、もう一度操作してください"
-      ],
-      status: :conflict
     )
   end
 end

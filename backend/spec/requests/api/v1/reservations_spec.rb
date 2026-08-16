@@ -220,7 +220,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(reservation_json["customer"]["id"]).to eq(customer.id)
       expect(reservation_json["requested_restaurant_master_type"]["label"]).to eq("テーブル席")
       expect(reservation_json["reservation_status"]["label"]).to eq("予約確定")
-      expect(reservation_json["restaurant_master_ids"]).to eq([restaurant_master.id])
+      expect(reservation_json["restaurant_master_ids"]).to eq([ restaurant_master.id ])
       expect(reservation_json["restaurant_masters"].first["code"]).to eq("T01")
     end
   end
@@ -232,18 +232,18 @@ RSpec.describe "Api::V1::Reservations", type: :request do
           reservation: {
             reservation_name: "山田 太郎",
             reservation_phone_number: "09011112222",
-            starts_at: reservation_time(Time.zone.today, 18).iso8601,
-            ends_at: reservation_time(Time.zone.today, 20).iso8601,
+            starts_at:
+              reservation_time(Time.zone.today, 18).iso8601,
+            ends_at:
+              reservation_time(Time.zone.today, 20).iso8601,
             guest_count: 2,
             requested_restaurant_master_type_id: table_type.id,
             reservation_route_id: phone_route.id,
-            restaurant_master_ids: [restaurant_master.id],
+            restaurant_master_ids: [ restaurant_master.id ],
             reservation_status_id: confirmed_status.id
-
           }
         },
         headers: csrf_headers
-
       end.to change(Reservation, :count).by(1)
         .and change(ReservationTable, :count).by(1)
 
@@ -303,7 +303,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
             guest_count: 2,
             requested_restaurant_master_type_id: table_type.id,
             reservation_status_id: confirmed_status.id,
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [ restaurant_master.id ]
           }
         }
       end.not_to change(Reservation, :count)
@@ -384,7 +384,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
           guest_count: 3,
           requested_restaurant_master_type_id: table_type.id,
           lock_version: reservation.lock_version,
-          restaurant_master_ids: [restaurant_master.id]
+          restaurant_master_ids: [ restaurant_master.id ]
         }
       },
       headers: csrf_headers
@@ -397,7 +397,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(reservation.ends_at.hour).to eq(21)
       expect(reservation.guest_count).to eq(3)
       expect(reservation.updated_by_staff).to eq(staff)
-      expect(reservation.restaurant_master_ids).to eq([restaurant_master.id])
+      expect(reservation.restaurant_master_ids).to eq([ restaurant_master.id ])
     end
 
     it "restaurant_master_idsを送らない場合、実テーブル割当を変更しない" do
@@ -421,7 +421,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       reservation.reload
 
       expect(reservation.reservation_name).to eq("席は維持")
-      expect(reservation.restaurant_master_ids).to eq([restaurant_master.id])
+      expect(reservation.restaurant_master_ids).to eq([ restaurant_master.id ])
     end
 
     it "restaurant_master_idsに空配列を送ると、実テーブル割当を解除する" do
@@ -446,6 +446,44 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       reservation.reload
 
       expect(reservation.restaurant_master_ids).to eq([])
+    end
+
+    it "古いlock_versionの場合は409を返す" do
+      stale_lock_version = reservation.lock_version
+
+      # 編集画面を開いた後、別の担当者が先に更新した状況を再現する。
+      reservation.update!(
+        internal_memo: "別の担当者による更新"
+      )
+
+      patch "/api/v1/reservations/#{reservation.id}", params: {
+        reservation: {
+          reservation_name: "競合更新",
+          reservation_phone_number: reservation.reservation_phone_number,
+          starts_at: reservation.starts_at.iso8601,
+          ends_at: reservation.ends_at.iso8601,
+          guest_count: reservation.guest_count,
+          requested_restaurant_master_type_id: table_type.id,
+          lock_version: stale_lock_version
+        }
+      },
+      headers: csrf_headers
+
+      expect(response).to have_http_status(:conflict)
+
+      response_body = response.parsed_body
+
+      expect(response_body["status"]).to eq("error")
+      expect(response_body["message"])
+        .to eq("予約情報は別の担当者によって更新されています")
+      expect(response_body["errors"]).to include(
+        "最新の予約情報を再取得してから、もう一度操作してください"
+      )
+
+      reservation.reload
+
+      expect(reservation.reservation_name).to eq("更新前")
+      expect(reservation.internal_memo).to eq("別の担当者による更新")
     end
 
     it "lock_versionがない場合は更新できない" do
@@ -548,7 +586,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
-  
+
   describe "PATCH /api/v1/reservations/:id/restore" do
     let!(:reservation) do
       create(
@@ -693,12 +731,12 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   def reservation_time(date, hour, min = 0)
-  Time.zone.local(
-    date.year,
-    date.month,
-    date.day,
-    hour,
-    min
-  )
-end
+    Time.zone.local(
+      date.year,
+      date.month,
+      date.day,
+      hour,
+      min
+    )
+  end
 end

@@ -1,5 +1,10 @@
 ja:
   activerecord:
+    models:
+      customer: "顧客情報"
+      restaurant_master: "席情報"
+      reservation: "予約情報"
+
     attributes:
       reservation:
         reservation_name: "予約者名"
