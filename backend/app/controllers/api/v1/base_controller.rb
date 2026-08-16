@@ -9,11 +9,9 @@ class Api::V1::BaseController < ApplicationController
             with: :render_record_invalid
   rescue_from ActiveRecord::StaleObjectError,
             with: :render_stale_object_error
-  
-            # 本番環境用の例外処理
+
+  # 本番環境用の例外処理
   # rescue_from StandardError, with: :render_internal_server_error
-
-
   private
   # セッションから現在のスタッフを取得するヘルパーメソッド
   def current_staff
@@ -45,7 +43,7 @@ class Api::V1::BaseController < ApplicationController
   def render_success(data: {}, status: :ok)
     render json: {
         status: "success",
-        data: data 
+        data: data
         }, status: status
   end
 
@@ -53,11 +51,11 @@ class Api::V1::BaseController < ApplicationController
   def render_bad_request(error)
     render_error(
       message: "リクエストパラメータが不正です",
-      errors: [error.message],
+      errors: [ error.message ],
       status: :bad_request
     )
   end
-  
+
   # 異常系JSONレスポンス統一
   def render_error(
     message: "An error occurred",
@@ -75,18 +73,18 @@ class Api::V1::BaseController < ApplicationController
   def render_invalid_authenticity_token(error)
     render_error(
       message: "CSRFトークンが不正です",
-      errors: [error.message],
+      errors: [ error.message ],
       status: :unprocessable_content
     )
   end
-  
+
   # ActiveRecord::RecordNotFound例外をキャッチして404エラーを返す
   def render_not_found(error)
     render_error(
       message: "データが見つかりませんでした",
-      errors: [error.message],
+      errors: [ error.message ],
       status: :not_found
-    )    
+    )
   end
 
   def render_internal_server_error(error)
@@ -95,17 +93,19 @@ class Api::V1::BaseController < ApplicationController
 
     render_error(
       message: "サーバーエラーが発生しました",
-      errors: [error.message],
+      errors: [ error.message ],
       status: :internal_server_error
-    )    
+    )
   end
 
   # 楽観ロックにより更新が競合した場合のレスポンス
-  def render_stale_object_error(_error)
+  def render_stale_object_error(error)
+    resource_name = error.record.class.model_name.human
+
     render_error(
-      message: "データは別の担当者によって更新されています",
+      message: "#{resource_name}は別の担当者によって更新されています",
       errors: [
-        "最新情報を再取得してから、もう一度操作してください"
+        "最新の#{resource_name}を再取得してから、もう一度操作してください"
       ],
       status: :conflict
     )
