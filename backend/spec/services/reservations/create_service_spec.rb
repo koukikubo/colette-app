@@ -41,6 +41,17 @@ RSpec.describe Reservations::CreateService do
     create(
       :restaurant_master,
       restaurant_master_type: table_type,
+      capacity: 4,
+      created_by_staff: staff,
+      updated_by_staff: staff
+    )
+  end
+
+  let(:another_restaurant_master) do
+    create(
+      :restaurant_master,
+      restaurant_master_type: table_type,
+      capacity: 4,
       created_by_staff: staff,
       updated_by_staff: staff
     )
@@ -105,11 +116,48 @@ RSpec.describe Reservations::CreateService do
       expect(reservation.updated_by_staff).to eq(staff)
     end
 
+    it "複数の実テーブルで予約人数分の定員を確保できる場合は作成できる" do
+      reservation =
+        described_class.call(
+          attributes: base_attributes.merge(
+            guest_count: 8,
+            restaurant_master_ids: [
+              restaurant_master.id,
+              another_restaurant_master.id
+            ]
+          ),
+          current_staff: staff
+        )
+
+      expect(reservation).to be_persisted
+      expect(reservation.restaurant_masters)
+        .to contain_exactly(
+          restaurant_master,
+          another_restaurant_master
+        )
+    end
+
+    it "実テーブルの合計定員が予約人数を下回る場合は作成できない" do
+      expect do
+        described_class.call(
+          attributes: base_attributes.merge(
+            guest_count: 8,
+            restaurant_master_ids: [ restaurant_master.id ]
+          ),
+          current_staff: staff
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(
+          error.record.errors.details[:restaurant_master_ids]
+        ).to include(error: :insufficient_capacity)
+      }
+    end
+
     it "restaurant_master_idsがある場合、実テーブルを割り当てる" do
       reservation =
         described_class.call(
           attributes: base_attributes.merge(
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [ restaurant_master.id ]
           ),
           current_staff: staff
         )
@@ -189,7 +237,7 @@ RSpec.describe Reservations::CreateService do
       expect do
         described_class.call(
           attributes: base_attributes.merge(
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [ restaurant_master.id ]
           ),
           current_staff: staff
         )
@@ -201,7 +249,7 @@ RSpec.describe Reservations::CreateService do
         described_class.call(
           attributes: base_attributes.merge(
             reservation_name: nil,
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [ restaurant_master.id ]
           ),
           current_staff: staff
         )
