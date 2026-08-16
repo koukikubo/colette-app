@@ -1,7 +1,7 @@
 class Api::V1::ReservationsController < Api::V1::BaseController
   before_action :require_staff_login!, only: %i[create update cancel restore]
   before_action :set_reservation, only: %i[show update cancel restore]
-  
+
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
   reservation_name
@@ -44,14 +44,14 @@ class Api::V1::ReservationsController < Api::V1::BaseController
 
     render_success(
       data: {
-        reservations: Api::V1::ReservationSerializer.collection(reservations),
+        reservations: Api::V1::ReservationSerializer.collection(reservations)
       }
     )
   end
 
   def show
     render_reservation(@reservation)
-  end 
+  end
 
   def create
     reservation =
@@ -64,7 +64,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
       reservation,
       status: :created
     )
-  end 
+  end
 
   def update
     reservation =
@@ -111,7 +111,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     @reservation.updated_by_staff = current_staff
 
     # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
-    Reservations::DoubleBookingValidator.call(
+    Reservations::TableAssignmentValidator.call(
       reservation: @reservation,
       restaurant_master_ids: @reservation.restaurant_master_ids
     )
@@ -192,5 +192,4 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   def required_lock_version
     params.require(:reservation).require(:lock_version)
   end
-
 end

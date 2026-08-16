@@ -25,6 +25,7 @@ module Reservations
 
       validate_restaurant_masters_exist!
       validate_restaurant_masters_active!
+      validate_total_capacity!
       validate_no_double_booking!
     end
 
@@ -55,6 +56,29 @@ module Reservations
 
       raise ActiveRecord::RecordInvalid,
             Reservation.new.tap { |r| r.errors.add(:base, "無効な予約席が含まれています") }
+    end
+
+    # テーブルを割り当てる場合は、選択した全テーブルの合計定員が予約人数を満たすことを検証する。
+    # テーブル未割り当ての予約はcallの先頭で除外されるため、登録・更新を許可する。
+    def validate_total_capacity!
+      return if reservation.guest_count.blank?
+
+      total_capacity =
+        RestaurantMaster
+          .where(id: restaurant_master_ids)
+          .sum(:capacity)
+
+      return if total_capacity >= reservation.guest_count
+
+      invalid_reservation =
+        Reservation.new.tap do |record|
+          record.errors.add(
+            :restaurant_master_ids,
+            :insufficient_capacity
+          )
+        end
+
+      raise ActiveRecord::RecordInvalid, invalid_reservation
     end
 
     # restaurant_master_idsに重複予約がないかを検証する

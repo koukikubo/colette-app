@@ -17,10 +17,12 @@ ja:
         reservation_route: "予約経路"
         menu_type: "メニュー"
         occasion: "利用目的"
+        restaurant_master_ids: "確定テーブル"
 
     errors:
       messages:
         invalid_category: "は正しい種類の選択肢を選んでください"
+        insufficient_capacity: "では予約人数分の定員を確保できません"
       models:
         reservation:
           attributes:
