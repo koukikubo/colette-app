@@ -99,17 +99,31 @@ function EditReservationFormContent({
       router.push(`/reservations/${reservation.id}`);
     } catch (error) {
       if (error instanceof ApiClientError) {
-        setSubmitErrorMessage(error.message);
+        // 競合時は、再取得を促す案内もエラーメッセージへ含める。
+        if (error.status === 409) {
+          const conflictGuidance = error.errorMessages[0];
 
+          setSubmitErrorMessage(
+            conflictGuidance
+              ? `${error.message} ${conflictGuidance}`
+              : error.message,
+          );
+
+          return;
+        }
+
+        setSubmitErrorMessage(error.message);
+        // バリデーションエラーは、対象の入力項目にも個別表示する。
         if (error.status === 422 && !Array.isArray(error.errors)) {
           setFieldErrors(error.errors);
         }
 
         return;
       }
-
+      // APIで定義されていない例外には、共通のエラーを表示する。
       setSubmitErrorMessage("予約の更新中に予期しないエラーが発生しました。");
     } finally {
+      // 成功・失敗に関係なく、送信中の状態を解除する。
       setIsSubmitting(false);
     }
   }
