@@ -1,5 +1,4 @@
 class Api::V1::CustomersController < Api::V1::BaseController
-  
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
 
@@ -125,7 +124,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
   def customer_update_params
     permitted_params = params.expect(
-      customer: customer_attributes + [:lock_version]
+      customer: customer_attributes + [ :lock_version ]
     )
 
     if permitted_params[:lock_version].nil?
@@ -157,7 +156,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
   def required_lock_version
     permitted_params = params.expect(
-      customer: [:lock_version]
+      customer: [ :lock_version ]
     )
 
     lock_version = permitted_params[:lock_version]
