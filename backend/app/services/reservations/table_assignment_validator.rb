@@ -3,20 +3,19 @@ module Reservations
   # 複数の登録・更新処理で同じ割り当てルールを適用するため、Serviceとして共通化している。
   class TableAssignmentValidator
     # reservation: Reservationオブジェクト
-    def self.call(reservation:, restaurant_master_ids:)
+    def self.call(reservation:, restaurant_master_ids:, existing_restaurant_master_ids: [])
       new(
         reservation: reservation,
-        restaurant_master_ids: restaurant_master_ids
+        restaurant_master_ids: restaurant_master_ids,
+        existing_restaurant_master_ids: existing_restaurant_master_ids
       ).call
     end
     # restaurant_master_idsから来た値を整理するために、initializeで配列化・空白除去・整数化・重複除去を行う
-    def initialize(reservation:, restaurant_master_ids:)
+    def initialize(reservation:, restaurant_master_ids:, existing_restaurant_master_ids: [])
       @reservation = reservation
-      @restaurant_master_ids =
-        Array(restaurant_master_ids)
-          .reject(&:blank?)
-          .map(&:to_i)
-          .uniq
+      @restaurant_master_ids = normalize_ids(restaurant_master_ids)
+      @existing_restaurant_master_ids =
+        normalize_ids(existing_restaurant_master_ids)
     end
 
     def call
@@ -31,7 +30,15 @@ module Reservations
 
     private
 
-    attr_reader :reservation, :restaurant_master_ids
+    # paramsとDBの関連IDを同じ形式で比較できるように、整数の重複なし配列へ統一する。
+    def normalize_ids(ids)
+      Array(ids)
+        .reject(&:blank?)
+        .map(&:to_i)
+        .uniq
+    end
+
+    attr_reader :reservation, :restaurant_master_ids, :existing_restaurant_master_ids
     # restaurant_master_idsに存在しないIDが含まれていないかを検証する
     def validate_restaurant_masters_exist!
       found_count =
@@ -46,9 +53,14 @@ module Reservations
     end
     # restaurant_master_idsに無効な席が含まれていないかを検証する
     def validate_restaurant_masters_active!
+      newly_assigned_ids =
+        restaurant_master_ids - existing_restaurant_master_ids
+
+      return if newly_assigned_ids.blank?
+
       inactive_exists =
         RestaurantMaster
-          .where(id: restaurant_master_ids)
+          .where(id: newly_assigned_ids)
           .where(active: false)
           .exists?
 
