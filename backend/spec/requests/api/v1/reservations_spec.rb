@@ -110,6 +110,20 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     )
   end
 
+  let!(:another_restaurant_master) do
+    RestaurantMaster.create!(
+      name: "テーブル2",
+      code: "T02",
+      capacity: 4,
+      restaurant_master_type: table_type,
+      sequence_number: 2,
+      active: true,
+      position: 2,
+      created_by_staff: staff,
+      updated_by_staff: staff
+    )
+  end
+
   let!(:customer) do
     Customer.create!(
       customer_kind: "individual",
@@ -248,6 +262,67 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         .and change(ReservationTable, :count).by(1)
 
       expect(response).to have_http_status(:created)
+    end
+
+    it "複数の実テーブルで予約人数分の定員を確保して作成できる" do
+      expect do
+        post "/api/v1/reservations", params: {
+          reservation: {
+            reservation_name: "8名予約",
+            reservation_phone_number: "09011112222",
+            starts_at: reservation_time(Time.zone.today, 18).iso8601,
+            ends_at: reservation_time(Time.zone.today, 20).iso8601,
+            guest_count: 8,
+            requested_restaurant_master_type_id: table_type.id,
+            reservation_status_id: confirmed_status.id,
+            restaurant_master_ids: [
+              restaurant_master.id,
+              another_restaurant_master.id
+            ]
+          }
+        },
+        headers: csrf_headers
+      end.to change(Reservation, :count).by(1)
+        .and change(ReservationTable, :count).by(2)
+
+      expect(response).to have_http_status(:created)
+
+      reservation = Reservation.last
+
+      expect(reservation.restaurant_masters)
+        .to contain_exactly(
+          restaurant_master,
+          another_restaurant_master
+        )
+    end
+
+    it "実テーブルの合計定員が予約人数を下回る場合は作成できない" do
+      expect do
+        post "/api/v1/reservations", params: {
+          reservation: {
+            reservation_name: "定員超過予約",
+            reservation_phone_number: "09011112222",
+            starts_at: reservation_time(Time.zone.today, 18).iso8601,
+            ends_at: reservation_time(Time.zone.today, 20).iso8601,
+            guest_count: 8,
+            requested_restaurant_master_type_id: table_type.id,
+            reservation_status_id: confirmed_status.id,
+            restaurant_master_ids: [ restaurant_master.id ]
+          }
+        },
+        headers: csrf_headers
+      end.not_to change(Reservation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(
+        response.parsed_body.dig(
+          "errors",
+          "restaurant_master_ids"
+        )
+      ).to include(
+        "確定テーブルでは予約人数分の定員を確保できません"
+      )
     end
 
     it "既存顧客を選択した場合、顧客マスタの名前を予約名に反映する" do
@@ -398,6 +473,72 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(reservation.guest_count).to eq(3)
       expect(reservation.updated_by_staff).to eq(staff)
       expect(reservation.restaurant_master_ids).to eq([ restaurant_master.id ])
+    end
+
+    it "複数の実テーブルで予約人数分の定員を確保して更新できる" do
+      patch "/api/v1/reservations/#{reservation.id}", params: {
+        reservation: {
+          reservation_name: reservation.reservation_name,
+          reservation_phone_number: reservation.reservation_phone_number,
+          starts_at: reservation.starts_at.iso8601,
+          ends_at: reservation.ends_at.iso8601,
+          guest_count: 8,
+          requested_restaurant_master_type_id: table_type.id,
+          restaurant_master_ids: [
+            restaurant_master.id,
+            another_restaurant_master.id
+          ],
+          lock_version: reservation.lock_version
+        }
+      },
+      headers: csrf_headers
+
+      expect(response).to have_http_status(:ok)
+
+      reservation.reload
+
+      expect(reservation.guest_count).to eq(8)
+      expect(reservation.restaurant_masters)
+        .to contain_exactly(
+          restaurant_master,
+          another_restaurant_master
+        )
+    end
+
+    it "実テーブルの合計定員が予約人数を下回る場合は更新できない" do
+      reservation.restaurant_masters << restaurant_master
+
+      patch "/api/v1/reservations/#{reservation.id}", params: {
+        reservation: {
+          reservation_name: "定員超過による更新",
+          reservation_phone_number: reservation.reservation_phone_number,
+          starts_at: reservation.starts_at.iso8601,
+          ends_at: reservation.ends_at.iso8601,
+          guest_count: 8,
+          requested_restaurant_master_type_id: table_type.id,
+          restaurant_master_ids: [ restaurant_master.id ],
+          lock_version: reservation.lock_version
+        }
+      },
+      headers: csrf_headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(
+        response.parsed_body.dig(
+          "errors",
+          "restaurant_master_ids"
+        )
+      ).to include(
+        "確定テーブルでは予約人数分の定員を確保できません"
+      )
+
+      reservation.reload
+
+      expect(reservation.reservation_name).to eq("更新前")
+      expect(reservation.guest_count).to eq(2)
+      expect(reservation.restaurant_masters)
+        .to contain_exactly(restaurant_master)
     end
 
     it "restaurant_master_idsを送らない場合、実テーブル割当を変更しない" do
