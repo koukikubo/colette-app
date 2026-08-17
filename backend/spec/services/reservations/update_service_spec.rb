@@ -286,6 +286,28 @@ RSpec.describe Reservations::UpdateService do
       end.to raise_error(ActiveRecord::RecordInvalid)
     end
 
+    it "割り当て済みの実テーブルが後から無効になっても割り当てを維持できる" do
+      reservation.restaurant_masters << restaurant_master
+
+      # 予約へ割り当てた後に、席マスタが運用上無効化された状況を再現する。
+      restaurant_master.update!(active: false)
+
+      updated_reservation =
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            reservation_name: "既存席を維持",
+            restaurant_master_ids: [ restaurant_master.id ],
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+
+      expect(updated_reservation.reservation_name).to eq("既存席を維持")
+      expect(updated_reservation.restaurant_masters)
+        .to contain_exactly(restaurant_master)
+    end
+
     it "自分自身の実テーブル割当は二重予約扱いにしない" do
       reservation.restaurant_masters << restaurant_master
 
