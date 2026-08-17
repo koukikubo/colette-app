@@ -1,4 +1,7 @@
 ja:
+  errors:
+    format: "%{attribute}%{message}"
+
   activerecord:
     models:
       customer: "顧客情報"
