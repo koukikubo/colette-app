@@ -93,39 +93,33 @@ module Reservations
       raise ActiveRecord::RecordInvalid, invalid_reservation
     end
 
-    # restaurant_master_idsに重複予約がないかを検証する
+    # 重複している席が見つかった場合は、エラー情報を持つ Reservation を作成してActiveRecord::RecordInvalid を発生させる。
     def validate_no_double_booking!
       return if reservation.starts_at.blank? || reservation.ends_at.blank?
-
-      duplicated_exists =
-        double_booking_scope
-          .where(
-            "reservations.starts_at < :ends_at AND reservations.ends_at > :starts_at",
+      # 指定された時間帯に使用できない席のIDを取得する。
+      unavailable_restaurant_master_ids =
+          Reservations::UnavailableRestaurantMasterIdsQuery.call(
             starts_at: reservation.starts_at,
-            ends_at: reservation.ends_at
+            ends_at: reservation.ends_at,
+            # 予約更新時は、自分自身の予約を重複判定から除外する。
+            excluded_reservation_id: excluded_reservation_id,
+            # 今回選択された席だけを重複確認の対象にする。
+            restaurant_master_ids: restaurant_master_ids
           )
-          .exists?
+      # 使用できない席がなければ、重複していないので正常終了する。
+      return if unavailable_restaurant_master_ids.empty?
 
-      return unless duplicated_exists
-
+      # 重複を表すエラー情報を持ったReservationオブジェクトを作成し、
+      # ActiveRecord::RecordInvalidを発生させる。
       raise ActiveRecord::RecordInvalid,
             Reservation.new.tap { |r| r.errors.add(:base, "指定された席は同じ時間帯に予約済みです") }
     end
-    # reservationとrestaurant_master_idsに基づいて、重複予約の可能性があるReservationのスコープを返す
-    def double_booking_scope
-      scope =
-        Reservation
-          .joins(:reservation_tables)
-          .where(
-            reservation_tables: {
-              restaurant_master_id: restaurant_master_ids
-            }
-          )
-          .where(canceled_at: nil)
-      # reservationが新規作成の場合は、全ての既存予約を対象とする
-      return scope if reservation.new_record?
-      # reservationが既存の予約の場合は、自身を除外する
-      scope.where.not(reservations: { id: reservation.id })
+
+    # 編集・復元時は、自分自身のテーブル割り当てを重複予約として扱わない。
+    def excluded_reservation_id
+      return if reservation.new_record?
+
+      reservation.id
     end
   end
 end
