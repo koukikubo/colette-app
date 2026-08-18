@@ -68,6 +68,7 @@ function EditReservationFormContent({
     menuTypes,
     reservationOccasions,
     reservationStatuses,
+    restaurantMasters,
     isLoading: isOptionsLoading,
     errorMessage: optionsErrorMessage,
   } = useReservationFormOptions();
@@ -149,6 +150,7 @@ function EditReservationFormContent({
         menuTypes={menuTypes}
         reservationOccasion={reservationOccasions}
         reservationStatuses={reservationStatuses}
+        restaurantMasters={restaurantMasters}
         onSubmit={() => setConfirmOpen(true)}
         errorMessage={submitErrorMessage}
         isSubmitting={isSubmitting}

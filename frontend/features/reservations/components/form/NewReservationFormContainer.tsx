@@ -58,7 +58,7 @@ export function NewReservationFormContainer(
     menuTypes,
     reservationOccasions,
     reservationStatuses,
-    // restaurantMasters,
+    restaurantMasters,
   } = useReservationFormOptions();
 
   // 予約登録APIを呼び出す
@@ -116,7 +116,7 @@ export function NewReservationFormContainer(
       onClearFieldError={clearFieldError}
       onCustomerClear={handleCustomerClear}
       selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
-      // restaurantMasters={activeRestaurantMasters}
+      restaurantMasters={restaurantMasters}
     />
   );
 }
