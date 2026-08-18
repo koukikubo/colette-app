@@ -5,8 +5,8 @@ Rails.application.routes.draw do
       get "csrf", to: "csrf#show"
 
       namespace :staff do
-        get '/login_options', to: 'login_options#index'
-        
+        get "/login_options", to: "login_options#index"
+
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
         get "current", to: "sessions#current"
@@ -30,7 +30,7 @@ Rails.application.routes.draw do
                   path: "items",
                   as: "items",
                   only: %i[index show create update]
-      end 
+      end
 
       resources :customers, only: %i[index show create update] do
         member do
@@ -40,6 +40,9 @@ Rails.application.routes.draw do
       end
 
       resources :restaurant_masters, only: %i[index show create update]
+      # 予約席空き状況用
+      resources :restaurant_master_availabilities,
+                only: :index
 
       resources :reservations, only: %i[index show create update] do
         member do
