@@ -20,6 +20,7 @@ import { ReservationForm } from "./ReservationForm";
 import { ReservationUpdateConfirmDialog } from "../dialogs/ReservationUpdateConfirmDialog";
 import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { useRestaurantMasterAvailability } from "../../hooks/useRestaurantMasterAvailability";
 
 type EditReservationFormContentProps = {
   reservation: Reservation;
@@ -81,6 +82,16 @@ function EditReservationFormContent({
     confirmDiscard,
     handleDiscardDialogOpenChange,
   } = useUnsavedChangesGuard(isDirty);
+
+  const {
+    unavailableRestaurantMasterIds,
+    isAvailabilityLoading,
+    availabilityErrorMessage,
+  } = useRestaurantMasterAvailability({
+    startsAt: values.starts_at,
+    endsAt: values.ends_at,
+    reservationId: reservation.id,
+  });
 
   // 編集した予約内容をRailsの更新APIへ送信する。
   async function handleSubmit() {
@@ -168,6 +179,9 @@ function EditReservationFormContent({
         onClearFieldError={clearFieldError}
         onCustomerClear={handleCustomerClear}
         selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+        unavailableRestaurantMasterIds={unavailableRestaurantMasterIds}
+        isAvailabilityLoading={isAvailabilityLoading}
+        availabilityErrorMessage={availabilityErrorMessage}
         cancelLabel="閉じる"
         onCancel={() => {
           requestNavigation(() => {

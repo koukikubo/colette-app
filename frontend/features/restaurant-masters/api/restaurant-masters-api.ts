@@ -2,10 +2,15 @@ import { apiFetch } from "@/lib/api/api-client";
 
 import type {
   CreateRestaurantMasterRequest,
+  RestaurantMasterAvailabilityParams,
+  RestaurantMasterAvailabilityResponse,
   RestaurantMasterResponse,
   RestaurantMastersResponse,
   UpdateRestaurantMasterRequest,
 } from "../types";
+
+const RESTAURANT_MASTER_AVAILABILITIES_PATH =
+  "/api/v1/restaurant_master_availabilities";
 
 const RESTAURANT_MASTERS_API_API_PATH = "/api/v1/restaurant_masters";
 
@@ -50,6 +55,31 @@ export function updateRestaurantMaster(
     {
       method: "PATCH",
       body: payload,
+    },
+  );
+}
+
+// 指定時間帯に使用できない実テーブルIDを取得する。
+export function fetchRestaurantMasterAvailabilities(
+  params: RestaurantMasterAvailabilityParams,
+  signal?: AbortSignal,
+) {
+  const searchParams = new URLSearchParams({
+    starts_at: params.starts_at,
+    ends_at: params.ends_at,
+  });
+
+  // 編集時は対象予約自身を重複判定から除外する。
+  if (params.reservation_id !== undefined) {
+    searchParams.set("reservation_id", String(params.reservation_id));
+  }
+
+  return apiFetch<RestaurantMasterAvailabilityResponse>(
+    `${RESTAURANT_MASTER_AVAILABILITIES_PATH}?${searchParams.toString()}`,
+    {
+      method: "GET",
+      cache: "no-store",
+      signal,
     },
   );
 }

@@ -66,6 +66,9 @@ type ReservationFormProps = {
   cancelLabel?: string;
   onCancel?: () => void;
   restaurantMasters: RestaurantMaster[];
+  unavailableRestaurantMasterIds: number[];
+  isAvailabilityLoading: boolean;
+  availabilityErrorMessage: string | null;
 };
 
 type FieldErrorProps = {
@@ -161,6 +164,9 @@ export function ReservationForm({
   cancelLabel,
   onCancel,
   restaurantMasters,
+  unavailableRestaurantMasterIds,
+  isAvailabilityLoading,
+  availabilityErrorMessage,
 }: ReservationFormProps) {
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
@@ -485,6 +491,9 @@ export function ReservationForm({
                 restaurantMasters={restaurantMasters}
                 selectedIds={values.restaurant_master_ids}
                 guestCount={values.guest_count}
+                unavailableRestaurantMasterIds={unavailableRestaurantMasterIds}
+                isAvailabilityLoading={isAvailabilityLoading}
+                availabilityErrorMessage={availabilityErrorMessage}
                 errorMessages={fieldErrors.restaurant_master_ids}
                 onChange={(selectedIds) => {
                   onClearFieldError("restaurant_master_ids");

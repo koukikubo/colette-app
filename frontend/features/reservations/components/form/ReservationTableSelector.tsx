@@ -10,6 +10,9 @@ type ReservationTableSelectorProps = {
   guestCount: number;
   errorMessages?: string[];
   onChange: (selectedIds: number[]) => void;
+  unavailableRestaurantMasterIds: number[];
+  isAvailabilityLoading: boolean;
+  availabilityErrorMessage: string | null;
 };
 
 // 予約へ割り当てる実テーブルの複数選択と、選択中の合計定員を表示する。
@@ -19,6 +22,9 @@ export function ReservationTableSelector({
   guestCount,
   errorMessages,
   onChange,
+  unavailableRestaurantMasterIds,
+  isAvailabilityLoading,
+  availabilityErrorMessage,
 }: ReservationTableSelectorProps) {
   const selectedIdSet = new Set(selectedIds);
 
@@ -79,7 +85,17 @@ export function ReservationTableSelector({
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {restaurantMasters.map((restaurantMaster) => {
               const isSelected = selectedIdSet.has(restaurantMaster.id);
-              const isDisabled = !restaurantMaster.active && !isSelected;
+              const isUnavailable = unavailableRestaurantMasterIds.includes(
+                restaurantMaster.id,
+              );
+
+              const isDisabled =
+                (!restaurantMaster.active ||
+                  isUnavailable ||
+                  isAvailabilityLoading ||
+                  Boolean(availabilityErrorMessage)) &&
+                !isSelected;
+
               const checkboxId = `restaurant-master-${restaurantMaster.id}`;
 
               return (
@@ -104,6 +120,10 @@ export function ReservationTableSelector({
                       <span className="font-medium leading-none">
                         {restaurantMaster.name}
                       </span>
+
+                      {isUnavailable && (
+                        <Badge variant="destructive">予約済み</Badge>
+                      )}
 
                       {!restaurantMaster.active && (
                         <Badge variant="secondary">無効</Badge>
@@ -138,6 +158,18 @@ export function ReservationTableSelector({
       {hasInsufficientCapacity && (
         <p className="text-sm text-destructive" role="status">
           予約人数に対して定員が不足しています。テーブルを追加してください。
+        </p>
+      )}
+
+      {isAvailabilityLoading && (
+        <p className="text-sm text-muted-foreground" role="status">
+          実テーブルの空き状況を確認しています。
+        </p>
+      )}
+
+      {availabilityErrorMessage && (
+        <p className="text-sm text-destructive" role="alert">
+          {availabilityErrorMessage}
         </p>
       )}
 
