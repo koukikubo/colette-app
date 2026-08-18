@@ -308,6 +308,34 @@ RSpec.describe Reservations::UpdateService do
         .to contain_exactly(restaurant_master)
     end
 
+    it "無効な実テーブルを新しく割り当てることはできない" do
+      inactive_restaurant_master =
+        create(
+          :restaurant_master,
+          restaurant_master_type: table_type,
+          capacity: 4,
+          active: false,
+          created_by_staff: staff,
+          updated_by_staff: staff
+        )
+
+      expect do
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            restaurant_master_ids: [
+              inactive_restaurant_master.id
+            ],
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(error.record.errors[:base])
+          .to include("無効な予約席が含まれています")
+      }
+    end
+
     it "自分自身の実テーブル割当は二重予約扱いにしない" do
       reservation.restaurant_masters << restaurant_master
 
