@@ -1,6 +1,9 @@
+import {
+  fetchReservationOnServer,
+  ReservationServerApiError,
+} from "@/features/reservations/api/reservation-server-api";
 import { notFound } from "next/navigation";
-
-import { ReservationDetailContainer } from "@/features/reservations/components/details/ReservationDetailContainer";
+import { ReservationDetail } from "@/features/reservations/components/details/ReservationDetail";
 
 type ReservationDetailPageProps = {
   params: Promise<{
@@ -18,6 +21,19 @@ export default async function ReservationDetailPage({
   if (!Number.isInteger(reservationId) || reservationId <= 0) {
     notFound();
   }
+  let reservationResponse;
 
-  return <ReservationDetailContainer reservationId={reservationId} />;
+  try {
+    reservationResponse = await fetchReservationOnServer(reservationId);
+  } catch (error) {
+    if (error instanceof ReservationServerApiError && error.status === 404) {
+      notFound();
+    }
+
+    throw error;
+  }
+
+  const reservation = reservationResponse.data.reservation;
+
+  return <ReservationDetail reservation={reservation} />;
 }
