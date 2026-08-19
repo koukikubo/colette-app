@@ -202,6 +202,7 @@ function EditReservationFormContent({
         isSubmitting={isSubmitting}
         onOpenChange={setConfirmOpen}
         onConfirm={handleSubmit}
+        restaurantMasters={restaurantMasters}
       />
 
       <ConfirmDiscardChangesDialog
