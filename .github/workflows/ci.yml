@@ -21,6 +21,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+          working-directory: backend
 
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
@@ -30,8 +31,14 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+
+    defaults:
+    run:
+      working-directory: backend
+
     env:
-      RUBOCOP_CACHE_ROOT: tmp/rubocop
+      RUBOCOP_CACHE_ROOT: ${{ github.workspace }}/backend/tmp/rubocop
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -40,11 +47,12 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+          working-directory: backend
 
       - name: Prepare RuboCop cache
         uses: actions/cache@v4
         env:
-          DEPENDENCIES_HASH: ${{ hashFiles('.ruby-version', '**/.rubocop.yml', '**/.rubocop_todo.yml', 'Gemfile.lock') }}
+          DEPENDENCIES_HASH: ${{ hashFiles('backend/.ruby-version', 'backend/.rubocop.yml', 'backend/.rubocop_todo.yml', 'backend/Gemfile.lock') }}
         with:
           path: ${{ env.RUBOCOP_CACHE_ROOT }}
           key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
