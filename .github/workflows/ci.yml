@@ -102,7 +102,7 @@ jobs:
           working-directory: backend
 
       - name: Prepare test database
-        run: bin/rails db:prepare
+        run: bin/rails db:test:prepare
 
       - name: Run RSpec
         run: bundle exec rspec
