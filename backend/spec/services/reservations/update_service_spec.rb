@@ -240,6 +240,31 @@ RSpec.describe Reservations::UpdateService do
         .to contain_exactly(restaurant_master)
     end
 
+    it "restaurant_master_idsを送らず予約人数を増やす場合も既存割当の定員を検証する" do
+      reservation.restaurant_masters << restaurant_master
+
+      expect do
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            guest_count: 8,
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(
+          error.record.errors.details[:restaurant_master_ids]
+        ).to include(error: :insufficient_capacity)
+      }
+
+      reservation.reload
+
+      expect(reservation.guest_count).to eq(2)
+      expect(reservation.restaurant_masters)
+        .to contain_exactly(restaurant_master)
+    end
+
     it "restaurant_master_idsに空配列を送ると、実テーブル割当を解除する" do
       reservation.restaurant_masters << restaurant_master
 

@@ -19,7 +19,12 @@ module Reservations
     def call
       ActiveRecord::Base.transaction do
         existing_restaurant_master_ids = reservation.restaurant_master_ids
-        restaurant_master_ids = extract_restaurant_master_ids
+        submitted_restaurant_master_ids = extract_restaurant_master_ids
+
+        # 実テーブルが未送信でも、人数や日時の変更後に既存割り当てを再検証する。
+        # nilは割り当て維持、空配列は明示的な解除として区別する。
+        restaurant_master_ids_for_validation =
+          submitted_restaurant_master_ids || existing_restaurant_master_ids
 
         reservation.assign_attributes(reservation_attributes)
 
@@ -28,14 +33,14 @@ module Reservations
 
         Reservations::TableAssignmentValidator.call(
           reservation: reservation,
-          restaurant_master_ids: restaurant_master_ids,
+          restaurant_master_ids: restaurant_master_ids_for_validation,
           existing_restaurant_master_ids: existing_restaurant_master_ids
         )
 
         reservation.save!
 
         assign_restaurant_masters!(
-          restaurant_master_ids: restaurant_master_ids
+          restaurant_master_ids: submitted_restaurant_master_ids
         )
 
         reservation
