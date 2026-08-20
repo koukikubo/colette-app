@@ -70,6 +70,4 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
       ]
     )
   end
-
 end
-

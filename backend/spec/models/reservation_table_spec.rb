@@ -118,7 +118,7 @@ RSpec.describe ReservationTable, type: :model do
           reservation: reservation,
           restaurant_master: restaurant_master
         )
-      # reservationが新規作成の場合は、全ての既存予約を対象とする
+        # reservationが新規作成の場合は、全ての既存予約を対象とする
       end.to raise_error(ActiveRecord::RecordInvalid)
     end
   end

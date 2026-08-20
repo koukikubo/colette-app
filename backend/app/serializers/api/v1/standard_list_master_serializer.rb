@@ -1,7 +1,6 @@
 module Api
   module V1
     class StandardListMasterSerializer < ApplicationSerializer
-
       def as_json
         {
           id: resource.id,

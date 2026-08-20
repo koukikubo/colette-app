@@ -59,7 +59,7 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
         position: 1
       )
     end
-    
+
     it "基本コードマスタのアイテム一覧を取得できる" do
       get "/api/v1/standard_masters/#{standard_master.id}/items",
         headers: json_headers
@@ -80,7 +80,7 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
             "男性",
             "女性"
           ]
-        )    
+        )
     end
 
     it "指定した基本コードの選択肢だけを取得できる" do
@@ -101,7 +101,7 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
         ]
       )
     end
-    
+
     it "選択肢コードをposition順で返す" do
       get "/api/v1/standard_masters/#{standard_master.id}/items",
           headers: json_headers

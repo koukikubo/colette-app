@@ -7,7 +7,7 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
               .includes(:staff_master)
               .find_by(id: login_params[:staff_id])
 
-    
+
     return render_login_error if staff.blank?
     return render_login_error unless staff.login_allowed?
 
@@ -70,7 +70,7 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
 
   # ログインに必要なパラメータを安全に取得するためのストロングパラメータメソッド
   def login_params
-    #expectメソッドを使用して、staffパラメータの中にstaff_idとpasswordが存在することを要求する
+    # expectメソッドを使用して、staffパラメータの中にstaff_idとpasswordが存在することを要求する
     permitted_params = params.expect(staff: %i[staff_id password])
     permitted_params.require(%i[staff_id password])
 

@@ -12,13 +12,13 @@ class CreateStandardListMasters < ActiveRecord::Migration[8.1]
   end
 
   add_index :standard_list_masters,
-            [:standard_master_id, :code],
+            [ :standard_master_id, :code ],
             unique: true,
             name: "index_standard_list_masters_on_master_id_and_code"
   add_index :standard_list_masters, :active
-  
-  add_index :standard_list_masters, 
-            [:standard_master_id, :position],
+
+  add_index :standard_list_masters,
+            [ :standard_master_id, :position ],
             unique: true,
             name: "index_standard_list_masters_on_master_id_and_position"
   end

@@ -399,7 +399,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/retire",
         params: {
-          staff_master:{
+          staff_master: {
           retired_on: retired_on.iso8601
         }
       },

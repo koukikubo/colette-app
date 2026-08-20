@@ -42,7 +42,7 @@ reservation_seed_data = [
     starts_at: reservation_seed_time(seed_date, 17, 30),
     ends_at: reservation_seed_time(seed_date, 19, 0),
     guest_count: 4,
-    restaurant_masters: [restaurant_masters[0]]
+    restaurant_masters: [ restaurant_masters[0] ]
   },
   {
     reservation_name: "佐藤 花子",
@@ -50,7 +50,7 @@ reservation_seed_data = [
     starts_at: reservation_seed_time(seed_date, 18, 0),
     ends_at: reservation_seed_time(seed_date, 19, 30),
     guest_count: 2,
-    restaurant_masters: [restaurant_masters[1]]
+    restaurant_masters: [ restaurant_masters[1] ]
   },
   {
     reservation_name: "鈴木 一郎",
@@ -58,7 +58,7 @@ reservation_seed_data = [
     starts_at: reservation_seed_time(seed_date, 18, 45),
     ends_at: reservation_seed_time(seed_date, 20, 15),
     guest_count: 3,
-    restaurant_masters: [restaurant_masters[2]]
+    restaurant_masters: [ restaurant_masters[2] ]
   },
   {
     reservation_name: "高橋 美咲",
@@ -66,7 +66,7 @@ reservation_seed_data = [
     starts_at: reservation_seed_time(seed_date, 19, 0),
     ends_at: reservation_seed_time(seed_date, 21, 0),
     guest_count: 2,
-    restaurant_masters: [restaurant_masters[3]]
+    restaurant_masters: [ restaurant_masters[3] ]
   },
   {
     reservation_name: "田中 商事",
@@ -85,7 +85,7 @@ reservation_seed_data = [
     starts_at: reservation_seed_time(seed_date, 20, 15),
     ends_at: reservation_seed_time(seed_date, 21, 45),
     guest_count: 2,
-    restaurant_masters: [restaurant_masters[6]].compact
+    restaurant_masters: [ restaurant_masters[6] ].compact
   },
   {
     reservation_name: "渡辺 家",
@@ -93,7 +93,7 @@ reservation_seed_data = [
     starts_at: reservation_seed_time(seed_date, 21, 0),
     ends_at: reservation_seed_time(seed_date, 23, 0),
     guest_count: 4,
-    restaurant_masters: [restaurant_masters[7]].compact
+    restaurant_masters: [ restaurant_masters[7] ].compact
   },
   {
     reservation_name: "小林 グループ",

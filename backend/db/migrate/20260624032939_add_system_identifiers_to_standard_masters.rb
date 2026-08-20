@@ -17,7 +17,7 @@ class AddSystemIdentifiersToStandardMasters < ActiveRecord::Migration[8.1]
               unique: true
 
     add_index :standard_list_masters,
-              [:standard_master_id, :code],
+              [ :standard_master_id, :code ],
               unique: true,
               name: "idx_standard_list_masters_master_and_code"
   end

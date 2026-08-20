@@ -9,11 +9,10 @@ class CreateStaffMasters < ActiveRecord::Migration[8.1]
       t.text :memo
 
       t.timestamps
-
     end
     # コードは一意である必要があるため、ユニークインデックスを追加
     add_index :staff_masters, :code, unique: true
-    
+
     add_index :staff_masters, :role_code
     add_index :staff_masters, :retired_on
   end
