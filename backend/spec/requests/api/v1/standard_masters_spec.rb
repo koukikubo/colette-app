@@ -75,7 +75,7 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
           headers: json_headers
 
       expect(response).to have_http_status(:ok)
-      expect(json["status"]).to eq("success")      
+      expect(json["status"]).to eq("success")
 
       standard_masters =
         json.dig("data", "standard_masters")
@@ -117,7 +117,7 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
     end
   end
 
-  
+
 
   describe "GET /api/v1/standard_masters/:id" do
     let(:standard_master) do
@@ -206,7 +206,7 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
            params: valid_params,
            headers: csrf_headers,
            as: :json
-           
+
       expect(response).to have_http_status(:created)
       created_standard_master =
         StandardMaster.order(:id).last

@@ -3,5 +3,4 @@ class RemoveCodeFromStandardMastersAndStandardListMasters < ActiveRecord::Migrat
     remove_column :standard_masters, :code, :string
     remove_column :standard_list_masters, :code, :string
   end
-
 end

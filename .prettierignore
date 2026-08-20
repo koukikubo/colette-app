@@ -1,0 +1,8 @@
+.git/
+**/AGENTS.md
+backend/log/
+backend/storage/
+backend/tmp/
+backend/vendor/
+frontend/.next/
+frontend/node_modules/

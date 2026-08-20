@@ -29,7 +29,7 @@ class Staff < ApplicationRecord
 
   # staff_master_idは一意である必要があるため、バリデーションを追加
   validates :staff_master_id, uniqueness: true
-  validates :login_enabled, inclusion: { in: [true, false] }
+  validates :login_enabled, inclusion: { in: [ true, false ] }
   validates :failed_attempts,
             numericality: {
               only_integer: true,
@@ -48,7 +48,7 @@ class Staff < ApplicationRecord
   # ログインが許可されているかどうかを判断するメソッド
   def login_allowed?
     login_enabled? &&
-    !locked? && 
+    !locked? &&
     staff_master.active?
   end
 

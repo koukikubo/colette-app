@@ -7,7 +7,7 @@ module Api
 
             # 席種
             restaurant_master_type_id: resource.restaurant_master_type_id,
-            restaurant_master_type: 
+            restaurant_master_type:
               serialize_restaurant_master_type(
               resource.restaurant_master_type
             ),

@@ -13,7 +13,7 @@ class CreateReservationTables < ActiveRecord::Migration[8.1]
     end
 
     add_index :reservation_tables,
-              [:reservation_id, :restaurant_master_id],
+              [ :reservation_id, :restaurant_master_id ],
               unique: true,
               name: "idx_reservation_tables_unique_assignment"
   end

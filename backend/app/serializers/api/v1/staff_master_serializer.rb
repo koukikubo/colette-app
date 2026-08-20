@@ -28,7 +28,7 @@ module Api
           failed_attempts: staff.failed_attempts,
           last_logged_in_at: staff.last_logged_in_at,
           locked: staff.locked?,
-          locked_at: staff.locked_at,
+          locked_at: staff.locked_at
         }
       end
     end

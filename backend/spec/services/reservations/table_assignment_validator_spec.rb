@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Reservations::DoubleBookingValidator do
+RSpec.describe Reservations::TableAssignmentValidator do
   let(:staff) { create(:staff) }
 
   let(:restaurant_master_type_master) do
@@ -41,6 +41,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
     create(
       :restaurant_master,
       restaurant_master_type: table_type,
+      capacity: 4,
       created_by_staff: staff,
       updated_by_staff: staff
     )
@@ -50,6 +51,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
     create(
       :restaurant_master,
       restaurant_master_type: table_type,
+      capacity: 4,
       created_by_staff: staff,
       updated_by_staff: staff
     )
@@ -76,7 +78,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [999_999]
+          restaurant_master_ids: [ 999_999 ]
         )
       end.to raise_error(ActiveRecord::RecordNotFound)
     end
@@ -96,9 +98,38 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [inactive_restaurant_master.id]
+          restaurant_master_ids: [ inactive_restaurant_master.id ]
         )
       end.to raise_error(ActiveRecord::RecordInvalid)
+    end
+
+    it "選択した予約席の合計定員が予約人数を下回る場合はエラーにする" do
+      reservation = build_reservation(guest_count: 8)
+
+      expect do
+        described_class.call(
+          reservation: reservation,
+          restaurant_master_ids: [ restaurant_master.id ]
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(
+          error.record.errors.details[:restaurant_master_ids]
+        ).to include(error: :insufficient_capacity)
+      }
+    end
+
+    it "選択した複数の予約席の合計定員が予約人数以上の場合はエラーにしない" do
+      reservation = build_reservation(guest_count: 8)
+
+      expect do
+        described_class.call(
+          reservation: reservation,
+          restaurant_master_ids: [
+            restaurant_master.id,
+            another_restaurant_master.id
+          ]
+        )
+      end.not_to raise_error
     end
 
     it "同じ予約席で時間が重複する場合はエラーにする" do
@@ -119,7 +150,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [restaurant_master.id]
+          restaurant_master_ids: [ restaurant_master.id ]
         )
       end.to raise_error(ActiveRecord::RecordInvalid)
     end
@@ -142,7 +173,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [restaurant_master.id]
+          restaurant_master_ids: [ restaurant_master.id ]
         )
       end.not_to raise_error
     end
@@ -165,7 +196,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [another_restaurant_master.id]
+          restaurant_master_ids: [ another_restaurant_master.id ]
         )
       end.not_to raise_error
     end
@@ -189,7 +220,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [restaurant_master.id]
+          restaurant_master_ids: [ restaurant_master.id ]
         )
       end.not_to raise_error
     end
@@ -206,7 +237,7 @@ RSpec.describe Reservations::DoubleBookingValidator do
       expect do
         described_class.call(
           reservation: reservation,
-          restaurant_master_ids: [restaurant_master.id]
+          restaurant_master_ids: [ restaurant_master.id ]
         )
       end.not_to raise_error
     end

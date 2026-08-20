@@ -95,3 +95,15 @@ export type PendingRestaurantMasterValues = {
   active: boolean;
   memo: string | null;
 };
+
+// 指定時間帯の実テーブル空き状況を取得する検索条件。
+export type RestaurantMasterAvailabilityParams = {
+  starts_at: string;
+  ends_at: string;
+  reservation_id?: number;
+};
+
+// 実テーブル空き状況APIのレスポンス。
+export type RestaurantMasterAvailabilityResponse = ApiSuccessResponse<{
+  unavailable_restaurant_master_ids: number[];
+}>;

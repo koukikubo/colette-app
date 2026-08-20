@@ -4,6 +4,8 @@ import { ConfirmActionDialog } from "@/components/common/ConfirmActionDialog";
 
 import type { StandardListCode } from "@/features/standard-codes/types";
 import type { Reservation, ReservationFormValues } from "../../types";
+import type { RestaurantMaster } from "@/features/restaurant-masters/types";
+
 import { buildEditReservationFormValues } from "../../utils/reservation-form";
 
 type ReservationUpdateConfirmDialogProps = {
@@ -16,6 +18,7 @@ type ReservationUpdateConfirmDialogProps = {
   menuTypes: StandardListCode[];
   reservationOccasions: StandardListCode[];
   reservationStatuses: StandardListCode[];
+  restaurantMasters: RestaurantMaster[];
 
   isSubmitting: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,6 +52,41 @@ function formatDateTime(value: string): string {
   return `${date.replaceAll("-", "/")} ${time}`;
 }
 
+// 複数選択の順番が違うだけの場合は、変更として扱わない。
+function haveSameRestaurantMasterIds(
+  beforeIds: number[],
+  afterIds: number[],
+): boolean {
+  if (beforeIds.length !== afterIds.length) return false;
+
+  const sortedBeforeIds = [...beforeIds].sort((left, right) => left - right);
+  const sortedAfterIds = [...afterIds].sort((left, right) => left - right);
+
+  return sortedBeforeIds.every((id, index) => id === sortedAfterIds[index]);
+}
+
+// 実テーブルIDを、確認画面で理解しやすい名称とコードへ変換する。
+function formatRestaurantMasters(
+  ids: number[],
+  restaurantMasters: RestaurantMaster[],
+): string {
+  if (ids.length === 0) return "未割り当て";
+
+  return ids
+    .map((id) => {
+      const restaurantMaster = restaurantMasters.find(
+        (master) => master.id === id,
+      );
+
+      if (!restaurantMaster) {
+        return `不明なテーブル（ID: ${id}）`;
+      }
+
+      return `${restaurantMaster.name}（${restaurantMaster.code}）`;
+    })
+    .join("、");
+}
+
 // 予約更新時の文言を共通確認ダイアログへ設定する。
 export function ReservationUpdateConfirmDialog({
   open,
@@ -62,6 +100,7 @@ export function ReservationUpdateConfirmDialog({
   isSubmitting,
   onOpenChange,
   onConfirm,
+  restaurantMasters,
 }: ReservationUpdateConfirmDialogProps) {
   const originalValues = buildEditReservationFormValues(reservation);
   const changes: ReservationChangeItem[] = [];
@@ -102,6 +141,25 @@ export function ReservationUpdateConfirmDialog({
       label: "開始日時",
       before: formatDateTime(originalValues.starts_at),
       after: formatDateTime(values.starts_at),
+    });
+  }
+  // 確定テーブルの変更は、順番が違うだけの場合は変更として扱わない。
+  if (
+    !haveSameRestaurantMasterIds(
+      originalValues.restaurant_master_ids,
+      values.restaurant_master_ids,
+    )
+  ) {
+    changes.push({
+      label: "確定テーブル",
+      before: formatRestaurantMasters(
+        originalValues.restaurant_master_ids,
+        restaurantMasters,
+      ),
+      after: formatRestaurantMasters(
+        values.restaurant_master_ids,
+        restaurantMasters,
+      ),
     });
   }
 

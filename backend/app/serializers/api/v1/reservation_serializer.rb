@@ -56,7 +56,7 @@ module Api
             serialize_standard_list_master(
               resource.occasion
             ),
-          
+
           # 予約詳細
           allergy_note: resource.allergy_note,
           disliked_food_note: resource.disliked_food_note,

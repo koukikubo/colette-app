@@ -2,7 +2,8 @@
 import type { Customer } from "@/features/customers/types";
 import type { ReservationFormValues } from "../../types";
 import type { StandardListCode } from "@/features/standard-codes/types";
-// import type { RestaurantMaster } from "@/features/restaurant-masters/types";
+import type { RestaurantMaster } from "@/features/restaurant-masters/types";
+import { ReservationTableSelector } from "./ReservationTableSelector";
 
 import {
   CalendarClockIcon,
@@ -64,7 +65,10 @@ type ReservationFormProps = {
   selectedCustomerHasNoPhone: boolean;
   cancelLabel?: string;
   onCancel?: () => void;
-  // restaurantMasters: RestaurantMaster[];
+  restaurantMasters: RestaurantMaster[];
+  unavailableRestaurantMasterIds: number[];
+  isAvailabilityLoading: boolean;
+  availabilityErrorMessage: string | null;
 };
 
 type FieldErrorProps = {
@@ -159,7 +163,10 @@ export function ReservationForm({
   selectedCustomerHasNoPhone,
   cancelLabel,
   onCancel,
-  // restaurantMasters,
+  restaurantMasters,
+  unavailableRestaurantMasterIds,
+  isAvailabilityLoading,
+  availabilityErrorMessage,
 }: ReservationFormProps) {
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
@@ -402,6 +409,8 @@ export function ReservationForm({
                 aria-invalid={Boolean(fieldErrors.guest_count?.length)}
                 onChange={(event) => {
                   onClearFieldError("guest_count");
+                  onClearFieldError("restaurant_master_ids");
+
                   onChange({
                     ...values,
                     guest_count: Number(event.target.value),
@@ -475,6 +484,26 @@ export function ReservationForm({
                 }}
               />
               <FieldError messages={fieldErrors.reservation_status} />
+            </div>
+
+            <div className="md:col-span-2">
+              <ReservationTableSelector
+                restaurantMasters={restaurantMasters}
+                selectedIds={values.restaurant_master_ids}
+                guestCount={values.guest_count}
+                unavailableRestaurantMasterIds={unavailableRestaurantMasterIds}
+                isAvailabilityLoading={isAvailabilityLoading}
+                availabilityErrorMessage={availabilityErrorMessage}
+                errorMessages={fieldErrors.restaurant_master_ids}
+                onChange={(selectedIds) => {
+                  onClearFieldError("restaurant_master_ids");
+
+                  onChange({
+                    ...values,
+                    restaurant_master_ids: selectedIds,
+                  });
+                }}
+              />
             </div>
 
             <div className="space-y-2">

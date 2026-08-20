@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 
 import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { useReservationCustomer } from "../../hooks/useReservationCustomer";
+import { useRestaurantMasterAvailability } from "../../hooks/useRestaurantMasterAvailability";
 
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
@@ -58,8 +59,17 @@ export function NewReservationFormContainer(
     menuTypes,
     reservationOccasions,
     reservationStatuses,
-    // restaurantMasters,
+    restaurantMasters,
   } = useReservationFormOptions();
+
+  const {
+    unavailableRestaurantMasterIds,
+    isAvailabilityLoading,
+    availabilityErrorMessage,
+  } = useRestaurantMasterAvailability({
+    startsAt: values.starts_at,
+    endsAt: values.ends_at,
+  });
 
   // 予約登録APIを呼び出す
   async function handleSubmit() {
@@ -116,7 +126,10 @@ export function NewReservationFormContainer(
       onClearFieldError={clearFieldError}
       onCustomerClear={handleCustomerClear}
       selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
-      // restaurantMasters={activeRestaurantMasters}
+      restaurantMasters={restaurantMasters}
+      unavailableRestaurantMasterIds={unavailableRestaurantMasterIds}
+      isAvailabilityLoading={isAvailabilityLoading}
+      availabilityErrorMessage={availabilityErrorMessage}
     />
   );
 }

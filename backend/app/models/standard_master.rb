@@ -7,7 +7,7 @@ class StandardMaster < ApplicationRecord
             presence: true,
             numericality: { only_integer: true }
 
-  validates :active, inclusion: { in: [true, false] }
+  validates :active, inclusion: { in: [ true, false ] }
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
@@ -36,5 +36,4 @@ class StandardMaster < ApplicationRecord
 
     result
   end
-
 end

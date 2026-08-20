@@ -1,7 +1,6 @@
 class CreateCustomers < ActiveRecord::Migration[8.1]
   def change
     create_table :customers do |t|
-
       t.string :customer_kind,
                 null: false,
                 default: "individual",
@@ -57,7 +56,7 @@ class CreateCustomers < ActiveRecord::Migration[8.1]
     add_index :customers, :company_name_kana
 
     add_index :customers,
-              [:hidden_at, :id],
+              [ :hidden_at, :id ],
               name: "index_customers_on_hidden_at_and_id"
   end
 end

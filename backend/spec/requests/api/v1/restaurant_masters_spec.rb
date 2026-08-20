@@ -222,7 +222,7 @@ RSpec.describe "Api::V1::RestaurantMasters", type: :request do
             restaurant_master["id"]
           }
 
-      
+
       expect(ids).to eq(
         [
           third_table.id,

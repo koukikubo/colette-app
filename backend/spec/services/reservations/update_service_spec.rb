@@ -59,6 +59,7 @@ RSpec.describe Reservations::UpdateService do
     create(
       :restaurant_master,
       restaurant_master_type: table_type,
+      capacity: 4,
       created_by_staff: staff,
       updated_by_staff: staff
     )
@@ -68,6 +69,7 @@ RSpec.describe Reservations::UpdateService do
     create(
       :restaurant_master,
       restaurant_master_type: table_type,
+      capacity: 4,
       created_by_staff: staff,
       updated_by_staff: staff
     )
@@ -166,13 +168,59 @@ RSpec.describe Reservations::UpdateService do
           reservation: reservation,
           attributes: {
             lock_version: reservation.lock_version,
-            restaurant_master_ids: [another_restaurant_master.id]
+            restaurant_master_ids: [ another_restaurant_master.id ]
           },
           current_staff: other_staff
         )
 
       expect(updated_reservation.restaurant_masters)
         .to contain_exactly(another_restaurant_master)
+    end
+
+    it "複数の実テーブルで予約人数分の定員を確保できる場合は更新できる" do
+      updated_reservation =
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            guest_count: 8,
+            restaurant_master_ids: [
+              restaurant_master.id,
+              another_restaurant_master.id
+            ],
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+
+      expect(updated_reservation.guest_count).to eq(8)
+      expect(updated_reservation.restaurant_masters)
+        .to contain_exactly(
+          restaurant_master,
+          another_restaurant_master
+        )
+    end
+
+    it "実テーブルの合計定員が予約人数を下回る場合は更新できない" do
+      expect do
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            guest_count: 8,
+            restaurant_master_ids: [ restaurant_master.id ],
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(
+          error.record.errors.details[:restaurant_master_ids]
+        ).to include(error: :insufficient_capacity)
+      }
+
+      reservation.reload
+
+      expect(reservation.guest_count).to eq(2)
+      expect(reservation.restaurant_masters).to be_empty
     end
 
     it "restaurant_master_idsを送らない場合、実テーブル割当を変更しない" do
@@ -189,6 +237,31 @@ RSpec.describe Reservations::UpdateService do
         )
 
       expect(updated_reservation.restaurant_masters)
+        .to contain_exactly(restaurant_master)
+    end
+
+    it "restaurant_master_idsを送らず予約人数を増やす場合も既存割当の定員を検証する" do
+      reservation.restaurant_masters << restaurant_master
+
+      expect do
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            guest_count: 8,
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(
+          error.record.errors.details[:restaurant_master_ids]
+        ).to include(error: :insufficient_capacity)
+      }
+
+      reservation.reload
+
+      expect(reservation.guest_count).to eq(2)
+      expect(reservation.restaurant_masters)
         .to contain_exactly(restaurant_master)
     end
 
@@ -231,11 +304,61 @@ RSpec.describe Reservations::UpdateService do
             starts_at: reservation_time(Time.zone.today, 19),
             ends_at: reservation_time(Time.zone.today, 21),
             lock_version: reservation.lock_version,
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [ restaurant_master.id ]
           },
           current_staff: other_staff
         )
       end.to raise_error(ActiveRecord::RecordInvalid)
+    end
+
+    it "割り当て済みの実テーブルが後から無効になっても割り当てを維持できる" do
+      reservation.restaurant_masters << restaurant_master
+
+      # 予約へ割り当てた後に、席マスタが運用上無効化された状況を再現する。
+      restaurant_master.update!(active: false)
+
+      updated_reservation =
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            reservation_name: "既存席を維持",
+            restaurant_master_ids: [ restaurant_master.id ],
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+
+      expect(updated_reservation.reservation_name).to eq("既存席を維持")
+      expect(updated_reservation.restaurant_masters)
+        .to contain_exactly(restaurant_master)
+    end
+
+    it "無効な実テーブルを新しく割り当てることはできない" do
+      inactive_restaurant_master =
+        create(
+          :restaurant_master,
+          restaurant_master_type: table_type,
+          capacity: 4,
+          active: false,
+          created_by_staff: staff,
+          updated_by_staff: staff
+        )
+
+      expect do
+        described_class.call(
+          reservation: reservation,
+          attributes: {
+            restaurant_master_ids: [
+              inactive_restaurant_master.id
+            ],
+            lock_version: reservation.lock_version
+          },
+          current_staff: other_staff
+        )
+      end.to raise_error(ActiveRecord::RecordInvalid) { |error|
+        expect(error.record.errors[:base])
+          .to include("無効な予約席が含まれています")
+      }
     end
 
     it "自分自身の実テーブル割当は二重予約扱いにしない" do
@@ -247,7 +370,7 @@ RSpec.describe Reservations::UpdateService do
           attributes: {
             reservation_name: "更新後",
             lock_version: reservation.lock_version,
-            restaurant_master_ids: [restaurant_master.id]
+            restaurant_master_ids: [ restaurant_master.id ]
           },
           current_staff: other_staff
         )

@@ -18,22 +18,29 @@ module Reservations
     # 予約本体と実テーブル割当を一連の更新処理として扱い、失敗時は全てロールバックする
     def call
       ActiveRecord::Base.transaction do
-        restaurant_master_ids = extract_restaurant_master_ids
+        existing_restaurant_master_ids = reservation.restaurant_master_ids
+        submitted_restaurant_master_ids = extract_restaurant_master_ids
+
+        # 実テーブルが未送信でも、人数や日時の変更後に既存割り当てを再検証する。
+        # nilは割り当て維持、空配列は明示的な解除として区別する。
+        restaurant_master_ids_for_validation =
+          submitted_restaurant_master_ids || existing_restaurant_master_ids
 
         reservation.assign_attributes(reservation_attributes)
 
         apply_customer_to_reservation
         apply_staff
 
-        Reservations::DoubleBookingValidator.call(
+        Reservations::TableAssignmentValidator.call(
           reservation: reservation,
-          restaurant_master_ids: restaurant_master_ids
+          restaurant_master_ids: restaurant_master_ids_for_validation,
+          existing_restaurant_master_ids: existing_restaurant_master_ids
         )
 
         reservation.save!
 
         assign_restaurant_masters!(
-          restaurant_master_ids: restaurant_master_ids
+          restaurant_master_ids: submitted_restaurant_master_ids
         )
 
         reservation
@@ -47,7 +54,7 @@ module Reservations
     def reservation_attributes
       attributes.except(:restaurant_master_ids)
     end
-    
+
     # 実テーブルIDを配列として整形する。未送信と空配列の意味を分けるため、キーがない場合はnilを返す
     def extract_restaurant_master_ids
       return nil unless attributes.key?(:restaurant_master_ids)

@@ -8,12 +8,10 @@ class CreateStaffs < ActiveRecord::Migration[8.1]
       t.datetime :last_logged_in_at
 
       t.timestamps
-
     end
 
     add_check_constraint :staffs,
                           "failed_attempts >= 0",
                           name: "check_staffs_failed_attempts_non_negative"
-
   end
 end

@@ -64,7 +64,7 @@ class Api::V1::RestaurantMastersController < Api::V1::BaseController
         .find(params[:id])
   end
 
-  
+
 
   def restaurant_master_create_params
     permitted_params =

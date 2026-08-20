@@ -60,7 +60,7 @@ class RestaurantMaster < ApplicationRecord
             }
 
   validates :active,
-            inclusion: { in: [true, false] }
+            inclusion: { in: [ true, false ] }
 
   before_validation :normalize_editable_attributes
 
@@ -72,7 +72,7 @@ class RestaurantMaster < ApplicationRecord
         sequence_number: :asc
       )
   }
-  
+
   private
 
   def normalize_editable_attributes

@@ -104,4 +104,3 @@ class Customer < ApplicationRecord
     value.to_s.strip.downcase.presence
   end
 end
-

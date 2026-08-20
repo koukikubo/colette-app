@@ -20,7 +20,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
         end
       }
     )
-  end 
+  end
 
   def show
     render_success(
@@ -140,7 +140,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
 
   def login_enabled_params
     params.expect(
-      staff: [:login_enabled]
+      staff: [ :login_enabled ]
     )
   end
 
@@ -182,7 +182,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
 
   def retire_params
     params.expect(
-      staff_master: [:retired_on]
+      staff_master: [ :retired_on ]
     )
   end
 end
