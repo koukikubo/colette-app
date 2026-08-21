@@ -81,6 +81,19 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
     [reservations],
   );
 
+  // 表示日の予約件数を集計する。
+  const reservationCount = reservations.length;
+
+  // 表示日の来店予定人数を集計する。
+  // 初期値を0にすることで、予約がない日も0名として扱える。
+  const totalGuestCount = reservations.reduce(
+    (total, reservation) => total + reservation.guest_count,
+    0,
+  );
+
+  // 実テーブルがまだ割り当てられていない予約件数を集計する。
+  const unassignedReservationCount = unassignedReservations.length;
+
   if (isLoading) {
     return (
       <p className="text-muted-foreground text-sm">
@@ -102,6 +115,33 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   return (
     <div>
+      <section aria-labelledby="reservation-summary-heading">
+        <h2 id="reservation-summary-heading" className="sr-only">
+          表示日の予約サマリー
+        </h2>
+
+        <dl className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border bg-card p-4">
+            <dt className="text-sm text-muted-foreground">予約件数</dt>
+            <dd className="mt-1 text-2xl font-semibold">
+              {reservationCount}件
+            </dd>
+          </div>
+
+          <div className="rounded-lg border bg-card p-4">
+            <dt className="text-sm text-muted-foreground">来店予定人数</dt>
+            <dd className="mt-1 text-2xl font-semibold">{totalGuestCount}名</dd>
+          </div>
+
+          <div className="rounded-lg border bg-card p-4">
+            <dt className="text-sm text-muted-foreground">席未割当</dt>
+            <dd className="mt-1 text-2xl font-semibold">
+              {unassignedReservationCount}件
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <ReservationTimeline
         tableRows={tableRows}
         unassignedReservations={unassignedReservations}
