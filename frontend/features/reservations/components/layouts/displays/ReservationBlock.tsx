@@ -1,6 +1,6 @@
 import Link from "next/link";
-
 import type { Reservation } from "@/features/reservations/types";
+import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
 
 type ReservationBlockProps = {
   reservation: Reservation;
@@ -38,7 +38,6 @@ export function ReservationBlock({
 }: ReservationBlockProps) {
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
-
   return (
     <Link
       href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
@@ -60,19 +59,4 @@ export function ReservationBlock({
       </div>
     </Link>
   );
-}
-
-/**
- * Railsから返された日時を日本時間のHH:mm形式へ変換する。
- *
- * 現時点ではReservationBlock専用の処理として同じファイルに置く。
- * 他のcpでも再利用することが確定した場合にutilsへ移動する。
- */
-function formatReservationTime(value: string): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
 }

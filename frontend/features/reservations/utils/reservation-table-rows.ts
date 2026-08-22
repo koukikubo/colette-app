@@ -46,12 +46,23 @@ function compareRestaurantMasters(
   return left.id - right.id;
 }
 
-// 実テーブルがまだ割り当てられていない予約を取得する。
-// 希望席種だけ決まっていて実席が未確定の予約を、タイムラインの「席未割当」行へ表示するために使用する。
+// 実テーブルがまだ割り当てられていない予約を開始時刻順で取得する。
+// 予約一覧上部の「要対応」一覧へ表示し、早い予約から確認できるようにする。
 export function findUnassignedReservations(
   reservations: Reservation[],
 ): Reservation[] {
-  return reservations.filter(
-    (reservation) => reservation.restaurant_master_ids.length === 0,
-  );
+  return reservations
+    .filter((reservation) => reservation.restaurant_master_ids.length === 0)
+    .sort((firstReservation, secondReservation) => {
+      const startsAtDifference =
+        new Date(firstReservation.starts_at).getTime() -
+        new Date(secondReservation.starts_at).getTime();
+
+      // 開始時刻が同じ場合も、予約ID順にして表示順を安定させる。
+      if (startsAtDifference === 0) {
+        return firstReservation.id - secondReservation.id;
+      }
+
+      return startsAtDifference;
+    });
 }

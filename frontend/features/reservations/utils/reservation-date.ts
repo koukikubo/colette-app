@@ -99,3 +99,14 @@ export function formatReservationDateTimeLocal(value: string): string {
 
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
+
+// APIから取得した予約日時を、日本時間のHH:mm形式へ変換する。
+// タイムラインや席未割当一覧など、時刻だけを表示する画面で使用する。
+export function formatReservationTime(value: string): string {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}

@@ -12,6 +12,7 @@ import {
   findUnassignedReservations,
 } from "@/features/reservations/utils/reservation-table-rows";
 import { ReservationTimeline } from "./ReservationTimeline";
+import { UnassignedReservationList } from "./UnassignedReservationList";
 
 type ReservationListPageProps = {
   targetDate: string;
@@ -114,7 +115,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       <section aria-labelledby="reservation-summary-heading">
         <h2 id="reservation-summary-heading" className="sr-only">
           表示日の予約サマリー
@@ -142,69 +143,9 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
         </dl>
       </section>
 
-      <ReservationTimeline
-        tableRows={tableRows}
-        unassignedReservations={unassignedReservations}
-        targetDate={targetDate}
-      />
+      <UnassignedReservationList reservations={unassignedReservations} />
 
-      {unassignedReservations.length > 0 ? (
-        <section className="grid gap-3 rounded-lg border border-dashed p-4 md:grid-cols-[180px_1fr]">
-          <div>
-            <p className="font-medium">席未割当</p>
-
-            <p className="text-muted-foreground text-sm">実テーブル未確定</p>
-          </div>
-
-          <ReservationRowContent reservations={unassignedReservations} />
-        </section>
-      ) : null}
+      <ReservationTimeline tableRows={tableRows} targetDate={targetDate} />
     </div>
   );
-}
-
-type ReservationRowContentProps = {
-  reservations: Reservation[];
-};
-
-function ReservationRowContent({ reservations }: ReservationRowContentProps) {
-  if (reservations.length === 0) {
-    return (
-      <p className="text-muted-foreground self-center text-sm">予約なし</p>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {reservations.map((reservation) => (
-        <article
-          key={reservation.id}
-          className="bg-muted/40 rounded-md border p-3"
-        >
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="font-medium">{reservation.reservation_name}</p>
-
-            <p className="text-muted-foreground text-sm">
-              {reservation.guest_count}名
-            </p>
-          </div>
-
-          <p className="text-muted-foreground mt-1 text-sm">
-            {formatReservationTime(reservation.starts_at)}
-            {" 〜 "}
-            {formatReservationTime(reservation.ends_at)}
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function formatReservationTime(value: string): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
 }
