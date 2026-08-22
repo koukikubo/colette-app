@@ -35,8 +35,9 @@ RSpec.describe Customer, type: :model do
         expect(customer).to be_valid
       end
 
-      it "corporateなら有効になる" do
+      it "corporateかつ法人名があれば有効になる" do
         customer.customer_kind = "corporate"
+        customer.company_name = "株式会社コレット"
 
         expect(customer).to be_valid
       end
@@ -115,10 +116,21 @@ RSpec.describe Customer, type: :model do
 
     describe "法人情報" do
       it "法人情報が空でも有効になる" do
+        customer.customer_kind = "individual"
         customer.company_name = nil
         customer.company_name_kana = nil
 
         expect(customer).to be_valid
+      end
+
+      it "法人顧客は法人名が空なら無効になる" do
+        customer.customer_kind = "corporate"
+        customer.company_name = nil
+
+        expect(customer).to be_invalid
+        expect(customer.errors[:company_name]).to include(
+          "を入力してください"
+        )
       end
 
       it "法人名が101文字なら無効になる" do
@@ -214,6 +226,18 @@ RSpec.describe Customer, type: :model do
           customer.public_send("#{attribute}=", nil)
 
           expect(customer).to be_valid
+        end
+
+        it "#{attribute}のドメインにピリオドがない場合は無効になる" do
+          customer.public_send(
+            "#{attribute}=",
+            "customer@example"
+          )
+
+          expect(customer).to be_invalid
+          expect(customer.errors[attribute]).to include(
+            "の形式が正しくありません"
+          )
         end
       end
     end
@@ -338,6 +362,23 @@ RSpec.describe Customer, type: :model do
 
       expect(customer.phone_number).to eq("090ABC5678")
       expect(customer.errors[:phone_number]).to be_present
+    end
+  end
+
+  describe "メモ" do
+    it "1000文字なら有効になる" do
+      customer.memo = "あ" * 1_000
+
+      expect(customer).to be_valid
+    end
+
+    it "1001文字なら無効になる" do
+      customer.memo = "あ" * 1_001
+
+      expect(customer).to be_invalid
+      expect(customer.errors[:memo]).to include(
+        "は1000文字以内で入力してください"
+      )
     end
   end
 end

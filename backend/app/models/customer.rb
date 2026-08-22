@@ -7,6 +7,8 @@ class Customer < ApplicationRecord
   POSTAL_CODE_FORMAT = /\A\d{7}\z/
   PHONE_NUMBER_FORMAT = /\A\d{10,11}\z/
 
+  # 一般的なインターネットメールとして、@の前後とドメインのピリオドを必須にする。
+  EMAIL_FORMAT = /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/
   belongs_to :created_by_staff,
               class_name: "Staff",
               foreign_key: :created_by_staff_id,
@@ -25,15 +27,20 @@ class Customer < ApplicationRecord
             presence: true,
             length: { maximum: 30 }
 
+  # 法人顧客として管理する場合は、顧客を識別できる法人名を必須にする。
+  validates :company_name,
+            presence: true,
+            if: :corporate?
+
+  validates :company_name, :company_name_kana,
+            length: { maximum: 100 },
+            allow_blank: true
+
   validates :kana, :company_name_kana,
             format: {
               with: KANA_FORMAT,
               message: "は全角カタカナで入力してください"
             },
-            allow_blank: true
-
-  validates :company_name, :company_name_kana,
-            length: { maximum: 100 },
             allow_blank: true
 
   validates :postal_code, :company_postal_code,
@@ -52,7 +59,7 @@ class Customer < ApplicationRecord
 
   validates :email, :company_email,
             format: {
-              with: URI::MailTo::EMAIL_REGEXP,
+              with: EMAIL_FORMAT,
               message: "の形式が正しくありません"
             },
             length: { maximum: 255 },
@@ -62,10 +69,18 @@ class Customer < ApplicationRecord
             length: { maximum: 255 },
             allow_blank: true
 
+  # 極端に大きな入力を防ぎつつ、接客情報を十分記録できる長さを確保する。
+  validates :memo,
+            length: { maximum: 1_000 },
+            allow_blank: true
+
   validate :birthday_must_not_be_in_the_future
 
   private
-
+  # 法人判定
+  def corporate?
+    customer_kind == "corporate"
+  end
   def birthday_must_not_be_in_the_future
     return if birthday.blank? || birthday <= Date.current
 

@@ -425,7 +425,12 @@ RSpec.describe "Api::V1::Customers", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
-      expect(response_body["errors"]).to be_present
+      expect(response_body["message"])
+        .to eq("入力内容に誤りがあります")
+      expect(response_body["errors"]).to be_a(Hash)
+      expect(response_body["errors"]["kana"]).to include(
+        "フリガナは全角カタカナで入力してください"
+      )
     end
   end
 
@@ -532,6 +537,10 @@ RSpec.describe "Api::V1::Customers", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response_body["status"]).to eq("error")
+      expect(response_body["message"])
+        .to eq("入力内容に誤りがあります")
+      expect(response_body["errors"]).to be_a(Hash)
+      expect(response_body["errors"]["customer_kind"]).to be_present
       expect(customer.reload.customer_kind).to eq("individual")
     end
 

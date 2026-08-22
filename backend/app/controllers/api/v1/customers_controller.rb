@@ -256,12 +256,4 @@ class Api::V1::CustomersController < Api::V1::BaseController
       status: status
     )
   end
-
-  def render_validation_error(customer)
-    render_error(
-      message: "入力内容に誤りがあります",
-      errors: customer.errors.full_messages,
-      status: :unprocessable_content
-    )
-  end
 end

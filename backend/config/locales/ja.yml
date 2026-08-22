@@ -9,6 +9,23 @@ ja:
       reservation: "予約情報"
 
     attributes:
+      customer:
+        customer_kind: "顧客区分"
+        name: "顧客名"
+        kana: "フリガナ"
+        postal_code: "郵便番号"
+        address: "住所"
+        phone_number: "電話番号"
+        email: "メールアドレス"
+        birthday: "生年月日"
+        company_name: "法人名"
+        company_name_kana: "法人名カナ"
+        company_postal_code: "法人郵便番号"
+        company_address: "法人住所"
+        company_phone_number: "法人電話番号"
+        company_email: "法人メールアドレス"
+        memo: "メモ"
+
       reservation:
         reservation_name: "予約者名"
         reservation_phone_number: "電話番号"
@@ -24,6 +41,10 @@ ja:
 
     errors:
       messages:
+        blank: "を入力してください"
+        too_long: "は%{count}文字以内で入力してください"
+        inclusion: "は正しい値を選択してください"
+        required: "を入力してください"
         invalid_category: "は正しい種類の選択肢を選んでください"
         insufficient_capacity: "では予約人数分の定員を確保できません"
       models:

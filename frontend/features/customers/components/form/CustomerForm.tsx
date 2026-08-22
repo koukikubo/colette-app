@@ -9,34 +9,53 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
-import type { CustomerFormValues } from "../customer-form";
-import type { CustomerKind } from "../types";
+import type { CustomerKind } from "../../types";
+import { FieldError } from "@/components/ui/field";
+import type { ApiFieldErrors } from "@/lib/api/api-client";
+
+import {
+  CUSTOMER_FORM_FIELD_NAMES,
+  type CustomerFormValues,
+} from "../../customer-form";
 
 type CustomerFormProps = {
   formId: string;
   values: CustomerFormValues;
   errors?: string[];
+  fieldErrors: ApiFieldErrors;
   disabled?: boolean;
   onChange: (values: CustomerFormValues) => void;
+  onClearFieldError: (fieldName: string) => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
 };
 
 function isCustomerKind(value: string): value is CustomerKind {
   return value === "individual" || value === "corporate";
 }
+// errorメッセージの変換関数
+function toFieldErrorItems(messages?: string[]) {
+  return messages?.map((message) => ({
+    message,
+  }));
+}
 
 export function CustomerForm({
   formId,
   values,
   errors = [],
+  fieldErrors,
   disabled = false,
   onChange,
+  onClearFieldError,
   onSubmit,
 }: CustomerFormProps) {
   function updateField<K extends keyof CustomerFormValues>(
     field: K,
     value: CustomerFormValues[K],
   ) {
+    const apiFieldName = CUSTOMER_FORM_FIELD_NAMES[field];
+    onClearFieldError(apiFieldName);
+
     onChange({
       ...values,
       [field]: value,
@@ -56,9 +75,24 @@ export function CustomerForm({
   }
 
   const isCorporate = values.customerKind === "corporate";
+  type CustomerFormField = keyof CustomerFormValues;
+
+  function getFieldErrorMessages(field: CustomerFormField) {
+    const apiFieldName = CUSTOMER_FORM_FIELD_NAMES[field];
+
+    return fieldErrors[apiFieldName];
+  }
+
+  function hasFieldError(field: CustomerFormField) {
+    return Boolean(getFieldErrorMessages(field)?.length);
+  }
+
+  function fieldErrorId(field: CustomerFormField) {
+    return `${fieldId(field)}-error`;
+  }
 
   return (
-    <form id={formId} className="space-y-6" onSubmit={onSubmit}>
+    <form id={formId} className="space-y-6" noValidate onSubmit={onSubmit}>
       {errors.length > 0 && (
         <Alert variant="destructive">
           <CircleAlertIcon />
@@ -130,10 +164,20 @@ export function CustomerForm({
               <Input
                 id={fieldId("name")}
                 value={values.name}
+                aria-invalid={hasFieldError("name")}
+                aria-describedby={
+                  hasFieldError("name") ? fieldErrorId("name") : undefined
+                }
+
                 onChange={(event) => updateField("name", event.target.value)}
                 placeholder="例：浅井 太郎"
                 maxLength={30}
                 required
+              />
+
+              <FieldError
+                id={fieldErrorId("name")}
+                errors={toFieldErrorItems(getFieldErrorMessages("name"))}
               />
             </div>
 
@@ -148,10 +192,19 @@ export function CustomerForm({
               <Input
                 id={fieldId("kana")}
                 value={values.kana}
+                aria-invalid={hasFieldError("kana")}
+                aria-describedby={
+                  hasFieldError("kana") ? fieldErrorId("kana") : undefined
+                }
                 onChange={(event) => updateField("kana", event.target.value)}
                 placeholder="例：アサイ タロウ"
                 maxLength={30}
                 required
+              />
+
+              <FieldError
+                id={fieldErrorId("kana")}
+                errors={toFieldErrorItems(getFieldErrorMessages("kana"))}
               />
             </div>
 
@@ -162,9 +215,19 @@ export function CustomerForm({
                 id={fieldId("birthday")}
                 type="date"
                 value={values.birthday}
+                aria-invalid={hasFieldError("birthday")}
+                aria-describedby={
+                  hasFieldError("birthday")
+                    ? fieldErrorId("birthday")
+                    : undefined
+                }
                 onChange={(event) =>
                   updateField("birthday", event.target.value)
                 }
+              />
+              <FieldError
+                id={fieldErrorId("birthday")}
+                errors={toFieldErrorItems(getFieldErrorMessages("birthday"))}
               />
             </div>
           </div>
@@ -188,10 +251,21 @@ export function CustomerForm({
                 type="tel"
                 inputMode="tel"
                 value={values.phoneNumber}
+                aria-invalid={hasFieldError("phoneNumber")}
+                aria-describedby={
+                  hasFieldError("phoneNumber")
+                    ? fieldErrorId("phoneNumber")
+                    : undefined
+                }
                 onChange={(event) =>
                   updateField("phoneNumber", event.target.value)
                 }
                 placeholder="例：090-1234-5678"
+              />
+
+              <FieldError
+                id={fieldErrorId("phoneNumber")}
+                errors={toFieldErrorItems(getFieldErrorMessages("phoneNumber"))}
               />
             </div>
 
@@ -202,8 +276,17 @@ export function CustomerForm({
                 id={fieldId("email")}
                 type="email"
                 value={values.email}
+                aria-invalid={hasFieldError("email")}
+                aria-describedby={
+                  hasFieldError("email") ? fieldErrorId("email") : undefined
+                }
+
                 onChange={(event) => updateField("email", event.target.value)}
                 placeholder="例：customer@example.com"
+              />
+              <FieldError
+                id={fieldErrorId("email")}
+                errors={toFieldErrorItems(getFieldErrorMessages("email"))}
               />
             </div>
 
@@ -214,11 +297,23 @@ export function CustomerForm({
                 id={fieldId("postalCode")}
                 inputMode="numeric"
                 value={values.postalCode}
+                aria-invalid={hasFieldError("postalCode")}
+                aria-describedby={
+                  hasFieldError("postalCode")
+                    ? fieldErrorId("postalCode")
+                    : undefined
+                }
+
                 onChange={(event) =>
                   updateField("postalCode", event.target.value)
                 }
                 placeholder="例：530-0001"
                 maxLength={8}
+              />
+
+              <FieldError
+                id={fieldErrorId("postalCode")}
+                errors={toFieldErrorItems(getFieldErrorMessages("postalCode"))}
               />
             </div>
 
@@ -228,8 +323,18 @@ export function CustomerForm({
               <Input
                 id={fieldId("address")}
                 value={values.address}
+                aria-invalid={hasFieldError("address")}
+                aria-describedby={
+                  hasFieldError("address") ? fieldErrorId("address") : undefined
+                }
+
                 onChange={(event) => updateField("address", event.target.value)}
                 placeholder="例：大阪府大阪市北区梅田1-1-1"
+              />
+
+              <FieldError
+                id={fieldErrorId("address")}
+                errors={toFieldErrorItems(getFieldErrorMessages("address"))}
               />
             </div>
           </div>
@@ -247,15 +352,34 @@ export function CustomerForm({
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor={fieldId("companyName")}>法人名</Label>
+                <Label htmlFor={fieldId("companyName")}>
+                  法人名
+                  <span className="ml-1 text-destructive" aria-hidden="true">
+                    *
+                  </span>
+                </Label>
 
                 <Input
                   id={fieldId("companyName")}
                   value={values.companyName}
+                  aria-invalid={hasFieldError("companyName")}
+                  aria-describedby={
+                    hasFieldError("companyName")
+                      ? fieldErrorId("companyName")
+                      : undefined
+                  }
+
                   onChange={(event) =>
                     updateField("companyName", event.target.value)
                   }
                   placeholder="例：株式会社浅井"
+                />
+
+                <FieldError
+                  id={fieldErrorId("companyName")}
+                  errors={toFieldErrorItems(
+                    getFieldErrorMessages("companyName"),
+                  )}
                 />
               </div>
 
@@ -265,10 +389,23 @@ export function CustomerForm({
                 <Input
                   id={fieldId("companyNameKana")}
                   value={values.companyNameKana}
+                  aria-invalid={hasFieldError("companyNameKana")}
+                  aria-describedby={
+                    hasFieldError("companyNameKana")
+                      ? fieldErrorId("companyNameKana")
+                      : undefined
+                  }
+
                   onChange={(event) =>
                     updateField("companyNameKana", event.target.value)
                   }
                   placeholder="例：カブシキガイシャアサイ"
+                />
+                <FieldError
+                  id={fieldErrorId("companyNameKana")}
+                  errors={toFieldErrorItems(
+                    getFieldErrorMessages("companyNameKana"),
+                  )}
                 />
               </div>
 
@@ -282,10 +419,24 @@ export function CustomerForm({
                   type="tel"
                   inputMode="tel"
                   value={values.companyPhoneNumber}
+                  aria-invalid={hasFieldError("companyPhoneNumber")}
+                  aria-describedby={
+                    hasFieldError("companyPhoneNumber")
+                      ? fieldErrorId("companyPhoneNumber")
+                      : undefined
+                  }
+
                   onChange={(event) =>
                     updateField("companyPhoneNumber", event.target.value)
                   }
                   placeholder="例：06-1234-5678"
+                />
+
+                <FieldError
+                  id={fieldErrorId("companyPhoneNumber")}
+                  errors={toFieldErrorItems(
+                    getFieldErrorMessages("companyPhoneNumber"),
+                  )}
                 />
               </div>
 
@@ -298,10 +449,24 @@ export function CustomerForm({
                   id={fieldId("companyEmail")}
                   type="email"
                   value={values.companyEmail}
+                  aria-invalid={hasFieldError("companyEmail")}
+                  aria-describedby={
+                    hasFieldError("companyEmail")
+                      ? fieldErrorId("companyEmail")
+                      : undefined
+                  }
+
                   onChange={(event) =>
                     updateField("companyEmail", event.target.value)
                   }
                   placeholder="例：info@example.com"
+                />
+
+                <FieldError
+                  id={fieldErrorId("companyEmail")}
+                  errors={toFieldErrorItems(
+                    getFieldErrorMessages("companyEmail"),
+                  )}
                 />
               </div>
 
@@ -314,11 +479,25 @@ export function CustomerForm({
                   id={fieldId("companyPostalCode")}
                   inputMode="numeric"
                   value={values.companyPostalCode}
+                  aria-invalid={hasFieldError("companyPostalCode")}
+                  aria-describedby={
+                    hasFieldError("companyPostalCode")
+                      ? fieldErrorId("companyPostalCode")
+                      : undefined
+                  }
+
                   onChange={(event) =>
                     updateField("companyPostalCode", event.target.value)
                   }
                   placeholder="例：530-0001"
                   maxLength={8}
+                />
+
+                <FieldError
+                  id={fieldErrorId("companyPostalCode")}
+                  errors={toFieldErrorItems(
+                    getFieldErrorMessages("companyPostalCode"),
+                  )}
                 />
               </div>
 
@@ -328,10 +507,24 @@ export function CustomerForm({
                 <Input
                   id={fieldId("companyAddress")}
                   value={values.companyAddress}
+                  aria-invalid={hasFieldError("companyAddress")}
+                  aria-describedby={
+                    hasFieldError("companyAddress")
+                      ? fieldErrorId("companyAddress")
+                      : undefined
+                  }
+
                   onChange={(event) =>
                     updateField("companyAddress", event.target.value)
                   }
                   placeholder="例：大阪府大阪市北区梅田1-1-1"
+                />
+
+                <FieldError
+                  id={fieldErrorId("companyAddress")}
+                  errors={toFieldErrorItems(
+                    getFieldErrorMessages("companyAddress"),
+                  )}
                 />
               </div>
             </div>
@@ -353,9 +546,18 @@ export function CustomerForm({
             <Textarea
               id={fieldId("memo")}
               value={values.memo}
+              aria-invalid={hasFieldError("memo")}
+              aria-describedby={
+                hasFieldError("memo") ? fieldErrorId("memo") : undefined
+              }
               onChange={(event) => updateField("memo", event.target.value)}
               placeholder="アレルギー、好み、対応時の注意事項など"
               rows={4}
+            />
+
+            <FieldError
+              id={fieldErrorId("memo")}
+              errors={toFieldErrorItems(getFieldErrorMessages("memo"))}
             />
           </div>
         </section>

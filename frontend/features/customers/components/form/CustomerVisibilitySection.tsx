@@ -3,7 +3,7 @@
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { Customer } from "../types";
+import type { Customer } from "../../types";
 
 type CustomerVisibilitySectionProps = {
   customer: Customer;

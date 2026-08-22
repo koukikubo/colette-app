@@ -27,6 +27,24 @@ export type CustomerFormValues = {
 
   memo: string;
 };
+// 入力変更時に対応するエラーを消せるよう、フォーム項目とRails APIのエラーキーを対応付ける。
+export const CUSTOMER_FORM_FIELD_NAMES = {
+  customerKind: "customer_kind",
+  name: "name",
+  kana: "kana",
+  postalCode: "postal_code",
+  address: "address",
+  phoneNumber: "phone_number",
+  email: "email",
+  birthday: "birthday",
+  companyName: "company_name",
+  companyNameKana: "company_name_kana",
+  companyPostalCode: "company_postal_code",
+  companyAddress: "company_address",
+  companyPhoneNumber: "company_phone_number",
+  companyEmail: "company_email",
+  memo: "memo",
+} satisfies Record<keyof CustomerFormValues, keyof CustomerAttributes>;
 
 export const EMPTY_CUSTOMER_FORM_VALUES: CustomerFormValues = {
   customerKind: "individual",

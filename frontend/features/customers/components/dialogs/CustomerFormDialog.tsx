@@ -13,19 +13,21 @@ import {
 } from "@/components/ui/dialog";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { createCustomer, updateCustomer } from "../api/customer-api";
+import { createCustomer, updateCustomer } from "../../api/customer-api";
 import {
   buildCreateCustomerRequest,
   buildUpdateCustomerRequest,
   customerToFormValues,
   EMPTY_CUSTOMER_FORM_VALUES,
   type CustomerFormValues,
-} from "../customer-form";
-import type { Customer } from "../types";
-import { CustomerForm } from "./CustomerForm";
+} from "../../customer-form";
+import type { Customer } from "../../types";
+import { CustomerForm } from "../form/CustomerForm";
 import { CustomerFormConfirmDialog } from "./CustomerFormConfirmDialog";
-import { CustomerVisibilitySection } from "./CustomerVisibilitySection";
+import { CustomerVisibilitySection } from "../form/CustomerVisibilitySection";
 import { CustomerVisibilityDialog } from "./CustomerVisibilityDialog";
+import { useFieldErrors } from "@/hooks/useFieldErrors";
+import { validateCustomerFormValues } from "../../utils/customer-form-validation";
 
 export type CustomerFormMode = "create" | "edit";
 
@@ -69,6 +71,8 @@ export function CustomerFormDialog({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = mode === "edit";
+  const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
+    useFieldErrors();
 
   // 非表示確認画面の状態管理
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
@@ -76,6 +80,17 @@ export function CustomerFormDialog({
   function handleRequestConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrors([]);
+    clearAllFieldErrors();
+
+    const validationErrors = validateCustomerFormValues(values);
+
+    // 入力エラーがある場合は、確認ダイアログを開かずフォーム上に表示する。
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setErrors(["赤字で表示された項目を修正してください。"]);
+      return;
+    }
+
     setConfirmOpen(true);
   }
 
@@ -104,17 +119,20 @@ export function CustomerFormDialog({
       setConfirmOpen(false);
       setIsSubmitting(false);
       onOpenChange(false);
-
-      await onCompleted();
     } catch (error) {
       setConfirmOpen(false);
 
       if (error instanceof ApiClientError) {
-        setErrors(
-          error.errorMessages.length > 0
-            ? error.errorMessages
-            : [error.message],
-        );
+        if (error.status === 422 && !Array.isArray(error.errors)) {
+          setFieldErrors(error.errors);
+          setErrors([error.message]);
+        } else {
+          setErrors(
+            error.errorMessages.length > 0
+              ? error.errorMessages
+              : [error.message],
+          );
+        }
       } else {
         setErrors([
           isEdit
@@ -162,8 +180,10 @@ export function CustomerFormDialog({
             formId={FORM_ID}
             values={values}
             errors={errors}
+            fieldErrors={fieldErrors}
             disabled={isSubmitting}
             onChange={setValues}
+            onClearFieldError={clearFieldError}
             onSubmit={handleRequestConfirm}
           />
 

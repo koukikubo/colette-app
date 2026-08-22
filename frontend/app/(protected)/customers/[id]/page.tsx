@@ -1,4 +1,4 @@
-import { CustomerDetailPageClient } from "@/features/customers/components/CustomerDetailPageClient";
+import { CustomerDetailPageClient } from "@/features/customers/components/detail/CustomerDetailPageClient";
 
 type CustomersDetailPageProps = {
   params: Promise<{

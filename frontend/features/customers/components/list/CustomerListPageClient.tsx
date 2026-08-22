@@ -5,8 +5,12 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { fetchCustomers } from "../api/customer-api";
-import type { Customer, CustomerListParams } from "../types";
+import { fetchCustomers } from "../../api/customer-api";
+import type { Customer, CustomerListParams } from "../../types";
+import {
+  CustomerFormDialog,
+  type CustomerFormMode,
+} from "../dialogs/CustomerFormDialog";
 import { CustomerTable } from "./CustomerTable";
 import { CustomerTableSkeleton } from "./CustomerTableSkeleton";
 import { CustomerSearchForm } from "./CustomerSearchForm";
@@ -14,10 +18,6 @@ import { CustomerActiveFilters } from "./CustomerActiveFilters";
 import { CustomerFilterValues } from "./CustomerFilterPopover";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
-import {
-  CustomerFormDialog,
-  type CustomerFormMode,
-} from "./CustomerFormDialog";
 
 export function CustomerListPageClient() {
   const [customers, setCustomers] = useState<Customer[]>([]);
