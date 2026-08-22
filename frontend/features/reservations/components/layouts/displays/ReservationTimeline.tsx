@@ -1,4 +1,3 @@
-import type { Reservation } from "@/features/reservations/types";
 import { ReservationTimelineRow } from "./ReservationTimelineRow";
 import { ReservationTableRow } from "@/features/restaurant-masters/types";
 
@@ -20,8 +19,6 @@ const TABLE_LABEL_WIDTH_PX = 180;
 type ReservationTimelineProps = {
   //席マスタごとに予約をまとめた表示用データ。
   tableRows: ReservationTableRow[];
-  //実テーブルがまだ決まっていない予約
-  unassignedReservations: Reservation[];
   //現在表示している対象日。
   targetDate: string;
 };
@@ -32,12 +29,10 @@ type ReservationTimelineProps = {
  * 担当する処理：
  * ・時間ヘッダーの表示
  * ・席ごとのタイムライン行の表示
- * ・席未割当行の表示
  * ・横スクロール領域の管理
  */
 export function ReservationTimeline({
   tableRows,
-  unassignedReservations,
   targetDate,
 }: ReservationTimelineProps) {
   const timelineStartMinutes = TIMELINE_START_HOUR * 60;
@@ -101,21 +96,7 @@ export function ReservationTimeline({
             />
           ))}
 
-          {/* 席未割当予約が存在する場合だけ、通常席とは異なる点線の行として表示する */}
-          {unassignedReservations.length > 0 ? (
-            <ReservationTimelineRow
-              label="席未割当"
-              description="実テーブル未確定"
-              reservations={unassignedReservations}
-              targetDate={targetDate}
-              timelineStartMinutes={timelineStartMinutes}
-              timelineEndMinutes={timelineEndMinutes}
-              hourLabels={hourLabels}
-              dashed
-            />
-          ) : null}
-
-          {tableRows.length === 0 && unassignedReservations.length === 0 ? (
+          {tableRows.length === 0 ? (
             <div className="p-6">
               <p className="text-muted-foreground text-sm">
                 表示できる席がありません。

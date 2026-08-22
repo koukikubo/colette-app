@@ -123,7 +123,7 @@ class Reservation < ApplicationRecord
     return if starts_at.blank? || ends_at.blank?
     return if ends_at > starts_at
 
-    errors.add(:ends_at, "must be after starts_at")
+    errors.add(:ends_at, :must_be_after_starts_at)
   end
 
   def reservation_time_must_be_within_business_hours

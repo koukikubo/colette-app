@@ -15,8 +15,6 @@ type ReservationTimelineRowProps = {
   timelineStartMinutes: number;
   // タイムラインの表示終了時刻を分で表す。
   timelineEndMinutes: number;
-  // 席未割当行など、通常の席と見た目を変えたい場合に使用する。
-  dashed?: boolean;
   // タイムライン上部の時間目盛りを表示する。
   hourLabels: number[];
 };
@@ -29,7 +27,6 @@ export function ReservationTimelineRow({
   targetDate,
   timelineStartMinutes,
   timelineEndMinutes,
-  dashed = false,
   hourLabels,
 }: ReservationTimelineRowProps) {
   const timelineDurationMinutes = timelineEndMinutes - timelineStartMinutes;
@@ -39,12 +36,7 @@ export function ReservationTimelineRow({
   }
 
   return (
-    <section
-      className={[
-        "grid min-w-max grid-cols-[180px_1fr] border-b",
-        dashed ? "border-dashed" : "",
-      ].join(" ")}
-    >
+    <section className="grid min-w-max grid-cols-[180px_1fr] border-b">
       {/* 席情報を表示する左側の固定領域 */}
       <div className="bg-background sticky left-0 z-20 flex min-h-20 flex-col justify-center border-r px-4 py-3">
         <p className="font-medium">{label}</p>

@@ -31,6 +31,10 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     return { section: "顧客管理", page: "顧客一覧" };
   }
 
+  if (/^\/reservations\/[^/]+\/edit$/.test(pathname)) {
+    return { section: "予約管理", page: "予約編集" };
+  }
+
   const pageTitles: Record<string, string> = {
     "/dashboard": "ダッシュボード",
     "/restaurant-masters": "予約テーブルマスタ",

@@ -230,6 +230,22 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(customer_ids).to contain_exactly(corporate_customer.id)
     end
 
+    it "ひらがなのキーワードでフリガナを検索できる" do
+      get(
+        "/api/v1/customers",
+        params: { query: "やまだ" },
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      customer_ids =
+        response_body
+          .dig("data", "customers")
+          .map { |customer| customer["id"] }
+
+      expect(customer_ids).to contain_exactly(older_customer.id)
+    end
+
     it "不正なvisibilityの場合は400を返す" do
       get(
         "/api/v1/customers",

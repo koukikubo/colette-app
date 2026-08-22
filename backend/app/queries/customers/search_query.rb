@@ -52,11 +52,17 @@ module Customers
 
     def escaped_keyword
       @escaped_keyword ||=
-        ActiveRecord::Base.sanitize_sql_like(keyword)
+        ActiveRecord::Base.sanitize_sql_like(normalized_keyword)
     end
 
     def phone_keyword
       @phone_keyword ||= keyword.gsub(/\D/, "")
+    end
+
+    # ひらがなで入力された検索文字を、保存形式に合わせてカタカナへ変換する。
+    # 漢字・英数字・電話番号など、ひらがな以外の文字はそのまま維持する。
+    def normalized_keyword
+      @normalized_keyword ||= keyword.tr("ぁ-ゖ", "ァ-ヶ")
     end
   end
 end
