@@ -21,6 +21,7 @@ import { ReservationUpdateConfirmDialog } from "../dialogs/ReservationUpdateConf
 import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useRestaurantMasterAvailability } from "../../hooks/useRestaurantMasterAvailability";
+import { validateReservationDateTimes } from "../../utils/reservation-form-validation";
 
 type EditReservationFormContentProps = {
   reservation: Reservation;
@@ -93,6 +94,21 @@ function EditReservationFormContent({
     reservationId: reservation.id,
   });
 
+  // 確認ダイアログを開く前に、フロントで判断できる入力内容を検証する。
+  function handleOpenConfirmDialog() {
+    setSubmitErrorMessage(null);
+    clearAllFieldErrors();
+
+    const validationErrors = validateReservationDateTimes(values);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      return;
+    }
+
+    setConfirmOpen(true);
+  }
+
   // 編集した予約内容をRailsの更新APIへ送信する。
   async function handleSubmit() {
     // 二重クリックによる重複送信を防ぐ。
@@ -162,7 +178,7 @@ function EditReservationFormContent({
         reservationOccasion={reservationOccasions}
         reservationStatuses={reservationStatuses}
         restaurantMasters={restaurantMasters}
-        onSubmit={() => setConfirmOpen(true)}
+        onSubmit={handleOpenConfirmDialog}
         errorMessage={submitErrorMessage}
         isSubmitting={isSubmitting}
         submitLabel="予約を更新"

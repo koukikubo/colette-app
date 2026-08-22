@@ -43,6 +43,7 @@ ja:
 
             ends_at:
               blank: "を入力してください"
+              must_be_after_starts_at: "は予約開始日時より後に指定してください"
               outside_business_hours: "は17:00から21:00の間で指定してください"
 
             guest_count:

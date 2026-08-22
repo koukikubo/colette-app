@@ -8,6 +8,7 @@ import { ReservationTableSelector } from "./ReservationTableSelector";
 import {
   CalendarClockIcon,
   CheckIcon,
+  CircleAlertIcon,
   LoaderCircleIcon,
   NotebookPenIcon,
   UserRoundIcon,
@@ -168,6 +169,8 @@ export function ReservationForm({
   isAvailabilityLoading,
   availabilityErrorMessage,
 }: ReservationFormProps) {
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+
   return (
     <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
       <form
@@ -651,29 +654,49 @@ export function ReservationForm({
           </CardContent>
 
           <CardFooter className="justify-end gap-3">
-            {onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                disabled={isSubmitting}
-                onClick={onCancel}
+            {hasFieldErrors && (
+              <div
+                role="alert"
+                className="text-destructive flex items-center gap-2 text-sm"
               >
-                {cancelLabel ?? "戻る"}
-              </Button>
-            )}
+                <CircleAlertIcon
+                  className="size-4 shrink-0"
+                  aria-hidden="true"
+                />
 
-            <Button
-              type="submit"
-              size="lg"
-              className="min-w-32"
-              disabled={isSubmitting}
-            >
-              {isSubmitting && (
-                <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
+                <p>
+                  入力内容に誤りがあります。赤字で表示された項目を修正してください。
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 sm:ml-auto">
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  disabled={isSubmitting}
+                  onClick={onCancel}
+                >
+                  {cancelLabel ?? "戻る"}
+                </Button>
               )}
-              {isSubmitting ? submittingLabel : submitLabel}
-            </Button>
+
+              <Button
+                type="submit"
+                size="lg"
+                className="min-w-32"
+                disabled={isSubmitting}
+              >
+                {isSubmitting && (
+                  <LoaderCircleIcon
+                    className="animate-spin"
+                    aria-hidden="true"
+                  />
+                )}
+                {isSubmitting ? submittingLabel : submitLabel}
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </form>
