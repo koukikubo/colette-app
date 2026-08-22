@@ -27,6 +27,7 @@ import { CustomerFormConfirmDialog } from "./CustomerFormConfirmDialog";
 import { CustomerVisibilitySection } from "../form/CustomerVisibilitySection";
 import { CustomerVisibilityDialog } from "./CustomerVisibilityDialog";
 import { useFieldErrors } from "@/hooks/useFieldErrors";
+import { validateCustomerFormValues } from "../../utils/customer-form-validation";
 
 export type CustomerFormMode = "create" | "edit";
 
@@ -70,7 +71,8 @@ export function CustomerFormDialog({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = mode === "edit";
-  const { setFieldErrors, clearAllFieldErrors } = useFieldErrors();
+  const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
+    useFieldErrors();
 
   // 非表示確認画面の状態管理
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
@@ -79,6 +81,16 @@ export function CustomerFormDialog({
     event.preventDefault();
     setErrors([]);
     clearAllFieldErrors();
+
+    const validationErrors = validateCustomerFormValues(values);
+
+    // 入力エラーがある場合は、確認ダイアログを開かずフォーム上に表示する。
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setErrors(["赤字で表示された項目を修正してください。"]);
+      return;
+    }
+
     setConfirmOpen(true);
   }
 
@@ -168,8 +180,10 @@ export function CustomerFormDialog({
             formId={FORM_ID}
             values={values}
             errors={errors}
+            fieldErrors={fieldErrors}
             disabled={isSubmitting}
             onChange={setValues}
+            onClearFieldError={clearFieldError}
             onSubmit={handleRequestConfirm}
           />
 
