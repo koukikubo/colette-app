@@ -9,6 +9,23 @@ ja:
       reservation: "予約情報"
 
     attributes:
+      customer:
+        customer_kind: "顧客区分"
+        name: "顧客名"
+        kana: "フリガナ"
+        postal_code: "郵便番号"
+        address: "住所"
+        phone_number: "電話番号"
+        email: "メールアドレス"
+        birthday: "生年月日"
+        company_name: "法人名"
+        company_name_kana: "法人名カナ"
+        company_postal_code: "法人郵便番号"
+        company_address: "法人住所"
+        company_phone_number: "法人電話番号"
+        company_email: "法人メールアドレス"
+        memo: "メモ"
+
       reservation:
         reservation_name: "予約者名"
         reservation_phone_number: "電話番号"
