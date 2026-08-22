@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { fetchCustomer } from "../api/customer-api";
-import type { Customer } from "../types";
-import { CustomerFormDialog } from "./CustomerFormDialog";
+import { fetchCustomer } from "../../api/customer-api";
+import type { Customer } from "../../types";
+import { CustomerFormDialog } from "../dialogs/CustomerFormDialog";
 
 type CustomerDetailPageClientProps = {
   customerId: number;

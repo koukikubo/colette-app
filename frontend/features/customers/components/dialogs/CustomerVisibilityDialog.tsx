@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { hideCustomer, restoreCustomer } from "../api/customer-api";
-import type { Customer } from "../types";
+import { hideCustomer, restoreCustomer } from "../../api/customer-api";
+import type { Customer } from "../../types";
 
 type CustomerVisibilityDialogProps = {
   open: boolean;

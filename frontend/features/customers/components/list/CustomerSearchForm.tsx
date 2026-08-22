@@ -5,11 +5,11 @@ import { XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import type { CustomerKind, CustomerVisibility } from "../types";
+import type { CustomerKind, CustomerVisibility } from "../../types";
 
 import { CustomerFilterPopover } from "./CustomerFilterPopover";
 import type { CustomerFilterValues } from "./CustomerFilterPopover";
-import { CustomerKeywordSearch } from "./CustomerKeywordSearch";
+import { CustomerKeywordSearch } from "../search/CustomerKeywordSearch";
 
 type CustomerSearchFormProps = {
   initialQuery?: string;

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-import type { CustomerKind, CustomerVisibility } from "../types";
+import type { CustomerKind, CustomerVisibility } from "../../types";
 
 export type CustomerFilterValues = {
   visibility: CustomerVisibility;

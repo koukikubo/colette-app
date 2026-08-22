@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-import type { CustomerFormValues } from "../customer-form";
+import type { CustomerFormValues } from "../../customer-form";
 
 type CustomerFormConfirmDialogProps = {
   open: boolean;

@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import type { Customer } from "../types";
+import type { Customer } from "../../types";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";

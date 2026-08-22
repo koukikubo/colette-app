@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
-import type { CustomerFormValues } from "../customer-form";
-import type { CustomerKind } from "../types";
+import type { CustomerFormValues } from "../../customer-form";
+import type { CustomerKind } from "../../types";
 
 type CustomerFormProps = {
   formId: string;

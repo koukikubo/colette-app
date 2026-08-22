@@ -4,7 +4,7 @@ import { XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import type { CustomerListParams } from "../types";
+import type { CustomerListParams } from "../../types";
 
 type CustomerActiveFiltersProps = {
   filters: CustomerListParams;

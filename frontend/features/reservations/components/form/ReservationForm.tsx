@@ -16,7 +16,7 @@ import {
   UtensilsIcon,
 } from "lucide-react";
 
-import { CustomerKeywordSearch } from "@/features/customers/components/CustomerKeywordSearch";
+import { CustomerKeywordSearch } from "@/features/customers/components/search/CustomerKeywordSearch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
