@@ -69,6 +69,39 @@ RSpec.describe Customers::SearchQuery do
       end
     end
 
+    describe "ひらがな検索" do
+      let!(:individual_customer) do
+        create(
+          :customer,
+          kana: "ヤマダ タロウ"
+        )
+      end
+
+      let!(:corporate_customer) do
+        create(
+          :customer,
+          :corporate,
+          company_name_kana: "カブシキガイシャコレット"
+        )
+      end
+
+      context "個人のフリガナをひらがなで検索した場合" do
+        let(:keyword) { "やまだ" }
+
+        it "カタカナへ変換して該当顧客を返す" do
+          expect(result).to contain_exactly(individual_customer)
+        end
+      end
+
+      context "法人名カナをひらがなで検索した場合" do
+        let(:keyword) { "かぶしきがいしゃこれっと" }
+
+        it "カタカナへ変換して該当法人顧客を返す" do
+          expect(result).to contain_exactly(corporate_customer)
+        end
+      end
+    end
+
     describe "大文字と小文字" do
       let!(:target_customer) do
         create(
