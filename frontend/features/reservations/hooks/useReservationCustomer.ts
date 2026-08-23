@@ -55,6 +55,7 @@ export function useReservationCustomer({
     // 別の顧客を選択した時点で、以前の名前・電話番号エラーを消す。
     clearFieldError("reservation_name");
     clearFieldError("reservation_phone_number");
+    clearFieldError("customer_id");
 
     setSelectedCustomerHasNoPhone(!customer.phone_number);
 
@@ -71,6 +72,7 @@ export function useReservationCustomer({
   }
 
   function handleCustomerClear() {
+    clearFieldError("customer_id");
     setSelectedCustomerHasNoPhone(false);
 
     // 入力中の名前・電話番号は残し、顧客との関連だけを解除する。

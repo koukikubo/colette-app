@@ -247,11 +247,17 @@ export function ReservationForm({
             </div>
 
             {values.customer_id !== null && (
-              <div>
-                <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
+              <div className="space-y-2">
+                <div
+                  className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary"
+                  aria-invalid={Boolean(fieldErrors.customer_id?.length)}
+                >
                   <CheckIcon className="size-4" />
                   <span>{values.reservation_name}さんを選択しています</span>
                 </div>
+
+                {/* 別の顧客を選択した時点で、以前の顧客・名前・電話番号エラーを消す。 */}
+                <FieldError messages={fieldErrors.customer_id} />
 
                 <Button
                   type="button"
@@ -363,6 +369,8 @@ export function ReservationForm({
                 aria-invalid={Boolean(fieldErrors.starts_at?.length)}
                 onChange={(event) => {
                   onClearFieldError("starts_at");
+                  onClearFieldError("customer_id");
+
                   onChange({ ...values, starts_at: event.target.value });
                 }}
               />
@@ -386,6 +394,8 @@ export function ReservationForm({
                 aria-invalid={Boolean(fieldErrors.ends_at?.length)}
                 onChange={(event) => {
                   onClearFieldError("ends_at");
+                  onClearFieldError("customer_id");
+
                   onChange({ ...values, ends_at: event.target.value });
                 }}
               />

@@ -306,6 +306,122 @@ RSpec.describe Reservation, type: :model do
     end
   end
 
+  describe "同一顧客の時間重複バリデーション" do
+  let(:customer) { create(:customer) }
+
+  let!(:existing_reservation) do
+    create_reservation!(
+      customer: customer,
+      starts_at: reservation_time(Time.zone.today, 18),
+      ends_at: reservation_time(Time.zone.today, 20)
+    )
+  end
+
+  it "同一顧客の予約時間が重複する場合は無効である" do
+    reservation =
+      described_class.new(
+        valid_attributes.merge(
+          customer: customer,
+          starts_at: reservation_time(Time.zone.today, 19),
+          ends_at: reservation_time(Time.zone.today, 21)
+        )
+      )
+
+    expect(reservation).to be_invalid
+
+    expect(
+      reservation.errors.details[:customer_id]
+    ).to include(error: :overlapping_reservation)
+
+    expect(
+      reservation.errors.full_messages
+    ).to include(
+      "選択した顧客には、同じ時間帯の予約がすでに登録されています。既存の予約を編集してください。"
+    )
+  end
+
+  it "同一顧客でも既存予約の終了時刻から開始する場合は有効である" do
+    reservation =
+      described_class.new(
+        valid_attributes.merge(
+          customer: customer,
+          starts_at: reservation_time(Time.zone.today, 20),
+          ends_at: reservation_time(Time.zone.today, 21)
+        )
+      )
+
+    expect(reservation).to be_valid
+  end
+
+  it "別顧客なら同じ時間帯でも有効である" do
+  another_customer = create(:customer)
+
+  reservation =
+    described_class.new(
+      valid_attributes.merge(
+        customer: another_customer,
+        starts_at: reservation_time(Time.zone.today, 19),
+        ends_at: reservation_time(Time.zone.today, 21)
+      )
+    )
+
+  expect(reservation).to be_valid
+end
+
+it "既存予約がキャンセル済みなら同じ顧客・時間帯でも有効である" do
+    existing_reservation.update!(canceled_at: Time.current)
+
+    reservation =
+      described_class.new(
+        valid_attributes.merge(
+          customer: customer,
+          starts_at: reservation_time(Time.zone.today, 19),
+          ends_at: reservation_time(Time.zone.today, 21)
+        )
+      )
+
+    expect(reservation).to be_valid
+  end
+
+  it "顧客未選択なら時間が重複していても有効である" do
+    reservation =
+      described_class.new(
+        valid_attributes.merge(
+          customer: nil,
+          starts_at: reservation_time(Time.zone.today, 19),
+          ends_at: reservation_time(Time.zone.today, 21)
+        )
+      )
+
+    expect(reservation).to be_valid
+  end
+
+  it "更新時は自分自身を重複対象にしない" do
+    existing_reservation.reservation_name = "更新後の予約名"
+
+    expect(existing_reservation).to be_valid
+  end
+
+  it "更新後の時間が同一顧客の別予約と重複する場合は無効である" do
+    target_reservation =
+      create_reservation!(
+        customer: customer,
+        starts_at: reservation_time(Time.zone.today, 20),
+        ends_at: reservation_time(Time.zone.today, 21)
+      )
+
+    target_reservation.assign_attributes(
+      starts_at: reservation_time(Time.zone.today, 19),
+      ends_at: reservation_time(Time.zone.today, 21)
+    )
+
+    expect(target_reservation).to be_invalid
+    expect(
+      target_reservation.errors.details[:customer_id]
+    ).to include(error: :overlapping_reservation)
+  end
+end
+
   describe "scopes" do
     describe ".ordered" do
       it "開始日時とIDの昇順で取得する" do

@@ -27,6 +27,7 @@ ja:
         memo: "メモ"
 
       reservation:
+        customer_id: "選択した顧客"
         reservation_name: "予約者名"
         reservation_phone_number: "電話番号"
         starts_at: "予約開始日時"
@@ -50,6 +51,9 @@ ja:
       models:
         reservation:
           attributes:
+            customer_id:
+              overlapping_reservation: "には、同じ時間帯の予約がすでに登録されています。既存の予約を編集してください。"
+
             reservation_name:
               blank: "を入力してください"
               too_long: "は%{count}文字以内で入力してください"

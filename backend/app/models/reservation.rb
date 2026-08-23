@@ -81,6 +81,7 @@ class Reservation < ApplicationRecord
               system_key: "reservation_occasion"
             }
 
+  validate :customer_reservation_must_not_overlap
 
   # 検索に使用するスコープ
   scope :ordered, -> { order(:starts_at, :id) }
@@ -154,5 +155,34 @@ class Reservation < ApplicationRecord
     if ends_at > closing_at
       errors.add(:ends_at, :outside_business_hours)
     end
+  end
+
+  # 同一顧客に重複する時間帯の予約が存在しないことを確認する。
+  # 顧客未選択・キャンセル済みの予約は判定対象外とする。
+  def customer_reservation_must_not_overlap
+    return if customer_id.blank?
+    return if starts_at.blank? || ends_at.blank?
+    return if ends_at <= starts_at
+    return if canceled_at.present?
+
+    overlapping_reservations =
+      Reservation
+        .active
+        .where(customer_id: customer_id)
+        .where(
+          "starts_at < :ends_at AND ends_at > :starts_at",
+          starts_at: starts_at,
+          ends_at: ends_at
+        )
+
+    # 更新時は現在編集中の予約自身を重複対象から除外する。
+    if persisted?
+      overlapping_reservations =
+        overlapping_reservations.where.not(id: id)
+    end
+
+    return unless overlapping_reservations.exists?
+
+    errors.add(:customer_id, :overlapping_reservation)
   end
 end

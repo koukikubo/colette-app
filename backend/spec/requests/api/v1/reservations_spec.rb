@@ -385,6 +385,45 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
     end
+    it "同一顧客の予約時間が重複する場合は422を返す" do
+      Reservation.create!(
+        customer: customer,
+        reservation_name: customer.name,
+        reservation_phone_number: customer.phone_number,
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        guest_count: 2,
+        requested_restaurant_master_type: table_type,
+        reservation_status: confirmed_status,
+        created_by_staff: staff,
+        updated_by_staff: staff
+      )
+
+      expect do
+        post "/api/v1/reservations", params: {
+          reservation: {
+            customer_id: customer.id,
+            reservation_name: customer.name,
+            reservation_phone_number: customer.phone_number,
+            starts_at: reservation_time(Time.zone.today, 19).iso8601,
+            ends_at: reservation_time(Time.zone.today, 21).iso8601,
+            guest_count: 2,
+            requested_restaurant_master_type_id: table_type.id,
+            reservation_status_id: confirmed_status.id,
+            restaurant_master_ids: []
+          }
+        },
+        headers: csrf_headers
+      end.not_to change(Reservation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(
+        response.parsed_body.dig("errors", "customer_id")
+      ).to include(
+        "選択した顧客には、同じ時間帯の予約がすでに登録されています。既存の予約を編集してください。"
+      )
+    end
 
     it "予約ステータスが未選択の場合は作成できない" do
       expect do
@@ -641,6 +680,54 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       headers: csrf_headers
 
       expect(response).to have_http_status(:bad_request)
+    end
+
+    it "更新により同一顧客の別予約と時間が重複する場合は422を返す" do
+      Reservation.create!(
+        customer: customer,
+        reservation_name: customer.name,
+        reservation_phone_number: customer.phone_number,
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        guest_count: 2,
+        requested_restaurant_master_type: table_type,
+        reservation_status: confirmed_status,
+        created_by_staff: staff,
+        updated_by_staff: staff
+      )
+
+      patch "/api/v1/reservations/#{reservation.id}", params: {
+        reservation: {
+          customer_id: customer.id,
+          reservation_name: customer.name,
+          reservation_phone_number: customer.phone_number,
+          starts_at: reservation_time(Time.zone.today, 19).iso8601,
+          ends_at: reservation_time(Time.zone.today, 21).iso8601,
+          guest_count: 2,
+          requested_restaurant_master_type_id: table_type.id,
+          lock_version: reservation.lock_version,
+          restaurant_master_ids: []
+        }
+      },
+      headers: csrf_headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(
+        response.parsed_body.dig("errors", "customer_id")
+      ).to include(
+        "選択した顧客には、同じ時間帯の予約がすでに登録されています。既存の予約を編集してください。"
+      )
+
+      reservation.reload
+
+      expect(reservation.customer_id).to be_nil
+      expect(reservation.starts_at).to eq(
+        reservation_time(Time.zone.today, 18)
+      )
+      expect(reservation.ends_at).to eq(
+        reservation_time(Time.zone.today, 20)
+      )
     end
   end
 
