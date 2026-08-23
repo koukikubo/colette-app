@@ -336,7 +336,7 @@ RSpec.describe Reservation, type: :model do
     expect(
       reservation.errors.full_messages
     ).to include(
-      "顧客は同じ時間帯に別の予約が登録されています"
+      "選択した顧客には、同じ時間帯の予約がすでに登録されています。既存の予約を編集してください。"
     )
   end
 
