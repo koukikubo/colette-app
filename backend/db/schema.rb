@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_07_234327) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_24_234535) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
 
   create_table "customers", force: :cascade do |t|
@@ -98,6 +99,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_07_234327) do
     t.check_constraint "ends_at > starts_at", name: "check_reservations_ends_at_after_starts_at"
     t.check_constraint "guest_count > 0", name: "check_reservations_guest_count_positive"
     t.check_constraint "lock_version >= 0", name: "check_reservations_lock_version_non_negative"
+    t.exclusion_constraint "customer_id WITH =, tsrange(starts_at, ends_at, '[)'::text) WITH &&", where: "(customer_id IS NOT NULL) AND (canceled_at IS NULL)", using: :gist, name: "exclude_active_customer_reservation_overlaps"
   end
 
   create_table "restaurant_masters", force: :cascade do |t|
