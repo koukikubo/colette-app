@@ -1,4 +1,15 @@
 class Api::V1::ReservationsController < Api::V1::BaseController
+  # 同一顧客の有効な予約時間が重複した場合に発生する。
+  CUSTOMER_OVERLAP_CONSTRAINT_NAME =
+    "exclude_active_customer_reservation_overlaps".freeze
+
+  CUSTOMER_OVERLAP_ERROR_CODE =
+  "customer_reservation_overlap".freeze
+
+  # DB排他制約違反を確認し顧客予約の時間重複としてAPIレスポンスへ変換する。
+  rescue_from ActiveRecord::ExclusionViolation,
+              with: :render_customer_overlap_exclusion_error
+
   before_action :require_staff_login!, only: %i[create update cancel restore]
   before_action :set_reservation, only: %i[show update cancel restore]
 
@@ -124,6 +135,22 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   end
 
   private
+
+  # DBの排他制約が検出した同一顧客の時間重複を、フォームで表示できるバリデーションエラーへ変換する。
+  def render_customer_overlap_exclusion_error(error)
+    constraint_name =
+      error.cause
+        &.result
+        &.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME)
+
+    # 想定した制約以外のDBエラーは握りつぶさない。
+    raise error unless constraint_name == CUSTOMER_OVERLAP_CONSTRAINT_NAME
+
+    reservation = Reservation.new
+    reservation.errors.add(:customer_id, :overlapping_reservation)
+
+    render_validation_error(reservation, code: CUSTOMER_OVERLAP_ERROR_CODE)
+  end
 
   def set_reservation
     @reservation =
