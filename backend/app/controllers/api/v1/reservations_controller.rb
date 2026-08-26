@@ -4,7 +4,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     "exclude_active_customer_reservation_overlaps".freeze
 
   CUSTOMER_OVERLAP_ERROR_CODE =
-  "customer_reservation_overlap".freeze
+    "customer_reservation_overlap".freeze
 
   # DB排他制約違反を確認し顧客予約の時間重複としてAPIレスポンスへ変換する。
   rescue_from ActiveRecord::ExclusionViolation,

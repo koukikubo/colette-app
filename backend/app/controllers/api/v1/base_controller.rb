@@ -63,16 +63,16 @@ class Api::V1::BaseController < ApplicationController
     status: :unprocessable_content,
     code: nil
   )
-  response_body = {
-    status: "error",
-    message: message,
-    errors: errors
-  }
+    response_body = {
+      status: "error",
+      message: message,
+      errors: errors
+    }
 
-  # エラーの種類をフロント側で安全に判別する必要がある場合だけcodeを含める。
-  response_body[:code] = code if code.present?
-  
-  render json: response_body, status: status
+    # エラーの種類をフロント側で安全に判別する必要がある場合だけcodeを含める。
+    response_body[:code] = code if code.present?
+
+    render json: response_body, status: status
   end
 
   # CSRFトークンが不正な場合のレスポンス
