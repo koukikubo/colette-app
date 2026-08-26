@@ -22,6 +22,7 @@ import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardC
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { useRestaurantMasterAvailability } from "../../hooks/useRestaurantMasterAvailability";
 import { validateReservationDateTimes } from "../../utils/reservation-form-validation";
+import { ReservationOverlapDialog } from "../dialogs/ReservationOverlapDialog";
 
 type EditReservationFormContentProps = {
   reservation: Reservation;
@@ -45,6 +46,8 @@ function EditReservationFormContent({
 
   const { fieldErrors, clearFieldError, setFieldErrors, clearAllFieldErrors } =
     useFieldErrors();
+
+  const [overlapDialogOpen, setOverlapDialogOpen] = useState(false);
 
   const {
     customerQuery,
@@ -148,6 +151,13 @@ function EditReservationFormContent({
           setFieldErrors(error.errors);
         }
 
+        if (
+          error.status === 422 &&
+          error.code === "customer_reservation_overlap"
+        ) {
+          setOverlapDialogOpen(true);
+        }
+
         return;
       }
       // APIで定義されていない例外には、共通のエラーを表示する。
@@ -167,6 +177,14 @@ function EditReservationFormContent({
         {optionsErrorMessage}
       </p>
     );
+  }
+
+  // 重複した予約日を指定して予約一覧へ移動する。
+  function handleViewReservations() {
+    const reservationDate = values.starts_at.slice(0, 10);
+
+    setOverlapDialogOpen(false);
+    router.push(`/reservations?date=${reservationDate}`);
   }
 
   return (
@@ -206,6 +224,12 @@ function EditReservationFormContent({
             router.push(`/reservations/${reservation.id}`);
           });
         }}
+      />
+
+      <ReservationOverlapDialog
+        open={overlapDialogOpen}
+        onOpenChange={setOverlapDialogOpen}
+        onViewReservations={handleViewReservations}
       />
 
       <ReservationUpdateConfirmDialog
