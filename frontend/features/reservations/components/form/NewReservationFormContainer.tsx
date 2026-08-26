@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { useReservationCustomer } from "../../hooks/useReservationCustomer";
 import { useRestaurantMasterAvailability } from "../../hooks/useRestaurantMasterAvailability";
+import { ReservationOverlapDialog } from "../dialogs/ReservationOverlapDialog";
 
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
@@ -36,6 +37,9 @@ export function NewReservationFormContainer(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
+
+  const [overlapDialogOpen, setOverlapDialogOpen] = useState(false);
+
   const {
     customerQuery,
     customers,
@@ -92,6 +96,14 @@ export function NewReservationFormContainer(
         if (error.status === 422 && !Array.isArray(error.errors)) {
           setFieldErrors(error.errors);
         }
+
+        if (
+          error.status === 422 &&
+          error.code === "customer_reservation_overlap"
+        ) {
+          setOverlapDialogOpen(true);
+        }
+
         return;
       }
       // 失敗したらエラーメッセージを表示する
@@ -101,35 +113,50 @@ export function NewReservationFormContainer(
     }
   }
 
+  // 重複した予約日を指定して予約一覧へ移動する。
+  function handleViewReservations() {
+    const reservationDate = values.starts_at.slice(0, 10);
+
+    setOverlapDialogOpen(false);
+    router.push(`/reservations?date=${reservationDate}`);
+  }
+
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
-    <ReservationForm
-      values={values}
-      onChange={setValues}
-      requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
-      reservationRoutes={reservationRoutes}
-      menuTypes={menuTypes}
-      reservationOccasion={reservationOccasions}
-      reservationStatuses={reservationStatuses}
-      onSubmit={handleSubmit}
-      errorMessage={errorMessage}
-      isSubmitting={isSubmitting}
-      customerQuery={customerQuery}
-      customers={customers}
-      isCustomerSearching={isCustomerSearching}
-      customerSearchError={customerSearchError}
-      onCustomerQueryChange={setCustomerQuery}
-      onCustomerSearch={handleCustomerSearch}
-      onCustomerSelect={handleCustomerSelect}
-      hasSearchedCustomers={hasSearchedCustomers}
-      fieldErrors={fieldErrors}
-      onClearFieldError={clearFieldError}
-      onCustomerClear={handleCustomerClear}
-      selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
-      restaurantMasters={restaurantMasters}
-      unavailableRestaurantMasterIds={unavailableRestaurantMasterIds}
-      isAvailabilityLoading={isAvailabilityLoading}
-      availabilityErrorMessage={availabilityErrorMessage}
-    />
+    <>
+      <ReservationForm
+        values={values}
+        onChange={setValues}
+        requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
+        reservationRoutes={reservationRoutes}
+        menuTypes={menuTypes}
+        reservationOccasion={reservationOccasions}
+        reservationStatuses={reservationStatuses}
+        onSubmit={handleSubmit}
+        errorMessage={errorMessage}
+        isSubmitting={isSubmitting}
+        customerQuery={customerQuery}
+        customers={customers}
+        isCustomerSearching={isCustomerSearching}
+        customerSearchError={customerSearchError}
+        onCustomerQueryChange={setCustomerQuery}
+        onCustomerSearch={handleCustomerSearch}
+        onCustomerSelect={handleCustomerSelect}
+        hasSearchedCustomers={hasSearchedCustomers}
+        fieldErrors={fieldErrors}
+        onClearFieldError={clearFieldError}
+        onCustomerClear={handleCustomerClear}
+        selectedCustomerHasNoPhone={selectedCustomerHasNoPhone}
+        restaurantMasters={restaurantMasters}
+        unavailableRestaurantMasterIds={unavailableRestaurantMasterIds}
+        isAvailabilityLoading={isAvailabilityLoading}
+        availabilityErrorMessage={availabilityErrorMessage}
+      />
+      <ReservationOverlapDialog
+        open={overlapDialogOpen}
+        onOpenChange={setOverlapDialogOpen}
+        onViewReservations={handleViewReservations}
+      />
+    </>
   );
 }
