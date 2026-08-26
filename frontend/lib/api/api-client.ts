@@ -4,7 +4,6 @@ const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 // apiFetchで成功時に返すAPIレスポンスの共通形式。
 export type ApiSuccessResponse<T> = {
   data: T;
-  code?: string;
   message?: string;
   errors?: string;
 };
