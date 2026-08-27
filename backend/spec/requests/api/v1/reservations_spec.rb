@@ -471,6 +471,53 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         response.parsed_body.dig("errors", "reservation_status")
       ).to be_present
     end
+
+    it "DB排他制約違反を専用コード付き422へ変換する" do
+      Reservation.create!(
+        customer: customer,
+        reservation_name: customer.name,
+        reservation_phone_number: customer.phone_number,
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        guest_count: 2,
+        requested_restaurant_master_type: table_type,
+        reservation_status: confirmed_status,
+        created_by_staff: staff,
+        updated_by_staff: staff
+      )
+
+      # 同時処理でモデルの事前確認をすり抜けた状況を再現する。
+      allow_any_instance_of(Reservation)
+        .to receive(:customer_reservation_must_not_overlap)
+        .and_return(nil)
+
+      expect do
+        post "/api/v1/reservations", params: {
+          reservation: {
+            customer_id: customer.id,
+            reservation_name: customer.name,
+            reservation_phone_number: customer.phone_number,
+            starts_at: reservation_time(Time.zone.today, 19).iso8601,
+            ends_at: reservation_time(Time.zone.today, 21).iso8601,
+            guest_count: 2,
+            requested_restaurant_master_type_id: table_type.id,
+            reservation_status_id: confirmed_status.id,
+            restaurant_master_ids: []
+          }
+        },
+        headers: csrf_headers
+      end.not_to change(Reservation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["code"])
+        .to eq("customer_reservation_overlap")
+
+      expect(
+        response.parsed_body.dig("errors", "customer_id")
+      ).to include(
+        "選択した顧客には、同じ時間帯の予約がすでに登録されています。既存の予約を編集してください。"
+      )
+    end
   end
 
   describe "PATCH /api/v1/reservations/:id" do
