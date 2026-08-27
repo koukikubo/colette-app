@@ -1,6 +1,5 @@
 class Api::V1::RestaurantMasterAvailabilitiesController <
       Api::V1::BaseController
-  before_action :require_staff_login!
 
   rescue_from ArgumentError,
               with: :render_invalid_datetime

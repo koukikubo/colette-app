@@ -1,5 +1,4 @@
 class Api::V1::StaffMastersController < Api::V1::BaseController
-  before_action :require_staff_login!
   before_action :set_staff_master,
                 only: %i[
                   show
