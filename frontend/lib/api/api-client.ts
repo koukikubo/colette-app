@@ -13,18 +13,26 @@ export type ApiErrorResponse = {
   status: "error";
   message: string;
   errors: ApiErrorDetails;
+  code?: string;
 };
 
 // APIクライアントのエラーを表す例外クラス。
 export class ApiClientError extends Error {
   status: number;
   errors: ApiErrorDetails;
+  code?: string;
 
-  constructor(message: string, status: number, errors: ApiErrorDetails = []) {
+  constructor(
+    message: string,
+    status: number,
+    errors: ApiErrorDetails = [],
+    code?: string,
+  ) {
     super(message);
     this.name = "ApiClientError";
     this.status = status;
     this.errors = errors;
+    this.code = code;
   }
   // errorsが配列かオブジェクトかに関わらず、すべてのエラーメッセージを1つの配列として返す。
   get errorMessages(): string[] {
@@ -118,6 +126,7 @@ export async function apiFetch<T>(
       errorResponse?.message ?? "API response failed",
       response.status,
       errorResponse?.errors ?? [],
+      errorResponse?.code,
     );
   }
 

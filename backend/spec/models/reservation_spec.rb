@@ -317,6 +317,21 @@ RSpec.describe Reservation, type: :model do
     )
   end
 
+  it "モデルバリデーションを無効にしてもDB制約が時間重複を拒否する" do
+    overlapping_reservation =
+      described_class.new(
+        valid_attributes.merge(
+          customer: customer,
+          starts_at: reservation_time(Time.zone.today, 19),
+          ends_at: reservation_time(Time.zone.today, 21)
+        )
+      )
+
+    expect do
+      overlapping_reservation.save!(validate: false)
+    end.to raise_error(ActiveRecord::ExclusionViolation)
+  end
+
   it "同一顧客の予約時間が重複する場合は無効である" do
     reservation =
       described_class.new(

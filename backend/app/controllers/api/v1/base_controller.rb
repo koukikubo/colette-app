@@ -60,13 +60,19 @@ class Api::V1::BaseController < ApplicationController
   def render_error(
     message: "An error occurred",
     errors: [],
-    status: :unprocessable_content
+    status: :unprocessable_content,
+    code: nil
   )
-    render json: {
-        status: "error",
-        message: message,
-        errors: errors
-        }, status: status
+    response_body = {
+      status: "error",
+      message: message,
+      errors: errors
+    }
+
+    # エラーの種類をフロント側で安全に判別する必要がある場合だけcodeを含める。
+    response_body[:code] = code if code.present?
+
+    render json: response_body, status: status
   end
 
   # CSRFトークンが不正な場合のレスポンス
@@ -111,11 +117,12 @@ class Api::V1::BaseController < ApplicationController
     )
   end
 
-  def render_validation_error(record)
+  def render_validation_error(record, code: nil)
     render_error(
       message: "入力内容に誤りがあります",
       errors: record.errors.to_hash(full_messages: true),
-      status: :unprocessable_content
+      status: :unprocessable_content,
+      code: code
     )
   end
 end
