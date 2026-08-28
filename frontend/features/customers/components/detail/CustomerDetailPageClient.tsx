@@ -12,6 +12,7 @@ import { ApiClientError } from "@/lib/api/api-client";
 import { fetchCustomer } from "../../api/customer-api";
 import type { Customer } from "../../types";
 import { CustomerFormDialog } from "../dialogs/CustomerFormDialog";
+import { formatCustomerPhoneNumber } from "../../utils/customer-display";
 
 type CustomerDetailPageClientProps = {
   customerId: number;
@@ -291,7 +292,7 @@ export function CustomerDetailPageClient({
           <dl className="grid gap-5 md:grid-cols-2">
             <DetailItem
               label="電話番号"
-              value={displayValue(customer.phone_number)}
+              value={formatCustomerPhoneNumber(customer.phone_number)}
             />
 
             <DetailItem
@@ -330,7 +331,7 @@ export function CustomerDetailPageClient({
 
               <DetailItem
                 label="法人電話番号"
-                value={displayValue(customer.company_phone_number)}
+                value={formatCustomerPhoneNumber(customer.company_phone_number)}
               />
 
               <DetailItem

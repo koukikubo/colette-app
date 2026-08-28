@@ -11,6 +11,7 @@ import type { Customer } from "../../types";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";
+import { formatCustomerPhoneNumber } from "../../utils/customer-display";
 
 type CustomerTableProps = {
   customers: Customer[];
@@ -64,7 +65,9 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
 
               <TableCell>{customer.kana}</TableCell>
 
-              <TableCell>{customer.phone_number ?? "-"}</TableCell>
+              <TableCell className="whitespace-nowrap tabular-nums">
+                {formatCustomerPhoneNumber(customer.phone_number)}
+              </TableCell>
 
               <TableCell>{customer.email ?? "-"}</TableCell>
 
