@@ -169,10 +169,28 @@ export function CustomerListPageClient() {
 
   return (
     <div className="space-y-6 p-6">
-      <Button type="button" onClick={handleOpenCreateDialog}>
-        <PlusIcon />
-        顧客を登録
-      </Button>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">顧客管理</p>
+
+          <h1 className="text-2xl font-semibold tracking-tight">顧客一覧</h1>
+
+          <p className="text-sm text-muted-foreground">
+            {isLoading
+              ? "顧客情報を読み込んでいます。"
+              : `${customers.length}件の顧客を表示しています。`}
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          onClick={handleOpenCreateDialog}
+        >
+          <PlusIcon />
+          顧客を登録
+        </Button>
+      </header>
 
       <CustomerSearchForm
         value={queryInput}
