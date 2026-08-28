@@ -17,6 +17,7 @@ export function CustomerTableSkeleton() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-20">区分</TableHead>
+            <TableHead className="w-24">表示状態</TableHead>
             <TableHead>顧客名</TableHead>
             <TableHead>フリガナ</TableHead>
             <TableHead>電話番号</TableHead>
@@ -32,6 +33,9 @@ export function CustomerTableSkeleton() {
             <TableRow key={index}>
               <TableCell>
                 <Skeleton className="h-5 w-10" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-14" />
               </TableCell>
               <TableCell>
                 <Skeleton className="h-5 w-28" />

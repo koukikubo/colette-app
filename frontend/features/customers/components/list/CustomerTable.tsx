@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { EyeIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";
 import { formatCustomerPhoneNumber } from "../../utils/customer-display";
+import { Badge } from "@/components/ui/badge";
 
 type CustomerTableProps = {
   customers: Customer[];
@@ -46,6 +47,7 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead className="w-20">区分</TableHead>
+            <TableHead className="w-24">表示状態</TableHead>
             <TableHead>顧客名</TableHead>
             <TableHead>フリガナ</TableHead>
             <TableHead>電話番号</TableHead>
@@ -59,7 +61,30 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
         <TableBody>
           {customers.map((customer) => (
             <TableRow key={customer.id}>
-              <TableCell>{customerKindLabel(customer.customer_kind)}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={
+                    customer.customer_kind === "corporate"
+                      ? "secondary"
+                      : "outline"
+                  }
+                >
+                  {customerKindLabel(customer.customer_kind)}
+                </Badge>
+              </TableCell>
+
+              <TableCell>
+                <Badge
+                  variant={customer.hidden ? "secondary" : "outline"}
+                  className={
+                    customer.hidden
+                      ? undefined
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  }
+                >
+                  {customer.hidden ? "非表示" : "表示中"}
+                </Badge>
+              </TableCell>
 
               <TableCell className="font-medium">{customer.name}</TableCell>
 
