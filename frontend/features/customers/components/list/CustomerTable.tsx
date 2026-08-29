@@ -1,3 +1,8 @@
+import Link from "next/link";
+import { EyeIcon, PencilIcon } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,11 +13,7 @@ import {
 } from "@/components/ui/table";
 
 import type { Customer } from "../../types";
-import { Button } from "@/components/ui/button";
-import { EyeIcon, PencilIcon } from "lucide-react";
-import Link from "next/link";
 import { formatCustomerPhoneNumber } from "../../utils/customer-display";
-import { Badge } from "@/components/ui/badge";
 
 type CustomerTableProps = {
   customers: Customer[];
@@ -42,18 +43,22 @@ function customerKindLabel(customerKind: Customer["customer_kind"]) {
 // 顧客一覧ページ
 export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
   return (
-    <div className="overflow-hidden rounded-md border">
-      <Table>
+    <div className="overflow-x-auto rounded-lg border bg-card">
+      <Table className="min-w-[720px] xl:min-w-[1100px]">
         <TableHeader>
           <TableRow>
             <TableHead className="w-20">区分</TableHead>
             <TableHead className="w-24">表示状態</TableHead>
-            <TableHead>顧客名</TableHead>
-            <TableHead>フリガナ</TableHead>
-            <TableHead>電話番号</TableHead>
-            <TableHead>メールアドレス</TableHead>
-            <TableHead>法人名</TableHead>
-            <TableHead className="w-40">最終更新日時</TableHead>
+            <TableHead className="min-w-40">顧客名</TableHead>
+            <TableHead className="hidden lg:table-cell">フリガナ</TableHead>
+            <TableHead className="min-w-36">電話番号</TableHead>
+            <TableHead className="hidden xl:table-cell">
+              メールアドレス
+            </TableHead>
+            <TableHead className="hidden xl:table-cell">法人名</TableHead>
+            <TableHead className="hidden w-40 lg:table-cell">
+              最終更新日時
+            </TableHead>
             <TableHead className="w-44 text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
@@ -88,35 +93,49 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
 
               <TableCell className="font-medium">{customer.name}</TableCell>
 
-              <TableCell>{customer.kana}</TableCell>
+              <TableCell className="hidden lg:table-cell">
+                {customer.kana}
+              </TableCell>
 
               <TableCell className="whitespace-nowrap tabular-nums">
                 {formatCustomerPhoneNumber(customer.phone_number)}
               </TableCell>
 
-              <TableCell>{customer.email ?? "-"}</TableCell>
+              <TableCell className="hidden xl:table-cell">
+                {customer.email ?? "-"}
+              </TableCell>
 
-              <TableCell>{customer.company_name ?? "-"}</TableCell>
+              <TableCell className="hidden xl:table-cell">
+                {customer.company_name ?? "-"}
+              </TableCell>
 
-              <TableCell>{formatDateTime(customer.updated_at)}</TableCell>
+              <TableCell className="hidden whitespace-nowrap lg:table-cell">
+                {formatDateTime(customer.updated_at)}
+              </TableCell>
+
               <TableCell className="text-right">
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/customers/${customer.id}`}>
-                    <EyeIcon />
-                    詳細
-                  </Link>
-                </Button>
+                <div className="flex justify-end gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link
+                      href={`/customers/${customer.id}`}
+                      aria-label={`${customer.name}の詳細を表示`}
+                    >
+                      <EyeIcon />
+                      詳細
+                    </Link>
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEdit(customer)}
-                  aria-label={`${customer.name}を編集`}
-                >
-                  <PencilIcon />
-                  編集
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(customer)}
+                    aria-label={`${customer.name}を編集`}
+                  >
+                    <PencilIcon />
+                    編集
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

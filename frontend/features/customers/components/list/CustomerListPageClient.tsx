@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PlusIcon, RefreshCwIcon, SearchXIcon, UsersIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { fetchCustomers } from "../../api/customer-api";
@@ -16,8 +18,6 @@ import { CustomerTableSkeleton } from "./CustomerTableSkeleton";
 import { CustomerSearchForm } from "./CustomerSearchForm";
 import { CustomerActiveFilters } from "./CustomerActiveFilters";
 import { CustomerFilterValues } from "./CustomerFilterPopover";
-import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
 
 export function CustomerListPageClient() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -164,18 +164,22 @@ export function CustomerListPageClient() {
     setReloadKey((current) => current + 1);
   }
 
+  function handleRetry() {
+    setReloadKey((current) => current + 1);
+  }
+
   const hasSearchConditions =
     Boolean(filters.query) || visibility !== "visible" || Boolean(customerKind);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground">顧客管理</p>
 
           <h1 className="text-2xl font-semibold tracking-tight">顧客一覧</h1>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" aria-live="polite">
             {isLoading
               ? "顧客情報を読み込んでいます。"
               : `${customers.length}件の顧客を表示しています。`}
@@ -227,16 +231,40 @@ export function CustomerListPageClient() {
       {isLoading && <CustomerTableSkeleton />}
 
       {!isLoading && errorMessage && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="rounded-lg">
           <AlertTitle>顧客一覧を取得できませんでした</AlertTitle>
 
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertDescription>
+            <p>{errorMessage}</p>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={handleRetry}
+            >
+              <RefreshCwIcon />
+              再読み込み
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
       {!isLoading && !errorMessage && customers.length === 0 && (
-        <div className="rounded-md border border-dashed p-10 text-center">
-          <p className="font-medium">
+        <div
+          className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 p-8 text-center"
+          role="status"
+        >
+          <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            {hasSearchConditions ? (
+              <SearchXIcon className="size-6" aria-hidden="true" />
+            ) : (
+              <UsersIcon className="size-6" aria-hidden="true" />
+            )}
+          </div>
+
+          <p className="text-base font-medium">
             {hasSearchConditions
               ? "検索条件に一致する顧客が見つかりません"
               : "顧客が登録されていません"}
