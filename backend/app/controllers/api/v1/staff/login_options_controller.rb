@@ -1,6 +1,6 @@
 class Api::V1::Staff::LoginOptionsController < Api::V1::BaseController
-  skip_before_action :require_staff_login!, only: %i[create destroy]
-  
+  skip_before_action :require_staff_login!
+
   def index
     staffs =
       ::Staff
