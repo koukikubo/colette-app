@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::Reservations", type: :request do
+  include_context "authenticated request"
+
   let!(:staff_master) do
     StaffMaster.create!(
       code: "00001",
@@ -13,11 +15,13 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   let!(:staff) do
     Staff.create!(
       staff_master: staff_master,
-      password: "password",
-      password_confirmation: "password",
+      password: login_password,
+      password_confirmation: login_password,
       login_enabled: true
     )
   end
+
+  let(:login_staff) { staff }
 
   let!(:restaurant_master_type_master) do
     StandardMaster.create!(
@@ -136,7 +140,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   before do
-    login_as_staff(staff)
+    login!
     get "/api/v1/staff/current"
   end
 
@@ -977,32 +981,6 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
-  end
-
-  def login_as_staff(staff)
-    post "/api/v1/staff/login", params: {
-      staff: {
-        staff_id: staff.id,
-        password: "password"
-      }
-    },
-    headers: csrf_headers
-  end
-
-  def csrf_headers
-    get "/api/v1/csrf"
-
-    json = JSON.parse(response.body)
-
-    token =
-      json.dig("data", "csrf_token") ||
-      json.dig("data", "token") ||
-      json["csrf_token"] ||
-      json["token"]
-
-    {
-      "X-CSRF-Token" => token
-    }
   end
 
   def reservation_time(date, hour, min = 0)

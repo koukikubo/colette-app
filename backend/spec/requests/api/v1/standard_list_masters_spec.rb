@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe "Api::V1::StandardListMasters", type: :request do
+  include_context "authenticated request"
+
   def json
     JSON.parse(response.body)
   end
@@ -11,20 +13,11 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
     }
   end
 
-  def csrf_headers
-    get "/api/v1/csrf", headers: json_headers
-
-    token = JSON.parse(response.body).dig(
-      "data",
-      "csrf_token"
-    )
-
-    json_headers.merge(
-      "X-CSRF-Token" => token
-    )
-  end
-
   describe "GET /api/v1/standard_masters/:standard_master_id/items" do
+    before do
+      login!
+    end
+
     let(:standard_master) do
       create(:standard_master, name: "性別")
     end
@@ -132,6 +125,10 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
   end
 
   describe "GET /api/v1/standard_masters/:standard_master_id/items/:id" do
+    before do
+      login!
+    end
+
     let(:standard_master) do
       create(:standard_master)
     end
@@ -191,6 +188,10 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
   end
 
   describe "POST /api/v1/standard_masters/:standard_master_id/items" do
+    before do
+      login!
+    end
+
     let(:standard_master) do
       create(:standard_master, name: "性別")
     end
@@ -303,6 +304,10 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
   end
 
   describe "PATCH /api/v1/standard_masters/:standard_master_id/items/:id" do
+    before do
+      login!
+    end
+
     let(:standard_master) do
       create(:standard_master, name: "性別")
     end

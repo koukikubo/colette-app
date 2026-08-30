@@ -1,29 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::Customers", type: :request do
-  let(:login_password) { "Password123!" }
-
-  let!(:login_staff_master) do
-    create(
-      :staff_master,
-      code: "STF900",
-      name: "顧客管理担当者",
-      role_code: "owner",
-      employment_started_on: Date.new(2026, 1, 1)
-    )
-  end
-
-  let!(:login_staff) do
-    create(
-      :staff,
-      staff_master: login_staff_master,
-      password: login_password,
-      password_confirmation: login_password,
-      login_enabled: true,
-      failed_attempts: 0,
-      locked_at: nil
-    )
-  end
+  include_context "authenticated request"
 
   let!(:other_staff) do
     create(:staff)
@@ -31,50 +9,6 @@ RSpec.describe "Api::V1::Customers", type: :request do
 
   def response_body
     JSON.parse(response.body)
-  end
-
-  def fetch_csrf_token
-    get "/api/v1/csrf"
-
-    expect(response).to have_http_status(:ok), response.body
-
-    token =
-      response_body.dig("data", "csrf_token") ||
-      response_body["csrf_token"]
-
-    expect(token).to be_present, response.body
-
-    token
-  end
-
-  def csrf_headers(token)
-    {
-      "X-CSRF-Token" => token
-    }
-  end
-
-  def authenticated_headers
-    csrf_headers(@authenticated_csrf_token)
-  end
-
-  def login!
-    token = fetch_csrf_token
-
-    post(
-      "/api/v1/staff/login",
-      params: {
-        staff: {
-          staff_id: login_staff.id,
-          password: login_password
-        }
-      },
-      headers: csrf_headers(token),
-    )
-
-    expect(response).to have_http_status(:ok), response.body
-
-    # ログイン処理でreset_sessionされるため再取得する
-    @authenticated_csrf_token = fetch_csrf_token
   end
 
   describe "認証" do

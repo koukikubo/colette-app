@@ -1,80 +1,11 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::StaffMasters", type: :request do
-  let(:login_password) { "Password123!" }
-
-  let!(:login_staff_master) do
-    create(
-      :staff_master,
-      code: "STF900",
-      name: "管理者",
-      role_code: "owner",
-      employment_started_on: Date.new(2026, 1, 1)
-    )
-  end
-
-  let!(:login_staff) do
-    create(
-      :staff,
-      staff_master: login_staff_master,
-      password: login_password,
-      password_confirmation: login_password,
-      login_enabled: true,
-      failed_attempts: 0,
-      locked_at: nil
-    )
-  end
+  include_context "authenticated request"
 
   def response_body
     JSON.parse(response.body)
   end
-
-  def fetch_csrf_token
-    get "/api/v1/csrf", as: :json
-
-    expect(response).to have_http_status(:ok), response.body
-
-    body = response_body
-
-    token =
-      body.dig("data", "csrf_token") ||
-      body["csrf_token"]
-
-    expect(token).to be_present, response.body
-
-    token
-  end
-
-  def csrf_headers(token)
-    {
-      "X-CSRF-Token" => token
-    }
-  end
-
-  def authenticated_headers
-    csrf_headers(@authenticated_csrf_token)
-  end
-
-  def login!
-    token = fetch_csrf_token
-
-    post(
-      "/api/v1/staff/login",
-      params: {
-        staff: {
-          staff_id: login_staff.id,
-          password: login_password
-        }
-      },
-      headers: csrf_headers(token),
-      as: :json
-    )
-
-    expect(response).to have_http_status(:ok), response.body
-
-    @authenticated_csrf_token = fetch_csrf_token
-  end
-
   describe "認証" do
     it "未ログインの場合は401を返す" do
       get "/api/v1/staff_masters", as: :json
@@ -93,7 +24,6 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     let!(:first_staff_master) do
       create(
         :staff_master,
-        code: "STF001",
         name: "担当者A",
         role_code: "operator",
         employment_started_on: Date.new(2026, 2, 1)
@@ -113,7 +43,6 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     let!(:second_staff_master) do
       create(
         :staff_master,
-        code: "STF002",
         name: "担当者B",
         role_code: "viewer",
         employment_started_on: Date.new(2026, 3, 1)
@@ -133,7 +62,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
       codes = staff_masters.map { |staff_master| staff_master["code"] }
 
       expect(codes).to include(
-        login_staff_master.code,
+        login_staff.staff_master.code,
         first_staff_master.code,
         second_staff_master.code
       )

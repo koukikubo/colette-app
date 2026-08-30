@@ -2,9 +2,13 @@ require "rails_helper"
 
 RSpec.describe "Api::V1::RestaurantMasterAvailabilities",
                 type: :request do
+  include_context "authenticated request"
+
   let!(:staff) do
     create(:staff)
   end
+
+  let(:login_staff) { staff }
 
   let!(:restaurant_master_type_master) do
     create(
@@ -50,7 +54,7 @@ RSpec.describe "Api::V1::RestaurantMasterAvailabilities",
   end
 
   before do
-    login_as_staff(staff)
+    login!
     get "/api/v1/staff/current"
   end
 
@@ -201,31 +205,5 @@ RSpec.describe "Api::V1::RestaurantMasterAvailabilities",
         ).to eq("リクエストパラメータが不正です")
       end
     end
-  end
-
-  def login_as_staff(staff)
-    post "/api/v1/staff/login", params: {
-      staff: {
-        staff_id: staff.id,
-        password: "Password123!"
-      }
-    },
-    headers: csrf_headers
-  end
-
-  def csrf_headers
-    get "/api/v1/csrf"
-
-    json = JSON.parse(response.body)
-
-    token =
-      json.dig("data", "csrf_token") ||
-      json.dig("data", "token") ||
-      json["csrf_token"] ||
-      json["token"]
-
-    {
-      "X-CSRF-Token" => token
-    }
   end
 end
