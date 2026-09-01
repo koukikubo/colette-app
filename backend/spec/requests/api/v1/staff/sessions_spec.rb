@@ -37,16 +37,16 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
     csrf_token = fetch_csrf_token
 
     post "/api/v1/staff/login",
-         params: {
-           staff: {
-             staff_id: staff.id,
-             password: password
-           }
-         },
-         headers: {
-           "X-CSRF-Token" => csrf_token
-         },
-         as: :json
+          params: {
+            staff: {
+              staff_id: staff.id,
+              password: password
+            }
+          },
+          headers: {
+            "X-CSRF-Token" => csrf_token
+          },
+          as: :json
   end
 
   describe "POST /api/v1/staff/login" do
@@ -105,15 +105,15 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
       csrf_token = fetch_csrf_token
 
       post "/api/v1/staff/login",
-           params: {
-             staff: {
-               password: "password"
-             }
-           },
-           headers: {
-             "X-CSRF-Token" => csrf_token
-           },
-           as: :json
+            params: {
+              staff: {
+                password: "password"
+              }
+            },
+            headers: {
+              "X-CSRF-Token" => csrf_token
+            },
+            as: :json
 
       expect(response).to have_http_status(:bad_request)
 
@@ -206,9 +206,9 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
       csrf_token = fetch_csrf_token
 
       delete "/api/v1/staff/logout",
-             headers: {
-               "X-CSRF-Token" => csrf_token
-             }
+              headers: {
+                "X-CSRF-Token" => csrf_token
+              }
 
       expect(response).to have_http_status(:ok)
 
@@ -224,9 +224,9 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
       csrf_token = fetch_csrf_token
 
       delete "/api/v1/staff/logout",
-             headers: {
-               "X-CSRF-Token" => csrf_token
-             }
+              headers: {
+                "X-CSRF-Token" => csrf_token
+              }
 
       get "/api/v1/staff/current"
 
@@ -236,6 +236,22 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
 
       expect(body["status"]).to eq("error")
       expect(body["message"]).to eq("ログインが必要です")
+    end
+
+    it "未ログインの場合も正常終了すること" do
+      csrf_token = fetch_csrf_token
+
+      delete "/api/v1/staff/logout",
+            headers: {
+              "X-CSRF-Token" => csrf_token
+            }
+
+      expect(response).to have_http_status(:ok)
+
+      body = response_body
+
+      expect(body["status"]).to eq("success")
+      expect(body.dig("data", "message")).to eq("ログアウトしました")
     end
   end
 end
