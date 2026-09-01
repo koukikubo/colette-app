@@ -1,6 +1,6 @@
 class Api::V1::Staff::SessionsController < Api::V1::BaseController
   skip_before_action :require_staff_login!, only: %i[create destroy]
-  
+
   # POST /api/v1/staff/sessions
   def create
     staff = ::Staff
