@@ -41,3 +41,23 @@ export function formatCustomerPhoneNumber(
   // 想定外の値は、情報を欠落させず元の値を表示する。
   return value.trim();
 }
+
+// 顧客の郵便番号を画面で読みやすい形式へ変換する。
+// 保存値は変更せず、詳細画面へ表示するときだけ使用する。
+export function formatCustomerPostalCode(
+  value: string | null | undefined,
+): string {
+  if (!value?.trim()) {
+    return "-";
+  }
+
+  const normalizedValue = value.trim();
+  const digits = normalizedValue.replace("-", "");
+
+  if (/^\d{7}$/.test(digits)) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+
+  // 想定外の値は、情報を欠落させず元の値を表示する。
+  return normalizedValue;
+}
