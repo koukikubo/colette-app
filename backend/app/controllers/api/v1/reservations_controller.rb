@@ -10,7 +10,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   rescue_from ActiveRecord::ExclusionViolation,
               with: :render_customer_overlap_exclusion_error
 
-  before_action :require_staff_login!, only: %i[create update cancel restore]
   before_action :set_reservation, only: %i[show update cancel restore]
 
   RESERVATION_BASE_ATTRIBUTES = %i[

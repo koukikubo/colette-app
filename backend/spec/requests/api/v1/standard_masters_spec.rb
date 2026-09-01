@@ -1,6 +1,18 @@
 require 'rails_helper'
 
 RSpec.describe "Api::V1::StandardMasters", type: :request do
+  include_context "authenticated request"
+  describe "認証" do
+    it "未ログインの場合は401を返す" do
+      get "/api/v1/standard_masters",
+          headers: json_headers
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(json["status"]).to eq("error")
+      expect(json["message"]).to eq("ログインが必要です")
+    end
+  end
+
   def json
     JSON.parse(response.body)
   end
@@ -11,22 +23,11 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
     }
   end
 
-  # POST/PATCH前にCSRFトークンを取得する。
-  # 同じrequest session内なので、CSRF取得時のCookieも維持される。
-  def csrf_headers
-    get "/api/v1/csrf", headers: json_headers
-
-    token = JSON.parse(response.body).dig(
-      "data",
-      "csrf_token"
-    )
-
-    json_headers.merge(
-      "X-CSRF-Token" => token
-    )
-  end
-
   describe "GET /api/v1/standard_masters" do
+    before do
+      login!
+    end
+
     let!(:second_standard_master) do
       create(
         :standard_master,
@@ -120,6 +121,10 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
 
 
   describe "GET /api/v1/standard_masters/:id" do
+    before do
+      login!
+    end
+
     let(:standard_master) do
       create(
         :standard_master,
@@ -156,6 +161,10 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
   end
 
   describe "POST /api/v1/standard_masters" do
+    before do
+      login!
+    end
+
     before do
       create(
         :standard_master,
@@ -253,6 +262,10 @@ RSpec.describe "Api::V1::StandardMasters", type: :request do
   end
 
   describe "PATCH /api/v1/standard_masters/:id" do
+    before do
+      login!
+    end
+
     let!(:standard_master) do
       create(
         :standard_master,

@@ -2,7 +2,6 @@ class Api::V1::CustomersController < Api::V1::BaseController
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
 
-  before_action :require_staff_login!
   before_action :set_customer,
                 only: %i[show update hidden restore]
 

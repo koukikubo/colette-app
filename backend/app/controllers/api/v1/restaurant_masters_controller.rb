@@ -1,5 +1,4 @@
 class Api::V1::RestaurantMastersController < Api::V1::BaseController
-  before_action :require_staff_login!
   before_action :set_restaurant_master,
                 only: %i[show update]
   rescue_from ActiveRecord::RecordNotUnique,

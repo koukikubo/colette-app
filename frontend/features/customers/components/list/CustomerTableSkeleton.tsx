@@ -12,17 +12,22 @@ const SKELETON_ROW_COUNT = 5;
 
 export function CustomerTableSkeleton() {
   return (
-    <div className="overflow-hidden rounded-md border">
-      <Table>
+    <div className="overflow-x-auto rounded-lg border bg-card">
+      <Table className="min-w-[720px] xl:min-w-[1100px]">
         <TableHeader>
           <TableRow>
             <TableHead className="w-20">区分</TableHead>
-            <TableHead>顧客名</TableHead>
-            <TableHead>フリガナ</TableHead>
-            <TableHead>電話番号</TableHead>
-            <TableHead>メールアドレス</TableHead>
-            <TableHead>法人名</TableHead>
-            <TableHead className="w-40">最終更新日時</TableHead>
+            <TableHead className="w-24">表示状態</TableHead>
+            <TableHead className="min-w-40">顧客名</TableHead>
+            <TableHead className="hidden lg:table-cell">フリガナ</TableHead>
+            <TableHead className="min-w-36">電話番号</TableHead>
+            <TableHead className="hidden xl:table-cell">
+              メールアドレス
+            </TableHead>
+            <TableHead className="hidden xl:table-cell">法人名</TableHead>
+            <TableHead className="hidden w-40 lg:table-cell">
+              最終更新日時
+            </TableHead>
             <TableHead className="w-44 text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
@@ -34,6 +39,9 @@ export function CustomerTableSkeleton() {
                 <Skeleton className="h-5 w-10" />
               </TableCell>
               <TableCell>
+                <Skeleton className="h-5 w-14" />
+              </TableCell>
+              <TableCell className="hidden lg:table-cell">
                 <Skeleton className="h-5 w-28" />
               </TableCell>
               <TableCell>
@@ -42,13 +50,13 @@ export function CustomerTableSkeleton() {
               <TableCell>
                 <Skeleton className="h-5 w-28" />
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden xl:table-cell">
                 <Skeleton className="h-5 w-40" />
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden xl:table-cell">
                 <Skeleton className="h-5 w-32" />
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden lg:table-cell">
                 <Skeleton className="h-5 w-32" />
               </TableCell>
               <TableCell>

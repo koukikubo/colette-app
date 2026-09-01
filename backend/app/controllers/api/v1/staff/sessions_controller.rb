@@ -1,5 +1,5 @@
 class Api::V1::Staff::SessionsController < Api::V1::BaseController
-  before_action :require_staff_login!, only: %i[current]
+  skip_before_action :require_staff_login!, only: %i[create destroy]
 
   # POST /api/v1/staff/sessions
   def create

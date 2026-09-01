@@ -1,6 +1,6 @@
 class Api::V1::BaseController < ApplicationController
   # protect_from_forgery with: :null_session
-
+  before_action :require_staff_login!
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
   rescue_from ActionController::InvalidAuthenticityToken,
@@ -13,11 +13,23 @@ class Api::V1::BaseController < ApplicationController
   # 本番環境用の例外処理
   # rescue_from StandardError, with: :render_internal_server_error
   private
-  # セッションから現在のスタッフを取得するヘルパーメソッド
-  def current_staff
-    return nil if session[:staff_id].blank?
 
-    @current_staff ||= Staff.includes(:staff_master).find_by(id: session[:staff_id])
+  # セッションに保存されたスタッフが、現在も操作可能か確認する。
+  def current_staff
+    return @current_staff if defined?(@current_staff)
+    return @current_staff = nil if session[:staff_id].blank?
+
+    staff =
+      Staff
+        .includes(:staff_master)
+        .find_by(id: session[:staff_id])
+    # ログインできる状態かを判定する。
+    unless staff&.login_allowed?
+      reset_session
+      return @current_staff = nil
+    end
+
+    @current_staff = staff
   end
 
   # スタッフがログイン中かどうかを判定

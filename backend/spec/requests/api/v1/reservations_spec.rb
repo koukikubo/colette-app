@@ -1,6 +1,18 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::Reservations", type: :request do
+  include_context "authenticated request"
+
+  describe "認証" do
+    it "未ログインの場合は401を返す" do
+      get "/api/v1/reservations"
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.parsed_body["status"]).to eq("error")
+      expect(response.parsed_body["message"]).to eq("ログインが必要です")
+    end
+  end
+
   let!(:staff_master) do
     StaffMaster.create!(
       code: "00001",
@@ -13,11 +25,13 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   let!(:staff) do
     Staff.create!(
       staff_master: staff_master,
-      password: "password",
-      password_confirmation: "password",
+      password: login_password,
+      password_confirmation: login_password,
       login_enabled: true
     )
   end
+
+  let(:login_staff) { staff }
 
   let!(:restaurant_master_type_master) do
     StandardMaster.create!(
@@ -135,12 +149,11 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     )
   end
 
-  before do
-    login_as_staff(staff)
-    get "/api/v1/staff/current"
-  end
-
   describe "GET /api/v1/reservations" do
+    before do
+      login!
+    end
+
     let!(:today_reservation) do
       Reservation.create!(
         customer: customer,
@@ -201,6 +214,9 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   describe "GET /api/v1/reservations/:id" do
+    before do
+      login!
+    end
     let!(:reservation) do
       Reservation.create!(
         customer: customer,
@@ -240,6 +256,9 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   describe "POST /api/v1/reservations" do
+    before do
+      login!
+    end
     it "一見客の予約を作成できる" do
       expect do
         post "/api/v1/reservations", params: {
@@ -521,6 +540,10 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   describe "PATCH /api/v1/reservations/:id" do
+    before do
+      login!
+    end
+
     let!(:reservation) do
       Reservation.create!(
         reservation_name: "更新前",
@@ -779,6 +802,9 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   describe "PATCH /api/v1/reservations/:id/cancel" do
+    before do
+      login!
+    end
     let!(:reservation) do
       create(
         :reservation,
@@ -863,6 +889,9 @@ RSpec.describe "Api::V1::Reservations", type: :request do
   end
 
   describe "PATCH /api/v1/reservations/:id/restore" do
+    before do
+      login!
+    end
     let!(:reservation) do
       create(
         :reservation,
@@ -977,32 +1006,6 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
-  end
-
-  def login_as_staff(staff)
-    post "/api/v1/staff/login", params: {
-      staff: {
-        staff_id: staff.id,
-        password: "password"
-      }
-    },
-    headers: csrf_headers
-  end
-
-  def csrf_headers
-    get "/api/v1/csrf"
-
-    json = JSON.parse(response.body)
-
-    token =
-      json.dig("data", "csrf_token") ||
-      json.dig("data", "token") ||
-      json["csrf_token"] ||
-      json["token"]
-
-    {
-      "X-CSRF-Token" => token
-    }
   end
 
   def reservation_time(date, hour, min = 0)
