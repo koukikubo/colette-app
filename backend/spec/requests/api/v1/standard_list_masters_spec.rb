@@ -3,6 +3,24 @@ require 'rails_helper'
 RSpec.describe "Api::V1::StandardListMasters", type: :request do
   include_context "authenticated request"
 
+  describe "認証" do
+    let(:standard_master) do
+      create(:standard_master)
+    end
+
+    it "未ログインの場合は401を返す" do
+      get(
+        "/api/v1/standard_masters/" \
+        "#{standard_master.id}/items",
+        headers: json_headers
+      )
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(json["status"]).to eq("error")
+      expect(json["message"]).to eq("ログインが必要です")
+    end
+  end
+
   def json
     JSON.parse(response.body)
   end

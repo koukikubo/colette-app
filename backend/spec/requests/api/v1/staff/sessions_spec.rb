@@ -125,6 +125,54 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
   end
 
   describe "GET /api/v1/staff/current" do
+    it "ログイン後にログイン不可になった場合は401を返すこと" do
+      login_with
+
+      # ログイン後に管理者がログインを無効化した状況を再現する。
+      staff.update!(login_enabled: false)
+
+      get "/api/v1/staff/current"
+
+      expect(response).to have_http_status(:unauthorized)
+
+      body = response_body
+
+      expect(body["status"]).to eq("error")
+      expect(body["message"]).to eq("ログインが必要です")
+    end
+
+    it "ログイン後にアカウントがロックされた場合は401を返すこと" do
+      login_with
+
+      # ログイン後に認証失敗などでアカウントがロックされた状況を再現する。
+      staff.update!(locked_at: Time.current)
+
+      get "/api/v1/staff/current"
+
+      expect(response).to have_http_status(:unauthorized)
+
+      body = response_body
+
+      expect(body["status"]).to eq("error")
+      expect(body["message"]).to eq("ログインが必要です")
+    end
+
+    it "ログイン後に担当者が退職状態になった場合は401を返すこと" do
+      login_with
+
+      # ログイン後に担当者マスタが退職扱いになった状況を再現する。
+      staff_master.update!(retired_on: Date.current)
+
+      get "/api/v1/staff/current"
+
+      expect(response).to have_http_status(:unauthorized)
+
+      body = response_body
+
+      expect(body["status"]).to eq("error")
+      expect(body["message"]).to eq("ログインが必要です")
+    end
+
     it "ログイン中の場合、現在のスタッフ情報を返すこと" do
       login_with
 
