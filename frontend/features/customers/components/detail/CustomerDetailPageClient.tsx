@@ -19,7 +19,10 @@ import { ApiClientError } from "@/lib/api/api-client";
 
 import { fetchCustomer } from "../../api/customer-api";
 import type { Customer } from "../../types";
-import { formatCustomerPhoneNumber } from "../../utils/customer-display";
+import {
+  formatCustomerPhoneNumber,
+  formatCustomerPostalCode,
+} from "../../utils/customer-display";
 import { CustomerFormDialog } from "../dialogs/CustomerFormDialog";
 
 type CustomerDetailPageClientProps = {
@@ -365,7 +368,7 @@ export function CustomerDetailPageClient({
 
               <DetailItem
                 label="郵便番号"
-                value={displayValue(customer.postal_code)}
+                value={formatCustomerPostalCode(customer.postal_code)}
               />
 
               <DetailItem
@@ -422,7 +425,7 @@ export function CustomerDetailPageClient({
 
                 <DetailItem
                   label="法人郵便番号"
-                  value={displayValue(customer.company_postal_code)}
+                  value={formatCustomerPostalCode(customer.company_postal_code)}
                 />
 
                 <DetailItem
