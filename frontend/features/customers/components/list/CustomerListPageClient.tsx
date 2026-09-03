@@ -37,13 +37,8 @@ export function CustomerListPageClient() {
   const visibility = filters.visibility ?? "visible";
   const customerKind = filters.customer_kind;
   const appliedQuery = filters.query;
-  const {
-    currentPage,
-    perPage,
-    setCurrentPage,
-    setPerPage,
-    resetPage,
-  } = usePagination();
+  const { currentPage, perPage, setCurrentPage, setPerPage, resetPage } =
+    usePagination();
   const { customers, pagination, isLoading, errorMessage } = useCustomers({
     visibility,
     customer_kind: customerKind,
@@ -168,37 +163,44 @@ export function CustomerListPageClient() {
         </Button>
       </header>
 
-      <CustomerSearchForm
-        value={queryInput}
-        hasAppliedQuery={Boolean(filters.query)}
-        visibility={visibility}
-        customerKind={customerKind}
-        isLoading={isLoading}
-        onValueChange={setQueryInput}
-        onSearch={handleSearch}
-        onClear={handleClearQuery}
-        onApplyFilters={handleApplyFilters}
-      />
+      <section
+        className="space-y-4 rounded-lg border bg-card p-4"
+        aria-label="顧客一覧の検索とページ操作"
+      >
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <CustomerSearchForm
+            value={queryInput}
+            hasAppliedQuery={Boolean(filters.query)}
+            visibility={visibility}
+            customerKind={customerKind}
+            isLoading={isLoading}
+            onValueChange={setQueryInput}
+            onSearch={handleSearch}
+            onClear={handleClearQuery}
+            onApplyFilters={handleApplyFilters}
+          />
 
-      <CustomerActiveFilters
-        filters={filters}
-        onClearQuery={handleClearQuery}
-        onResetVisibility={handleResetVisibility}
-        onClearCustomerKind={handleClearCustomerKind}
-        onClearAll={handleClearAll}
-      />
+          {!isLoading && !errorMessage && pagination && (
+            <PaginationControls
+              className="shrink-0"
+              currentPage={pagination.current_page}
+              totalPages={pagination.total_pages}
+              totalCount={pagination.total_count}
+              perPage={perPage}
+              onPageChange={setCurrentPage}
+              onPerPageChange={handlePerPageChange}
+            />
+          )}
+        </div>
 
-      {!isLoading && !errorMessage && pagination && (
-        <PaginationControls
-          className="rounded-lg border bg-card px-4 py-3"
-          currentPage={pagination.current_page}
-          totalPages={pagination.total_pages}
-          totalCount={pagination.total_count}
-          perPage={perPage}
-          onPageChange={setCurrentPage}
-          onPerPageChange={handlePerPageChange}
+        <CustomerActiveFilters
+          filters={filters}
+          onClearQuery={handleClearQuery}
+          onResetVisibility={handleResetVisibility}
+          onClearCustomerKind={handleClearCustomerKind}
+          onClearAll={handleClearAll}
         />
-      )}
+      </section>
 
       {formDialogOpen && (
         <CustomerFormDialog
