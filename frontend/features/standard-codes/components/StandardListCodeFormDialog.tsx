@@ -21,7 +21,7 @@ import type {
   StandardListCode,
   StandardListCodeFormValues,
 } from "@/features/standard-codes/types";
-import { ConfirmStandardListCodeSaveDialog } from "@/features/standard-codes/components/Alert/ConfirmStandardListCodeSaveDialog";
+import { ConfirmStandardListCodeSaveDialog } from "@/features/standard-codes/components/Dialog/ConfirmStandardListCodeSaveDialog";
 
 type DialogMode = "create" | "edit";
 
@@ -31,6 +31,7 @@ type StandardListCodeFormDialogProps = {
   selectedStandardCode: StandardCode | null;
   standardListCode?: StandardListCode | null;
   isSubmitting?: boolean;
+  errorMessage: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: StandardListCodeFormValues) => void | Promise<void>;
 };
@@ -39,6 +40,7 @@ type StandardListCodeFormContentProps = {
   mode: DialogMode;
   selectedStandardCode: StandardCode | null;
   standardListCode?: StandardListCode | null;
+  errorMessage: string | null;
   isSubmitting: boolean;
   onSubmit: (values: StandardListCodeFormValues) => void | Promise<void>;
 };
@@ -74,6 +76,7 @@ function StandardListCodeFormContent({
   standardListCode,
   isSubmitting,
   onSubmit,
+  errorMessage,
 }: StandardListCodeFormContentProps) {
   const [values, setValues] = useState<StandardListCodeFormValues>(() =>
     buildInitialValues(mode, standardListCode),
@@ -116,6 +119,12 @@ function StandardListCodeFormContent({
               : "基本コードを選択してください。"}
           </DialogDescription>
         </DialogHeader>
+
+        {errorMessage && (
+          <p className="text-destructive text-sm" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
         <div className="space-y-4">
           <div className="rounded-lg border bg-muted/30 p-3">
@@ -189,9 +198,6 @@ function StandardListCodeFormContent({
           </Button>
         </DialogFooter>
       </form>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        ...
-      </form>
 
       <ConfirmStandardListCodeSaveDialog
         open={confirmOpen}
@@ -218,6 +224,7 @@ export function StandardListCodeFormDialog({
   selectedStandardCode,
   standardListCode,
   isSubmitting = false,
+  errorMessage,
   onOpenChange,
   onSubmit,
 }: StandardListCodeFormDialogProps) {
@@ -232,6 +239,7 @@ export function StandardListCodeFormDialog({
             mode={mode}
             selectedStandardCode={selectedStandardCode}
             standardListCode={standardListCode}
+            errorMessage={errorMessage}
             isSubmitting={isSubmitting}
             onSubmit={onSubmit}
           />

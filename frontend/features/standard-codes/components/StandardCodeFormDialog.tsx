@@ -20,7 +20,7 @@ import type {
   StandardCode,
   StandardCodeFormValues,
 } from "@/features/standard-codes/types";
-import { ConfirmStandardCodeSaveDialog } from "./Alert/ConfirmStandardCodeSaveDialog";
+import { ConfirmStandardCodeSaveDialog } from "./Dialog/ConfirmStandardCodeSaveDialog";
 
 type DialogMode = "create" | "edit";
 
@@ -29,6 +29,7 @@ type StandardCodeFormDialogProps = {
   mode: DialogMode;
   standardCode?: StandardCode | null;
   isSubmitting?: boolean;
+  errorMessage: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: StandardCodeFormValues) => void | Promise<void>;
 };
@@ -36,6 +37,7 @@ type StandardCodeFormDialogProps = {
 type StandardCodeFormContentProps = {
   mode: DialogMode;
   standardCode?: StandardCode | null;
+  errorMessage: string | null;
   isSubmitting: boolean;
   onSubmit: (values: StandardCodeFormValues) => void | Promise<void>;
 };
@@ -69,6 +71,7 @@ function StandardCodeFormContent({
   mode,
   standardCode,
   isSubmitting,
+  errorMessage,
   onSubmit,
 }: StandardCodeFormContentProps) {
   const [values, setValues] = useState<StandardCodeFormValues>(() =>
@@ -111,6 +114,12 @@ function StandardCodeFormContent({
             基本コードは、選択肢コードをまとめる親コードです。
           </DialogDescription>
         </DialogHeader>
+
+        {errorMessage && (
+          <p className="text-destructive text-sm" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
         <div className="space-y-4">
           <div className="space-y-2">
@@ -197,6 +206,7 @@ export function StandardCodeFormDialog({
   mode,
   standardCode,
   isSubmitting = false,
+  errorMessage,
   onOpenChange,
   onSubmit,
 }: StandardCodeFormDialogProps) {
@@ -209,6 +219,7 @@ export function StandardCodeFormDialog({
             mode={mode}
             standardCode={standardCode}
             isSubmitting={isSubmitting}
+            errorMessage={errorMessage}
             onSubmit={onSubmit}
           />
         </DialogContent>

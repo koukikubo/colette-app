@@ -35,6 +35,7 @@ import { StandardCodeTable } from "@/features/standard-codes/components/Standard
 import { StandardListCodeTable } from "@/features/standard-codes/components/StandardListCodeTable";
 import { StandardCodeFormDialog } from "@/features/standard-codes/components/StandardCodeFormDialog";
 import { StandardListCodeFormDialog } from "./StandardListCodeFormDialog";
+import { ApiClientError } from "@/lib/api/api-client";
 
 type ActiveFilter = "all" | "active" | "inactive";
 type DialogMode = "create" | "edit";
@@ -117,6 +118,13 @@ export function StandardCodeMasterPage() {
 
   // 変更点: 登録・更新・無効化の送信中状態を共通管理
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [standardCodeSubmitError, setStandardCodeSubmitError] = useState<
+    string | null
+  >(null);
+
+  const [standardListCodeSubmitError, setStandardListCodeSubmitError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let ignored = false;
@@ -335,6 +343,7 @@ export function StandardCodeMasterPage() {
 
     setEditingStandardListCode(null);
     setStandardListCodeDialogMode("create");
+    setStandardListCodeSubmitError(null);
     setStandardListCodeDialogOpen(true);
   }, [selectedStandardCode]);
 
@@ -349,6 +358,7 @@ export function StandardCodeMasterPage() {
 
   const handleSubmitStandardCode = useCallback(
     async (values: StandardCodeFormValues) => {
+      setStandardCodeSubmitError(null);
       setIsSubmitting(true);
 
       try {
@@ -364,6 +374,19 @@ export function StandardCodeMasterPage() {
         setEditingStandardCode(null);
 
         await handleReloadStandardCodes();
+      } catch (error) {
+        if (error instanceof ApiClientError) {
+          setStandardCodeSubmitError(
+            error.errorMessages.length > 0
+              ? error.errorMessages.join("、")
+              : error.message,
+          );
+          return;
+        }
+
+        setStandardCodeSubmitError(
+          "基本コードの保存中に予期しないエラーが発生しました。",
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -375,6 +398,7 @@ export function StandardCodeMasterPage() {
     async (values: StandardListCodeFormValues) => {
       if (!selectedStandardCode) return;
 
+      setStandardListCodeSubmitError(null);
       setIsSubmitting(true);
 
       try {
@@ -396,6 +420,19 @@ export function StandardCodeMasterPage() {
         // 変更点: awaitを付ける
         // 理由: 保存後の再取得が終わってから送信中状態を解除するため
         await handleReloadStandardListCodes();
+      } catch (error) {
+        if (error instanceof ApiClientError) {
+          setStandardListCodeSubmitError(
+            error.errorMessages.length > 0
+              ? error.errorMessages.join("、")
+              : error.message,
+          );
+          return;
+        }
+
+        setStandardListCodeSubmitError(
+          "選択肢コードの保存中に予期しないエラーが発生しました。",
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -674,6 +711,7 @@ export function StandardCodeMasterPage() {
         mode={standardCodeDialogMode}
         standardCode={editingStandardCode}
         isSubmitting={isSubmitting}
+        errorMessage={standardCodeSubmitError}
         onOpenChange={(open) => {
           setStandardCodeDialogOpen(open);
 
@@ -691,6 +729,7 @@ export function StandardCodeMasterPage() {
         selectedStandardCode={selectedStandardCode}
         standardListCode={editingStandardListCode}
         isSubmitting={isSubmitting}
+        errorMessage={standardListCodeSubmitError}
         onOpenChange={(open) => {
           setStandardListCodeDialogOpen(open);
 
