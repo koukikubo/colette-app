@@ -142,43 +142,33 @@ export function CustomerListPageClient() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {isLoading
-              ? "顧客情報を読み込んでいます。"
-              : pagination
-                ? `全${pagination.total_count}件中、${customers.length}件の顧客を表示しています。`
-                : `${customers.length}件の顧客を表示しています。`}
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          onClick={handleOpenCreateDialog}
-        >
-          <PlusIcon />
-          顧客を登録
-        </Button>
-      </header>
-
       <section
         className="space-y-4 rounded-lg border bg-card p-4"
         aria-label="顧客一覧の検索とページ操作"
       >
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <CustomerSearchForm
-            value={queryInput}
-            hasAppliedQuery={Boolean(filters.query)}
-            visibility={visibility}
-            customerKind={customerKind}
-            isLoading={isLoading}
-            onValueChange={setQueryInput}
-            onSearch={handleSearch}
-            onClear={handleClearQuery}
-            onApplyFilters={handleApplyFilters}
-          />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start">
+            <Button
+              type="button"
+              className="w-full shrink-0 sm:w-auto"
+              onClick={handleOpenCreateDialog}
+            >
+              <PlusIcon />
+              顧客を登録
+            </Button>
+
+            <CustomerSearchForm
+              value={queryInput}
+              hasAppliedQuery={Boolean(filters.query)}
+              visibility={visibility}
+              customerKind={customerKind}
+              isLoading={isLoading}
+              onValueChange={setQueryInput}
+              onSearch={handleSearch}
+              onClear={handleClearQuery}
+              onApplyFilters={handleApplyFilters}
+            />
+          </div>
 
           {!isLoading && !errorMessage && pagination && (
             <PaginationControls
