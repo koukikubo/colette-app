@@ -63,10 +63,7 @@ export function PaginationControls({
               value={String(perPage)}
               onValueChange={(value) => onPerPageChange(Number(value))}
             >
-              <SelectTrigger
-                size="sm"
-                aria-label="1ページあたりの表示件数"
-              >
+              <SelectTrigger size="sm" aria-label="1ページあたりの表示件数">
                 <SelectValue />
               </SelectTrigger>
 
