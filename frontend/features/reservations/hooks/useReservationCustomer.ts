@@ -27,6 +27,7 @@ export function useReservationCustomer({
 
   const {
     customers,
+    pagination: customerSearchPagination,
     isSearching: isCustomerSearching,
     errorMessage: customerSearchError,
     searchCustomers,
@@ -85,6 +86,7 @@ export function useReservationCustomer({
   return {
     customerQuery,
     customers,
+    customerSearchPagination,
     isCustomerSearching,
     customerSearchError,
     hasSearchedCustomers,

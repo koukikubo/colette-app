@@ -52,6 +52,7 @@ function EditReservationFormContent({
   const {
     customerQuery,
     customers,
+    customerSearchPagination,
     isCustomerSearching,
     customerSearchError,
     hasSearchedCustomers,
@@ -210,6 +211,7 @@ function EditReservationFormContent({
         onCustomerQueryChange={setCustomerQuery}
         onCustomerSearch={handleCustomerSearch}
         onCustomerSelect={handleCustomerSelect}
+        customerSearchPagination={customerSearchPagination}
         hasSearchedCustomers={hasSearchedCustomers}
         fieldErrors={fieldErrors}
         onClearFieldError={clearFieldError}

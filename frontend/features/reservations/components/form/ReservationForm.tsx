@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiFieldErrors } from "@/lib/api/api-client";
+import { Pagination } from "@/lib/api/pagination";
 
 type ReservationFormProps = {
   values: ReservationFormValues;
@@ -70,6 +71,7 @@ type ReservationFormProps = {
   unavailableRestaurantMasterIds: number[];
   isAvailabilityLoading: boolean;
   availabilityErrorMessage: string | null;
+  customerSearchPagination: Pagination | null;
 };
 
 type FieldErrorProps = {
@@ -153,6 +155,7 @@ export function ReservationForm({
   customerQuery,
   customers,
   isCustomerSearching,
+  customerSearchPagination,
   customerSearchError,
   onCustomerQueryChange,
   onCustomerSearch,
@@ -244,6 +247,15 @@ export function ReservationForm({
                   ))}
                 </ul>
               )}
+              {customerSearchPagination &&
+                customerSearchPagination.total_count >
+                  customerSearchPagination.per_page && (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    検索結果が多いため、先頭
+                    {customerSearchPagination.per_page}件を表示しています。
+                    氏名・フリガナ・電話番号を追加して、検索条件を絞り込んでください。
+                  </p>
+                )}
             </div>
 
             {values.customer_id !== null && (

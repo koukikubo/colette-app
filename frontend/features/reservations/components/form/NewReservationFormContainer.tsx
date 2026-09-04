@@ -44,6 +44,7 @@ export function NewReservationFormContainer(
     customerQuery,
     customers,
     isCustomerSearching,
+    customerSearchPagination,
     customerSearchError,
     hasSearchedCustomers,
     selectedCustomerHasNoPhone,
@@ -137,6 +138,7 @@ export function NewReservationFormContainer(
         isSubmitting={isSubmitting}
         customerQuery={customerQuery}
         customers={customers}
+        customerSearchPagination={customerSearchPagination}
         isCustomerSearching={isCustomerSearching}
         customerSearchError={customerSearchError}
         onCustomerQueryChange={setCustomerQuery}
