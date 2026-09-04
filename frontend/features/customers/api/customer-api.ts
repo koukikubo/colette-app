@@ -25,6 +25,14 @@ function buildCustomersPath(params: CustomerListParams = {}) {
     searchParams.set("customer_kind", params.customer_kind);
   }
 
+  if (params.page !== undefined) {
+    searchParams.set("page", String(params.page));
+  }
+
+  if (params.per_page !== undefined) {
+    searchParams.set("per_page", String(params.per_page));
+  }
+
   const query = params.query?.trim();
 
   if (query) {

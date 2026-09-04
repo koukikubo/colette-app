@@ -36,8 +36,8 @@ export function CustomerSearchForm({
   onApplyFilters,
 }: CustomerSearchFormProps) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      <div className="flex gap-2">
+    <div className="w-full xl:max-w-3xl">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <CustomerKeywordSearch
           value={value}
           isLoading={isLoading}

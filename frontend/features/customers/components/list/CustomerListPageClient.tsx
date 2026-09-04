@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PlusIcon, RefreshCwIcon, SearchXIcon, UsersIcon } from "lucide-react";
 
+import { PaginationControls } from "@/components/common/pagination/PaginationControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ApiClientError } from "@/lib/api/api-client";
+import { usePagination } from "@/hooks/usePagination";
 
-import { fetchCustomers } from "../../api/customer-api";
 import type { Customer, CustomerListParams } from "../../types";
+import { useCustomers } from "../../hooks/useCustomers";
 import {
   CustomerFormDialog,
   type CustomerFormMode,
@@ -20,9 +21,6 @@ import { CustomerActiveFilters } from "./CustomerActiveFilters";
 import { CustomerFilterValues } from "./CustomerFilterPopover";
 
 export function CustomerListPageClient() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [queryInput, setQueryInput] = useState("");
 
   const [filters, setFilters] = useState<CustomerListParams>({
@@ -39,63 +37,21 @@ export function CustomerListPageClient() {
   const visibility = filters.visibility ?? "visible";
   const customerKind = filters.customer_kind;
   const appliedQuery = filters.query;
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadCustomers() {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const response = await fetchCustomers({
-          visibility,
-          customer_kind: customerKind,
-          query: appliedQuery,
-        });
-
-        if (isCancelled) {
-          return;
-        }
-
-        setCustomers(response.data.customers);
-      } catch (error) {
-        if (isCancelled) {
-          return;
-        }
-
-        if (error instanceof ApiClientError) {
-          const details =
-            error.errorMessages.length > 0
-              ? ` ${error.errorMessages.join(" / ")}`
-              : "";
-
-          setErrorMessage(
-            `顧客一覧を取得できませんでした。` +
-              `（HTTP ${error.status}）` +
-              `${error.message}${details}`,
-          );
-
-          return;
-        }
-
-        setErrorMessage("顧客一覧の取得中に予期しないエラーが発生しました。");
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadCustomers();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [visibility, customerKind, appliedQuery, reloadKey]);
+  const { currentPage, perPage, setCurrentPage, setPerPage, resetPage } =
+    usePagination();
+  const { customers, pagination, isLoading, errorMessage } = useCustomers({
+    visibility,
+    customer_kind: customerKind,
+    query: appliedQuery,
+    page: currentPage,
+    per_page: perPage,
+    reloadKey,
+  });
 
   function handleSearch() {
     const normalizedQuery = queryInput.trim();
+
+    resetPage();
 
     setFilters((current) => ({
       ...current,
@@ -105,6 +61,7 @@ export function CustomerListPageClient() {
 
   function handleClearQuery() {
     setQueryInput("");
+    resetPage();
 
     setFilters((current) => ({
       ...current,
@@ -113,6 +70,8 @@ export function CustomerListPageClient() {
   }
 
   function handleApplyFilters(nextFilters: CustomerFilterValues) {
+    resetPage();
+
     setFilters((current) => ({
       ...current,
       visibility: nextFilters.visibility,
@@ -121,6 +80,8 @@ export function CustomerListPageClient() {
   }
 
   function handleResetVisibility() {
+    resetPage();
+
     setFilters((current) => ({
       ...current,
       visibility: "visible",
@@ -128,6 +89,8 @@ export function CustomerListPageClient() {
   }
 
   function handleClearCustomerKind() {
+    resetPage();
+
     setFilters((current) => ({
       ...current,
       customer_kind: undefined,
@@ -136,10 +99,16 @@ export function CustomerListPageClient() {
 
   function handleClearAll() {
     setQueryInput("");
+    resetPage();
 
     setFilters({
       visibility: "visible",
     });
+  }
+
+  function handlePerPageChange(nextPerPage: number) {
+    resetPage();
+    setPerPage(nextPerPage);
   }
 
   function handleOpenCreateDialog() {
@@ -173,48 +142,55 @@ export function CustomerListPageClient() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">顧客管理</p>
+      <section
+        className="space-y-4 rounded-lg border bg-card p-4"
+        aria-label="顧客一覧の検索とページ操作"
+      >
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start">
+            <Button
+              type="button"
+              className="w-full shrink-0 sm:w-auto"
+              onClick={handleOpenCreateDialog}
+            >
+              <PlusIcon />
+              顧客を登録
+            </Button>
 
-          <h1 className="text-2xl font-semibold tracking-tight">顧客一覧</h1>
+            <CustomerSearchForm
+              value={queryInput}
+              hasAppliedQuery={Boolean(filters.query)}
+              visibility={visibility}
+              customerKind={customerKind}
+              isLoading={isLoading}
+              onValueChange={setQueryInput}
+              onSearch={handleSearch}
+              onClear={handleClearQuery}
+              onApplyFilters={handleApplyFilters}
+            />
+          </div>
 
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {isLoading
-              ? "顧客情報を読み込んでいます。"
-              : `${customers.length}件の顧客を表示しています。`}
-          </p>
+          {!isLoading && !errorMessage && pagination && (
+            <PaginationControls
+              className="shrink-0"
+              currentPage={pagination.current_page}
+              totalPages={pagination.total_pages}
+              totalCount={pagination.total_count}
+              perPage={perPage}
+              onPageChange={setCurrentPage}
+              onPerPageChange={handlePerPageChange}
+            />
+          )}
         </div>
 
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          onClick={handleOpenCreateDialog}
-        >
-          <PlusIcon />
-          顧客を登録
-        </Button>
-      </header>
-
-      <CustomerSearchForm
-        value={queryInput}
-        hasAppliedQuery={Boolean(filters.query)}
-        visibility={visibility}
-        customerKind={customerKind}
-        isLoading={isLoading}
-        onValueChange={setQueryInput}
-        onSearch={handleSearch}
-        onClear={handleClearQuery}
-        onApplyFilters={handleApplyFilters}
-      />
-
-      <CustomerActiveFilters
-        filters={filters}
-        onClearQuery={handleClearQuery}
-        onResetVisibility={handleResetVisibility}
-        onClearCustomerKind={handleClearCustomerKind}
-        onClearAll={handleClearAll}
-      />
+        <CustomerActiveFilters
+          filters={filters}
+          onClearQuery={handleClearQuery}
+          onResetVisibility={handleResetVisibility}
+          onClearCustomerKind={handleClearCustomerKind}
+          onClearAll={handleClearAll}
+        />
+      </section>
 
       {formDialogOpen && (
         <CustomerFormDialog
@@ -280,6 +256,18 @@ export function CustomerListPageClient() {
 
       {!isLoading && !errorMessage && customers.length > 0 && (
         <CustomerTable customers={customers} onEdit={handleOpenEditDialog} />
+      )}
+
+      {!isLoading && !errorMessage && pagination && (
+        <PaginationControls
+          className="border-t pt-4"
+          currentPage={pagination.current_page}
+          totalPages={pagination.total_pages}
+          totalCount={pagination.total_count}
+          perPage={perPage}
+          onPageChange={setCurrentPage}
+          onPerPageChange={handlePerPageChange}
+        />
       )}
     </div>
   );

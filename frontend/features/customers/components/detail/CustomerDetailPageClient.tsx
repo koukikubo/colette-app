@@ -99,7 +99,7 @@ function DetailItem({ label, value, wide = false }: DetailItemProps) {
     >
       <dt className="text-sm text-muted-foreground">{label}</dt>
 
-      <dd className="break-words text-sm leading-6 font-medium">{value}</dd>
+      <dd className="wrap-break-word text-sm leading-6 font-medium">{value}</dd>
     </div>
   );
 }
@@ -290,7 +290,7 @@ export function CustomerDetailPageClient({
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="break-words text-2xl font-semibold tracking-tight">
+                <h1 className="wrap-break-word text-2xl font-semibold tracking-tight">
                   {customer.name}
                 </h1>
 
@@ -387,7 +387,7 @@ export function CustomerDetailPageClient({
               </div>
 
               <div className="min-h-24 rounded-lg border bg-muted/20 p-4">
-                <p className="whitespace-pre-wrap break-words text-sm leading-7">
+                <p className="whitespace-pre-wrap wrap-break-word text-sm leading-7">
                   {displayValue(customer.memo)}
                 </p>
               </div>

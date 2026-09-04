@@ -40,6 +40,12 @@ ja:
         occasion: "利用目的"
         restaurant_master_ids: "確定テーブル"
 
+      standard_master:
+        name: "名称"
+
+      standard_list_master:
+        label: "表示名"
+
     errors:
       messages:
         blank: "を入力してください"

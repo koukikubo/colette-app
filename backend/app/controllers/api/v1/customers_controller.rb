@@ -1,6 +1,9 @@
 class Api::V1::CustomersController < Api::V1::BaseController
+  include ApiPagination
+
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
+
 
   before_action :set_customer,
                 only: %i[show update hidden restore]
@@ -12,24 +15,39 @@ class Api::V1::CustomersController < Api::V1::BaseController
     return unless valid_visibility?(visibility)
     return unless valid_customer_kind?(customer_kind)
 
+    # 共通Concernでpage・per_pageを変換し、入力値を検証する。
+    pagination = pagination_params
+    return unless pagination
+
     customers = Customer.includes(
       created_by_staff: :staff_master,
       updated_by_staff: :staff_master
     )
 
     customers = filter_by_visibility(customers, visibility)
-    customers = customers.where(customer_kind: customer_kind) if customer_kind
+
+    if customer_kind
+      customers = customers.where(customer_kind: customer_kind)
+    end
+
     customers = ::Customers::SearchQuery.new(
         relation: customers,
         keyword: params[:query]
       ).call
     customers = customers.order(id: :desc)
 
+    # 顧客固有の絞り込みが終わったRelationを共通Concernへ渡してページ分割する。
+    paginated_customers = paginate(
+      customers,
+      **pagination
+    )
+
     render_success(
       data: {
-        customers: customers.map do |customer|
+        customers: paginated_customers[:records].map do |customer|
           serialize_customer(customer)
-        end
+        end,
+        pagination: paginated_customers[:metadata]
       }
     )
   end

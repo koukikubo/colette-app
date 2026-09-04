@@ -1,3 +1,5 @@
+import { Pagination } from "@/lib/api/pagination";
+
 // 個人・法人フラグ
 export const CUSTOMER_KINDS = ["individual", "corporate"] as const;
 
@@ -51,6 +53,8 @@ export type CustomerListParams = {
   visibility?: CustomerVisibility;
   customer_kind?: CustomerKind;
   query?: string;
+  page?: number;
+  per_page?: number;
 };
 
 export type CustomerAttributes = {
@@ -94,6 +98,7 @@ export type ChangeCustomerVisibilityRequest = {
 
 export type CustomerListData = {
   customers: Customer[];
+  pagination: Pagination;
 };
 
 export type CustomerData = {

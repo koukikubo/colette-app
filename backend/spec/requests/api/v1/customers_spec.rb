@@ -95,6 +95,130 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(customer_ids).to eq(customer_ids.sort.reverse)
     end
 
+    it "ページ指定がない場合は20件まで取得する" do
+      create_list(
+        :customer,
+        25,
+        created_by_staff: login_staff,
+        updated_by_staff: login_staff
+      )
+
+      get "/api/v1/customers"
+
+      expect(response).to have_http_status(:ok)
+
+      customers = response_body.dig("data", "customers")
+      pagination = response_body.dig("data", "pagination")
+
+      expect(customers.length).to eq(20)
+      expect(pagination).to eq(
+        {
+          "current_page" => 1,
+          "per_page" => 20,
+          "total_pages" => 2,
+          "total_count" => 28
+        }
+      )
+    end
+
+    it "指定したページの顧客を取得できる" do
+      get(
+        "/api/v1/customers",
+        params: {
+          page: 2,
+          per_page: 2
+        }
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      customers = response_body.dig("data", "customers")
+      pagination = response_body.dig("data", "pagination")
+      customer_ids = customers.map { |customer| customer["id"] }
+
+      expect(customer_ids).to eq([ older_customer.id ])
+
+      expect(pagination).to eq(
+        {
+          "current_page" => 2,
+          "per_page" => 2,
+          "total_pages" => 2,
+          "total_count" => 3
+        }
+      )
+    end
+
+    it "pageが0の場合は400を返す" do
+      get(
+        "/api/v1/customers",
+        params: { page: 0 }
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response_body["message"]).to eq("ページ指定が不正です")
+      expect(response_body["errors"]).to include(
+        "pageには1以上の整数を指定してください"
+      )
+    end
+
+    it "pageが整数ではない場合は400を返す" do
+      get(
+        "/api/v1/customers",
+        params: { page: "invalid" }
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response_body["errors"]).to include(
+        "pageには1以上の整数を指定してください"
+      )
+    end
+
+    it "per_pageが0の場合は400を返す" do
+      get(
+        "/api/v1/customers",
+        params: { per_page: 0 }
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response_body["errors"]).to include(
+        "per_pageには1以上の整数を指定してください"
+      )
+    end
+
+    it "per_pageが最大取得件数を超える場合は400を返す" do
+      get(
+        "/api/v1/customers",
+        params: { per_page: 101 }
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response_body["errors"]).to include(
+        "per_pageには100以下の整数を指定してください"
+      )
+    end
+
+    it "総ページ数を超えるページの場合は空配列を返す" do
+      get(
+        "/api/v1/customers",
+        params: {
+          page: 3,
+          per_page: 2
+        }
+      )
+
+      expect(response).to have_http_status(:ok)
+      expect(response_body.dig("data", "customers")).to be_empty
+
+      expect(response_body.dig("data", "pagination")).to eq(
+        {
+          "current_page" => 3,
+          "per_page" => 2,
+          "total_pages" => 2,
+          "total_count" => 3
+        }
+      )
+    end
+
     it "visibility=hiddenで非表示顧客だけを取得する" do
       get(
         "/api/v1/customers",
