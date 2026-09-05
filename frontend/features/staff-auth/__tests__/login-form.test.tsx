@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { LoginForm } from "./login-form";
+import { LoginForm } from "../components/login/login-form";
 import { ApiClientError } from "@/lib/api/api-client";
 
 const mocks = vi.hoisted(() => ({
@@ -18,7 +18,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("./api/staff-auth-api", () => ({
+vi.mock("../api/staff-auth-api", () => ({
   loginStaff: mocks.loginStaff,
 }));
 
