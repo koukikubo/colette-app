@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 import { FormEvent, useState } from "react";
-import { loginStaff } from "./api/staff-auth-api";
+import { loginStaff } from "../../api/staff-auth-api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 import { Button } from "../../../../components/ui/button";
@@ -22,7 +22,7 @@ import {
 } from "../../../../components/ui/select";
 import { Input } from "../../../../components/ui/input";
 import { useAuth } from "../../hooks/use-auth";
-import { StaffOption } from "./types";
+import { StaffOption } from "../../types";
 
 type LoginFormProps = React.ComponentProps<"div"> & {
   staffOptions: StaffOption[];

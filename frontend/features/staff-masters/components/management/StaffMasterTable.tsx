@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import type { StaffMaster, StaffRoleCode } from "../types";
+import type { StaffMaster, StaffRoleCode } from "../../types";
 
 type ListMode = "active" | "retired";
 

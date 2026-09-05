@@ -15,28 +15,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { resetStaffFailedAttempts } from "../api/staff-master-api";
-import type { StaffMaster } from "../types";
+import { restoreStaffMaster } from "../../api/staff-master-api";
+import type { StaffMaster } from "../../types";
 
-type ResetFailedAttemptsDialogProps = {
+type RestoreStaffDialogProps = {
   open: boolean;
   staffMaster: StaffMaster;
   onOpenChange: (open: boolean) => void;
-  onUpdated: () => Promise<void>;
+  onRestored: () => Promise<void>;
 };
 
-export function ResetFailedAttemptsDialog({
+export function RestoreStaffDialog({
   open,
   staffMaster,
   onOpenChange,
-  onUpdated,
-}: ResetFailedAttemptsDialogProps) {
+  onRestored,
+}: RestoreStaffDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const staff = staffMaster.staff;
-  const isLocked = staff?.locked ?? false;
-  const failedAttempts = staff?.failed_attempts ?? 0;
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (isSubmitting) {
@@ -51,7 +47,7 @@ export function ResetFailedAttemptsDialog({
   };
 
   const handleConfirm = async () => {
-    if (!staff || isSubmitting) {
+    if (isSubmitting || staffMaster.retired_on === null) {
       return;
     }
 
@@ -59,13 +55,13 @@ export function ResetFailedAttemptsDialog({
     setErrorMessage(null);
 
     try {
-      await resetStaffFailedAttempts(staffMaster.id);
-      await onUpdated();
+      await restoreStaffMaster(staffMaster.id);
+      await onRestored();
 
       onOpenChange(false);
     } catch {
       setErrorMessage(
-        "ログイン失敗回数をリセットできませんでした。時間をおいて再度お試しください。",
+        "担当者を復帰できませんでした。時間をおいて再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);
@@ -76,14 +72,10 @@ export function ResetFailedAttemptsDialog({
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            {isLocked
-              ? "アカウントロックを解除しますか？"
-              : "ログイン失敗回数をリセットしますか？"}
-          </AlertDialogTitle>
+          <AlertDialogTitle>この担当者を在籍中へ戻しますか？</AlertDialogTitle>
 
           <AlertDialogDescription>
-            対象担当者と現在の状態を確認してください。
+            対象担当者と現在の退職情報を確認してください。
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -94,20 +86,25 @@ export function ResetFailedAttemptsDialog({
           <dt className="text-muted-foreground">担当者名</dt>
           <dd>{staffMaster.name}</dd>
 
-          <dt className="text-muted-foreground">現在の状態</dt>
-          <dd>{isLocked ? "ロック中" : "正常"}</dd>
+          <dt className="text-muted-foreground">入社日</dt>
+          <dd>{formatDate(staffMaster.employment_started_on)}</dd>
 
-          <dt className="text-muted-foreground">ログイン失敗回数</dt>
-          <dd>{failedAttempts}回</dd>
+          <dt className="text-muted-foreground">退職日</dt>
+          <dd className="font-medium">{formatDate(staffMaster.retired_on)}</dd>
 
-          <dt className="text-muted-foreground">ロック日時</dt>
-          <dd>{formatDateTime(staff?.locked_at)}</dd>
+          <dt className="text-muted-foreground">ログイン設定</dt>
+          <dd>
+            {staffMaster.staff
+              ? staffMaster.staff.login_enabled
+                ? "有効"
+                : "無効"
+              : "ログイン情報未登録"}
+          </dd>
         </dl>
 
         <p className="text-sm text-muted-foreground">
-          実行すると、ログイン失敗回数を0回に戻し、
-          アカウントロック状態を解除します。
-          ログイン可否の設定は変更されません。
+          復帰後も、現在のログイン可否・失敗回数・ロック状態は維持されます。
+          必要な場合は復帰後に個別に変更してください。
         </p>
 
         {errorMessage && (
@@ -122,9 +119,7 @@ export function ResetFailedAttemptsDialog({
           </AlertDialogCancel>
 
           <AlertDialogAction
-            disabled={
-              isSubmitting || !staff || (!isLocked && failedAttempts === 0)
-            }
+            disabled={isSubmitting || staffMaster.retired_on === null}
             onClick={(event) => {
               event.preventDefault();
               void handleConfirm();
@@ -133,8 +128,7 @@ export function ResetFailedAttemptsDialog({
             {isSubmitting && (
               <Loader2Icon className="animate-spin" aria-hidden="true" />
             )}
-
-            {isLocked ? "ロックを解除" : "失敗回数をリセット"}
+            復帰を確定
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -142,24 +136,20 @@ export function ResetFailedAttemptsDialog({
   );
 }
 
-function formatDateTime(value: string | null | undefined) {
+function formatDate(value: string | null | undefined) {
   if (!value) {
     return "—";
   }
 
-  const date = new Date(value);
+  const date = new Date(`${value}T00:00:00`);
 
   if (Number.isNaN(date.getTime())) {
     return "—";
   }
 
   return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
   }).format(date);
 }

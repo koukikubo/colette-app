@@ -13,8 +13,8 @@ import { ApiClientError } from "@/lib/api/api-client";
 import {
   fetchCurrentStaff,
   logoutStaff,
-} from "@/features/staff-auth/components/Auth/api/staff-auth-api";
-import type { Staff } from "@/features/staff-auth/components/Auth/types";
+} from "@/features/staff-auth/api/staff-auth-api";
+import type { Staff } from "@/features/staff-auth/types";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 

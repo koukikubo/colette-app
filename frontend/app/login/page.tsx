@@ -1,4 +1,4 @@
-import { LoginFormContainer } from "@/features/staff-auth/components/Auth/login-form-container";
+import { LoginFormContainer } from "@/features/staff-auth/components/login/login-form-container";
 
 export default function LoginPage() {
   return (

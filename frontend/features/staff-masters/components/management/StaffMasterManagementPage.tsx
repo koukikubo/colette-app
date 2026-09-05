@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { fetchStaffMasters } from "../api/staff-master-api";
-import type { StaffMaster } from "../types";
+import { fetchStaffMasters } from "../../api/staff-master-api";
+import type { StaffMaster } from "../../types";
 import { StaffMasterTable } from "./StaffMasterTable";
-import { StaffMasterCreateDialog } from "./StaffMasterCreateDialog";
-import { StaffMasterEditDialog } from "./StaffMasterEditDialog";
-import { RestoreStaffDialog } from "./RestoreStaffDialog";
+import { StaffMasterCreateDialog } from "../dialog/StaffMasterCreateDialog";
+import { StaffMasterEditDialog } from "../dialog/StaffMasterEditDialog";
+import { RestoreStaffDialog } from "../dialog/RestoreStaffDialog";
 
 type ListMode = "active" | "retired";
 

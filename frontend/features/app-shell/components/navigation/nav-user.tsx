@@ -20,7 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { LogoutButton } from "@/features/staff-auth/components/Auth/LogoutButton";
+import { LogoutButton } from "@/features/staff-auth/components/session/LogoutButton";
 import {
   EllipsisVerticalIcon,
   // CircleUserRoundIcon,
@@ -28,7 +28,7 @@ import {
   // BellIcon,
   LogOutIcon,
 } from "lucide-react";
-import { CurrentStaffDisplay } from "./CurrentStaffDisplay";
+import { CurrentStaffDisplay } from "../../../staff-auth/components/session/CurrentStaffDisplay";
 
 export function NavUser(
   {

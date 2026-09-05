@@ -26,8 +26,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { retireStaffMaster } from "../api/staff-master-api";
-import type { RetireStaffMasterRequest, StaffMaster } from "../types";
+import { retireStaffMaster } from "../../api/staff-master-api";
+import type { RetireStaffMasterRequest, StaffMaster } from "../../types";
 
 type RetireStaffDialogProps = {
   open: boolean;

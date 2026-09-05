@@ -5,9 +5,9 @@ import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { fetchStaffLoginOptions } from "./api/staff-auth-api";
+import { fetchStaffLoginOptions } from "../../api/staff-auth-api";
 import { LoginForm } from "./login-form";
-import { StaffOption } from "./types";
+import { StaffOption } from "../../types";
 
 export function LoginFormContainer() {
   const [staffOptions, setStaffOptions] = React.useState<StaffOption[]>([]);

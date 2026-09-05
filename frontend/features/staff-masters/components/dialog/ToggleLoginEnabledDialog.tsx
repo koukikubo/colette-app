@@ -15,8 +15,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { updateStaffLoginEnabled } from "../api/staff-master-api";
-import type { StaffMaster } from "../types";
+import { updateStaffLoginEnabled } from "../../api/staff-master-api";
+import type { StaffMaster } from "../../types";
 
 type ToggleLoginEnabledDialogProps = {
   open: boolean;

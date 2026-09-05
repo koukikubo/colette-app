@@ -36,14 +36,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
-import { updateStaffMaster } from "../api/staff-master-api";
-import { STAFF_ROLE_LABELS, STAFF_ROLE_OPTIONS } from "../constants";
+import { updateStaffMaster } from "../../api/staff-master-api";
+import { STAFF_ROLE_LABELS, STAFF_ROLE_OPTIONS } from "../../constants";
 import {
   STAFF_ROLE_CODES,
   type StaffMaster,
   type StaffRoleCode,
   type UpdateStaffMasterRequest,
-} from "../types";
+} from "../../types";
 import { ToggleLoginEnabledDialog } from "./ToggleLoginEnabledDialog";
 import { ResetFailedAttemptsDialog } from "./ResetFailedAttemptsDialog";
 import { RetireStaffDialog } from "./RetireStaffDialog";
