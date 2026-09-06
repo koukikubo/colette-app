@@ -11,8 +11,8 @@ import { StandardListCode } from "@/features/standard-codes/types";
 import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
 import { RestaurantMasterTable } from "./RestaurantMasterTable";
 import { useState } from "react";
-import { RestaurantMasterCreateDialog } from "./RestaurantMasterCreateDialog";
-import { RestaurantMasterEditDialog } from "./RestaurantMasterEditDialog";
+import { RestaurantMasterEditDialog } from "../dialog/RestaurantMasterEditDialog";
+import { RestaurantMasterCreateDialog } from "../dialog/RestaurantMasterCreateDialog";
 
 const RESTAURANT_MASTER_TYPE_NAME = "予約席種";
 
