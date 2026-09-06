@@ -20,7 +20,7 @@ import type {
   StandardCode,
   StandardCodeFormValues,
 } from "@/features/standard-codes/types";
-import { ConfirmStandardCodeSaveDialog } from "./Dialog/ConfirmStandardCodeSaveDialog";
+import { ConfirmStandardCodeSaveDialog } from "./ConfirmStandardCodeSaveDialog";
 
 type DialogMode = "create" | "edit";
 

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -31,11 +30,12 @@ import type {
   StandardListCodeFormValues,
 } from "@/features/standard-codes/types";
 
-import { StandardCodeTable } from "@/features/standard-codes/components/StandardCodeTable";
-import { StandardListCodeTable } from "@/features/standard-codes/components/StandardListCodeTable";
-import { StandardCodeFormDialog } from "@/features/standard-codes/components/StandardCodeFormDialog";
-import { StandardListCodeFormDialog } from "./StandardListCodeFormDialog";
+import { StandardCodeTable } from "@/features/standard-codes/components/management/StandardCodeTable";
+import { StandardListCodeTable } from "@/features/standard-codes/components/management/StandardListCodeTable";
+import { StandardListCodeFormDialog } from "../Dialog/StandardListCodeFormDialog";
 import { ApiClientError } from "@/lib/api/api-client";
+import { StandardCodeFormDialog } from "../Dialog/StandardCodeFormDialog";
+import { Button } from "@/components/ui/button";
 
 type ActiveFilter = "all" | "active" | "inactive";
 type DialogMode = "create" | "edit";
@@ -201,8 +201,6 @@ export function StandardCodeMasterPage() {
   );
 
   const handleReloadStandardCodes = useCallback(async () => {
-    if (!selectedStandardCodeId) return;
-
     setIsLoadingStandardCodes(true);
     setStandardCodeError(null);
 
@@ -524,7 +522,9 @@ export function StandardCodeMasterPage() {
                         ? "default"
                         : "outline"
                     }
-                    onClick={() => handleChangeStandardCodeActiveFilter("all")}
+                    onClick={() =>
+                      handleChangeStandardCodeActiveFilter("active")
+                    }
                   >
                     有効
                   </Button>
@@ -537,7 +537,7 @@ export function StandardCodeMasterPage() {
                         : "outline"
                     }
                     onClick={() =>
-                      handleChangeStandardCodeActiveFilter("active")
+                      handleChangeStandardCodeActiveFilter("inactive")
                     }
                   >
                     無効
@@ -652,9 +652,7 @@ export function StandardCodeMasterPage() {
                         : "outline"
                     }
                     disabled={!selectedStandardCode}
-                    onClick={() =>
-                      handleChangeStandardCodeActiveFilter("inactive")
-                    }
+                    onClick={() => setStandardListCodeActiveFilter("inactive")}
                   >
                     無効
                   </Button>
