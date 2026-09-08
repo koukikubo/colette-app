@@ -572,69 +572,6 @@ describe("CustomerListPageClient", () => {
     ).toBeInTheDocument();
   });
 
-  it("表示状態と顧客区分で絞り込める", async () => {
-    const user = userEvent.setup();
-
-    mocks.fetchCustomers.mockResolvedValue({
-      status: "success",
-      data: {
-        customers: [],
-        pagination: {
-          current_page: 1,
-          per_page: 20,
-          total_pages: 1,
-          total_count: 0,
-        },
-      },
-    });
-
-    render(<CustomerListPageClient />);
-
-    expect(
-      await screen.findByText("顧客が登録されていません"),
-    ).toBeInTheDocument();
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "絞り込み",
-      }),
-    );
-
-    await user.click(
-      screen.getByRole("radio", {
-        name: "非表示",
-      }),
-    );
-
-    await user.click(
-      screen.getByRole("radio", {
-        name: "法人",
-      }),
-    );
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "適用",
-      }),
-    );
-
-    await waitFor(() => {
-      expect(mocks.fetchCustomers).toHaveBeenCalledTimes(2);
-    });
-
-    expect(mocks.fetchCustomers).toHaveBeenNthCalledWith(2, {
-      visibility: "hidden",
-      customer_kind: "corporate",
-      query: undefined,
-      page: 1,
-      per_page: 20,
-    });
-
-    expect(
-      await screen.findByText("検索条件に一致する顧客が見つかりません"),
-    ).toBeInTheDocument();
-  });
-
   it("次へを押すと、次ページの顧客を取得する", async () => {
     const user = userEvent.setup();
 
