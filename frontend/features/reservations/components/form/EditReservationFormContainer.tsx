@@ -145,10 +145,11 @@ function EditReservationFormContent({
         }
 
         setSubmitErrorMessage(error.message);
+        // APIエラーをフォーム上で確認できるよう、確認Dialogを閉じる。
+        setConfirmOpen(false);
+
         // バリデーションエラーは、対象の入力項目にも個別表示する。
         if (error.status === 422 && !Array.isArray(error.errors)) {
-          // フォーム上の項目別エラーを確認できるよう、確認Dialogを閉じる。
-          setConfirmOpen(false);
           setFieldErrors(error.errors);
         }
 
