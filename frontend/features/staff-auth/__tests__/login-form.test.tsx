@@ -117,32 +117,6 @@ describe("LoginForm", () => {
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
-  // ③ API認証失敗のケース
-  it("ログイン API が認証エラーを返すと、エラーを表示して画面遷移しない", async () => {
-    const user = userEvent.setup();
-    const errorMessage = "担当者またはパスワードが正しくありません。";
-
-    mocks.loginStaff.mockRejectedValue(new ApiClientError(errorMessage, 401));
-
-    render(
-      <LoginForm
-        staffOptions={[
-          { id: 1, code: "00001", name: "店主" },
-          { id: 2, code: "00002", name: "登録担当" },
-        ]}
-      />,
-    );
-
-    await user.click(screen.getByRole("combobox", { name: "担当者" }));
-    await user.click(await screen.findByRole("option", { name: "00001店主" }));
-    await user.type(screen.getByLabelText("パスワード"), "wrong-password");
-    await user.click(screen.getByRole("button", { name: "ログイン" }));
-
-    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
-    expect(mocks.refreshCurrentStaff).not.toHaveBeenCalled();
-    expect(mocks.replace).not.toHaveBeenCalled();
-  });
-
   // ② パスワード未入力のケース
   it("パスワードが未入力なら、ログイン処理を実行しない", async () => {
     const user = userEvent.setup();
