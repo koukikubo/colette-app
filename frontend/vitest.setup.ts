@@ -15,12 +15,11 @@ afterEach(() => {
 });
 
 if (!HTMLElement.prototype.hasPointerCapture) {
-  HTMLElement.prototype.hasPointerCapture = (_pointerId: number) => false;
-  HTMLElement.prototype.setPointerCapture = (_pointerId: number) => {};
-  HTMLElement.prototype.releasePointerCapture = (_pointerId: number) => {};
+  HTMLElement.prototype.hasPointerCapture = () => false;
+  HTMLElement.prototype.setPointerCapture = () => {};
+  HTMLElement.prototype.releasePointerCapture = () => {};
 }
+
 if (!HTMLElement.prototype.scrollIntoView) {
-  HTMLElement.prototype.scrollIntoView = (
-    _options?: boolean | ScrollIntoViewOptions,
-  ) => {};
+  HTMLElement.prototype.scrollIntoView = () => {};
 }
