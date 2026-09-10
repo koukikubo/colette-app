@@ -61,16 +61,17 @@ describe("CustomerDetailPageClient", () => {
 
     render(<CustomerDetailPageClient customerId={10} />);
 
-    expect(await screen.findByRole("heading", { name: "山田 太郎" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "山田 太郎" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("090-1234-5678")).toBeInTheDocument();
     expect(screen.getByText("100-0001")).toBeInTheDocument();
     expect(screen.getByText("常連のお客様")).toBeInTheDocument();
     expect(screen.getByText("店主")).toBeInTheDocument();
     expect(screen.getByText("担当者")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /顧客一覧へ戻る/ })).toHaveAttribute(
-      "href",
-      "/customers",
-    );
+    expect(
+      screen.getByRole("link", { name: /顧客一覧へ戻る/ }),
+    ).toHaveAttribute("href", "/customers");
     expect(mocks.fetchCustomer).toHaveBeenCalledWith(10);
   });
 
@@ -115,7 +116,9 @@ describe("CustomerDetailPageClient", () => {
 
     render(<CustomerDetailPageClient customerId={999} />);
 
-    expect(await screen.findByText("顧客情報を表示できません")).toBeInTheDocument();
+    expect(
+      await screen.findByText("顧客情報を表示できません"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("指定された顧客が見つかりませんでした。"),
     ).toBeInTheDocument();

@@ -22,7 +22,12 @@ describe("useReservationFormOptions", () => {
   });
 
   it("有効な基本コードに属する有効な選択肢だけを返す", async () => {
-    const confirmed = { id: 1, code: "confirmed", name: "予約確定", active: true };
+    const confirmed = {
+      id: 1,
+      code: "confirmed",
+      name: "予約確定",
+      active: true,
+    };
     const inactive = { id: 2, code: "old", name: "旧状態", active: false };
     const tables = [{ id: 10, code: "T01", active: true }];
 

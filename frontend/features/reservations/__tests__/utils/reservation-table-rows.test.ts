@@ -52,8 +52,8 @@ describe("reservation-table-rows", () => {
       createReservation({ id: 4, restaurant_master_ids: [1] }),
     ];
 
-    expect(findUnassignedReservations(reservations).map(({ id }) => id)).toEqual([
-      1, 2, 3,
-    ]);
+    expect(
+      findUnassignedReservations(reservations).map(({ id }) => id),
+    ).toEqual([1, 2, 3]);
   });
 });

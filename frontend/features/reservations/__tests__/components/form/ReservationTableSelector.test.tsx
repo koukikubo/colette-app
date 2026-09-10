@@ -523,5 +523,4 @@ describe("ReservationTableSelector", () => {
 
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
-
 });
