@@ -1,7 +1,7 @@
 "use client";
 
-import { AppSidebar } from "@/features/staff-auth/components/displays/app-sidebar";
-import { SiteHeader } from "@/features/staff-auth/components/displays/site-header";
+import { AppSidebar } from "@/features/app-shell/components/app-sidebar";
+import { SiteHeader } from "@/features/app-shell/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";

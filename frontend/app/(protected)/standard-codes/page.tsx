@@ -1,4 +1,4 @@
-import { StandardCodeMasterPage } from "@/features/standard-codes/components/StandardCodeMasterPage";
+import { StandardCodeMasterPage } from "@/features/standard-codes/components/management/StandardCodeMasterPage";
 
 export default function Page() {
   return <StandardCodeMasterPage />;
