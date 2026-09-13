@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Reservation } from "../../types";
 import { formatReservationDateTimeLocal } from "../../utils/reservation-date";
+import { ReservationStatusActions } from "./ReservationStatusActions";
 
 type DetailItemTone = "default" | "info" | "seat" | "success" | "danger";
 
@@ -153,6 +154,8 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                   一覧へ戻る
                 </Link>
               </Button>
+
+              <ReservationStatusActions reservation={reservation} />
 
               <Button asChild size="sm">
                 <Link href={"/reservations/" + reservation.id + "/edit"}>
