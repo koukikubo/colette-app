@@ -52,6 +52,7 @@ class Reservation < ApplicationRecord
 
   validate :ends_at_must_be_after_starts_at
   validate :reservation_time_must_be_within_business_hours
+  validate :completion_and_cancellation_are_mutually_exclusive
 
   validates :guest_count,
             presence: true,
@@ -184,5 +185,14 @@ class Reservation < ApplicationRecord
     return unless overlapping_reservations.exists?
 
     errors.add(:customer_id, :overlapping_reservation)
+  end
+
+  def completion_and_cancellation_are_mutually_exclusive
+    return if completed_at.blank? || canceled_at.blank?
+
+    errors.add(
+      :base,
+      "対応完了とキャンセルは同時に設定できません"
+    )
   end
 end

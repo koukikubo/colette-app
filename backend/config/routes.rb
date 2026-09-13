@@ -46,7 +46,9 @@ Rails.application.routes.draw do
       resources :reservations, only: %i[index show create update] do
         member do
           patch :cancel
+          patch :reopen
           patch :restore
+          patch :complete
         end
       end
     end

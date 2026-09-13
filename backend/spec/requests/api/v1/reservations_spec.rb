@@ -81,13 +81,23 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     )
   end
 
+  let!(:completed_status) do
+    StandardListMaster.create!(
+      standard_master: reservation_status_master,
+      code: "completed",
+      label: "対応完了",
+      active: true,
+      position: 2
+    )
+  end
+
   let!(:canceled_status) do
     StandardListMaster.create!(
       standard_master: reservation_status_master,
       code: "canceled",
       label: "取消",
       active: true,
-      position: 2
+      position: 3
     )
   end
 
@@ -801,6 +811,286 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/reservations/:id/complete" do
+    before do
+      login!
+    end
+
+    let!(:reservation) do
+      create(
+        :reservation,
+        reservation_name: "対応完了対象",
+        reservation_phone_number: "09011112222",
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        requested_restaurant_master_type: table_type,
+        reservation_status: confirmed_status,
+        created_by_staff: staff,
+        updated_by_staff: staff,
+        completed_at: nil,
+        canceled_at: nil
+      )
+    end
+
+    it "予約を対応完了にできる" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/complete",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      response_reservation =
+        response.parsed_body.dig("data", "reservation")
+
+      expect(response_reservation["completed_at"]).to be_present
+      expect(
+        response_reservation.dig("reservation_status", "code")
+      ).to eq("completed")
+
+      reservation.reload
+
+      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.completed_at).to be_present
+      expect(reservation.canceled_at).to be_nil
+      expect(reservation.updated_by_staff).to eq(staff)
+    end
+
+    it "対応完了済み予約は再度対応完了にできない" do
+      reservation.update!(
+        reservation_status: completed_status,
+        completed_at: Time.current
+      )
+
+      original_completed_at = reservation.completed_at
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/complete",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      reservation.reload
+
+      expect(reservation.completed_at).to eq(original_completed_at)
+      expect(reservation.reservation_status).to eq(completed_status)
+    end
+
+    it "キャンセル済み予約は対応完了にできない" do
+      reservation.update!(
+        reservation_status: canceled_status,
+        canceled_at: Time.current
+      )
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/complete",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      reservation.reload
+
+      expect(reservation.completed_at).to be_nil
+      expect(reservation.reservation_status).to eq(canceled_status)
+    end
+
+    it "lock_versionがない場合は対応完了にできない" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/complete",
+        params: {
+          reservation: {}
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:bad_request)
+
+      reservation.reload
+
+      expect(reservation.completed_at).to be_nil
+      expect(reservation.reservation_status).to eq(confirmed_status)
+    end
+
+    it "存在しない予約の場合は404を返す" do
+      patch(
+        "/api/v1/reservations/999999999/complete",
+        params: {
+          reservation: {
+            lock_version: 0
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "古いlock_versionの場合は409を返す" do
+      stale_lock_version = reservation.lock_version
+
+      reservation.update!(
+        internal_memo: "別の操作による更新"
+      )
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/complete",
+        params: {
+          reservation: {
+            lock_version: stale_lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:conflict)
+
+      reservation.reload
+
+      expect(reservation.completed_at).to be_nil
+      expect(reservation.reservation_status).to eq(confirmed_status)
+    end
+  end
+
+  describe "PATCH /api/v1/reservations/:id/reopen" do
+    before do
+      login!
+    end
+
+    let!(:reservation) do
+      create(
+        :reservation,
+        :completed,
+        reservation_name: "対応完了取消対象",
+        reservation_phone_number: "09011112222",
+        starts_at: reservation_time(Time.zone.today, 18),
+        ends_at: reservation_time(Time.zone.today, 20),
+        requested_restaurant_master_type: table_type,
+        reservation_status: completed_status,
+        created_by_staff: staff,
+        updated_by_staff: staff,
+        canceled_at: nil
+      )
+    end
+
+    it "対応完了済み予約を予約確定へ戻せる" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/reopen",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      reservation.reload
+
+      expect(reservation.reservation_status).to eq(confirmed_status)
+      expect(reservation.completed_at).to be_nil
+      expect(reservation.canceled_at).to be_nil
+      expect(reservation.updated_by_staff).to eq(staff)
+    end
+
+    it "対応完了していない予約は予約確定へ戻せない" do
+      reservation.update!(
+        reservation_status: confirmed_status,
+        completed_at: nil
+      )
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/reopen",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      reservation.reload
+
+      expect(reservation.reservation_status).to eq(confirmed_status)
+      expect(reservation.completed_at).to be_nil
+    end
+
+    it "lock_versionがない場合は対応完了を取り消せない" do
+      patch(
+        "/api/v1/reservations/#{reservation.id}/reopen",
+        params: {
+          reservation: {}
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:bad_request)
+
+      reservation.reload
+
+      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.completed_at).to be_present
+    end
+
+    it "存在しない予約の場合は404を返す" do
+      patch(
+        "/api/v1/reservations/999999999/reopen",
+        params: {
+          reservation: {
+            lock_version: 0
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "古いlock_versionの場合は409を返す" do
+      stale_lock_version = reservation.lock_version
+
+      reservation.update!(
+        internal_memo: "別の操作による更新"
+      )
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/reopen",
+        params: {
+          reservation: {
+            lock_version: stale_lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:conflict)
+
+      reservation.reload
+
+      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.completed_at).to be_present
+    end
+  end
+
   describe "PATCH /api/v1/reservations/:id/cancel" do
     before do
       login!
@@ -836,11 +1126,14 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       reservation.reload
 
       expect(reservation.canceled_at).to be_present
+      expect(reservation.completed_at).to be_nil
+      expect(reservation.reservation_status).to eq(canceled_status)
       expect(reservation.updated_by_staff).to eq(staff)
     end
 
     it "キャンセル済み予約は再度キャンセルできない" do
       reservation.update!(
+        reservation_status: canceled_status,
         canceled_at: Time.current
       )
 
@@ -886,6 +1179,33 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
+
+    it "対応完了済み予約はキャンセルできない" do
+      reservation.update!(
+        reservation_status: completed_status,
+        completed_at: Time.current
+      )
+
+      original_completed_at = reservation.completed_at
+
+      patch(
+        "/api/v1/reservations/#{reservation.id}/cancel",
+        params: {
+          reservation: {
+            lock_version: reservation.lock_version
+          }
+        },
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+
+      reservation.reload
+
+      expect(reservation.completed_at).to eq(original_completed_at)
+      expect(reservation.canceled_at).to be_nil
+      expect(reservation.reservation_status).to eq(completed_status)
+    end
   end
 
   describe "PATCH /api/v1/reservations/:id/restore" do
@@ -928,6 +1248,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(reservation.canceled_at).to be_nil
       expect(reservation.updated_by_staff).to eq(staff)
+      expect(reservation.reservation_status).to eq(confirmed_status)
+      expect(reservation.completed_at).to be_nil
     end
 
     it "キャンセルされていない予約は復元できない" do

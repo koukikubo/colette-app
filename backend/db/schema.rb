@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_24_234535) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -62,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_234535) do
   create_table "reservations", force: :cascade do |t|
     t.text "allergy_note"
     t.datetime "canceled_at"
+    t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.bigint "created_by_staff_id", null: false
     t.bigint "customer_id"
@@ -85,6 +86,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_234535) do
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
     t.index ["canceled_at"], name: "index_reservations_on_canceled_at"
+    t.index ["completed_at"], name: "index_reservations_on_completed_at"
     t.index ["created_by_staff_id"], name: "index_reservations_on_created_by_staff_id"
     t.index ["customer_id"], name: "index_reservations_on_customer_id"
     t.index ["menu_type_id"], name: "index_reservations_on_menu_type_id"
@@ -94,6 +96,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_234535) do
     t.index ["reservation_status_id"], name: "index_reservations_on_reservation_status_id"
     t.index ["starts_at"], name: "index_reservations_on_starts_at"
     t.index ["updated_by_staff_id"], name: "index_reservations_on_updated_by_staff_id"
+    t.check_constraint "NOT (completed_at IS NOT NULL AND canceled_at IS NOT NULL)", name: "check_reservations_not_completed_and_canceled"
     t.check_constraint "char_length(btrim(reservation_name::text)) > 0", name: "check_reservations_name_not_blank"
     t.check_constraint "char_length(btrim(reservation_phone_number::text)) > 0", name: "check_reservations_phone_not_blank"
     t.check_constraint "ends_at > starts_at", name: "check_reservations_ends_at_after_starts_at"
