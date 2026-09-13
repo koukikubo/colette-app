@@ -84,6 +84,7 @@ export type Reservation = {
 
   // 詳細確認・キャンセル情報
   details_confirmed_at: string | null;
+  completed_at: string | null;
   canceled_at: string | null;
 
   // 楽観ロック
@@ -165,6 +166,13 @@ export type ReservationUpdateAttributes = Partial<ReservationAttributes> & {
 // 予約更新APIへ送るリクエスト
 export type ReservationUpdateRequest = {
   reservation: ReservationUpdateAttributes;
+};
+
+// 予約状態変更APIへ送るリクエスト
+export type ReservationStatusActionRequest = {
+  reservation: {
+    lock_version: number;
+  };
 };
 
 // 予約一覧APIへ渡す検索条件

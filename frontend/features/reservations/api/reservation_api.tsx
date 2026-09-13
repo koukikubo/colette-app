@@ -5,6 +5,7 @@ import type {
   ReservationListResponse,
   ReservationResponse,
   ReservationUpdateRequest,
+  ReservationStatusActionRequest,
 } from "../types";
 
 const RESERVATIONS_PATH = "/api/v1/reservations";
@@ -57,6 +58,50 @@ export function updateReservation(
   payload: ReservationUpdateRequest,
 ) {
   return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+// 指定された予約を対応完了にする。
+export function completeReservation(
+  id: number,
+  payload: ReservationStatusActionRequest,
+) {
+  return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}/complete`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+// 指定された予約の対応完了を取り消す。
+export function reopenReservation(
+  id: number,
+  payload: ReservationStatusActionRequest,
+) {
+  return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}/reopen`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+// 指定された予約をキャンセルする。
+export function cancelReservation(
+  id: number,
+  payload: ReservationStatusActionRequest,
+) {
+  return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}/cancel`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+// 指定された予約のキャンセルを取り消す。
+export function restoreReservation(
+  id: number,
+  payload: ReservationStatusActionRequest,
+) {
+  return apiFetch<ReservationResponse>(`${RESERVATIONS_PATH}/${id}/restore`, {
     method: "PATCH",
     body: payload,
   });
