@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Reservation } from "@/features/reservations/types";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
-
+import type { ReservationTimelineState } from "@/features/reservations/utils/reservation-timeline-state";
 type ReservationBlockProps = {
   reservation: Reservation;
 
@@ -22,6 +22,19 @@ type ReservationBlockProps = {
    * 2時間分の割合を受け取る。
    */
   widthPercentage: number;
+  timelineState: ReservationTimelineState;
+};
+
+const timelineStateClassNames: Record<ReservationTimelineState, string> = {
+  upcoming:
+    "border-sky-300 bg-sky-50 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950 dark:hover:bg-sky-900",
+  in_progress:
+    "border-emerald-400 bg-emerald-100 hover:bg-emerald-200 dark:border-emerald-700 dark:bg-emerald-950 dark:hover:bg-emerald-900",
+  overdue:
+    "border-amber-400 bg-amber-100 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-950 dark:hover:bg-amber-900",
+  completed:
+    "border-zinc-300 bg-zinc-100 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800",
+  canceled: "hidden",
 };
 
 /**
@@ -35,6 +48,7 @@ export function ReservationBlock({
   reservation,
   leftPercentage,
   widthPercentage,
+  timelineState,
 }: ReservationBlockProps) {
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
@@ -43,7 +57,11 @@ export function ReservationBlock({
       href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
       scroll={false}
       aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
-      className="bg-primary/10 border-primary/30 hover:bg-primary/20 focus-visible:ring-ring absolute inset-y-1 overflow-hidden rounded-md border px-2 py-1 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      data-timeline-state={timelineState}
+      className={[
+        "focus-visible:ring-ring absolute inset-y-1 overflow-hidden rounded-md border px-2 py-1 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none",
+        timelineStateClassNames[timelineState],
+      ].join(" ")}
       style={{
         left: `${leftPercentage}%`,
         width: `${widthPercentage}%`,

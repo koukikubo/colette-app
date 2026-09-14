@@ -13,12 +13,14 @@ import {
 } from "@/features/reservations/utils/reservation-table-rows";
 import { ReservationTimeline } from "./ReservationTimeline";
 import { UnassignedReservationList } from "./UnassignedReservationList";
+import { useCurrentTime } from "@/features/reservations/hooks/useCurrentTime";
 
 type ReservationListPageProps = {
   targetDate: string;
 };
 
 export function ReservationListPage({ targetDate }: ReservationListPageProps) {
+  const currentTime = useCurrentTime();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [restaurantMasters, setRestaurantMasters] = useState<
     RestaurantMaster[]
@@ -145,7 +147,11 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
       <UnassignedReservationList reservations={unassignedReservations} />
 
-      <ReservationTimeline tableRows={tableRows} targetDate={targetDate} />
+      <ReservationTimeline
+        tableRows={tableRows}
+        targetDate={targetDate}
+        currentTime={currentTime}
+      />
     </div>
   );
 }

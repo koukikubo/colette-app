@@ -1,6 +1,7 @@
 import type { Reservation } from "@/features/reservations/types";
 
 import { ReservationBlock } from "./ReservationBlock";
+import { getReservationTimelineState } from "@/features/reservations/utils/reservation-timeline-state";
 
 type ReservationTimelineRowProps = {
   // 行の左側に表示する名称。
@@ -17,6 +18,7 @@ type ReservationTimelineRowProps = {
   timelineEndMinutes: number;
   // タイムライン上部の時間目盛りを表示する。
   hourLabels: number[];
+  currentTime: Date;
 };
 
 // 担当する処理：席名と補足情報の表示・予約開始時刻から左位置を計算・予約時間から横幅を計算・計算結果をReservationBlockへ渡す
@@ -28,6 +30,7 @@ export function ReservationTimelineRow({
   timelineStartMinutes,
   timelineEndMinutes,
   hourLabels,
+  currentTime,
 }: ReservationTimelineRowProps) {
   const timelineDurationMinutes = timelineEndMinutes - timelineStartMinutes;
 
@@ -80,6 +83,11 @@ export function ReservationTimelineRow({
             timelineEndMinutes,
           });
 
+          const timelineState = getReservationTimelineState(
+            reservation,
+            currentTime,
+          );
+
           // 表示範囲が17:00〜24:00以外は表示しない。
           if (!position) {
             return null;
@@ -91,6 +99,7 @@ export function ReservationTimelineRow({
               reservation={reservation}
               leftPercentage={position.leftPercentage}
               widthPercentage={position.widthPercentage}
+              timelineState={timelineState}
             />
           );
         })}
