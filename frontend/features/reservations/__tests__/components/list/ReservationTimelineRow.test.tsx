@@ -36,5 +36,42 @@ describe("ReservationTimelineRow", () => {
       "data-timeline-state",
       "in_progress",
     );
+
+    expect(reservationLink).toHaveAttribute("data-progress-percentage", "50");
+  });
+
+  it("終了予定を過ぎた未完了予約を現在時刻まで延長する", () => {
+    const reservation = createReservation({
+      id: 31,
+      reservation_name: "佐藤 花子",
+      starts_at: "2026-09-14T18:00:00+09:00",
+      ends_at: "2026-09-14T20:00:00+09:00",
+      completed_at: null,
+      canceled_at: null,
+    });
+
+    render(
+      <ReservationTimelineRow
+        label="カウンター1"
+        description="C01 / 定員2名"
+        reservations={[reservation]}
+        targetDate="2026-09-14"
+        currentTime={new Date("2026-09-14T21:00:00+09:00")}
+        timelineStartMinutes={17 * 60}
+        timelineEndMinutes={24 * 60}
+        hourLabels={[17 * 60, 18 * 60, 19 * 60, 20 * 60, 21 * 60]}
+      />,
+    );
+
+    const reservationLink = screen.getByRole("link", {
+      name: "佐藤 花子様の予約詳細を開く",
+    });
+
+    expect(reservationLink).toHaveAttribute("data-timeline-state", "overdue");
+
+    expect(Number.parseFloat(reservationLink.style.width)).toBeCloseTo(
+      42.86,
+      2,
+    );
   });
 });

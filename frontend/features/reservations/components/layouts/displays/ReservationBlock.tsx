@@ -5,24 +5,13 @@ import type { ReservationTimelineState } from "@/features/reservations/utils/res
 type ReservationBlockProps = {
   reservation: Reservation;
 
-  /**
-   * タイムライン左端から予約開始位置までの割合。
-   *
-   * 例：
-   * 表示範囲が17:00〜24:00で、予約開始が18:00なら、
-   * 17:00から18:00までの位置を割合で受け取る。
-   */
+  // タイムライン左端から予約開始位置までの割合。
   leftPercentage: number;
-
-  /**
-   * タイムライン全体に対する予約時間の横幅。
-   *
-   * 例：
-   * 2時間の予約であれば、表示時間全体に対する
-   * 2時間分の割合を受け取る。
-   */
+  // タイムライン全体に対する予約時間の横幅。
   widthPercentage: number;
+
   timelineState: ReservationTimelineState;
+  progressPercentage: number;
 };
 
 const timelineStateClassNames: Record<ReservationTimelineState, string> = {
@@ -49,6 +38,7 @@ export function ReservationBlock({
   leftPercentage,
   widthPercentage,
   timelineState,
+  progressPercentage,
 }: ReservationBlockProps) {
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
@@ -58,6 +48,7 @@ export function ReservationBlock({
       scroll={false}
       aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
       data-timeline-state={timelineState}
+      data-progress-percentage={progressPercentage}
       className={[
         "focus-visible:ring-ring absolute inset-y-1 overflow-hidden rounded-md border px-2 py-1 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none",
         timelineStateClassNames[timelineState],
@@ -67,11 +58,21 @@ export function ReservationBlock({
         width: `${widthPercentage}%`,
       }}
     >
-      <div className="truncate text-sm font-medium">
+      {timelineState === "in_progress" ? (
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 bg-emerald-300/70 transition-[width] duration-500 dark:bg-emerald-700/50"
+          style={{
+            width: `${progressPercentage}%`,
+          }}
+        />
+      ) : null}
+
+      <div className="relative z-10 truncate text-sm font-medium">
         {reservation.reservation_name}
       </div>
 
-      <div className="text-muted-foreground truncate text-xs">
+      <div className="text-muted-foreground relative z-10 truncate text-xs">
         {reservation.guest_count}名{" / "}
         {startTime}〜{endTime}
       </div>
