@@ -221,6 +221,52 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(reservations.first["id"]).to eq(tomorrow_reservation.id)
       expect(reservations.first["reservation_name"]).to eq("明日の予約")
     end
+
+    let!(:canceled_today_reservation) do
+      Reservation.create!(
+        reservation_name: "キャンセル済み予約",
+        reservation_phone_number: "09088887777",
+        starts_at: reservation_time(Time.zone.today, 19),
+        ends_at: reservation_time(Time.zone.today, 21),
+        guest_count: 2,
+        requested_restaurant_master_type: table_type,
+        reservation_status: canceled_status,
+        created_by_staff: staff,
+        updated_by_staff: staff,
+        canceled_at: Time.current
+      )
+    end
+
+    it "state=canceledの場合、指定日のキャンセル済み予約を返す" do
+      get "/api/v1/reservations", params: {
+        date: Time.zone.today.to_s,
+        state: "canceled"
+      }
+
+      expect(response).to have_http_status(:ok)
+
+      reservations =
+        response.parsed_body.dig("data", "reservations")
+
+      expect(reservations.size).to eq(1)
+      expect(reservations.first["id"]).to eq(
+        canceled_today_reservation.id
+      )
+      expect(reservations.first["reservation_name"]).to eq(
+        "キャンセル済み予約"
+      )
+      expect(reservations.first["canceled_at"]).to be_present
+    end
+
+
+    it "未対応のstateを指定した場合は400を返す" do
+      get "/api/v1/reservations", params: {
+        date: Time.zone.today.to_s,
+        state: "unknown"
+      }
+
+      expect(response).to have_http_status(:bad_request)
+    end
   end
 
   describe "GET /api/v1/reservations/:id" do

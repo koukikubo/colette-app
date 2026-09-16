@@ -50,7 +50,9 @@ class Api::V1::ReservationsController < Api::V1::BaseController
         )
         .on_date(target_date)
         .ordered
-        .active
+
+    reservations =
+      apply_reservation_state_filter(reservations)
 
     render_success(
       data: {
@@ -294,5 +296,15 @@ class Api::V1::ReservationsController < Api::V1::BaseController
         },
         code: code
       )
+  end
+
+  def apply_reservation_state_filter(reservations)
+    state = params[:state]
+
+    return reservations.active if state.blank? || state == "active"
+    return reservations.canceled if state == "canceled"
+
+    raise ActionController::BadRequest,
+          "stateはactiveまたはcanceledを指定してください"
   end
 end
