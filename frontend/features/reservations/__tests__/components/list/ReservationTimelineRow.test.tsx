@@ -32,12 +32,22 @@ describe("ReservationTimelineRow", () => {
       name: "山田 太郎様の予約詳細を開く",
     });
 
-    expect(reservationLink).toHaveAttribute(
+    expect(
+      screen.getByRole("button", {
+        name: "山田 太郎様の予約操作を開く",
+      }),
+    ).toBeInTheDocument();
+
+    const reservationBlock = reservationLink.closest(
+      "[data-reservation-block]",
+    );
+
+    expect(reservationBlock).not.toBeNull();
+    expect(reservationBlock).toHaveAttribute(
       "data-timeline-state",
       "in_progress",
     );
-
-    expect(reservationLink).toHaveAttribute("data-progress-percentage", "50");
+    expect(reservationBlock).toHaveAttribute("data-progress-percentage", "50");
   });
 
   it("終了予定を過ぎた未完了予約を現在時刻まで延長する", () => {
@@ -67,11 +77,52 @@ describe("ReservationTimelineRow", () => {
       name: "佐藤 花子様の予約詳細を開く",
     });
 
-    expect(reservationLink).toHaveAttribute("data-timeline-state", "overdue");
-
-    expect(Number.parseFloat(reservationLink.style.width)).toBeCloseTo(
-      42.86,
-      2,
+    const reservationBlock = reservationLink.closest(
+      "[data-reservation-block]",
     );
+    expect(reservationBlock).not.toBeNull();
+    expect(reservationBlock).toHaveAttribute("data-timeline-state", "overdue");
+    expect(
+      Number.parseFloat((reservationBlock as HTMLElement).style.width),
+    ).toBeCloseTo(42.86, 2);
+  });
+
+  it("次の予約が15分以内なら警告を表示する", () => {
+    const overdueReservation = createReservation({
+      id: 31,
+      reservation_name: "佐藤 花子",
+      starts_at: "2026-09-14T18:00:00+09:00",
+      ends_at: "2026-09-14T20:00:00+09:00",
+      completed_at: null,
+      canceled_at: null,
+    });
+
+    const nextReservation = createReservation({
+      id: 32,
+      reservation_name: "鈴木 一郎",
+      starts_at: "2026-09-14T20:10:00+09:00",
+      ends_at: "2026-09-14T22:00:00+09:00",
+      completed_at: null,
+      canceled_at: null,
+    });
+
+    render(
+      <ReservationTimelineRow
+        label="カウンター1"
+        description="C01 / 定員2名"
+        reservations={[overdueReservation, nextReservation]}
+        targetDate="2026-09-14"
+        currentTime={new Date("2026-09-14T20:00:00+09:00")}
+        timelineStartMinutes={17 * 60}
+        timelineEndMinutes={24 * 60}
+        hourLabels={[17 * 60, 18 * 60, 19 * 60, 20 * 60]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "次の予約まで10分",
+      }),
+    ).toBeInTheDocument();
   });
 });

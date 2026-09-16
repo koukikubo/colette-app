@@ -4,6 +4,7 @@ import { ReservationBlock } from "./ReservationBlock";
 import {
   getReservationTimelineState,
   getReservationProgressPercentage,
+  findNextReservationWarning,
 } from "@/features/reservations/utils/reservation-timeline-state";
 import type { ReservationTimelineState } from "@/features/reservations/utils/reservation-timeline-state";
 
@@ -99,6 +100,12 @@ export function ReservationTimelineRow({
             currentTime,
           );
 
+          const nextReservationWarning = findNextReservationWarning(
+            reservation,
+            reservations,
+            currentTime,
+          );
+
           // 表示範囲が17:00〜24:00以外は表示しない。
           if (!position) {
             return null;
@@ -112,6 +119,7 @@ export function ReservationTimelineRow({
               widthPercentage={position.widthPercentage}
               timelineState={timelineState}
               progressPercentage={progressPercentage}
+              nextReservationWarning={nextReservationWarning}
             />
           );
         })}

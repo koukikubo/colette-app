@@ -385,9 +385,14 @@ describe("ReservationListPage", () => {
       name: "佐藤 花子様の予約詳細を開く",
     });
 
+    const reservationBlock = reservationLink.closest(
+      "[data-reservation-block]",
+    );
+
+    expect(reservationBlock).not.toBeNull();
     expect(reservationLink).toHaveTextContent("23:30〜00:30");
 
-    expect(reservationLink).toHaveStyle({
+    expect(reservationBlock).toHaveStyle({
       left: "92.85714285714286%",
       width: "7.142857142857142%",
     });
@@ -454,9 +459,14 @@ describe("ReservationListPage", () => {
       name: "鈴木 一郎様の予約詳細を開く",
     });
 
+    const reservationBlock = reservationLink.closest(
+      "[data-reservation-block]",
+    );
+
+    expect(reservationBlock).not.toBeNull();
     expect(reservationLink).toHaveTextContent("16:30〜18:00");
 
-    expect(reservationLink).toHaveStyle({
+    expect(reservationBlock).toHaveStyle({
       left: "0%",
       width: "14.285714285714285%",
     });

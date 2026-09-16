@@ -1,7 +1,13 @@
 import Link from "next/link";
 import type { Reservation } from "@/features/reservations/types";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
-import type { ReservationTimelineState } from "@/features/reservations/utils/reservation-timeline-state";
+import type {
+  NextReservationWarning,
+  ReservationTimelineState,
+} from "@/features/reservations/utils/reservation-timeline-state";
+import { ReservationWarningDialog } from "./ReservationWarningDialog";
+import { ReservationTimelineActionMenu } from "./ReservationTimelineActionMenu";
+
 type ReservationBlockProps = {
   reservation: Reservation;
 
@@ -12,6 +18,7 @@ type ReservationBlockProps = {
 
   timelineState: ReservationTimelineState;
   progressPercentage: number;
+  nextReservationWarning: NextReservationWarning | null;
 };
 
 const timelineStateClassNames: Record<ReservationTimelineState, string> = {
@@ -39,18 +46,17 @@ export function ReservationBlock({
   widthPercentage,
   timelineState,
   progressPercentage,
+  nextReservationWarning,
 }: ReservationBlockProps) {
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
   return (
-    <Link
-      href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
-      scroll={false}
-      aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
+    <div
+      data-reservation-block
       data-timeline-state={timelineState}
       data-progress-percentage={progressPercentage}
       className={[
-        "focus-visible:ring-ring absolute inset-y-1 overflow-hidden rounded-md border px-2 py-1 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none",
+        "absolute inset-y-1 overflow-hidden rounded-md border transition-colors",
         timelineStateClassNames[timelineState],
       ].join(" ")}
       style={{
@@ -58,24 +64,47 @@ export function ReservationBlock({
         width: `${widthPercentage}%`,
       }}
     >
-      {timelineState === "in_progress" ? (
-        <div
-          aria-hidden="true"
-          className="absolute inset-y-0 left-0 bg-emerald-300/70 transition-[width] duration-500 dark:bg-emerald-700/50"
-          style={{
-            width: `${progressPercentage}%`,
-          }}
-        />
-      ) : null}
+      <Link
+        href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
+        scroll={false}
+        aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
+        className={[
+          "focus-visible:ring-ring absolute inset-0 overflow-hidden rounded-md px-2 py-1 text-left focus-visible:ring-2 focus-visible:outline-none",
+          nextReservationWarning ? "pr-16" : "pr-9",
+        ].join(" ")}
+      >
+        {timelineState === "in_progress" ? (
+          <div
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 bg-emerald-300/70 transition-[width] duration-500 dark:bg-emerald-700/50"
+            style={{
+              width: `${progressPercentage}%`,
+            }}
+          />
+        ) : null}
 
-      <div className="relative z-10 truncate text-sm font-medium">
-        {reservation.reservation_name}
-      </div>
+        <div className="relative z-10 flex items-center gap-1 text-sm font-medium">
+          <span className="truncate">{reservation.reservation_name}</span>
+        </div>
 
-      <div className="text-muted-foreground relative z-10 truncate text-xs">
-        {reservation.guest_count}名{" / "}
-        {startTime}〜{endTime}
+        <div className="text-muted-foreground relative z-10 truncate text-xs">
+          {reservation.guest_count}名{" / "}
+          {startTime}〜{endTime}
+        </div>
+      </Link>
+      <div className="absolute right-1 top-1 z-20 flex items-center gap-1">
+        {nextReservationWarning ? (
+          <ReservationWarningDialog
+            reservationName={reservation.reservation_name}
+            nextReservationId={nextReservationWarning.nextReservationId}
+            minutesUntilNextReservation={
+              nextReservationWarning.minutesUntilNextReservation
+            }
+          />
+        ) : null}
+
+        <ReservationTimelineActionMenu reservation={reservation} />
       </div>
-    </Link>
+    </div>
   );
 }
