@@ -13,10 +13,12 @@ import type { Reservation } from "@/features/reservations/types";
 
 type ReservationTimelineActionMenuProps = {
   reservation: Reservation;
+  onReservationStatusChanged?: () => void;
 };
 
 export function ReservationTimelineActionMenu({
   reservation,
+  onReservationStatusChanged,
 }: ReservationTimelineActionMenuProps) {
   return (
     <Popover>
@@ -37,7 +39,10 @@ export function ReservationTimelineActionMenu({
           <PopoverDescription>予約状態を変更できます。</PopoverDescription>
         </PopoverHeader>
 
-        <ReservationStatusActions reservation={reservation} />
+        <ReservationStatusActions
+          reservation={reservation}
+          onStatusChanged={onReservationStatusChanged}
+        />
       </PopoverContent>
     </Popover>
   );

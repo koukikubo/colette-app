@@ -24,6 +24,7 @@ type ReservationTimelineRowProps = {
   // タイムライン上部の時間目盛りを表示する。
   hourLabels: number[];
   currentTime: Date;
+  onReservationStatusChanged?: () => void;
 };
 
 // 担当する処理：席名と補足情報の表示・予約開始時刻から左位置を計算・予約時間から横幅を計算・計算結果をReservationBlockへ渡す
@@ -36,6 +37,7 @@ export function ReservationTimelineRow({
   timelineEndMinutes,
   hourLabels,
   currentTime,
+  onReservationStatusChanged,
 }: ReservationTimelineRowProps) {
   const timelineDurationMinutes = timelineEndMinutes - timelineStartMinutes;
 
@@ -120,6 +122,7 @@ export function ReservationTimelineRow({
               timelineState={timelineState}
               progressPercentage={progressPercentage}
               nextReservationWarning={nextReservationWarning}
+              onReservationStatusChanged={onReservationStatusChanged}
             />
           );
         })}

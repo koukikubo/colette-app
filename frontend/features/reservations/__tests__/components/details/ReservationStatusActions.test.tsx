@@ -48,6 +48,7 @@ describe("ReservationStatusActions", () => {
 
   it("対応完了ボタンから予約を完了できる", async () => {
     const user = userEvent.setup();
+    const onStatusChanged = vi.fn();
     const reservation = createReservation({
       id: 30,
       lock_version: 2,
@@ -70,7 +71,12 @@ describe("ReservationStatusActions", () => {
       },
     });
 
-    render(<ReservationStatusActions reservation={reservation} />);
+    render(
+      <ReservationStatusActions
+        reservation={reservation}
+        onStatusChanged={onStatusChanged}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: "対応完了" }));
 
@@ -81,6 +87,7 @@ describe("ReservationStatusActions", () => {
     });
 
     await waitFor(() => {
+      expect(onStatusChanged).toHaveBeenCalledOnce();
       expect(mocks.refresh).toHaveBeenCalledOnce();
     });
   });
@@ -112,6 +119,7 @@ describe("ReservationStatusActions", () => {
 
   it("対応完了を取り消して予約確定へ戻せる", async () => {
     const user = userEvent.setup();
+    const onStatusChanged = vi.fn();
     const reservation = createReservation({
       id: 30,
       lock_version: 3,
@@ -138,7 +146,12 @@ describe("ReservationStatusActions", () => {
       },
     });
 
-    render(<ReservationStatusActions reservation={reservation} />);
+    render(
+      <ReservationStatusActions
+        reservation={reservation}
+        onStatusChanged={onStatusChanged}
+      />,
+    );
 
     await user.click(
       screen.getByRole("button", {
@@ -153,6 +166,7 @@ describe("ReservationStatusActions", () => {
     });
 
     await waitFor(() => {
+      expect(onStatusChanged).toHaveBeenCalledOnce();
       expect(mocks.refresh).toHaveBeenCalledOnce();
     });
   });

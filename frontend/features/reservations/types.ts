@@ -175,9 +175,12 @@ export type ReservationStatusActionRequest = {
   };
 };
 
+export type ReservationListState = "active" | "canceled";
+
 // 予約一覧APIへ渡す検索条件
 export type ReservationListParams = {
   date?: string;
+  state?: ReservationListState;
 };
 
 // 予約一覧APIのdata部分

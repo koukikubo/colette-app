@@ -4,27 +4,57 @@ import { describe, expect, it, vi } from "vitest";
 import { ReservationListPage } from "../../../components/layouts/displays/ReservationListPage";
 import { ApiClientError } from "@/lib/api/api-client";
 import { createReservation } from "../../fixtures/reservation-fixtures";
+import { Reservation } from "@/features/reservations/types";
+import userEvent from "@testing-library/user-event";
 
 const mocks = vi.hoisted(() => ({
   fetchReservations: vi.fn(),
   fetchRestaurantMasters: vi.fn(),
+  restoreReservation: vi.fn(),
+  refresh: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: mocks.refresh,
+  }),
 }));
 
 vi.mock("@/features/reservations/api/reservation_api", () => ({
   fetchReservations: mocks.fetchReservations,
+  restoreReservation: mocks.restoreReservation,
 }));
 
 vi.mock("@/features/restaurant-masters/api/restaurant-masters-api", () => ({
   fetchRestaurantMasters: mocks.fetchRestaurantMasters,
 }));
 
-describe("ReservationListPage", () => {
-  it("指定日の予約情報を取得し、予約がない日のサマリーを表示する", async () => {
-    mocks.fetchReservations.mockResolvedValue({
+function mockReservationLists({
+  active = [],
+  canceled = [],
+}: {
+  active?: Reservation[];
+  canceled?: Reservation[];
+}) {
+  mocks.fetchReservations
+    .mockResolvedValueOnce({
       status: "success",
       data: {
-        reservations: [],
+        reservations: active,
       },
+    })
+    .mockResolvedValueOnce({
+      status: "success",
+      data: {
+        reservations: canceled,
+      },
+    });
+}
+
+describe("ReservationListPage", () => {
+  it("指定日の予約情報を取得し、予約がない日のサマリーを表示する", async () => {
+    mockReservationLists({
+      active: [],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -47,12 +77,25 @@ describe("ReservationListPage", () => {
     expect(within(summary).getByText("予約件数")).toBeInTheDocument();
     expect(within(summary).getByText("来店予定人数")).toBeInTheDocument();
     expect(within(summary).getByText("席未割当")).toBeInTheDocument();
+    expect(within(summary).getByText("キャンセル済み")).toBeInTheDocument();
 
-    expect(within(summary).getAllByText("0件")).toHaveLength(2);
+    expect(within(summary).getAllByText("0件")).toHaveLength(3);
     expect(within(summary).getByText("0名")).toBeInTheDocument();
+    expect(mocks.fetchReservations).toHaveBeenNthCalledWith(
+      1,
+      {
+        date: "2026-09-08",
+        state: "active",
+      },
+      expect.any(AbortSignal),
+    );
 
-    expect(mocks.fetchReservations).toHaveBeenCalledWith(
-      { date: "2026-09-08" },
+    expect(mocks.fetchReservations).toHaveBeenNthCalledWith(
+      2,
+      {
+        date: "2026-09-08",
+        state: "canceled",
+      },
       expect.any(AbortSignal),
     );
 
@@ -80,7 +123,10 @@ describe("ReservationListPage", () => {
     expect(alert).toHaveTextContent("予約情報を取得できませんでした。");
 
     expect(mocks.fetchReservations).toHaveBeenCalledWith(
-      { date: "2026-09-08" },
+      {
+        date: "2026-09-08",
+        state: "active",
+      },
       expect.any(AbortSignal),
     );
   });
@@ -121,12 +167,19 @@ describe("ReservationListPage", () => {
       restaurant_master_ids: [],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [assignedReservation, unassignedReservation],
-      },
-    });
+    mocks.fetchReservations
+      .mockResolvedValueOnce({
+        status: "success",
+        data: {
+          reservations: [assignedReservation, unassignedReservation],
+        },
+      })
+      .mockResolvedValueOnce({
+        status: "success",
+        data: {
+          reservations: [],
+        },
+      });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
       status: "success",
@@ -141,9 +194,20 @@ describe("ReservationListPage", () => {
       name: "表示日の予約サマリー",
     });
 
-    expect(within(summary).getByText("2件")).toBeInTheDocument();
+    const reservationCountLabel = within(summary).getByText("予約件数");
+    const reservationCountCard = reservationCountLabel.closest("div");
+
+    expect(reservationCountCard).not.toBeNull();
+
+    expect(within(reservationCountCard!).getByText("2件")).toBeInTheDocument();
     expect(within(summary).getByText("5名")).toBeInTheDocument();
-    expect(within(summary).getByText("1件")).toBeInTheDocument();
+
+    const unassignedLabel = within(summary).getByText("席未割当");
+    const unassignedCard = unassignedLabel.closest("div");
+
+    expect(unassignedCard).not.toBeNull();
+
+    expect(within(unassignedCard!).getByText("1件")).toBeInTheDocument();
   });
 
   it("席未割当予約を要対応一覧に表示する", async () => {
@@ -157,11 +221,8 @@ describe("ReservationListPage", () => {
       restaurant_masters: [],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [reservation],
-      },
+    mockReservationLists({
+      active: [reservation],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -238,11 +299,8 @@ describe("ReservationListPage", () => {
       ],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [reservation],
-      },
+    mockReservationLists({
+      active: [reservation],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -297,11 +355,8 @@ describe("ReservationListPage", () => {
       updated_at: "2026-09-01T10:00:00+09:00",
     };
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [],
-      },
+    mockReservationLists({
+      active: [],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -365,11 +420,8 @@ describe("ReservationListPage", () => {
       ],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [reservation],
-      },
+    mockReservationLists({
+      active: [reservation],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -439,11 +491,8 @@ describe("ReservationListPage", () => {
       ],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [reservation],
-      },
+    mockReservationLists({
+      active: [reservation],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -532,12 +581,19 @@ describe("ReservationListPage", () => {
       ],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [beforeTimelineReservation, afterTimelineReservation],
-      },
-    });
+    mocks.fetchReservations
+      .mockResolvedValueOnce({
+        status: "success",
+        data: {
+          reservations: [beforeTimelineReservation, afterTimelineReservation],
+        },
+      })
+      .mockResolvedValueOnce({
+        status: "success",
+        data: {
+          reservations: [],
+        },
+      });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
       status: "success",
@@ -562,11 +618,16 @@ describe("ReservationListPage", () => {
       }),
     ).not.toBeInTheDocument();
 
-    const summary = screen.getByRole("region", {
+    const summary = await screen.findByRole("region", {
       name: "表示日の予約サマリー",
     });
 
-    expect(within(summary).getByText("2件")).toBeInTheDocument();
+    const reservationCountLabel = within(summary).getByText("予約件数");
+    const reservationCountCard = reservationCountLabel.closest("div");
+
+    expect(reservationCountCard).not.toBeNull();
+
+    expect(within(reservationCountCard!).getByText("2件")).toBeInTheDocument();
   });
 
   it("複数の席に割り当てられた予約を、それぞれの席行に表示する", async () => {
@@ -628,11 +689,8 @@ describe("ReservationListPage", () => {
       ],
     });
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [reservation],
-      },
+    mockReservationLists({
+      active: [reservation],
     });
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -717,11 +775,8 @@ describe("ReservationListPage", () => {
       capacity: 4,
     };
 
-    mocks.fetchReservations.mockResolvedValue({
-      status: "success",
-      data: {
-        reservations: [],
-      },
+    mockReservationLists({
+      active: [],
     });
 
     // 意図的に表示順とは異なる順番で返す
@@ -741,5 +796,144 @@ describe("ReservationListPage", () => {
       .map((element) => element.textContent);
 
     expect(seatNames).toEqual(["カウンター1", "カウンター2", "テーブル1"]);
+  });
+
+  it("キャンセル済み予約を一覧に表示する", async () => {
+    const user = userEvent.setup();
+    const canceledReservation = createReservation({
+      id: 30,
+      reservation_name: "山田 太郎",
+      guest_count: 2,
+      starts_at: "2026-09-08T18:00:00+09:00",
+      ends_at: "2026-09-08T20:00:00+09:00",
+      canceled_at: "2026-09-07T12:00:00+09:00",
+    });
+
+    mockReservationLists({
+      canceled: [canceledReservation],
+    });
+
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      status: "success",
+      data: {
+        restaurant_masters: [],
+      },
+    });
+
+    render(<ReservationListPage targetDate="2026-09-08" />);
+
+    const summary = await screen.findByRole("region", {
+      name: "表示日の予約サマリー",
+    });
+
+    const canceledLabel = within(summary).getByText("キャンセル済み");
+    const canceledCard = canceledLabel.closest("div");
+
+    expect(canceledCard).not.toBeNull();
+
+    expect(within(canceledCard!).getByText("1件")).toBeInTheDocument();
+
+    const drawerTrigger = await screen.findByRole("button", {
+      name: "キャンセル済み予約1件を表示",
+    });
+
+    await user.click(drawerTrigger);
+
+    const canceledSection = await screen.findByRole("region", {
+      name: "キャンセル済み予約",
+    });
+
+    expect(
+      within(canceledSection).getByRole("link", {
+        name: "山田 太郎様の予約詳細を開く",
+      }),
+    ).toHaveAttribute("href", "/reservations/30");
+
+    expect(within(canceledSection).getByText("2名")).toBeInTheDocument();
+
+    expect(
+      within(canceledSection).getByText("18:00〜20:00"),
+    ).toBeInTheDocument();
+
+    expect(
+      within(canceledSection).getByRole("button", {
+        name: "予約を復元",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("キャンセル済み予約を復元すると一覧を再取得する", async () => {
+    const user = userEvent.setup();
+
+    const canceledReservation = createReservation({
+      id: 30,
+      reservation_name: "山田 太郎",
+      guest_count: 2,
+      starts_at: "2026-09-08T18:00:00+09:00",
+      ends_at: "2026-09-08T20:00:00+09:00",
+      canceled_at: "2026-09-07T12:00:00+09:00",
+    });
+
+    const restoredReservation = {
+      ...canceledReservation,
+      canceled_at: null,
+      lock_version: canceledReservation.lock_version + 1,
+    };
+
+    // 初回表示時のAPI結果
+    mockReservationLists({
+      canceled: [canceledReservation],
+    });
+
+    // 復元後の再取得結果
+    mockReservationLists({
+      active: [restoredReservation],
+    });
+
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      status: "success",
+      data: {
+        restaurant_masters: [],
+      },
+    });
+
+    mocks.restoreReservation.mockResolvedValue({
+      status: "success",
+      data: {
+        reservation: restoredReservation,
+      },
+    });
+
+    render(<ReservationListPage targetDate="2026-09-08" />);
+
+    const drawerTrigger = await screen.findByRole("button", {
+      name: "キャンセル済み予約1件を表示",
+    });
+
+    await user.click(drawerTrigger);
+
+    const restoreButton = await screen.findByRole("button", {
+      name: "予約を復元",
+    });
+
+    await user.click(restoreButton);
+
+    expect(mocks.restoreReservation).toHaveBeenCalledWith(30, {
+      reservation: {
+        lock_version: canceledReservation.lock_version,
+      },
+    });
+
+    const updatedDrawerTrigger = await screen.findByRole("button", {
+      name: "キャンセル済み予約0件を表示",
+    });
+
+    expect(updatedDrawerTrigger).toHaveTextContent("0件");
+
+    await user.click(updatedDrawerTrigger);
+
+    expect(
+      await screen.findByText("キャンセル済みの予約はありません。"),
+    ).toBeInTheDocument();
   });
 });

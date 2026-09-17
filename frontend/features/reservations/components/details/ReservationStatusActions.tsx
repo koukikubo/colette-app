@@ -34,10 +34,12 @@ import type { Reservation } from "../../types";
 
 type ReservationStatusActionsProps = {
   reservation: Reservation;
+  onStatusChanged?: () => void;
 };
 
 export function ReservationStatusActions({
   reservation,
+  onStatusChanged,
 }: ReservationStatusActionsProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,6 +64,7 @@ export function ReservationStatusActions({
         },
       });
 
+      onStatusChanged?.();
       router.refresh();
     } catch (error) {
       setErrorMessage(
@@ -89,6 +92,7 @@ export function ReservationStatusActions({
         },
       });
 
+      onStatusChanged?.();
       router.refresh();
     } catch (error) {
       setErrorMessage(
@@ -117,6 +121,7 @@ export function ReservationStatusActions({
       });
 
       setIsCancelDialogOpen(false);
+      onStatusChanged?.();
       router.refresh();
     } catch (error) {
       setErrorMessage(
@@ -144,6 +149,7 @@ export function ReservationStatusActions({
         },
       });
 
+      onStatusChanged?.();
       router.refresh();
     } catch (error) {
       setErrorMessage(

@@ -18,6 +18,10 @@ function buildReservationsPath(params: ReservationListParams = {}): string {
     searchParams.set("date", params.date);
   }
 
+  if (params.state) {
+    searchParams.set("state", params.state);
+  }
+
   const queryString = searchParams.toString();
 
   return queryString

@@ -22,6 +22,7 @@ type ReservationTimelineProps = {
   //現在表示している対象日。
   targetDate: string;
   currentTime: Date;
+  onReservationStatusChanged?: () => void;
 };
 
 /**
@@ -36,6 +37,7 @@ export function ReservationTimeline({
   tableRows,
   targetDate,
   currentTime,
+  onReservationStatusChanged,
 }: ReservationTimelineProps) {
   const timelineStartMinutes = TIMELINE_START_HOUR * 60;
   const timelineEndMinutes = TIMELINE_END_HOUR * 60;
@@ -96,6 +98,7 @@ export function ReservationTimeline({
               timelineStartMinutes={timelineStartMinutes}
               timelineEndMinutes={timelineEndMinutes}
               hourLabels={hourLabels}
+              onReservationStatusChanged={onReservationStatusChanged}
             />
           ))}
 

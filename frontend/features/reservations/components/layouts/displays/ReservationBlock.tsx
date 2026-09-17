@@ -19,6 +19,7 @@ type ReservationBlockProps = {
   timelineState: ReservationTimelineState;
   progressPercentage: number;
   nextReservationWarning: NextReservationWarning | null;
+  onReservationStatusChanged?: () => void;
 };
 
 const timelineStateClassNames: Record<ReservationTimelineState, string> = {
@@ -47,6 +48,7 @@ export function ReservationBlock({
   timelineState,
   progressPercentage,
   nextReservationWarning,
+  onReservationStatusChanged,
 }: ReservationBlockProps) {
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
@@ -103,7 +105,10 @@ export function ReservationBlock({
           />
         ) : null}
 
-        <ReservationTimelineActionMenu reservation={reservation} />
+        <ReservationTimelineActionMenu
+          reservation={reservation}
+          onReservationStatusChanged={onReservationStatusChanged}
+        />
       </div>
     </div>
   );
