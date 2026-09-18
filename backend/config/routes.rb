@@ -36,6 +36,10 @@ Rails.application.routes.draw do
           patch :hidden
           patch :restore
         end
+
+        resources :reservations,
+            only: :index,
+            controller: "customer_reservations"
       end
 
       resources :restaurant_masters, only: %i[index show create update]
