@@ -24,6 +24,7 @@ import {
   formatCustomerPostalCode,
 } from "../../utils/customer-display";
 import { CustomerFormDialog } from "../dialogs/CustomerFormDialog";
+import { CustomerReservationHistory } from "./CustomerReservationHistory";
 
 type CustomerDetailPageClientProps = {
   customerId: number;
@@ -476,6 +477,8 @@ export function CustomerDetailPageClient({
           </DetailSection>
         </CardContent>
       </Card>
+
+      <CustomerReservationHistory customerId={customer.id} />
 
       {editDialogOpen && (
         <CustomerFormDialog

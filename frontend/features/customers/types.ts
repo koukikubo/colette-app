@@ -1,4 +1,5 @@
 import { Pagination } from "@/lib/api/pagination";
+import type { Reservation } from "@/features/reservations/types";
 
 // 個人・法人フラグ
 export const CUSTOMER_KINDS = ["individual", "corporate"] as const;
@@ -105,6 +106,16 @@ export type CustomerData = {
   customer: Customer;
 };
 
+export type CustomerReservationListParams = {
+  page?: number;
+  per_page?: number;
+};
+
+export type CustomerReservationListData = {
+  reservations: Reservation[];
+  pagination: Pagination;
+};
+
 export type ApiSuccessResponse<T> = {
   status: "success";
   data: T;
@@ -119,3 +130,6 @@ export type ApiErrorResponse = {
 export type CustomerListResponse = ApiSuccessResponse<CustomerListData>;
 
 export type CustomerResponse = ApiSuccessResponse<CustomerData>;
+
+export type CustomerReservationListResponse =
+  ApiSuccessResponse<CustomerReservationListData>;
