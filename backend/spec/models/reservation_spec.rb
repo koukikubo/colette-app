@@ -304,6 +304,61 @@ RSpec.describe Reservation, type: :model do
         reservation.errors.details[:reservation_status]
       ).to include(error: :invalid_category)
     end
+
+    it "completed_atだけが設定されている場合は有効である" do
+      reservation = described_class.new(
+        valid_attributes.merge(
+          completed_at: Time.current,
+          canceled_at: nil
+        )
+      )
+
+      expect(reservation).to be_valid
+    end
+
+    it "canceled_atだけが設定されている場合は有効である" do
+      reservation = described_class.new(
+        valid_attributes.merge(
+          completed_at: nil,
+          canceled_at: Time.current
+        )
+      )
+
+      expect(reservation).to be_valid
+    end
+
+    it "completed_atとcanceled_atを同時に設定できない" do
+      reservation = described_class.new(
+        valid_attributes.merge(
+          completed_at: Time.current,
+          canceled_at: Time.current
+        )
+      )
+
+      expect(reservation).to be_invalid
+
+      expect(
+        reservation.errors[:base]
+      ).to include(
+        "対応完了とキャンセルは同時に設定できません"
+      )
+    end
+  end
+
+  describe "database constraints" do
+    it "バリデーションを通さなくてもcompleted_atとcanceled_atの同時設定を拒否する" do
+      reservation = create(
+        :reservation,
+        valid_attributes
+      )
+
+      expect do
+        reservation.update_columns(
+          completed_at: Time.current,
+          canceled_at: Time.current
+        )
+      end.to raise_error(ActiveRecord::StatementInvalid)
+    end
   end
 
   describe "同一顧客の時間重複バリデーション" do

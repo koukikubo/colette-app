@@ -66,6 +66,7 @@ module Api
           internal_memo: resource.internal_memo,
 
           details_confirmed_at: resource.details_confirmed_at,
+          completed_at: resource.completed_at,
           canceled_at: resource.canceled_at,
 
           # 同時更新制御

@@ -39,6 +39,10 @@ FactoryBot.define do
       canceled_at { Time.current }
     end
 
+    trait :completed do
+      completed_at { Time.current }
+    end
+
     trait :details_confirmed do
       details_confirmed_at { Time.current }
     end

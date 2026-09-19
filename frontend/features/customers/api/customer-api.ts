@@ -5,6 +5,8 @@ import type {
   CreateCustomerRequest,
   CustomerListParams,
   CustomerListResponse,
+  CustomerReservationListParams,
+  CustomerReservationListResponse,
   CustomerResponse,
   UpdateCustomerRequest,
 } from "../types";
@@ -52,12 +54,50 @@ function buildCustomerPath(id: number) {
 }
 
 /**
+ * 顧客予約履歴APIのURLを生成する。
+ */
+function buildCustomerReservationsPath(
+  customerId: number,
+  params: CustomerReservationListParams = {},
+) {
+  const searchParams = new URLSearchParams();
+
+  if (params.page !== undefined) {
+    searchParams.set("page", String(params.page));
+  }
+
+  if (params.per_page !== undefined) {
+    searchParams.set("per_page", String(params.per_page));
+  }
+
+  const path = `${buildCustomerPath(customerId)}/reservations`;
+  const queryString = searchParams.toString();
+
+  return queryString ? `${path}?${queryString}` : path;
+}
+
+/**
  * 顧客一覧を取得する。
  */
 export function fetchCustomers(params: CustomerListParams = {}) {
   return apiFetch<CustomerListResponse>(buildCustomersPath(params), {
     cache: "no-store",
   });
+}
+
+/**
+ * 指定した顧客の予約履歴を取得する。
+ */
+export function fetchCustomerReservations(
+  customerId: number,
+  params: CustomerReservationListParams = {},
+) {
+  return apiFetch<CustomerReservationListResponse>(
+    buildCustomerReservationsPath(customerId, params),
+    {
+      cache: "no-store",
+    },
+  );
 }
 
 /**

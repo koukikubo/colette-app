@@ -20,6 +20,12 @@ vi.mock("../components/dialogs/CustomerFormDialog", () => ({
     open ? <div role="dialog">顧客編集ダイアログ</div> : null,
 }));
 
+vi.mock("../components/detail/CustomerReservationHistory", () => ({
+  CustomerReservationHistory: ({ customerId }: { customerId: number }) => (
+    <section aria-label="予約履歴">顧客{customerId}の予約履歴</section>
+  ),
+}));
+
 function createCustomer(overrides: Partial<Customer> = {}): Customer {
   return {
     id: 10,
@@ -73,6 +79,11 @@ describe("CustomerDetailPageClient", () => {
       screen.getByRole("link", { name: /顧客一覧へ戻る/ }),
     ).toHaveAttribute("href", "/customers");
     expect(mocks.fetchCustomer).toHaveBeenCalledWith(10);
+    expect(
+      screen.getByRole("region", {
+        name: "予約履歴",
+      }),
+    ).toHaveTextContent("顧客10の予約履歴");
   });
 
   it("法人顧客の場合は法人情報を表示する", async () => {

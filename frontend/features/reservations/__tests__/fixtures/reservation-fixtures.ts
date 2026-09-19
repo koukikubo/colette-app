@@ -46,6 +46,7 @@ export function createReservation(
     internal_memo: null,
 
     details_confirmed_at: null,
+    completed_at: null,
     canceled_at: null,
     lock_version: 0,
 
