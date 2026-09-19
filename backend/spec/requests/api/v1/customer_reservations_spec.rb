@@ -225,7 +225,7 @@ RSpec.describe "Api::V1::CustomerReservations", type: :request do
 
       expect(
         reservations.map { |reservation| reservation["id"] }
-      ).to eq([older_reservation.id])
+      ).to eq([ older_reservation.id ])
 
       expect(pagination).to eq(
         {

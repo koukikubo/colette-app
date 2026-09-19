@@ -86,7 +86,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
     t.index ["canceled_at"], name: "index_reservations_on_canceled_at"
-    t.index ["completed_at"], name: "index_reservations_on_completed_at"
+    t.index [ "completed_at" ], name: "index_reservations_on_completed_at"
     t.index ["created_by_staff_id"], name: "index_reservations_on_created_by_staff_id"
     t.index ["customer_id"], name: "index_reservations_on_customer_id"
     t.index ["menu_type_id"], name: "index_reservations_on_menu_type_id"
