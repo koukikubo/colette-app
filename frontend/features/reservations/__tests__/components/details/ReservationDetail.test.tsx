@@ -57,11 +57,6 @@ describe("ReservationDetail", () => {
     render(
       <ReservationDetail
         reservation={createReservation({
-          reservation_status: {
-            id: 3,
-            code: "completed",
-            label: "対応完了",
-          },
           completed_at: "2026-09-12T20:30:00+09:00",
         })}
       />,

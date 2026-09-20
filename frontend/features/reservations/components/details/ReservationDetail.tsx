@@ -111,9 +111,12 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
   const reservationDate = formatReservationDateTimeLocal(
     reservation.starts_at,
   ).slice(0, 10);
+  const isCompleted = reservation.completed_at !== null;
   const isCanceled = reservation.canceled_at !== null;
   const statusLabel = isCanceled
     ? "キャンセル"
+    : isCompleted
+    ? "対応完了"
     : (reservation.reservation_status?.label ?? "状況不明");
   const totalTableCapacity = reservation.restaurant_masters.reduce(
     (total, restaurantMaster) => total + restaurantMaster.capacity,

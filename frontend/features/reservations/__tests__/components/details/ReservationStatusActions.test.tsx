@@ -60,11 +60,6 @@ describe("ReservationStatusActions", () => {
       data: {
         reservation: {
           ...reservation,
-          reservation_status: {
-            id: 3,
-            code: "completed",
-            label: "対応完了",
-          },
           completed_at: "2026-09-12T20:30:00+09:00",
           lock_version: 3,
         },
@@ -96,11 +91,6 @@ describe("ReservationStatusActions", () => {
     render(
       <ReservationStatusActions
         reservation={createReservation({
-          reservation_status: {
-            id: 3,
-            code: "completed",
-            label: "対応完了",
-          },
           completed_at: "2026-09-12T20:30:00+09:00",
         })}
       />,
@@ -117,17 +107,12 @@ describe("ReservationStatusActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("対応完了を取り消して予約確定へ戻せる", async () => {
+  it("予約状態を維持して対応完了を取り消せる", async () => {
     const user = userEvent.setup();
     const onStatusChanged = vi.fn();
     const reservation = createReservation({
       id: 30,
       lock_version: 3,
-      reservation_status: {
-        id: 3,
-        code: "completed",
-        label: "対応完了",
-      },
       completed_at: "2026-09-12T20:30:00+09:00",
     });
 
@@ -230,11 +215,6 @@ describe("ReservationStatusActions", () => {
     render(
       <ReservationStatusActions
         reservation={createReservation({
-          reservation_status: {
-            id: 4,
-            code: "canceled",
-            label: "取消",
-          },
           completed_at: null,
           canceled_at: "2026-09-12T18:00:00+09:00",
         })}
@@ -259,11 +239,6 @@ describe("ReservationStatusActions", () => {
     const reservation = createReservation({
       id: 30,
       lock_version: 3,
-      reservation_status: {
-        id: 4,
-        code: "canceled",
-        label: "取消",
-      },
       completed_at: null,
       canceled_at: "2026-09-12T18:00:00+09:00",
     });
