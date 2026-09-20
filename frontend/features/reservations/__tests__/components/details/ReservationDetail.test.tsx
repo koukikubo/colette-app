@@ -1,8 +1,14 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ReservationDetail } from "../../../components/details/ReservationDetail";
 import { createReservation } from "../../fixtures/reservation-fixtures";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}));
 
 describe("ReservationDetail", () => {
   it("予約の基本情報と遷移リンクを表示する", () => {
@@ -21,6 +27,9 @@ describe("ReservationDetail", () => {
       "href",
       "/reservations/30/edit",
     );
+    expect(
+      screen.getByRole("button", { name: "対応完了" }),
+    ).toBeInTheDocument();
   });
 
   it("キャンセル済みなら予約状況よりキャンセル表示を優先する", () => {
@@ -33,11 +42,29 @@ describe("ReservationDetail", () => {
     );
 
     expect(screen.getAllByText("キャンセル")).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: "対応完了" }),
+    ).not.toBeInTheDocument();
   });
 
   it("任意情報が未登録なら代替文言を表示する", () => {
     render(<ReservationDetail reservation={createReservation()} />);
     expect(screen.getAllByText("登録なし").length).toBeGreaterThan(0);
     expect(screen.getAllByText("未割り当て")).toHaveLength(2);
+  });
+
+  it("対応完了済みなら対応完了ボタンを表示しない", () => {
+    render(
+      <ReservationDetail
+        reservation={createReservation({
+          completed_at: "2026-09-12T20:30:00+09:00",
+        })}
+      />,
+    );
+
+    expect(screen.getAllByText("対応完了")).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: "対応完了" }),
+    ).not.toBeInTheDocument();
   });
 });

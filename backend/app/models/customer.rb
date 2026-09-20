@@ -19,9 +19,12 @@ class Customer < ApplicationRecord
               foreign_key: :updated_by_staff_id,
               inverse_of: :updated_customers
 
+  has_many :reservations,
+              inverse_of: :customer
+
   validates :customer_kind,
-            presence: true,
-            inclusion: { in: CUSTOMER_KINDS }
+              presence: true,
+              inclusion: { in: CUSTOMER_KINDS }
 
   validates :name, :kana,
             presence: true,

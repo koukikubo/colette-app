@@ -13,19 +13,26 @@ import {
 } from "@/features/reservations/utils/reservation-table-rows";
 import { ReservationTimeline } from "./ReservationTimeline";
 import { UnassignedReservationList } from "./UnassignedReservationList";
+import { useCurrentTime } from "@/features/reservations/hooks/useCurrentTime";
+import { CanceledReservationDrawer } from "./CanceledReservationDrawer";
 
 type ReservationListPageProps = {
   targetDate: string;
 };
 
 export function ReservationListPage({ targetDate }: ReservationListPageProps) {
+  const currentTime = useCurrentTime();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [restaurantMasters, setRestaurantMasters] = useState<
     RestaurantMaster[]
   >([]);
+  const [canceledReservations, setCanceledReservations] = useState<
+    Reservation[]
+  >([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -35,18 +42,30 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
       setErrorMessage(null);
 
       try {
-        const [reservationsResponse, restaurantMastersResponse] =
-          await Promise.all([
-            fetchReservations(
-              {
-                date: targetDate,
-              },
-              controller.signal,
-            ),
-            fetchRestaurantMasters(controller.signal),
-          ]);
+        const [
+          reservationsResponse,
+          canceledReservationsResponse,
+          restaurantMastersResponse,
+        ] = await Promise.all([
+          fetchReservations(
+            {
+              date: targetDate,
+              state: "active",
+            },
+            controller.signal,
+          ),
+          fetchReservations(
+            {
+              date: targetDate,
+              state: "canceled",
+            },
+            controller.signal,
+          ),
+          fetchRestaurantMasters(controller.signal),
+        ]);
 
         setReservations(reservationsResponse.data.reservations);
+        setCanceledReservations(canceledReservationsResponse.data.reservations);
         setRestaurantMasters(restaurantMastersResponse.data.restaurant_masters);
       } catch (error) {
         if (controller.signal.aborted) {
@@ -70,7 +89,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
     return () => {
       controller.abort();
     };
-  }, [targetDate]);
+  }, [targetDate, reloadKey]);
 
   const tableRows = useMemo(
     () => buildReservationTableRows(restaurantMasters, reservations),
@@ -121,7 +140,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
           表示日の予約サマリー
         </h2>
 
-        <dl className="grid gap-3 sm:grid-cols-3">
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-lg border bg-card p-4">
             <dt className="text-sm text-muted-foreground">予約件数</dt>
             <dd className="mt-1 text-2xl font-semibold">
@@ -140,12 +159,41 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
               {unassignedReservationCount}件
             </dd>
           </div>
+
+          <div
+            className="
+            group relative rounded-lg border bg-card p-4 pr-12
+            transition-[transform,box-shadow,background-color,border-color]
+            hover:-translate-y-0.5 hover:border-foreground/20
+            hover:bg-accent/40 hover:shadow-sm
+            active:translate-y-0 active:shadow-none
+            focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2
+            "
+          >
+            <dt className="text-sm text-muted-foreground">キャンセル済み</dt>
+
+            <dd className="mt-1">
+              <CanceledReservationDrawer
+                reservations={canceledReservations}
+                onReservationStatusChanged={() => {
+                  setReloadKey((current) => current + 1);
+                }}
+              />
+            </dd>
+          </div>
         </dl>
       </section>
 
       <UnassignedReservationList reservations={unassignedReservations} />
 
-      <ReservationTimeline tableRows={tableRows} targetDate={targetDate} />
+      <ReservationTimeline
+        tableRows={tableRows}
+        targetDate={targetDate}
+        currentTime={currentTime}
+        onReservationStatusChanged={() => {
+          setReloadKey((current) => current + 1);
+        }}
+      />
     </div>
   );
 }

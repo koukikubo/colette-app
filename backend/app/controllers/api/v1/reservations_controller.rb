@@ -10,7 +10,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   rescue_from ActiveRecord::ExclusionViolation,
               with: :render_customer_overlap_exclusion_error
 
-  before_action :set_reservation, only: %i[show update cancel restore]
+  before_action :set_reservation, only: %i[show update cancel restore complete reopen]
 
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
@@ -50,7 +50,9 @@ class Api::V1::ReservationsController < Api::V1::BaseController
         )
         .on_date(target_date)
         .ordered
-        .active
+
+    reservations =
+      apply_reservation_state_filter(reservations)
 
     render_success(
       data: {
@@ -87,8 +89,62 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     render_reservation(reservation)
   end
 
+  def complete
+    @reservation.lock_version = required_lock_version
+
+    if @reservation.completed_at.present?
+      return render_error(
+        message: "この予約はすでに対応完了済みです。",
+        status: :unprocessable_content
+      )
+    end
+
+    if @reservation.canceled_at.present?
+      return render_error(
+        message: "キャンセル済みの予約は対応完了にできません。",
+        status: :unprocessable_content
+      )
+    end
+
+    @reservation.completed_at = Time.current
+    @reservation.updated_by_staff = current_staff
+
+    if @reservation.save
+      render_reservation(@reservation)
+    else
+      render_validation_error(@reservation)
+    end
+  end
+
+  def reopen
+    @reservation.lock_version = required_lock_version
+
+    if @reservation.completed_at.nil?
+      return render_error(
+        message: "この予約は対応完了済みではありません。",
+        status: :unprocessable_content
+      )
+    end
+
+    @reservation.completed_at = nil
+    @reservation.updated_by_staff = current_staff
+
+    if @reservation.save
+      render_reservation(@reservation)
+    else
+      render_validation_error(@reservation)
+    end
+  end
+
   def cancel
     @reservation.lock_version = required_lock_version
+
+    if @reservation.completed_at.present?
+      return render_error(
+        message: "対応完了済みの予約はキャンセルできません。",
+        status: :unprocessable_content
+      )
+    end
 
     if @reservation.canceled_at.present?
       return render_error(
@@ -189,7 +245,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
         *RESERVATION_BASE_ATTRIBUTES,
         :reservation_status_id,
         :details_confirmed_at,
-        :canceled_at,
         :lock_version,
         restaurant_master_ids: []
       )
@@ -217,5 +272,15 @@ class Api::V1::ReservationsController < Api::V1::BaseController
 
   def required_lock_version
     params.require(:reservation).require(:lock_version)
+  end
+
+  def apply_reservation_state_filter(reservations)
+    state = params[:state]
+
+    return reservations.active if state.blank? || state == "active"
+    return reservations.canceled if state == "canceled"
+
+    raise ActionController::BadRequest,
+          "stateはactiveまたはcanceledを指定してください"
   end
 end

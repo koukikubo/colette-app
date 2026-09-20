@@ -1,6 +1,12 @@
 import type { Reservation } from "@/features/reservations/types";
 
 import { ReservationBlock } from "./ReservationBlock";
+import {
+  getReservationTimelineState,
+  getReservationProgressPercentage,
+  findNextReservationWarning,
+} from "@/features/reservations/utils/reservation-timeline-state";
+import type { ReservationTimelineState } from "@/features/reservations/utils/reservation-timeline-state";
 
 type ReservationTimelineRowProps = {
   // 行の左側に表示する名称。
@@ -17,6 +23,8 @@ type ReservationTimelineRowProps = {
   timelineEndMinutes: number;
   // タイムライン上部の時間目盛りを表示する。
   hourLabels: number[];
+  currentTime: Date;
+  onReservationStatusChanged?: () => void;
 };
 
 // 担当する処理：席名と補足情報の表示・予約開始時刻から左位置を計算・予約時間から横幅を計算・計算結果をReservationBlockへ渡す
@@ -28,6 +36,8 @@ export function ReservationTimelineRow({
   timelineStartMinutes,
   timelineEndMinutes,
   hourLabels,
+  currentTime,
+  onReservationStatusChanged,
 }: ReservationTimelineRowProps) {
   const timelineDurationMinutes = timelineEndMinutes - timelineStartMinutes;
 
@@ -73,12 +83,30 @@ export function ReservationTimelineRow({
         })}
 
         {reservations.map((reservation) => {
+          const timelineState = getReservationTimelineState(
+            reservation,
+            currentTime,
+          );
+
           const position = calculateReservationPosition({
             reservation,
             targetDate,
+            currentTime,
+            timelineState,
             timelineStartMinutes,
             timelineEndMinutes,
           });
+
+          const progressPercentage = getReservationProgressPercentage(
+            reservation,
+            currentTime,
+          );
+
+          const nextReservationWarning = findNextReservationWarning(
+            reservation,
+            reservations,
+            currentTime,
+          );
 
           // 表示範囲が17:00〜24:00以外は表示しない。
           if (!position) {
@@ -91,6 +119,10 @@ export function ReservationTimelineRow({
               reservation={reservation}
               leftPercentage={position.leftPercentage}
               widthPercentage={position.widthPercentage}
+              timelineState={timelineState}
+              progressPercentage={progressPercentage}
+              nextReservationWarning={nextReservationWarning}
+              onReservationStatusChanged={onReservationStatusChanged}
             />
           );
         })}
@@ -108,6 +140,8 @@ export function ReservationTimelineRow({
 type CalculateReservationPositionParams = {
   reservation: Reservation;
   targetDate: string;
+  currentTime: Date;
+  timelineState: ReservationTimelineState;
   timelineStartMinutes: number;
   timelineEndMinutes: number;
 };
@@ -133,6 +167,8 @@ type ReservationPosition = {
 function calculateReservationPosition({
   reservation,
   targetDate,
+  currentTime,
+  timelineState,
   timelineStartMinutes,
   timelineEndMinutes,
 }: CalculateReservationPositionParams): ReservationPosition | null {
@@ -145,6 +181,20 @@ function calculateReservationPosition({
     reservation.ends_at,
     targetDate,
   );
+
+  const currentTimeMinutes = convertToTargetDateMinutes(
+    currentTime.toISOString(),
+    targetDate,
+  );
+
+  const canExtendToCurrentTime =
+    timelineState === "overdue" &&
+    currentTimeMinutes >= timelineStartMinutes &&
+    currentTimeMinutes <= timelineEndMinutes;
+
+  const displayEndMinutes = canExtendToCurrentTime
+    ? Math.max(reservationEndMinutes, currentTimeMinutes)
+    : reservationEndMinutes;
 
   /*
    * 予約の一部だけが表示時間内に入る場合、
@@ -159,8 +209,7 @@ function calculateReservationPosition({
     timelineStartMinutes,
   );
 
-  const visibleEndMinutes = Math.min(reservationEndMinutes, timelineEndMinutes);
-
+  const visibleEndMinutes = Math.min(displayEndMinutes, timelineEndMinutes);
   //表示範囲と予約時間が重なっていない場合は描画しない。
   if (visibleEndMinutes <= visibleStartMinutes) {
     return null;

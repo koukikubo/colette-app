@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Reservation } from "../../types";
 import { formatReservationDateTimeLocal } from "../../utils/reservation-date";
+import { ReservationStatusActions } from "./ReservationStatusActions";
 
 type DetailItemTone = "default" | "info" | "seat" | "success" | "danger";
 
@@ -110,10 +111,13 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
   const reservationDate = formatReservationDateTimeLocal(
     reservation.starts_at,
   ).slice(0, 10);
+  const isCompleted = reservation.completed_at !== null;
   const isCanceled = reservation.canceled_at !== null;
   const statusLabel = isCanceled
     ? "キャンセル"
-    : (reservation.reservation_status?.label ?? "状況不明");
+    : isCompleted
+      ? "対応完了"
+      : (reservation.reservation_status?.label ?? "状況不明");
   const totalTableCapacity = reservation.restaurant_masters.reduce(
     (total, restaurantMaster) => total + restaurantMaster.capacity,
     0,
@@ -153,6 +157,8 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                   一覧へ戻る
                 </Link>
               </Button>
+
+              <ReservationStatusActions reservation={reservation} />
 
               <Button asChild size="sm">
                 <Link href={"/reservations/" + reservation.id + "/edit"}>

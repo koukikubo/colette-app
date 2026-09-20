@@ -1,27 +1,37 @@
 import Link from "next/link";
 import type { Reservation } from "@/features/reservations/types";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
+import type {
+  NextReservationWarning,
+  ReservationTimelineState,
+} from "@/features/reservations/utils/reservation-timeline-state";
+import { ReservationWarningDialog } from "./ReservationWarningDialog";
+import { ReservationTimelineActionMenu } from "./ReservationTimelineActionMenu";
 
 type ReservationBlockProps = {
   reservation: Reservation;
 
-  /**
-   * タイムライン左端から予約開始位置までの割合。
-   *
-   * 例：
-   * 表示範囲が17:00〜24:00で、予約開始が18:00なら、
-   * 17:00から18:00までの位置を割合で受け取る。
-   */
+  // タイムライン左端から予約開始位置までの割合。
   leftPercentage: number;
-
-  /**
-   * タイムライン全体に対する予約時間の横幅。
-   *
-   * 例：
-   * 2時間の予約であれば、表示時間全体に対する
-   * 2時間分の割合を受け取る。
-   */
+  // タイムライン全体に対する予約時間の横幅。
   widthPercentage: number;
+
+  timelineState: ReservationTimelineState;
+  progressPercentage: number;
+  nextReservationWarning: NextReservationWarning | null;
+  onReservationStatusChanged?: () => void;
+};
+
+const timelineStateClassNames: Record<ReservationTimelineState, string> = {
+  upcoming:
+    "border-sky-300 bg-sky-50 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950 dark:hover:bg-sky-900",
+  in_progress:
+    "border-emerald-400 bg-emerald-100 hover:bg-emerald-200 dark:border-emerald-700 dark:bg-emerald-950 dark:hover:bg-emerald-900",
+  overdue:
+    "border-amber-400 bg-amber-100 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-950 dark:hover:bg-amber-900",
+  completed:
+    "border-zinc-300 bg-zinc-100 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800",
+  canceled: "hidden",
 };
 
 /**
@@ -35,28 +45,71 @@ export function ReservationBlock({
   reservation,
   leftPercentage,
   widthPercentage,
+  timelineState,
+  progressPercentage,
+  nextReservationWarning,
+  onReservationStatusChanged,
 }: ReservationBlockProps) {
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
   return (
-    <Link
-      href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
-      scroll={false}
-      aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
-      className="bg-primary/10 border-primary/30 hover:bg-primary/20 focus-visible:ring-ring absolute inset-y-1 overflow-hidden rounded-md border px-2 py-1 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+    <div
+      data-reservation-block
+      data-timeline-state={timelineState}
+      data-progress-percentage={progressPercentage}
+      className={[
+        "absolute inset-y-1 overflow-hidden rounded-md border transition-colors",
+        timelineStateClassNames[timelineState],
+      ].join(" ")}
       style={{
         left: `${leftPercentage}%`,
         width: `${widthPercentage}%`,
       }}
     >
-      <div className="truncate text-sm font-medium">
-        {reservation.reservation_name}
-      </div>
+      <Link
+        href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
+        scroll={false}
+        aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
+        className={[
+          "focus-visible:ring-ring absolute inset-0 overflow-hidden rounded-md px-2 py-1 text-left focus-visible:ring-2 focus-visible:outline-none",
+          nextReservationWarning ? "pr-16" : "pr-9",
+        ].join(" ")}
+      >
+        {timelineState === "in_progress" ? (
+          <div
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 bg-emerald-300/70 transition-[width] duration-500 dark:bg-emerald-700/50"
+            style={{
+              width: `${progressPercentage}%`,
+            }}
+          />
+        ) : null}
 
-      <div className="text-muted-foreground truncate text-xs">
-        {reservation.guest_count}名{" / "}
-        {startTime}〜{endTime}
+        <div className="relative z-10 flex items-center gap-1 text-sm font-medium">
+          <span className="truncate">{reservation.reservation_name}</span>
+        </div>
+
+        <div className="text-muted-foreground relative z-10 truncate text-xs">
+          {reservation.guest_count}名{" / "}
+          {startTime}〜{endTime}
+        </div>
+      </Link>
+      <div className="absolute right-1 top-1 z-20 flex items-center gap-1">
+        {nextReservationWarning ? (
+          <ReservationWarningDialog
+            reservationName={reservation.reservation_name}
+            nextReservationId={nextReservationWarning.nextReservationId}
+            minutesUntilNextReservation={
+              nextReservationWarning.minutesUntilNextReservation
+            }
+          />
+        ) : null}
+
+        <ReservationTimelineActionMenu
+          reservation={reservation}
+          onReservationStatusChanged={onReservationStatusChanged}
+        />
       </div>
-    </Link>
+    </div>
   );
 }
