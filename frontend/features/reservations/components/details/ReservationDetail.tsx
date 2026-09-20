@@ -116,8 +116,8 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
   const statusLabel = isCanceled
     ? "キャンセル"
     : isCompleted
-    ? "対応完了"
-    : (reservation.reservation_status?.label ?? "状況不明");
+      ? "対応完了"
+      : (reservation.reservation_status?.label ?? "状況不明");
   const totalTableCapacity = reservation.restaurant_masters.reduce(
     (total, restaurantMaster) => total + restaurantMaster.capacity,
     0,
