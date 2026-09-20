@@ -81,26 +81,6 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     )
   end
 
-  let!(:completed_status) do
-    StandardListMaster.create!(
-      standard_master: reservation_status_master,
-      code: "completed",
-      label: "対応完了",
-      active: true,
-      position: 2
-    )
-  end
-
-  let!(:canceled_status) do
-    StandardListMaster.create!(
-      standard_master: reservation_status_master,
-      code: "canceled",
-      label: "取消",
-      active: true,
-      position: 3
-    )
-  end
-
   let!(:reservation_route_master) do
     StandardMaster.create!(
       system_key: "reservation_route",
@@ -230,7 +210,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         ends_at: reservation_time(Time.zone.today, 21),
         guest_count: 2,
         requested_restaurant_master_type: table_type,
-        reservation_status: canceled_status,
+        reservation_status: confirmed_status,
         created_by_staff: staff,
         updated_by_staff: staff,
         canceled_at: Time.current
@@ -897,11 +877,10 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(response_reservation["completed_at"]).to be_present
       expect(
         response_reservation.dig("reservation_status", "code")
-      ).to eq("completed")
-
+      ).to eq("confirmed")
       reservation.reload
 
-      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.reservation_status).to eq(confirmed_status)
       expect(reservation.completed_at).to be_present
       expect(reservation.canceled_at).to be_nil
       expect(reservation.updated_by_staff).to eq(staff)
@@ -909,7 +888,6 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
     it "対応完了済み予約は再度対応完了にできない" do
       reservation.update!(
-        reservation_status: completed_status,
         completed_at: Time.current
       )
 
@@ -930,12 +908,10 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       reservation.reload
 
       expect(reservation.completed_at).to eq(original_completed_at)
-      expect(reservation.reservation_status).to eq(completed_status)
-    end
+      expect(reservation.reservation_status).to eq(confirmed_status)    end
 
     it "キャンセル済み予約は対応完了にできない" do
       reservation.update!(
-        reservation_status: canceled_status,
         canceled_at: Time.current
       )
 
@@ -954,7 +930,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       reservation.reload
 
       expect(reservation.completed_at).to be_nil
-      expect(reservation.reservation_status).to eq(canceled_status)
+      expect(reservation.reservation_status).to eq(confirmed_status)
     end
 
     it "lock_versionがない場合は対応完了にできない" do
@@ -1028,14 +1004,14 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         starts_at: reservation_time(Time.zone.today, 18),
         ends_at: reservation_time(Time.zone.today, 20),
         requested_restaurant_master_type: table_type,
-        reservation_status: completed_status,
+        reservation_status: confirmed_status,
         created_by_staff: staff,
         updated_by_staff: staff,
         canceled_at: nil
       )
     end
 
-    it "対応完了済み予約を予約確定へ戻せる" do
+    it "対応完了済み予約の対応完了を取り消せる" do
       patch(
         "/api/v1/reservations/#{reservation.id}/reopen",
         params: {
@@ -1056,7 +1032,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
       expect(reservation.updated_by_staff).to eq(staff)
     end
 
-    it "対応完了していない予約は予約確定へ戻せない" do
+    it "対応完了していない予約は対応完了取消できない" do
       reservation.update!(
         reservation_status: confirmed_status,
         completed_at: nil
@@ -1093,7 +1069,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       reservation.reload
 
-      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.reservation_status).to eq(confirmed_status)
       expect(reservation.completed_at).to be_present
     end
 
@@ -1132,7 +1108,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       reservation.reload
 
-      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.reservation_status).to eq(confirmed_status)
       expect(reservation.completed_at).to be_present
     end
   end
@@ -1173,13 +1149,12 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(reservation.canceled_at).to be_present
       expect(reservation.completed_at).to be_nil
-      expect(reservation.reservation_status).to eq(canceled_status)
+      expect(reservation.reservation_status).to eq(confirmed_status)
       expect(reservation.updated_by_staff).to eq(staff)
     end
 
     it "キャンセル済み予約は再度キャンセルできない" do
       reservation.update!(
-        reservation_status: canceled_status,
         canceled_at: Time.current
       )
 
@@ -1228,7 +1203,6 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
     it "対応完了済み予約はキャンセルできない" do
       reservation.update!(
-        reservation_status: completed_status,
         completed_at: Time.current
       )
 
@@ -1250,7 +1224,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
 
       expect(reservation.completed_at).to eq(original_completed_at)
       expect(reservation.canceled_at).to be_nil
-      expect(reservation.reservation_status).to eq(completed_status)
+      expect(reservation.reservation_status).to eq(confirmed_status)
     end
   end
 
@@ -1267,7 +1241,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         starts_at: reservation_time(Time.zone.today, 18),
         ends_at: reservation_time(Time.zone.today, 20),
         requested_restaurant_master_type: table_type,
-        reservation_status: canceled_status,
+        reservation_status: confirmed_status,
         created_by_staff: staff,
         updated_by_staff: staff
       )

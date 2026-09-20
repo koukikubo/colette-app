@@ -78,22 +78,10 @@ standard_master_seeds = [
         position: 1
       },
       {
-        code: "seated",
-        label: "来店済み",
-        description: "お客様が来店して着席している状態",
+        code: "tentative",
+        label: "仮予約",
+        description: "予約受付が仮の状態",
         position: 2
-      },
-      {
-        code: "completed",
-        label: "対応完了",
-        description: "来店対応が完了している状態",
-        position: 3
-      },
-      {
-        code: "canceled",
-        label: "取消",
-        description: "予約が取り消された状態",
-        position: 4
       }
     ]
   },

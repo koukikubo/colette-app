@@ -106,10 +106,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
       )
     end
 
-    completed_status =
-      reservation_status_by_code!("completed")
-
-    @reservation.reservation_status = completed_status
     @reservation.completed_at = Time.current
     @reservation.updated_by_staff = current_staff
 
@@ -129,9 +125,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
         status: :unprocessable_content
       )
     end
-
-    @reservation.reservation_status =
-      reservation_status_by_code!("confirmed")
 
     @reservation.completed_at = nil
     @reservation.updated_by_staff = current_staff
@@ -160,9 +153,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
       )
     end
 
-
-    @reservation.reservation_status =
-      reservation_status_by_code!("canceled")
     @reservation.canceled_at = Time.current
     @reservation.updated_by_staff = current_staff
 
@@ -183,8 +173,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
       )
     end
 
-    @reservation.reservation_status =
-      reservation_status_by_code!("confirmed")
     @reservation.canceled_at = nil
     @reservation.updated_by_staff = current_staff
 
@@ -257,7 +245,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
         *RESERVATION_BASE_ATTRIBUTES,
         :reservation_status_id,
         :details_confirmed_at,
-        :canceled_at,
         :lock_version,
         restaurant_master_ids: []
       )
@@ -285,17 +272,6 @@ class Api::V1::ReservationsController < Api::V1::BaseController
 
   def required_lock_version
     params.require(:reservation).require(:lock_version)
-  end
-
-  def reservation_status_by_code!(code)
-    StandardListMaster
-      .joins(:standard_master)
-      .find_by!(
-        standard_masters: {
-          system_key: "reservation_status"
-        },
-        code: code
-      )
   end
 
   def apply_reservation_state_filter(reservations)
