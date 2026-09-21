@@ -22,6 +22,10 @@ class Customer < ApplicationRecord
   has_many :reservations,
               inverse_of: :customer
 
+  has_many :rf_rank_results,
+          class_name: "CustomerRfRankResult",
+          dependent: :restrict_with_error
+
   validates :customer_kind,
               presence: true,
               inclusion: { in: CUSTOMER_KINDS }

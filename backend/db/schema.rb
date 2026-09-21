@@ -10,10 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_21_050907) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "customer_rf_rank_results", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.string "exclusion_reason"
+    t.integer "frequency_count", default: 0, null: false
+    t.date "last_visit_on"
+    t.integer "recency_days"
+    t.bigint "rf_calculation_run_id", null: false
+    t.bigint "rf_rank_id"
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_customer_rf_rank_results_on_customer_id"
+    t.index ["rf_calculation_run_id", "customer_id"], name: "idx_customer_rf_results_on_run_and_customer", unique: true
+    t.index ["rf_calculation_run_id"], name: "index_customer_rf_rank_results_on_rf_calculation_run_id"
+    t.index ["rf_rank_id"], name: "index_customer_rf_rank_results_on_rf_rank_id"
+    t.check_constraint "frequency_count >= 0", name: "check_customer_rf_results_frequency_count"
+    t.check_constraint "recency_days IS NULL OR recency_days >= 0", name: "check_customer_rf_results_recency_days"
+  end
 
   create_table "customers", force: :cascade do |t|
     t.string "address", limit: 255
@@ -86,7 +104,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
     t.index ["canceled_at"], name: "index_reservations_on_canceled_at"
-    t.index [ "completed_at" ], name: "index_reservations_on_completed_at"
+    t.index ["completed_at"], name: "index_reservations_on_completed_at"
     t.index ["created_by_staff_id"], name: "index_reservations_on_created_by_staff_id"
     t.index ["customer_id"], name: "index_reservations_on_customer_id"
     t.index ["menu_type_id"], name: "index_reservations_on_menu_type_id"
@@ -128,6 +146,110 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
     t.check_constraint "char_length(btrim(code::text)) > 0", name: "check_restaurant_masters_code_not_blank"
     t.check_constraint "char_length(btrim(name::text)) > 0", name: "check_restaurant_masters_name_not_blank"
     t.check_constraint "sequence_number > 0", name: "check_restaurant_masters_sequence_positive"
+  end
+
+  create_table "rf_calculation_runs", force: :cascade do |t|
+    t.date "aggregation_started_on", null: false
+    t.date "base_date", null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.integer "customer_count", default: 0, null: false
+    t.integer "excluded_count", default: 0, null: false
+    t.text "failure_message"
+    t.date "frequency_started_on", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "previous_run_id"
+    t.bigint "rf_rule_set_id", null: false
+    t.datetime "started_at"
+    t.bigint "started_by_staff_id"
+    t.string "status", default: "pending", null: false
+    t.integer "unmatched_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["base_date"], name: "index_rf_calculation_runs_on_base_date"
+    t.index ["previous_run_id"], name: "index_rf_calculation_runs_on_previous_run_id"
+    t.index ["rf_rule_set_id"], name: "index_rf_calculation_runs_on_rf_rule_set_id"
+    t.index ["started_by_staff_id"], name: "index_rf_calculation_runs_on_started_by_staff_id"
+    t.index ["status"], name: "index_rf_calculation_runs_on_status"
+    t.check_constraint "customer_count >= 0", name: "check_rf_calculation_runs_customer_count"
+    t.check_constraint "excluded_count >= 0", name: "check_rf_calculation_runs_excluded_count"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying]::text[])", name: "check_rf_calculation_runs_status"
+    t.check_constraint "unmatched_count >= 0", name: "check_rf_calculation_runs_unmatched_count"
+  end
+
+  create_table "rf_frequency_rules", force: :cascade do |t|
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "label", null: false
+    t.integer "max_visits"
+    t.integer "min_visits", null: false
+    t.integer "position", null: false
+    t.bigint "rf_rule_set_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["rf_rule_set_id", "code"], name: "index_rf_frequency_rules_on_rf_rule_set_id_and_code", unique: true
+    t.index ["rf_rule_set_id", "position"], name: "index_rf_frequency_rules_on_rf_rule_set_id_and_position", unique: true
+    t.index ["rf_rule_set_id"], name: "index_rf_frequency_rules_on_rf_rule_set_id"
+    t.check_constraint "max_visits IS NULL OR max_visits >= min_visits", name: "check_rf_frequency_rules_range"
+    t.check_constraint "min_visits >= 0", name: "check_rf_frequency_rules_min_visits"
+  end
+
+  create_table "rf_rank_mappings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "rf_frequency_rule_id", null: false
+    t.bigint "rf_rank_id", null: false
+    t.bigint "rf_recency_rule_id", null: false
+    t.bigint "rf_rule_set_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["rf_frequency_rule_id"], name: "index_rf_rank_mappings_on_rf_frequency_rule_id"
+    t.index ["rf_rank_id"], name: "index_rf_rank_mappings_on_rf_rank_id"
+    t.index ["rf_recency_rule_id"], name: "index_rf_rank_mappings_on_rf_recency_rule_id"
+    t.index ["rf_rule_set_id", "rf_recency_rule_id", "rf_frequency_rule_id"], name: "idx_rf_rank_mappings_on_rule_and_dimensions", unique: true
+    t.index ["rf_rule_set_id"], name: "index_rf_rank_mappings_on_rf_rule_set_id"
+  end
+
+  create_table "rf_recency_rules", force: :cascade do |t|
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "label", null: false
+    t.integer "max_days"
+    t.integer "min_days", null: false
+    t.integer "position", null: false
+    t.bigint "rf_rule_set_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["rf_rule_set_id", "code"], name: "index_rf_recency_rules_on_rf_rule_set_id_and_code", unique: true
+    t.index ["rf_rule_set_id", "position"], name: "index_rf_recency_rules_on_rf_rule_set_id_and_position", unique: true
+    t.index ["rf_rule_set_id"], name: "index_rf_recency_rules_on_rf_rule_set_id"
+    t.check_constraint "max_days IS NULL OR max_days >= min_days", name: "check_rf_recency_rules_range"
+    t.check_constraint "min_days >= 0", name: "check_rf_recency_rules_min_days"
+  end
+
+  create_table "rf_rule_sets", force: :cascade do |t|
+    t.integer "aggregation_months", default: 60, null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_staff_id"
+    t.integer "frequency_window_months", default: 12, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.string "name", null: false
+    t.datetime "published_at"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.integer "version", null: false
+    t.index ["created_by_staff_id"], name: "index_rf_rule_sets_on_created_by_staff_id"
+    t.index ["version"], name: "index_rf_rule_sets_on_version", unique: true
+    t.check_constraint "aggregation_months > 0", name: "check_rf_rule_sets_aggregation_months"
+    t.check_constraint "frequency_window_months <= aggregation_months", name: "check_rf_rule_sets_frequency_within_aggregation"
+    t.check_constraint "frequency_window_months > 0", name: "check_rf_rule_sets_frequency_window_months"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying]::text[])", name: "check_rf_rule_sets_status"
+  end
+
+  create_table "rf_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "current_calculation_run_id"
+    t.integer "lock_version", default: 0, null: false
+    t.boolean "singleton_key", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.index ["current_calculation_run_id"], name: "index_rf_settings_on_current_calculation_run_id"
+    t.index ["singleton_key"], name: "index_rf_settings_on_singleton_key", unique: true
+    t.check_constraint "singleton_key = true", name: "check_rf_settings_singleton"
   end
 
   create_table "staff_masters", force: :cascade do |t|
@@ -187,6 +309,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
     t.index ["system_key"], name: "index_standard_masters_on_system_key", unique: true
   end
 
+  add_foreign_key "customer_rf_rank_results", "customers"
+  add_foreign_key "customer_rf_rank_results", "rf_calculation_runs"
+  add_foreign_key "customer_rf_rank_results", "standard_list_masters", column: "rf_rank_id"
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
   add_foreign_key "reservation_tables", "reservations"
@@ -202,6 +327,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_041157) do
   add_foreign_key "restaurant_masters", "staffs", column: "created_by_staff_id"
   add_foreign_key "restaurant_masters", "staffs", column: "updated_by_staff_id"
   add_foreign_key "restaurant_masters", "standard_list_masters", column: "restaurant_master_type_id"
+  add_foreign_key "rf_calculation_runs", "rf_calculation_runs", column: "previous_run_id"
+  add_foreign_key "rf_calculation_runs", "rf_rule_sets"
+  add_foreign_key "rf_calculation_runs", "staffs", column: "started_by_staff_id"
+  add_foreign_key "rf_frequency_rules", "rf_rule_sets"
+  add_foreign_key "rf_rank_mappings", "rf_frequency_rules"
+  add_foreign_key "rf_rank_mappings", "rf_recency_rules"
+  add_foreign_key "rf_rank_mappings", "rf_rule_sets"
+  add_foreign_key "rf_rank_mappings", "standard_list_masters", column: "rf_rank_id"
+  add_foreign_key "rf_recency_rules", "rf_rule_sets"
+  add_foreign_key "rf_rule_sets", "staffs", column: "created_by_staff_id"
+  add_foreign_key "rf_settings", "rf_calculation_runs", column: "current_calculation_run_id"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
 end

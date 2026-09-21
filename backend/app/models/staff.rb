@@ -22,6 +22,11 @@ class Staff < ApplicationRecord
             inverse_of: :updated_by_staff,
             dependent: :restrict_with_error
 
+  has_many :started_rf_calculation_runs,
+          class_name: "RfCalculationRun",
+          foreign_key: :started_by_staff_id,
+          dependent: :restrict_with_error
+
   has_secure_password
 
   MAX_FAILED_ATTEMPTS = 30
