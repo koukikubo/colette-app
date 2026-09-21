@@ -92,6 +92,15 @@ class Customer < ApplicationRecord
 
   validate :birthday_must_not_be_in_the_future
 
+  validates :customer_rank,
+          presence: true,
+          if: -> { customer_rank_id.present? }
+
+  validates :customer_rank,
+            standard_list_category: {
+              system_key: "customer_rank"
+            }
+
   private
   # 法人判定
   def corporate?

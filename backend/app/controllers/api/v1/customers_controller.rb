@@ -20,6 +20,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
     return unless pagination
 
     customers = Customer.includes(
+      :customer_rank,
       created_by_staff: :staff_master,
       updated_by_staff: :staff_master
     )
@@ -127,6 +128,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
   def set_customer
     @customer = Customer
       .includes(
+        :customer_rank,
         created_by_staff: :staff_master,
         updated_by_staff: :staff_master
       )
@@ -154,6 +156,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
   def customer_attributes
     %i[
       customer_kind
+      customer_rank_id
       name
       kana
       postal_code
