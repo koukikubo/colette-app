@@ -35,6 +35,21 @@ RSpec.describe Rf::CalculationRunner do
     )
   end
 
+  let(:excluded_customer_rank) do
+    master = create(
+      :standard_master,
+      system_key: "customer_rank",
+      name: "顧客ランク"
+    )
+
+    create(
+      :standard_list_master,
+      standard_master: master,
+      code: "R",
+      label: "Rランク"
+    )
+  end
+
   let(:valid_rule_result) do
     Rf::RuleSetValidator::Result.new(
       errors: [],
@@ -129,5 +144,54 @@ RSpec.describe Rf::CalculationRunner do
     )
 
     expect(RfCalculationRun.count).to eq(0)
+  end
+
+  it "顧客ランクRの顧客をRF計算対象外にする" do
+    excluded_customer = create(
+      :customer,
+      customer_rank: excluded_customer_rank
+    )
+
+    calculated_customer = create(:customer)
+
+    calculation_result =
+      Rf::CustomerRankCalculator::Result.new(
+        rf_rank: rf_rank,
+        recency_days: 20,
+        frequency_count: 2,
+        last_visit_on: Date.new(2026, 9, 1)
+      )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+      .and_return(calculation_result)
+
+    calculation_run =
+      described_class.call(
+        rule_set: rule_set,
+        base_date: base_date,
+        started_by_staff: staff
+      )
+
+    excluded_result =
+      calculation_run
+        .customer_rf_rank_results
+        .find_by!(customer: excluded_customer)
+
+    expect(excluded_result.rf_rank).to be_nil
+    expect(excluded_result.exclusion_reason)
+      .to eq("manual_customer_rank")
+
+    expect(calculation_run.customer_count).to eq(2)
+    expect(calculation_run.excluded_count).to eq(1)
+
+    expect(Rf::CustomerRankCalculator)
+      .to have_received(:call)
+      .with(
+        customer: calculated_customer,
+        rule_set: rule_set,
+        base_date: base_date
+      )
+      .once
   end
 end

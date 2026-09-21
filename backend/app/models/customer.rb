@@ -6,6 +6,7 @@ class Customer < ApplicationRecord
   KANA_FORMAT = /\A[ァ-ヶー・ 　]+\z/
   POSTAL_CODE_FORMAT = /\A\d{7}\z/
   PHONE_NUMBER_FORMAT = /\A\d{10,11}\z/
+  RF_EXCLUDED_RANK_CODE = "R"
 
   # 一般的なインターネットメールとして、@の前後とドメインのピリオドを必須にする。
   EMAIL_FORMAT = /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/
@@ -100,6 +101,10 @@ class Customer < ApplicationRecord
             standard_list_category: {
               system_key: "customer_rank"
             }
+
+  def excluded_from_rf_calculation?
+    customer_rank&.code == RF_EXCLUDED_RANK_CODE
+end
 
   private
   # 法人判定

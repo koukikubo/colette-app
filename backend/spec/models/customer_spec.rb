@@ -339,6 +339,35 @@ RSpec.describe Customer, type: :model do
     end
   end
 
+  describe "#excluded_from_rf_calculation?" do
+    it "顧客ランクがRならtrueを返す" do
+      customer_rank_master = create(
+        :standard_master,
+        system_key: "customer_rank",
+        name: "顧客ランク"
+      )
+
+      customer.customer_rank = create(
+        :standard_list_master,
+        standard_master: customer_rank_master,
+        code: "R",
+        label: "Rランク"
+      )
+
+      expect(
+        customer.excluded_from_rf_calculation?
+      ).to be(true)
+    end
+
+    it "顧客ランクが未設定ならfalseを返す" do
+      customer.customer_rank = nil
+
+      expect(
+        customer.excluded_from_rf_calculation?
+      ).to be(false)
+    end
+  end
+
   describe "入力値の正規化" do
     it "氏名とカナの前後空白を削除する" do
       customer.name = "  山田 太郎  "
