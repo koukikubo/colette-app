@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_050907) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -45,6 +45,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_050907) do
     t.datetime "created_at", null: false
     t.bigint "created_by_staff_id", null: false
     t.string "customer_kind", limit: 30, default: "individual", null: false
+    t.bigint "customer_rank_id"
     t.string "email", limit: 255
     t.datetime "hidden_at"
     t.string "kana", limit: 30, null: false
@@ -60,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_050907) do
     t.index ["company_phone_number"], name: "index_customers_on_company_phone_number"
     t.index ["created_by_staff_id"], name: "index_customers_on_created_by_staff_id"
     t.index ["customer_kind"], name: "index_customers_on_customer_kind"
+    t.index ["customer_rank_id"], name: "index_customers_on_customer_rank_id"
     t.index ["hidden_at", "id"], name: "index_customers_on_hidden_at_and_id"
     t.index ["kana"], name: "index_customers_on_kana"
     t.index ["name"], name: "index_customers_on_name"
@@ -314,6 +316,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_050907) do
   add_foreign_key "customer_rf_rank_results", "standard_list_masters", column: "rf_rank_id"
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
+  add_foreign_key "customers", "standard_list_masters", column: "customer_rank_id"
   add_foreign_key "reservation_tables", "reservations"
   add_foreign_key "reservation_tables", "restaurant_masters"
   add_foreign_key "reservations", "customers"

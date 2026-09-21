@@ -21,6 +21,17 @@ RSpec.describe Customer, type: :model do
       expect(association.class_name).to eq("Staff")
       expect(association.foreign_key).to eq("updated_by_staff_id")
     end
+
+    it "手動顧客ランクとして基本コードに所属する" do
+      association =
+        described_class.reflect_on_association(:customer_rank)
+
+      expect(association.macro).to eq(:belongs_to)
+      expect(association.class_name).to eq(
+        "StandardListMaster"
+      )
+      expect(association.options[:optional]).to be(true)
+    end
   end
 
   describe "バリデーション" do
@@ -54,6 +65,48 @@ RSpec.describe Customer, type: :model do
 
         expect(customer).to be_invalid
         expect(customer.errors[:customer_kind]).to be_present
+      end
+    end
+    describe "顧客ランク" do
+      it "顧客ランクの基本コードなら有効になる" do
+        customer_rank_master = create(
+          :standard_master,
+          system_key: "customer_rank",
+          name: "顧客ランク"
+        )
+
+        customer.customer_rank = create(
+          :standard_list_master,
+          standard_master: customer_rank_master,
+          code: "R",
+          label: "Rランク"
+        )
+
+        expect(customer).to be_valid
+      end
+
+      it "RFランクの基本コードなら無効になる" do
+        rf_rank_master = create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+        customer.customer_rank = create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク"
+        )
+
+        expect(customer).to be_invalid
+        expect(customer.errors[:customer_rank]).to be_present
+      end
+
+      it "顧客ランクが未設定でも有効になる" do
+        customer.customer_rank = nil
+
+        expect(customer).to be_valid
       end
     end
 

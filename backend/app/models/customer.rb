@@ -26,6 +26,15 @@ class Customer < ApplicationRecord
           class_name: "CustomerRfRankResult",
           dependent: :restrict_with_error
 
+  belongs_to :customer_rank,
+            class_name: "StandardListMaster",
+            optional: true
+
+  validates :customer_rank,
+          standard_list_category: {
+            system_key: "customer_rank"
+          }
+
   validates :customer_kind,
               presence: true,
               inclusion: { in: CUSTOMER_KINDS }
