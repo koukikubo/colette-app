@@ -139,4 +139,120 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         .to eq("RFランクを計算できません")
     end
   end
+
+  describe "PATCH /api/v1/rf_calculation_runs/:id/activate" do
+    let(:calculation_run) do
+      RfCalculationRun.create!(
+        rf_rule_set: rule_set,
+        base_date: Date.new(2026, 9, 22),
+        aggregation_started_on:
+          Date.new(2021, 9, 22),
+        frequency_started_on:
+          Date.new(2025, 9, 22),
+        status: "completed",
+        completed_at: Time.current
+      )
+    end
+
+    it "未ログインの場合は401を返す" do
+      patch(
+        "/api/v1/rf_calculation_runs/#{calculation_run.id}/activate",
+        headers: csrf_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "計算完了済みの結果を現在値として適用する" do
+      login!
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{calculation_run.id}/activate",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      setting = RfSetting.first
+
+      expect(
+        setting.current_calculation_run
+      ).to eq(calculation_run)
+
+      expect(
+        response_body.dig(
+          "data",
+          "current_calculation_run_id"
+        )
+      ).to eq(calculation_run.id)
+    end
+
+    it "計算途中の結果は適用できない" do
+      login!
+
+      calculation_run.update!(
+        status: "processing",
+        completed_at: nil
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{calculation_run.id}/activate",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(response_body["message"])
+        .to eq("計算結果を適用できません")
+    end
+
+    it "現在値と接続していない古い結果は適用できない" do
+      login!
+
+      current_run =
+        RfCalculationRun.create!(
+          rf_rule_set: rule_set,
+          base_date: Date.new(2026, 9, 21),
+          aggregation_started_on:
+            Date.new(2021, 9, 21),
+          frequency_started_on:
+            Date.new(2025, 9, 21),
+          status: "completed",
+          completed_at: Time.current
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{calculation_run.id}/activate",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:conflict)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+    end
+
+    it "存在しない計算履歴の場合は404を返す" do
+      login!
+
+      patch(
+        "/api/v1/rf_calculation_runs/999999/activate",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

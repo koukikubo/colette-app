@@ -61,7 +61,11 @@ Rails.application.routes.draw do
           only: :show
 
       resources :rf_calculation_runs,
-          only: :create
+          only: :create do
+        member do
+          patch :activate
+        end
+      end
     end
   end
 end

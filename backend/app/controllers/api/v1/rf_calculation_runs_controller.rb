@@ -28,6 +28,37 @@ class Api::V1::RfCalculationRunsController <
     )
   end
 
+  def activate
+    calculation_run =
+      RfCalculationRun.find(params[:id])
+
+    setting =
+      Rf::CalculationActivator.call(
+        calculation_run: calculation_run
+      )
+
+    render_success(
+      data: {
+        calculation_run:
+          serialize_calculation_run(calculation_run),
+        current_calculation_run_id:
+          setting.current_calculation_run_id
+      }
+    )
+  rescue Rf::CalculationActivator::IncompleteRunError => error
+    render_error(
+      message: "計算結果を適用できません",
+      errors: [ error.message ],
+      status: :unprocessable_content
+    )
+  rescue Rf::CalculationActivator::StaleRunError => error
+    render_error(
+      message: "計算結果を適用できません",
+      errors: [ error.message ],
+      status: :conflict
+    )
+  end
+
   private
 
   def calculation_params
@@ -72,5 +103,11 @@ class Api::V1::RfCalculationRunsController <
     )
 
     nil
+  end
+
+  def serialize_calculation_run(calculation_run)
+    Api::V1::RfCalculationRunSerializer
+      .new(calculation_run)
+      .as_json
   end
 end
