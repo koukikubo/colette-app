@@ -55,6 +55,10 @@ Rails.application.routes.draw do
           patch :complete
         end
       end
+
+      resource :rf_setting,
+          path: "rf_settings",
+          only: :show
     end
   end
 end
