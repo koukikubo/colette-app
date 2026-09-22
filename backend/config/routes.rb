@@ -58,9 +58,11 @@ Rails.application.routes.draw do
 
       resource :rf_setting,
           path: "rf_settings",
+          controller: "rf/settings",
           only: :show
 
       resources :rf_calculation_runs,
+          controller: "rf/calculation_runs",
           only: :create do
         member do
           patch :activate

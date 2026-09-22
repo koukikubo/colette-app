@@ -1,4 +1,4 @@
-class Api::V1::RfCalculationRunsController <
+class Api::V1::Rf::CalculationRunsController <
   Api::V1::BaseController
   def create
     base_date = parsed_base_date
@@ -14,7 +14,7 @@ class Api::V1::RfCalculationRunsController <
     render_success(
       data: {
         calculation_run:
-          Api::V1::RfCalculationRunSerializer
+          Api::V1::Rf::CalculationRunSerializer
             .new(calculation_run)
             .as_json
       },
@@ -131,7 +131,7 @@ class Api::V1::RfCalculationRunsController <
   end
 
   def serialize_calculation_run(calculation_run)
-    Api::V1::RfCalculationRunSerializer
+    Api::V1::Rf::CalculationRunSerializer
       .new(calculation_run)
       .as_json
   end

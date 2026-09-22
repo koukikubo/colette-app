@@ -1,4 +1,4 @@
-class Api::V1::RfSettingsController < Api::V1::BaseController
+class Api::V1::Rf::SettingsController < Api::V1::BaseController
   def show
     render_success(
       data: {
@@ -42,7 +42,7 @@ class Api::V1::RfSettingsController < Api::V1::BaseController
   def serialize_rule_set(rule_set)
     return nil if rule_set.nil?
 
-    Api::V1::RfRuleSetSerializer
+    Api::V1::Rf::RuleSetSerializer
       .new(rule_set)
       .as_json
   end
@@ -50,7 +50,7 @@ class Api::V1::RfSettingsController < Api::V1::BaseController
   def serialize_calculation_run(calculation_run)
     return nil if calculation_run.nil?
 
-    Api::V1::RfCalculationRunSerializer
+    Api::V1::Rf::CalculationRunSerializer
       .new(calculation_run)
       .as_json
   end
