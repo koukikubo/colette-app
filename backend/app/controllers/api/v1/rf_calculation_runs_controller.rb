@@ -59,6 +59,31 @@ class Api::V1::RfCalculationRunsController <
     )
   end
 
+  def rollback
+    setting = Rf::CalculationRollback.call
+
+    current_calculation_run =
+      setting.current_calculation_run
+
+    render_success(
+      data: {
+        calculation_run:
+          serialize_calculation_run(
+            current_calculation_run
+          ),
+        current_calculation_run_id:
+          current_calculation_run.id
+      }
+    )
+  rescue Rf::CalculationRollback::CurrentRunNotFoundError,
+         Rf::CalculationRollback::PreviousRunNotFoundError => error
+    render_error(
+      message: "計算結果を復元できません",
+      errors: [ error.message ],
+      status: :unprocessable_content
+    )
+  end
+
   private
 
   def calculation_params

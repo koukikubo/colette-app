@@ -65,6 +65,10 @@ Rails.application.routes.draw do
         member do
           patch :activate
         end
+
+        collection do
+          patch :rollback
+        end
       end
     end
   end

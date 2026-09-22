@@ -255,4 +255,112 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "PATCH /api/v1/rf_calculation_runs/rollback" do
+    it "未ログインの場合は401を返す" do
+      patch(
+        "/api/v1/rf_calculation_runs/rollback",
+        headers: csrf_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "ひとつ前の計算結果へ戻す" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 22),
+          previous_run: previous_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/rollback",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(previous_run)
+
+      expect(
+        response_body.dig(
+          "data",
+          "current_calculation_run_id"
+        )
+      ).to eq(previous_run.id)
+    end
+
+    it "現在適用中の結果がない場合は422を返す" do
+      login!
+
+      patch(
+        "/api/v1/rf_calculation_runs/rollback",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(response_body["message"])
+        .to eq("計算結果を復元できません")
+    end
+
+    it "ひとつ前の結果がない場合は422を返す" do
+      login!
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 22)
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/rollback",
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+    end
+  end
+
+  def create_completed_run(base_date:, previous_run: nil)
+    RfCalculationRun.create!(
+      rf_rule_set: rule_set,
+      previous_run: previous_run,
+      base_date: base_date,
+      aggregation_started_on:
+        base_date.advance(months: -60),
+      frequency_started_on:
+        base_date.advance(months: -12),
+      status: "completed",
+      completed_at: Time.current
+    )
+  end
 end
