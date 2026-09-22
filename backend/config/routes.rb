@@ -59,6 +59,9 @@ Rails.application.routes.draw do
       resource :rf_setting,
           path: "rf_settings",
           only: :show
+
+      resources :rf_calculation_runs,
+          only: :create
     end
   end
 end

@@ -14,6 +14,7 @@ module Api
           status: resource.status,
           customer_count: resource.customer_count,
           excluded_count: resource.excluded_count,
+          rank_counts: serialize_rank_counts,
           unmatched_count: resource.unmatched_count,
           started_at: resource.started_at,
           completed_at: resource.completed_at,
@@ -34,6 +35,27 @@ module Api
           code: staff.staff_master&.code,
           name: staff.staff_master&.name
         }
+      end
+
+      def serialize_rank_counts
+        counts =
+          resource
+            .customer_rf_rank_results
+            .where.not(rf_rank_id: nil)
+            .group(:rf_rank_id)
+            .count
+
+        StandardListMaster
+          .where(id: counts.keys)
+          .order(:position, :id)
+          .map do |rank|
+          {
+            id: rank.id,
+            code: rank.code,
+            label: rank.label,
+            count: counts.fetch(rank.id)
+          }
+        end
       end
     end
   end
