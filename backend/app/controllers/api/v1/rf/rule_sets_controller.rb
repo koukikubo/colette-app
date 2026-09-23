@@ -2,6 +2,16 @@ class Api::V1::Rf::RuleSetsController <
   Api::V1::BaseController
   include ApiPagination
 
+  before_action :require_owner!,
+              only: %i[
+                create
+                update
+                destroy
+                validate
+                publish
+                archive
+              ]
+
   def index
     pagination = pagination_params
     return unless pagination

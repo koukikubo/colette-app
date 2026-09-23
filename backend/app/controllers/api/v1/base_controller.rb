@@ -47,6 +47,15 @@ class Api::V1::BaseController < ApplicationController
     )
   end
 
+  def require_owner!
+    return if current_staff&.staff_master_role_code == "owner"
+
+    render_error(
+      message: "この操作を行う権限がありません",
+      status: :forbidden
+    )
+  end
+
   def render_record_invalid(error)
     render_validation_error(error.record)
   end

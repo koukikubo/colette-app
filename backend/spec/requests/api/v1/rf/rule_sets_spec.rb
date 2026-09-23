@@ -4,6 +4,19 @@ RSpec.describe "Api::V1::RfRuleSets",
                type: :request do
   include_context "authenticated request"
 
+  let(:login_staff) do
+    create(
+      :staff,
+      staff_master:
+        create(
+          :staff_master,
+          role_code: "owner"
+        ),
+      password: login_password,
+      password_confirmation: login_password
+    )
+  end
+
   def response_body
     JSON.parse(response.body)
   end
@@ -728,6 +741,63 @@ RSpec.describe "Api::V1::RfRuleSets",
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(RfRuleSet.exists?(rule_set.id)).to be(true)
+    end
+  end
+
+  describe "権限制御" do
+    context "operatorでログインしている場合" do
+      let(:login_staff) do
+        create(
+          :staff,
+          staff_master:
+            create(
+              :staff_master,
+              role_code: "operator"
+            ),
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+
+      it "RFルールを作成できない" do
+        login!
+
+        expect do
+          post(
+            "/api/v1/rf_rule_sets",
+            params: {
+              rf_rule_set: {
+                name: "権限のないルール",
+                aggregation_months: 60,
+                frequency_window_months: 12,
+                recency_rules: [],
+                frequency_rules: [],
+                rank_mappings: []
+              }
+            },
+            headers: authenticated_headers,
+            as: :json
+          )
+        end.not_to change(RfRuleSet, :count)
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(response_body).to include(
+          "status" => "error",
+          "message" => "この操作を行う権限がありません"
+        )
+      end
+
+      it "RFルール一覧は参照できる" do
+        login!
+
+        get(
+          "/api/v1/rf_rule_sets",
+          headers: authenticated_headers
+        )
+
+        expect(response).to have_http_status(:ok)
+      end
     end
   end
 
