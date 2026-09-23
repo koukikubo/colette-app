@@ -192,6 +192,102 @@ RSpec.describe "Api::V1::RfRuleSets",
     end
   end
 
+  describe "POST /api/v1/rf_rule_sets" do
+    it "RFルールをdraftとして作成する" do
+      login!
+
+      rf_rank_master =
+        create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+      rf_rank =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク",
+          position: 1
+        )
+
+      expect do
+        post(
+          "/api/v1/rf_rule_sets",
+          params: {
+            rf_rule_set: {
+              name: "新しいRFルール",
+              aggregation_months: 60,
+              frequency_window_months: 12,
+              recency_rules: [
+                {
+                  code: "R1",
+                  label: "90日以内",
+                  min_days: 0,
+                  max_days: nil,
+                  position: 1
+                }
+              ],
+              frequency_rules: [
+                {
+                  code: "F1",
+                  label: "0回以上",
+                  min_visits: 0,
+                  max_visits: nil,
+                  position: 1
+                }
+              ],
+              rank_mappings: [
+                {
+                  recency_code: "R1",
+                  frequency_code: "F1",
+                  rf_rank_id: rf_rank.id
+                }
+              ]
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+      end.to change(RfRuleSet, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+
+      rule_set = RfRuleSet.order(:id).last
+
+      expect(rule_set).to have_attributes(
+        name: "新しいRFルール",
+        version: 1,
+        status: "draft",
+        created_by_staff_id: login_staff.id
+      )
+
+      expect(rule_set.recency_rules.count).to eq(1)
+      expect(rule_set.frequency_rules.count).to eq(1)
+      expect(rule_set.rank_mappings.count).to eq(1)
+
+      response_rule_set =
+        response_body.dig(
+          "data",
+          "rule_set"
+        )
+
+      expect(response_rule_set).to include(
+        "id" => rule_set.id,
+        "status" => "draft",
+        "lock_version" => 0
+      )
+
+      expect(
+        response_rule_set.dig(
+          "created_by_staff",
+          "id"
+        )
+      ).to eq(login_staff.id)
+    end
+  end
+
   private
 
   def create_rule_set(
@@ -201,14 +297,12 @@ RSpec.describe "Api::V1::RfRuleSets",
     published_at: nil
   )
     RfRuleSet.create!(
-      name: name,
-      version: version,
-      aggregation_months: 60,
-      frequency_window_months: 12,
-      status: status,
-      published_at: published_at,
-      created_by_staff:
-        status == "draft" ? nil : nil
-    )
+    name: name,
+    version: version,
+    aggregation_months: 60,
+    frequency_window_months: 12,
+    status: status,
+    published_at: published_at
+  )
   end
 end
