@@ -670,6 +670,67 @@ RSpec.describe "Api::V1::RfRuleSets",
     end
   end
 
+  describe "DELETE /api/v1/rf_rule_sets/:id" do
+    it "draftのRFルールを削除する" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "削除対象ルール",
+          version: 1,
+          status: "draft"
+        )
+
+      create_valid_rule_structure!(rule_set)
+
+      expect do
+        delete(
+          "/api/v1/rf_rule_sets/#{rule_set.id}",
+          params: {
+            rf_rule_set: {
+              lock_version: rule_set.lock_version
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+      end.to change(RfRuleSet, :count).by(-1)
+
+      expect(response).to have_http_status(:no_content)
+      expect(RfRecencyRule.where(rf_rule_set_id: rule_set.id)).to be_empty
+      expect(RfFrequencyRule.where(rf_rule_set_id: rule_set.id)).to be_empty
+      expect(RfRankMapping.where(rf_rule_set_id: rule_set.id)).to be_empty
+    end
+
+    it "公開済みのRFルールは削除できない" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "公開済みルール",
+          version: 1,
+          status: "published",
+          published_at: Time.current
+        )
+
+      expect do
+        delete(
+          "/api/v1/rf_rule_sets/#{rule_set.id}",
+          params: {
+            rf_rule_set: {
+              lock_version: rule_set.lock_version
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+      end.not_to change(RfRuleSet, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(RfRuleSet.exists?(rule_set.id)).to be(true)
+    end
+  end
+
   private
 
   def create_rule_set(

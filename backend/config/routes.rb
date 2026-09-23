@@ -77,7 +77,7 @@ Rails.application.routes.draw do
 
       resources :rf_rule_sets,
         controller: "rf/rule_sets",
-        only: %i[index show create update] do
+        only: %i[index show create update destroy] do
         member do
           post :validate
           patch :publish

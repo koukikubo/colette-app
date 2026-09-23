@@ -143,7 +143,17 @@ class Api::V1::Rf::RuleSetsController <
             .as_json
       }
     )
-end
+  end
+
+  def destroy
+    Rf::RuleSetDeleter.call(
+      rule_set: RfRuleSet.find(params[:id]),
+      expected_lock_version:
+        destroy_params[:lock_version]
+    )
+
+    head :no_content
+  end
 
   private
 
@@ -199,5 +209,13 @@ end
         :lock_version
       ]
     )
-end
+  end
+
+  def destroy_params
+    params.expect(
+      rf_rule_set: [
+        :lock_version
+      ]
+    )
+  end
 end
