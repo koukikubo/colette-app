@@ -164,6 +164,50 @@ end
     )
   end
 
+  def restore
+    target_run =
+      RfCalculationRun.find(params[:id])
+
+    expected_current_run_id =
+      parsed_expected_current_run_id
+
+    return if performed?
+
+    setting =
+      Rf::CalculationRestorer.call(
+        target_run: target_run,
+        expected_current_run_id: expected_current_run_id
+      )
+
+    current_calculation_run =
+      setting.current_calculation_run
+
+    render_success(
+      data: {
+        calculation_run:
+          serialize_calculation_run(
+            current_calculation_run
+          ),
+        current_calculation_run_id:
+          current_calculation_run.id
+      }
+    )
+  rescue Rf::CalculationRestorer::CurrentRunNotFoundError,
+         Rf::CalculationRestorer::IncompleteRunError,
+         Rf::CalculationRestorer::NotAncestorError => error
+    render_error(
+      message: "計算結果を復元できません",
+      errors: [ error.message ],
+      status: :unprocessable_content
+    )
+  rescue Rf::CalculationRestorer::StaleRunError => error
+    render_error(
+      message: "計算結果を復元できません",
+      errors: [ error.message ],
+      status: :conflict
+    )
+end
+
   def rollback
     expected_current_run_id =
       parsed_expected_current_run_id
@@ -204,8 +248,8 @@ end
 
   private
 
-  def rollback_params
-    @rollback_params ||=
+  def expected_current_run_params
+    @expected_current_run_params ||=
       params.expect(
         rf_calculation: [
           :expected_current_run_id
@@ -214,8 +258,10 @@ end
   end
 
   def parsed_expected_current_run_id
-    value = rollback_params[:expected_current_run_id]
-
+    value =
+      expected_current_run_params[
+        :expected_current_run_id
+      ]
     if value.blank?
       raise ActionController::ParameterMissing.new(
         :expected_current_run_id
@@ -223,16 +269,16 @@ end
     end
 
     Integer(value.to_s, 10)
-  rescue ArgumentError, TypeError
-    render_error(
-      message: "計算履歴IDが不正です",
-      errors: [
-        "expected_current_run_idは整数で指定してください"
-      ],
-      status: :bad_request
-    )
+      rescue ArgumentError, TypeError
+        render_error(
+          message: "計算履歴IDが不正です",
+          errors: [
+            "expected_current_run_idは整数で指定してください"
+          ],
+          status: :bad_request
+        )
 
-    nil
+        nil
   end
 
   def calculation_params

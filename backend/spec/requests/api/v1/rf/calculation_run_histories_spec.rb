@@ -154,6 +154,139 @@ RSpec.describe "Api::V1::RfCalculationRunHistories",
     end
   end
 
+  describe "PATCH /api/v1/rf_calculation_runs/:id/restore" do
+    it "選択した過去の計算履歴へ復元する" do
+      login!
+
+      oldest_run =
+        create_completed_run(
+          base_date: Date.new(2026, 7, 31)
+        )
+
+      middle_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31),
+          previous_run: oldest_run
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: middle_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{oldest_run.id}/restore",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: current_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(oldest_run)
+
+      expect(
+        response_body.dig(
+          "data",
+          "current_calculation_run_id"
+        )
+      ).to eq(oldest_run.id)
+    end
+
+    it "現在値が操作開始時から変わっている場合は409を返す" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{previous_run.id}/restore",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: previous_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:conflict)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+
+      expect(response_body["message"])
+        .to eq("計算結果を復元できません")
+    end
+
+    it "現在値とつながっていない履歴には復元できない" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      unrelated_run =
+        create_completed_run(
+          base_date: Date.new(2026, 7, 31)
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{unrelated_run.id}/restore",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: current_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+    end
+  end
+
   private
 
   def create_completed_run(base_date:, previous_run: nil)

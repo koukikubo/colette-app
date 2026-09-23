@@ -63,10 +63,11 @@ Rails.application.routes.draw do
 
       resources :rf_calculation_runs,
           controller: "rf/calculation_runs",
-          only: %i[index create show] do
+          only: %i[index create show ] do
         member do
           patch :activate
           get :results
+          patch :restore
         end
 
         collection do
