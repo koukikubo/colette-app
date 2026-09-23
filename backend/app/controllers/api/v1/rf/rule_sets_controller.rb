@@ -67,6 +67,23 @@ class Api::V1::Rf::RuleSetsController <
     )
   end
 
+  def update
+    rule_set =
+      Rf::RuleSetUpdater.call(
+        rule_set: RfRuleSet.find(params[:id]),
+        attributes: rule_set_params.to_h
+      )
+
+    render_success(
+      data: {
+        rule_set:
+          Api::V1::Rf::RuleSetSerializer
+            .new(rule_set)
+            .as_json
+      }
+    )
+end
+
   private
 
   def rule_set_params
@@ -75,6 +92,7 @@ class Api::V1::Rf::RuleSetsController <
         :name,
         :aggregation_months,
         :frequency_window_months,
+        :lock_version,
         {
           recency_rules: [
             %i[

@@ -288,6 +288,162 @@ RSpec.describe "Api::V1::RfRuleSets",
     end
   end
 
+  describe "PATCH /api/v1/rf_rule_sets/:id" do
+    it "draftのRFルールを更新する" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "更新前RFルール",
+          version: 1,
+          status: "draft"
+        )
+
+      rf_rank_master =
+        create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+      rf_rank =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク",
+          position: 1
+        )
+
+      patch(
+        "/api/v1/rf_rule_sets/#{rule_set.id}",
+        params: {
+          rf_rule_set: {
+            name: "更新後RFルール",
+            aggregation_months: 36,
+            frequency_window_months: 6,
+            lock_version: rule_set.lock_version,
+            recency_rules: [
+              {
+                code: "R1",
+                label: "90日以内",
+                min_days: 0,
+                max_days: nil,
+                position: 1
+              }
+            ],
+            frequency_rules: [
+              {
+                code: "F1",
+                label: "1回以上",
+                min_visits: 1,
+                max_visits: nil,
+                position: 1
+              }
+            ],
+            rank_mappings: [
+              {
+                recency_code: "R1",
+                frequency_code: "F1",
+                rf_rank_id: rf_rank.id
+              }
+            ]
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      rule_set.reload
+
+      expect(rule_set).to have_attributes(
+        name: "更新後RFルール",
+        aggregation_months: 36,
+        frequency_window_months: 6,
+        status: "draft",
+        lock_version: 1
+      )
+
+      expect(rule_set.recency_rules.count).to eq(1)
+      expect(rule_set.frequency_rules.count).to eq(1)
+      expect(rule_set.rank_mappings.count).to eq(1)
+    end
+  end
+
+  it "公開済みのRFルールは更新できない" do
+    login!
+
+    rule_set =
+      create_rule_set(
+        name: "公開済みRFルール",
+        version: 1,
+        status: "published",
+        published_at: Time.current
+      )
+
+    patch(
+      "/api/v1/rf_rule_sets/#{rule_set.id}",
+      params: {
+        rf_rule_set: {
+          name: "更新後RFルール",
+          aggregation_months: 36,
+          frequency_window_months: 6,
+          lock_version: rule_set.lock_version,
+          recency_rules: [],
+          frequency_rules: [],
+          rank_mappings: []
+        }
+      },
+      headers: authenticated_headers,
+      as: :json
+    )
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(rule_set.reload.name).to eq("公開済みRFルール")
+  end
+
+  it "古いlock_versionでは更新できない" do
+    login!
+
+    rule_set =
+      create_rule_set(
+        name: "更新前RFルール",
+        version: 1,
+        status: "draft"
+      )
+
+    stale_lock_version = rule_set.lock_version
+
+    rule_set.update!(
+      name: "別の担当者が更新したRFルール"
+    )
+
+    patch(
+      "/api/v1/rf_rule_sets/#{rule_set.id}",
+      params: {
+        rf_rule_set: {
+          name: "古い画面からの更新",
+          aggregation_months: 36,
+          frequency_window_months: 6,
+          lock_version: stale_lock_version,
+          recency_rules: [],
+          frequency_rules: [],
+          rank_mappings: []
+        }
+      },
+      headers: authenticated_headers,
+      as: :json
+    )
+
+    expect(response).to have_http_status(:conflict)
+
+    expect(rule_set.reload.name).to eq(
+      "別の担当者が更新したRFルール"
+    )
+  end
+
   private
 
   def create_rule_set(
