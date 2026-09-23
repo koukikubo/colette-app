@@ -613,6 +613,63 @@ RSpec.describe "Api::V1::RfRuleSets",
     end
   end
 
+  describe "PATCH /api/v1/rf_rule_sets/:id/archive" do
+    it "公開中のRFルールをアーカイブする" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "公開中のルール",
+          version: 1,
+          status: "published",
+          published_at: Time.current
+        )
+
+      patch(
+        "/api/v1/rf_rule_sets/#{rule_set.id}/archive",
+        params: {
+          rf_rule_set: {
+            lock_version: rule_set.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      rule_set.reload
+
+      expect(rule_set.status).to eq("archived")
+      expect(rule_set.lock_version).to eq(1)
+    end
+
+    it "draftのRFルールはアーカイブできない" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "編集中のルール",
+          version: 1,
+          status: "draft"
+        )
+
+      patch(
+        "/api/v1/rf_rule_sets/#{rule_set.id}/archive",
+        params: {
+          rf_rule_set: {
+            lock_version: rule_set.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(rule_set.reload.status).to eq("draft")
+    end
+  end
+
   private
 
   def create_rule_set(

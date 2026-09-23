@@ -127,6 +127,24 @@ class Api::V1::Rf::RuleSetsController <
     )
   end
 
+  def archive
+    rule_set =
+      Rf::RuleSetArchiver.call(
+        rule_set: RfRuleSet.find(params[:id]),
+        expected_lock_version:
+          archive_params[:lock_version]
+      )
+
+    render_success(
+      data: {
+        rule_set:
+          Api::V1::Rf::RuleSetSerializer
+            .new(rule_set)
+            .as_json
+      }
+    )
+end
+
   private
 
   def rule_set_params
@@ -174,4 +192,12 @@ class Api::V1::Rf::RuleSetsController <
       ]
     )
   end
+
+  def archive_params
+    params.expect(
+      rf_rule_set: [
+        :lock_version
+      ]
+    )
+end
 end

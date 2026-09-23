@@ -81,6 +81,7 @@ Rails.application.routes.draw do
         member do
           post :validate
           patch :publish
+          patch :archive
         end
       end
     end
