@@ -66,6 +66,7 @@ Rails.application.routes.draw do
           only: :create do
         member do
           patch :activate
+          get :results
         end
 
         collection do

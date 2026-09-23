@@ -1,5 +1,7 @@
 class Api::V1::Rf::CalculationRunsController <
   Api::V1::BaseController
+  include ApiPagination
+
   def create
     base_date = parsed_base_date
     return if performed?
@@ -25,6 +27,47 @@ class Api::V1::Rf::CalculationRunsController <
       message: "RFランクを計算できません",
       errors: [ error.message ],
       status: :unprocessable_content
+    )
+  end
+
+  def results
+    calculation_run =
+      RfCalculationRun.find(params[:id])
+
+    pagination = pagination_params
+    return unless pagination
+
+    paginated_results =
+      paginate(
+        calculation_run
+          .customer_rf_rank_results
+          .includes(:customer, :rf_rank)
+          .order(:customer_id),
+        **pagination
+      )
+
+    results = paginated_results[:records].to_a
+
+    previous_results =
+      previous_results_by_customer_id(
+        calculation_run,
+        results.map(&:customer_id)
+      )
+
+    render_success(
+      data: {
+        results:
+          results.map do |result|
+            Api::V1::Rf::CustomerRankResultSerializer
+              .new(
+                result,
+                previous_result:
+                  previous_results[result.customer_id]
+              )
+              .as_json
+          end,
+        pagination: paginated_results[:metadata]
+      }
     )
   end
 
@@ -178,5 +221,20 @@ class Api::V1::Rf::CalculationRunsController <
     Api::V1::Rf::CalculationRunSerializer
       .new(calculation_run)
       .as_json
+  end
+
+  def previous_results_by_customer_id(
+    calculation_run,
+    customer_ids
+  )
+    return {} if calculation_run.previous_run.nil?
+    return {} if customer_ids.empty?
+
+    calculation_run
+      .previous_run
+      .customer_rf_rank_results
+      .includes(:rf_rank)
+      .where(customer_id: customer_ids)
+      .index_by(&:customer_id)
   end
 end
