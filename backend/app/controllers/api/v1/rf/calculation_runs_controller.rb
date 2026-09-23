@@ -2,6 +2,68 @@ class Api::V1::Rf::CalculationRunsController <
   Api::V1::BaseController
   include ApiPagination
 
+  def index
+    pagination = pagination_params
+    return unless pagination
+
+    paginated_runs =
+      paginate(
+        RfCalculationRun
+          .includes(
+            :rf_rule_set,
+            started_by_staff: :staff_master
+          )
+          .order(created_at: :desc, id: :desc),
+        **pagination
+      )
+
+    current_run =
+      RfSetting.first&.current_calculation_run
+
+    restorable_run_ids =
+      collect_previous_run_ids(current_run)
+
+    render_success(
+      data: {
+        calculation_runs:
+          paginated_runs[:records].map do |calculation_run|
+            Api::V1::Rf::CalculationRunHistorySerializer
+              .new(
+                calculation_run,
+                current_run_id: current_run&.id,
+                restorable_run_ids: restorable_run_ids
+              )
+              .as_json
+          end,
+        pagination: paginated_runs[:metadata]
+      }
+    )
+  end
+
+  def show
+    calculation_run =
+      RfCalculationRun.find(params[:id])
+
+    current_run =
+      RfSetting.first&.current_calculation_run
+
+    restorable_run_ids =
+      collect_previous_run_ids(current_run)
+
+    render_success(
+      data: {
+        calculation_run:
+          Api::V1::Rf::CalculationRunDetailSerializer
+            .new(
+              calculation_run,
+              current_run_id: current_run&.id,
+              restorable_run_ids: restorable_run_ids
+            )
+            .as_json
+      }
+    )
+end
+
   def create
     base_date = parsed_base_date
     return if performed?
@@ -237,4 +299,16 @@ class Api::V1::Rf::CalculationRunsController <
       .where(customer_id: customer_ids)
       .index_by(&:customer_id)
   end
+
+  def collect_previous_run_ids(current_run)
+    ids = []
+    calculation_run = current_run&.previous_run
+
+    while calculation_run
+      ids << calculation_run.id
+      calculation_run = calculation_run.previous_run
+    end
+
+    ids
+end
 end
