@@ -86,6 +86,21 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         )
       ).to eq(calculation_run.id)
 
+      preview =
+        response_body.dig(
+          "data",
+          "calculation_run",
+          "preview"
+        )
+
+      expect(preview).to include(
+        "changed_count" => 0,
+        "unchanged_count" => 0,
+        "excluded_count" => 0
+      )
+
+      expect(preview["rank_transitions"]).to eq([])
+
       expect(RfSetting.count).to eq(0)
     end
 
@@ -137,6 +152,161 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       expect(response_body["message"])
         .to eq("RFランクを計算できません")
+    end
+  end
+
+  describe "GET /api/v1/rf_calculation_runs/:id/results" do
+    it "未ログインの場合は401を返す" do
+      get(
+        "/api/v1/rf_calculation_runs/1/results",
+        headers: csrf_headers
+      )
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "存在しない計算履歴の場合は404を返す" do
+      login!
+
+      get(
+        "/api/v1/rf_calculation_runs/999999/results",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:not_found)
+      expect(response_body["message"])
+        .to eq("データが見つかりませんでした")
+    end
+
+    it "ページ指定が不正な場合は400を返す" do
+      login!
+
+      calculation_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23)
+        )
+
+      get(
+        "/api/v1/rf_calculation_runs/#{calculation_run.id}/results",
+        params: {
+          page: 0,
+          per_page: 20
+        },
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:bad_request)
+      expect(response_body["message"])
+        .to eq("ページ指定が不正です")
+    end
+
+    it "顧客ごとの変更前後のRFランクと判定根拠を返す" do
+      login!
+
+      rf_rank_master =
+        create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+      rank_a =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク",
+          position: 1
+        )
+
+      rank_b =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "B",
+          label: "Bランク",
+          position: 2
+        )
+
+      customer = create(:customer)
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      previous_run.customer_rf_rank_results.create!(
+        customer: customer,
+        rf_rank: rank_b,
+        recency_days: 40,
+        frequency_count: 1,
+        last_visit_on: Date.new(2026, 8, 1)
+      )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      current_result =
+        current_run.customer_rf_rank_results.create!(
+          customer: customer,
+          rf_rank: rank_a,
+          recency_days: 20,
+          frequency_count: 3,
+          last_visit_on: Date.new(2026, 9, 3)
+        )
+
+      get(
+        "/api/v1/rf_calculation_runs/#{current_run.id}/results",
+        params: {
+          page: 1,
+          per_page: 20
+        },
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      result =
+        response_body
+          .dig("data", "results")
+          .first
+
+      expect(result).to include(
+        "id" => current_result.id,
+        "changed" => true,
+        "recency_days" => 20,
+        "frequency_count" => 3,
+        "last_visit_on" => "2026-09-03",
+        "exclusion_reason" => nil
+      )
+
+      expect(result["customer"]).to include(
+        "id" => customer.id,
+        "name" => customer.name
+      )
+
+      expect(result["previous_rf_rank"]).to include(
+        "id" => rank_b.id,
+        "code" => "B",
+        "label" => "Bランク"
+      )
+
+      expect(result["rf_rank"]).to include(
+        "id" => rank_a.id,
+        "code" => "A",
+        "label" => "Aランク"
+      )
+
+      expect(
+        response_body.dig(
+          "data",
+          "pagination",
+          "total_count"
+        )
+      ).to eq(1)
     end
   end
 

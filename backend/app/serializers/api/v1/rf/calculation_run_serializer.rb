@@ -13,6 +13,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
       customer_count: resource.customer_count,
       excluded_count: resource.excluded_count,
       rank_counts: serialize_rank_counts,
+      preview: serialize_preview,
       unmatched_count: resource.unmatched_count,
       started_at: resource.started_at,
       completed_at: resource.completed_at,
@@ -32,6 +33,43 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
       id: staff.id,
       code: staff.staff_master&.code,
       name: staff.staff_master&.name
+    }
+  end
+
+  def serialize_preview
+    preview =
+      Rf::CalculationPreviewBuilder.call(
+        calculation_run: resource
+      )
+
+    {
+      changed_count: preview.changed_count,
+      unchanged_count: preview.unchanged_count,
+      excluded_count: preview.excluded_count,
+      rank_transitions:
+        preview.rank_transitions.map do |transition|
+          serialize_transition(transition)
+        end
+    }
+  end
+
+  def serialize_transition(transition)
+    {
+      from_rf_rank:
+        serialize_rf_rank(transition.from_rf_rank),
+      to_rf_rank:
+        serialize_rf_rank(transition.to_rf_rank),
+      count: transition.count
+    }
+  end
+
+  def serialize_rf_rank(rf_rank)
+    return nil if rf_rank.nil?
+
+    {
+      id: rf_rank.id,
+      code: rf_rank.code,
+      label: rf_rank.label
     }
   end
 
