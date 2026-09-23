@@ -60,7 +60,14 @@ class Api::V1::Rf::CalculationRunsController <
   end
 
   def rollback
-    setting = Rf::CalculationRollback.call
+    expected_current_run_id =
+      parsed_expected_current_run_id
+
+    return if performed?
+
+    setting = Rf::CalculationRollback.call(
+      expected_current_run_id: expected_current_run_id
+    )
 
     current_calculation_run =
       setting.current_calculation_run
@@ -76,15 +83,52 @@ class Api::V1::Rf::CalculationRunsController <
       }
     )
   rescue Rf::CalculationRollback::CurrentRunNotFoundError,
-         Rf::CalculationRollback::PreviousRunNotFoundError => error
+          Rf::CalculationRollback::PreviousRunNotFoundError => error
     render_error(
       message: "計算結果を復元できません",
       errors: [ error.message ],
       status: :unprocessable_content
     )
+    rescue Rf::CalculationRollback::StaleRunError => error
+      render_error(
+        message: "計算結果を復元できません",
+        errors: [ error.message ],
+        status: :conflict
+      )
   end
 
   private
+
+  def rollback_params
+    @rollback_params ||=
+      params.expect(
+        rf_calculation: [
+          :expected_current_run_id
+        ]
+      )
+  end
+
+  def parsed_expected_current_run_id
+    value = rollback_params[:expected_current_run_id]
+
+    if value.blank?
+      raise ActionController::ParameterMissing.new(
+        :expected_current_run_id
+      )
+    end
+
+    Integer(value.to_s, 10)
+  rescue ArgumentError, TypeError
+    render_error(
+      message: "計算履歴IDが不正です",
+      errors: [
+        "expected_current_run_idは整数で指定してください"
+      ],
+      status: :bad_request
+    )
+
+    nil
+  end
 
   def calculation_params
     @calculation_params ||=

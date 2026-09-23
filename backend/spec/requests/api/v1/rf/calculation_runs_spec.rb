@@ -287,6 +287,11 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       patch(
         "/api/v1/rf_calculation_runs/rollback",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: current_run.id
+          }
+        },
         headers: authenticated_headers,
         as: :json
       )
@@ -310,6 +315,11 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       patch(
         "/api/v1/rf_calculation_runs/rollback",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: 999_999
+          }
+        },
         headers: authenticated_headers,
         as: :json
       )
@@ -336,6 +346,11 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       patch(
         "/api/v1/rf_calculation_runs/rollback",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: current_run.id
+          }
+        },
         headers: authenticated_headers,
         as: :json
       )
@@ -347,6 +362,45 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       expect(
         RfSetting.first.current_calculation_run
       ).to eq(current_run)
+    end
+
+    it "現在値が操作開始時から変わっている場合は復元しない" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 22),
+          previous_run: previous_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/rollback",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: previous_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:conflict)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+
+      expect(response_body["message"])
+        .to eq("計算結果を復元できません")
     end
   end
 

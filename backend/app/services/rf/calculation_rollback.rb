@@ -2,9 +2,16 @@ module Rf
   class CalculationRollback
     class CurrentRunNotFoundError < StandardError; end
     class PreviousRunNotFoundError < StandardError; end
+    class StaleRunError < StandardError; end
 
-    def self.call
-      new.call
+    def self.call(expected_current_run_id:)
+      new(
+        expected_current_run_id: expected_current_run_id
+      ).call
+    end
+
+    def initialize(expected_current_run_id:)
+      @expected_current_run_id = expected_current_run_id
     end
 
     def call
@@ -25,6 +32,7 @@ module Rf
                 "現在適用中のRFランクがありません"
         end
 
+        validate_current_run!(current_run)
         previous_run = current_run.previous_run
 
         if previous_run.nil?
@@ -38,6 +46,17 @@ module Rf
       end
 
       setting
+    end
+
+    private
+
+    attr_reader :expected_current_run_id
+
+    def validate_current_run!(current_run)
+      return if current_run.id == expected_current_run_id
+
+      raise StaleRunError,
+            "現在のRFランクが変更されています。再読み込みしてください"
     end
   end
 end
