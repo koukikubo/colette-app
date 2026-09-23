@@ -82,7 +82,32 @@ class Api::V1::Rf::RuleSetsController <
             .as_json
       }
     )
-end
+  end
+
+  def validate
+    rule_set =
+      RfRuleSet
+        .includes(
+          :recency_rules,
+          :frequency_rules,
+          rank_mappings: {
+            rf_rank: :standard_master
+          }
+        )
+        .find(params[:id])
+
+    result = Rf::RuleSetValidator.call(rule_set)
+
+    render_success(
+      data: {
+        validation: {
+          valid: result.valid?,
+          errors: result.errors,
+          warnings: result.warnings
+        }
+      }
+    )
+  end
 
   private
 

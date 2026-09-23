@@ -444,6 +444,110 @@ RSpec.describe "Api::V1::RfRuleSets",
     )
   end
 
+  describe "POST /api/v1/rf_rule_sets/:id/validate" do
+    it "有効なRFルールの検証結果を返す" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "検証対象RFルール",
+          version: 1,
+          status: "draft"
+        )
+
+      recency_rule =
+        rule_set.recency_rules.create!(
+          code: "R1",
+          label: "全期間",
+          min_days: 0,
+          max_days: nil,
+          position: 1
+        )
+
+      frequency_rule =
+        rule_set.frequency_rules.create!(
+          code: "F1",
+          label: "0回以上",
+          min_visits: 0,
+          max_visits: nil,
+          position: 1
+        )
+
+      rf_rank_master =
+        create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+      rf_rank =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク",
+          position: 1
+        )
+
+      rule_set.rank_mappings.create!(
+        rf_recency_rule: recency_rule,
+        rf_frequency_rule: frequency_rule,
+        rf_rank: rf_rank
+      )
+
+      post(
+        "/api/v1/rf_rule_sets/#{rule_set.id}/validate",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      expect(
+        response_body.dig(
+          "data",
+          "validation"
+        )
+      ).to include(
+        "valid" => true,
+        "errors" => [],
+        "warnings" => []
+      )
+    end
+
+    it "不完全なRFルールの検証エラーを返す" do
+      login!
+
+      rule_set =
+        create_rule_set(
+          name: "不完全なRFルール",
+          version: 1,
+          status: "draft"
+        )
+
+      post(
+        "/api/v1/rf_rule_sets/#{rule_set.id}/validate",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      validation =
+        response_body.dig(
+          "data",
+          "validation"
+        )
+
+      expect(validation["valid"]).to be(false)
+
+      expect(
+        validation["errors"].pluck("code")
+      ).to contain_exactly(
+        "recency_missing",
+        "frequency_missing"
+      )
+    end
+  end
+
   private
 
   def create_rule_set(
