@@ -74,6 +74,10 @@ Rails.application.routes.draw do
           patch :rollback
         end
       end
+
+      resources :rf_rule_sets,
+        controller: "rf/rule_sets",
+        only: %i[index show]
     end
   end
 end
