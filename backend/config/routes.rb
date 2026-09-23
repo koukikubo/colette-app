@@ -80,6 +80,7 @@ Rails.application.routes.draw do
         only: %i[index show create update] do
         member do
           post :validate
+          patch :publish
         end
       end
     end

@@ -548,6 +548,71 @@ RSpec.describe "Api::V1::RfRuleSets",
     end
   end
 
+  describe "PATCH /api/v1/rf_rule_sets/:id/publish" do
+    it "有効なdraftを公開し、現在公開中のルールをアーカイブする" do
+      login!
+
+      current_rule_set =
+        create_rule_set(
+          name: "現在公開中のルール",
+          version: 1,
+          status: "published",
+          published_at: Time.current
+        )
+
+      draft_rule_set =
+        create_rule_set(
+          name: "新しいルール",
+          version: 2,
+          status: "draft"
+        )
+
+      create_valid_rule_structure!(draft_rule_set)
+
+      patch(
+        "/api/v1/rf_rule_sets/#{draft_rule_set.id}/publish",
+        params: {
+          rf_rule_set: {
+            lock_version: draft_rule_set.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      expect(draft_rule_set.reload.status).to eq("published")
+      expect(draft_rule_set.published_at).to be_present
+      expect(current_rule_set.reload.status).to eq("archived")
+    end
+
+    it "検証エラーがあるdraftは公開しない" do
+      login!
+
+      draft_rule_set =
+        create_rule_set(
+          name: "不完全なルール",
+          version: 1,
+          status: "draft"
+        )
+
+      patch(
+        "/api/v1/rf_rule_sets/#{draft_rule_set.id}/publish",
+        params: {
+          rf_rule_set: {
+            lock_version: draft_rule_set.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(draft_rule_set.reload.status).to eq("draft")
+    end
+  end
+
   private
 
   def create_rule_set(
@@ -564,5 +629,47 @@ RSpec.describe "Api::V1::RfRuleSets",
     status: status,
     published_at: published_at
   )
+  end
+
+  def create_valid_rule_structure!(rule_set)
+    rf_rank_master =
+      create(
+        :standard_master,
+        system_key: "rf_rank",
+        name: "RFランク"
+      )
+
+    rf_rank =
+      create(
+        :standard_list_master,
+        standard_master: rf_rank_master,
+        code: "A",
+        label: "Aランク",
+        position: 1
+      )
+
+    recency_rule =
+      rule_set.recency_rules.create!(
+        code: "R1",
+        label: "全期間",
+        min_days: 0,
+        max_days: nil,
+        position: 1
+      )
+
+    frequency_rule =
+      rule_set.frequency_rules.create!(
+        code: "F1",
+        label: "0回以上",
+        min_visits: 0,
+        max_visits: nil,
+        position: 1
+      )
+
+    rule_set.rank_mappings.create!(
+      rf_recency_rule: recency_rule,
+      rf_frequency_rule: frequency_rule,
+      rf_rank: rf_rank
+    )
   end
 end

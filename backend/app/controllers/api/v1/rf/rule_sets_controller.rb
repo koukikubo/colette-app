@@ -109,6 +109,24 @@ class Api::V1::Rf::RuleSetsController <
     )
   end
 
+  def publish
+    rule_set =
+      Rf::RuleSetPublisher.call(
+        rule_set: RfRuleSet.find(params[:id]),
+        expected_lock_version:
+          publish_params[:lock_version]
+      )
+
+    render_success(
+      data: {
+        rule_set:
+          Api::V1::Rf::RuleSetSerializer
+            .new(rule_set)
+            .as_json
+      }
+    )
+  end
+
   private
 
   def rule_set_params
@@ -145,6 +163,14 @@ class Api::V1::Rf::RuleSetsController <
             ]
           ]
         }
+      ]
+    )
+  end
+
+  def publish_params
+    params.expect(
+      rf_rule_set: [
+        :lock_version
       ]
     )
   end
