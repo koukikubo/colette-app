@@ -788,6 +788,217 @@ RSpec.describe "Api::V1::RfRuleSets",
         )
       end
 
+      it "RFルールを更新できない" do
+        login!
+
+        rule_set =
+          create_rule_set(
+            name: "更新前ルール",
+            version: 1,
+            status: "draft"
+          )
+
+        original_lock_version = rule_set.lock_version
+
+        patch(
+          "/api/v1/rf_rule_sets/#{rule_set.id}",
+          params: {
+            rf_rule_set: {
+              name: "更新後ルール",
+              aggregation_months: 36,
+              frequency_window_months: 6,
+              lock_version: rule_set.lock_version,
+              recency_rules: [],
+              frequency_rules: [],
+              rank_mappings: []
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(response_body).to include(
+          "status" => "error",
+          "message" => "この操作を行う権限がありません"
+        )
+
+        rule_set.reload
+
+        expect(rule_set.name).to eq("更新前ルール")
+        expect(rule_set.lock_version)
+          .to eq(original_lock_version)
+      end
+
+      it "RFルールを検証できない" do
+        login!
+
+        rule_set =
+          create_rule_set(
+            name: "検証対象ルール",
+            version: 1,
+            status: "draft"
+          )
+
+        create_valid_rule_structure!(rule_set)
+
+        post(
+          "/api/v1/rf_rule_sets/#{rule_set.id}/validate",
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(response_body).to include(
+          "status" => "error",
+          "message" => "この操作を行う権限がありません"
+        )
+      end
+
+      it "RFルールを公開できない" do
+        login!
+
+        rule_set =
+          create_rule_set(
+            name: "公開対象ルール",
+            version: 1,
+            status: "draft"
+          )
+
+        create_valid_rule_structure!(rule_set)
+
+        original_lock_version = rule_set.lock_version
+
+        patch(
+          "/api/v1/rf_rule_sets/#{rule_set.id}/publish",
+          params: {
+            rf_rule_set: {
+              lock_version: rule_set.lock_version
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(response_body).to include(
+          "status" => "error",
+          "message" => "この操作を行う権限がありません"
+        )
+
+        rule_set.reload
+
+        expect(rule_set.status).to eq("draft")
+        expect(rule_set.published_at).to be_nil
+
+        expect(rule_set.lock_version)
+          .to eq(original_lock_version)
+      end
+
+      it "RFルールをアーカイブできない" do
+        login!
+
+        rule_set =
+          create_rule_set(
+            name: "公開中ルール",
+            version: 1,
+            status: "published",
+            published_at: Time.current
+          )
+
+        original_lock_version = rule_set.lock_version
+
+        patch(
+          "/api/v1/rf_rule_sets/#{rule_set.id}/archive",
+          params: {
+            rf_rule_set: {
+              lock_version: rule_set.lock_version
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(response_body).to include(
+          "status" => "error",
+          "message" => "この操作を行う権限がありません"
+        )
+
+        rule_set.reload
+
+        expect(rule_set.status).to eq("published")
+
+        expect(rule_set.lock_version)
+          .to eq(original_lock_version)
+      end
+
+      it "RFルールを削除できない" do
+        login!
+
+        rule_set =
+          create_rule_set(
+            name: "削除対象ルール",
+            version: 1,
+            status: "draft"
+          )
+
+        create_valid_rule_structure!(rule_set)
+
+        expect do
+          delete(
+            "/api/v1/rf_rule_sets/#{rule_set.id}",
+            params: {
+              rf_rule_set: {
+                lock_version: rule_set.lock_version
+              }
+            },
+            headers: authenticated_headers,
+            as: :json
+          )
+        end.not_to change(RfRuleSet, :count)
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(response_body).to include(
+          "status" => "error",
+          "message" => "この操作を行う権限がありません"
+        )
+
+        expect(RfRuleSet.exists?(rule_set.id))
+          .to be(true)
+      end
+
+      it "RFルール詳細は参照できる" do
+        login!
+
+        rule_set =
+          create_rule_set(
+            name: "参照用ルール",
+            version: 1,
+            status: "draft"
+          )
+
+        get(
+          "/api/v1/rf_rule_sets/#{rule_set.id}",
+          headers: authenticated_headers
+        )
+
+        expect(response).to have_http_status(:ok)
+
+        expect(
+          response_body.dig(
+            "data",
+            "rule_set",
+            "id"
+          )
+        ).to eq(rule_set.id)
+      end
+
       it "RFルール一覧は参照できる" do
         login!
 
