@@ -86,6 +86,7 @@ export type CustomerListParams = {
 
 export type CustomerAttributes = {
   customer_kind: CustomerKind;
+  customer_rank_id?: number | null;
 
   name: string;
   kana: string;

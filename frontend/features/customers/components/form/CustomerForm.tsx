@@ -18,9 +18,22 @@ import {
   type CustomerFormValues,
 } from "../../customer-form";
 
+import type { StandardListCode } from "@/features/standard-codes/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const EMPTY_CUSTOMER_RANK_VALUE = "__none__";
+
 type CustomerFormProps = {
   formId: string;
   values: CustomerFormValues;
+  customerRankOptions: StandardListCode[];
+  isCustomerRankLoading?: boolean;
   errors?: string[];
   fieldErrors: ApiFieldErrors;
   disabled?: boolean;
@@ -42,6 +55,8 @@ function toFieldErrorItems(messages?: string[]) {
 export function CustomerForm({
   formId,
   values,
+  customerRankOptions,
+  isCustomerRankLoading = false,
   errors = [],
   fieldErrors,
   disabled = false,
@@ -68,6 +83,21 @@ export function CustomerForm({
     }
 
     updateField("customerKind", value);
+  }
+
+  function handleCustomerRankChange(value: string) {
+    if (value === EMPTY_CUSTOMER_RANK_VALUE) {
+      updateField("customerRankId", null);
+      return;
+    }
+
+    const customerRankId = Number(value);
+
+    if (!Number.isInteger(customerRankId)) {
+      return;
+    }
+
+    updateField("customerRankId", customerRankId);
   }
 
   function fieldId(field: keyof CustomerFormValues) {
@@ -228,6 +258,61 @@ export function CustomerForm({
               <FieldError
                 id={fieldErrorId("birthday")}
                 errors={toFieldErrorItems(getFieldErrorMessages("birthday"))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={fieldId("customerRankId")}>顧客ランク</Label>
+
+              <Select
+                value={
+                  values.customerRankId === null
+                    ? EMPTY_CUSTOMER_RANK_VALUE
+                    : String(values.customerRankId)
+                }
+                disabled={disabled || isCustomerRankLoading}
+                onValueChange={handleCustomerRankChange}
+              >
+                <SelectTrigger
+                  id={fieldId("customerRankId")}
+                  className="w-full"
+                  aria-invalid={hasFieldError("customerRankId")}
+                  aria-describedby={`${fieldId("customerRankId")}-description`}
+                >
+                  <SelectValue
+                    placeholder={
+                      isCustomerRankLoading
+                        ? "顧客ランクを読み込み中..."
+                        : "顧客ランクを選択してください"
+                    }
+                  />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value={EMPTY_CUSTOMER_RANK_VALUE}>
+                    未設定
+                  </SelectItem>
+
+                  {customerRankOptions.map((option) => (
+                    <SelectItem key={option.id} value={String(option.id)}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <p
+                id={`${fieldId("customerRankId")}-description`}
+                className="text-xs text-muted-foreground"
+              >
+                Rランクを設定した顧客は、RFランクの自動計算対象外になります。
+              </p>
+
+              <FieldError
+                id={fieldErrorId("customerRankId")}
+                errors={toFieldErrorItems(
+                  getFieldErrorMessages("customerRankId"),
+                )}
               />
             </div>
           </div>

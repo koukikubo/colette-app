@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,8 @@ import { CustomerVisibilitySection } from "../form/CustomerVisibilitySection";
 import { CustomerVisibilityDialog } from "./CustomerVisibilityDialog";
 import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { validateCustomerFormValues } from "../../utils/customer-form-validation";
+import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
+import type { StandardListCode } from "@/features/standard-codes/types";
 
 export type CustomerFormMode = "create" | "edit";
 
@@ -66,6 +68,11 @@ export function CustomerFormDialog({
   const [values, setValues] = useState<CustomerFormValues>(() =>
     createInitialFormValues(mode, customer),
   );
+  const [customerRankOptions, setCustomerRankOptions] = useState<
+    StandardListCode[]
+  >([]);
+
+  const [isCustomerRankLoading, setIsCustomerRankLoading] = useState(false);
 
   const [errors, setErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -76,6 +83,49 @@ export function CustomerFormDialog({
 
   // 非表示確認画面の状態管理
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadCustomerRankOptions() {
+      setIsCustomerRankLoading(true);
+
+      try {
+        const response = await fetchStandardCodes(controller.signal);
+
+        const customerRankMaster = response.data.standard_masters.find(
+          (standardMaster) => standardMaster.system_key === "customer_rank",
+        );
+
+        const activeOptions =
+          customerRankMaster?.items?.filter((option) => option.active) ?? [];
+
+        setCustomerRankOptions(activeOptions);
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        console.error("顧客ランクの取得に失敗しました。", error);
+
+        setErrors(["顧客ランクの選択肢を取得できませんでした。"]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsCustomerRankLoading(false);
+        }
+      }
+    }
+
+    void loadCustomerRankOptions();
+
+    return () => {
+      controller.abort();
+    };
+  }, [open]);
 
   function handleRequestConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -160,6 +210,10 @@ export function CustomerFormDialog({
     onOpenChange(false);
   }
 
+  const selectedCustomerRankLabel =
+    customerRankOptions.find((option) => option.id === values.customerRankId)
+      ?.label ?? null;
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -179,6 +233,8 @@ export function CustomerFormDialog({
           <CustomerForm
             formId={FORM_ID}
             values={values}
+            customerRankOptions={customerRankOptions}
+            isCustomerRankLoading={isCustomerRankLoading}
             errors={errors}
             fieldErrors={fieldErrors}
             disabled={isSubmitting}
@@ -217,6 +273,7 @@ export function CustomerFormDialog({
         open={confirmOpen}
         mode={mode}
         values={values}
+        customerRankLabel={selectedCustomerRankLabel}
         isSubmitting={isSubmitting}
         onOpenChange={setConfirmOpen}
         onConfirm={() => {
