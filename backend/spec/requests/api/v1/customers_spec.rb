@@ -7,6 +7,23 @@ RSpec.describe "Api::V1::Customers", type: :request do
     create(:staff)
   end
 
+  let(:customer_rank_master) do
+    create(
+      :standard_master,
+      system_key: "customer_rank",
+      name: "顧客ランク"
+    )
+  end
+
+  let(:customer_rank) do
+    create(
+      :standard_list_master,
+      standard_master: customer_rank_master,
+      code: "R",
+      label: "Rランク"
+    )
+  end
+
   def response_body
     JSON.parse(response.body)
   end
@@ -342,6 +359,49 @@ RSpec.describe "Api::V1::Customers", type: :request do
       )
     end
 
+    let(:rf_rank_master) do
+      create(
+        :standard_master,
+        system_key: "rf_rank",
+        name: "RFランク"
+      )
+    end
+
+    let(:rf_rank) do
+      create(
+        :standard_list_master,
+        standard_master: rf_rank_master,
+        code: "A",
+        label: "Aランク",
+        position: 1
+      )
+    end
+
+    let(:rf_rule_set) do
+      RfRuleSet.create!(
+        name: "公開RFルール",
+        version: 1,
+        aggregation_months: 60,
+        frequency_window_months: 12,
+        status: "published",
+        published_at: Time.current
+      )
+    end
+
+    let(:calculation_run) do
+      RfCalculationRun.create!(
+        rf_rule_set: rf_rule_set,
+        started_by_staff: login_staff,
+        base_date: Date.new(2026, 9, 26),
+        aggregation_started_on:
+          Date.new(2021, 9, 26),
+        frequency_started_on:
+          Date.new(2025, 9, 26),
+        status: "completed",
+        completed_at: Time.current
+      )
+    end
+
     it "指定した顧客を取得できる" do
       get "/api/v1/customers/#{customer.id}"
 
@@ -382,6 +442,137 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(response_body["status"]).to eq("error")
       expect(response_body["message"])
         .to eq("データが見つかりませんでした")
+    end
+
+    it "顧客ランクを取得できる" do
+      customer.update!(
+        customer_rank: customer_rank
+      )
+
+      get "/api/v1/customers/#{customer.id}"
+
+      response_customer =
+        response_body.dig("data", "customer")
+
+      expect(response_customer["customer_rank_id"])
+        .to eq(customer_rank.id)
+
+      expect(response_customer["customer_rank"]).to eq(
+        {
+          "id" => customer_rank.id,
+          "code" => "R",
+          "label" => "Rランク"
+        }
+      )
+    end
+
+    it "現在適用中のRFランクと判定根拠を取得できる" do
+      calculation_run
+        .customer_rf_rank_results
+        .create!(
+          customer: customer,
+          rf_rank: rf_rank,
+          recency_days: 20,
+          frequency_count: 3,
+          last_visit_on: Date.new(2026, 9, 6)
+        )
+
+      RfSetting.create!(
+        current_calculation_run: calculation_run
+      )
+
+      get "/api/v1/customers/#{customer.id}"
+
+      expect(response).to have_http_status(:ok)
+
+      response_customer =
+        response_body.dig(
+          "data",
+          "customer"
+        )
+
+      expect(response_customer["current_rf_rank"]).to eq(
+        {
+          "id" => rf_rank.id,
+          "code" => "A",
+          "label" => "Aランク"
+        }
+      )
+
+      expect(response_customer["rf_rank_basis"]).to eq(
+        {
+          "calculation_run_id" => calculation_run.id,
+          "base_date" => "2026-09-26",
+          "recency_days" => 20,
+          "frequency_count" => 3,
+          "last_visit_on" => "2026-09-06",
+          "exclusion_reason" => nil
+        }
+      )
+    end
+
+    it "現在適用中のRF計算結果がない場合はRF情報をnullで返す" do
+      get "/api/v1/customers/#{customer.id}"
+
+      expect(response).to have_http_status(:ok)
+
+      response_customer =
+        response_body.dig(
+          "data",
+          "customer"
+        )
+
+      expect(
+        response_customer["current_rf_rank"]
+      ).to be_nil
+
+      expect(
+        response_customer["rf_rank_basis"]
+      ).to be_nil
+    end
+
+    it "RF計算対象外の場合は対象外理由を取得できる" do
+      calculation_run
+        .customer_rf_rank_results
+        .create!(
+          customer: customer,
+          rf_rank: nil,
+          recency_days: nil,
+          frequency_count: 0,
+          last_visit_on: nil,
+          exclusion_reason:
+            "manual_customer_rank"
+        )
+
+      RfSetting.create!(
+        current_calculation_run: calculation_run
+      )
+
+      get "/api/v1/customers/#{customer.id}"
+
+      expect(response).to have_http_status(:ok)
+
+      response_customer =
+        response_body.dig(
+          "data",
+          "customer"
+        )
+
+      expect(
+        response_customer["current_rf_rank"]
+      ).to be_nil
+
+      expect(response_customer["rf_rank_basis"]).to eq(
+        {
+          "calculation_run_id" => calculation_run.id,
+          "base_date" => "2026-09-26",
+          "recency_days" => nil,
+          "frequency_count" => 0,
+          "last_visit_on" => nil,
+          "exclusion_reason" =>
+            "manual_customer_rank"
+        }
+      )
     end
   end
 
@@ -489,6 +680,35 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(response_body["errors"]["kana"]).to include(
         "フリガナは全角カタカナで入力してください"
       )
+    end
+
+    it "顧客ランクを指定して登録できる" do
+      params = valid_params.deep_merge(
+        customer: {
+          customer_rank_id: customer_rank.id
+        }
+      )
+
+      post(
+        "/api/v1/customers",
+        params: params,
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:created)
+
+      customer = Customer.order(:id).last
+
+      expect(customer.customer_rank).to eq(customer_rank)
+      expect(
+        response_body.dig(
+          "data",
+          "customer",
+          "customer_rank",
+          "code"
+        )
+      ).to eq("R")
     end
   end
 
@@ -647,6 +867,59 @@ RSpec.describe "Api::V1::Customers", type: :request do
 
       expect(customer.name).to eq("更新前 顧客")
       expect(customer.memo).to eq("別の担当者による更新")
+    end
+
+    it "顧客ランクを更新できる" do
+      patch(
+        "/api/v1/customers/#{customer.id}",
+        params: {
+          customer: {
+            customer_rank_id: customer_rank.id,
+            lock_version: customer.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+      expect(customer.reload.customer_rank).to eq(customer_rank)
+    end
+
+    it "RFランクを手動顧客ランクには設定できない" do
+      rf_rank_master = create(
+        :standard_master,
+        system_key: "rf_rank",
+        name: "RFランク"
+      )
+
+      rf_rank = create(
+        :standard_list_master,
+        standard_master: rf_rank_master,
+        code: "A",
+        label: "Aランク"
+      )
+
+      patch(
+        "/api/v1/customers/#{customer.id}",
+        params: {
+          customer: {
+            customer_rank_id: rf_rank.id,
+            lock_version: customer.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(customer.reload.customer_rank).to be_nil
+      expect(
+        response_body.dig("errors", "customer_rank")
+      ).to be_present
     end
   end
 

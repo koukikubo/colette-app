@@ -9,6 +9,10 @@ export function formatCustomerPhoneNumber(
 
   const digits = value.replace(/\D/g, "");
 
+  if (/^0800\d{7}$/.test(digits)) {
+    return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+
   // 携帯電話・IP電話
   if (/^(070|080|090|050)\d{8}$/.test(digits)) {
     return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
@@ -21,10 +25,6 @@ export function formatCustomerPhoneNumber(
 
   // フリーダイヤル・ナビダイヤル
   if (/^(0120|0570)\d{6}$/.test(digits)) {
-    return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
-  }
-
-  if (/^0800\d{7}$/.test(digits)) {
     return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
   }
 

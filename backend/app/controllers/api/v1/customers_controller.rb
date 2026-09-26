@@ -20,6 +20,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
     return unless pagination
 
     customers = Customer.includes(
+      :customer_rank,
       created_by_staff: :staff_master,
       updated_by_staff: :staff_master
     )
@@ -42,18 +43,26 @@ class Api::V1::CustomersController < Api::V1::BaseController
       **pagination
     )
 
+    serialized_customers =
+      paginated_customers[:records].map do |customer|
+        serialize_customer(customer)
+      end
+
     render_success(
       data: {
-        customers: paginated_customers[:records].map do |customer|
-          serialize_customer(customer)
-        end,
+        customers: serialized_customers,
         pagination: paginated_customers[:metadata]
       }
     )
   end
 
   def show
-    render_customer(@customer)
+    render_success(
+        data: {
+          customer:
+            serialize_customer_detail(@customer)
+        }
+      )
   end
 
   def create
@@ -127,10 +136,28 @@ class Api::V1::CustomersController < Api::V1::BaseController
   def set_customer
     @customer = Customer
       .includes(
+        :customer_rank,
         created_by_staff: :staff_master,
         updated_by_staff: :staff_master
       )
       .find(params[:id])
+  end
+
+  def current_rf_rank_result(customer)
+    current_run =
+      RfSetting
+        .first
+        &.current_calculation_run
+
+    return nil if current_run.nil?
+
+    current_run
+      .customer_rf_rank_results
+      .includes(
+        :rf_rank,
+        :rf_calculation_run
+      )
+      .find_by(customer_id: customer.id)
   end
 
   def customer_create_params
@@ -154,6 +181,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
   def customer_attributes
     %i[
       customer_kind
+      customer_rank_id
       name
       kana
       postal_code
@@ -262,6 +290,19 @@ class Api::V1::CustomersController < Api::V1::BaseController
   def serialize_customer(customer)
     Api::V1::CustomerSerializer
       .new(customer)
+      .as_json
+  end
+  # 顧客詳細専用Serializer
+  def serialize_customer_detail(customer)
+    rf_rank_result =
+      current_rf_rank_result(customer)
+
+    Api::V1::CustomerDetailSerializer
+      .new(
+        customer,
+        current_rf_rank_result:
+          rf_rank_result
+      )
       .as_json
   end
 

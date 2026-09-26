@@ -55,6 +55,35 @@ Rails.application.routes.draw do
           patch :complete
         end
       end
+
+      resource :rf_setting,
+          path: "rf_settings",
+          controller: "rf/settings",
+          only: :show
+
+      resources :rf_calculation_runs,
+          controller: "rf/calculation_runs",
+          only: %i[index create show ] do
+        member do
+          patch :activate
+          get :results
+          patch :restore
+        end
+
+        collection do
+          patch :rollback
+        end
+      end
+
+      resources :rf_rule_sets,
+        controller: "rf/rule_sets",
+        only: %i[index show create update destroy] do
+        member do
+          post :validate
+          patch :publish
+          patch :archive
+        end
+      end
     end
   end
 end

@@ -1,0 +1,390 @@
+require "rails_helper"
+
+RSpec.describe "Api::V1::RfCalculationRunHistories",
+               type: :request do
+  include_context "authenticated request"
+
+  let(:login_role_code) { "owner" }
+
+  let(:login_staff) do
+    staff_master =
+      create(
+        :staff_master,
+        role_code: login_role_code
+      )
+
+    create(
+      :staff,
+      staff_master: staff_master,
+      password: login_password,
+      password_confirmation: login_password
+    )
+  end
+
+  let(:login_staff) do
+    create(
+      :staff,
+      staff_master:
+        create(
+          :staff_master,
+          role_code: "owner"
+        ),
+      password: login_password,
+      password_confirmation: login_password
+    )
+  end
+
+  def response_body
+    JSON.parse(response.body)
+  end
+
+  let(:rule_set) do
+    RfRuleSet.create!(
+      name: "公開RFルール",
+      version: 1,
+      aggregation_months: 60,
+      frequency_window_months: 12,
+      status: "published",
+      published_at: Time.current
+    )
+  end
+
+  describe "GET /api/v1/rf_calculation_runs" do
+    it "計算履歴を新しい順に返す" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      get(
+        "/api/v1/rf_calculation_runs",
+        params: {
+          page: 1,
+          per_page: 20
+        },
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      calculation_runs =
+        response_body.dig(
+          "data",
+          "calculation_runs"
+        )
+
+      expect(
+        calculation_runs.pluck("id")
+      ).to eq(
+        [
+          current_run.id,
+          previous_run.id
+        ]
+      )
+
+      expect(calculation_runs.first).to include(
+        "id" => current_run.id,
+        "base_date" => "2026-09-23",
+        "status" => "completed",
+        "current" => true,
+        "restorable" => false
+      )
+
+      expect(calculation_runs.second).to include(
+        "id" => previous_run.id,
+        "base_date" => "2026-08-31",
+        "status" => "completed",
+        "current" => false,
+        "restorable" => true
+      )
+
+      expect(
+        response_body.dig(
+          "data",
+          "pagination",
+          "total_count"
+        )
+      ).to eq(2)
+    end
+  end
+
+  describe "GET /api/v1/rf_calculation_runs/:id" do
+    it "指定した計算履歴の詳細を返す" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      get(
+        "/api/v1/rf_calculation_runs/#{previous_run.id}",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      calculation_run =
+        response_body.dig(
+          "data",
+          "calculation_run"
+        )
+
+      expect(calculation_run).to include(
+        "id" => previous_run.id,
+        "rf_rule_set_id" => rule_set.id,
+        "base_date" => "2026-08-31",
+        "status" => "completed",
+        "customer_count" => 10,
+        "excluded_count" => 1,
+        "current" => false,
+        "restorable" => true
+      )
+
+      expect(calculation_run["preview"]).to include(
+        "changed_count" => 0,
+        "unchanged_count" => 0,
+        "excluded_count" => 0
+      )
+    end
+
+    it "存在しない計算履歴の場合は404を返す" do
+      login!
+
+      get(
+        "/api/v1/rf_calculation_runs/999999",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:not_found)
+      expect(response_body["message"])
+        .to eq("データが見つかりませんでした")
+    end
+  end
+
+  describe "PATCH /api/v1/rf_calculation_runs/:id/restore" do
+    context "operatorが操作した場合" do
+      let(:login_staff) do
+        staff_master =
+          create(
+            :staff_master,
+            role_code: "operator"
+          )
+
+        create(
+          :staff,
+          staff_master: staff_master,
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+      it "403を返し、選択した履歴へ復元しない" do
+        login!
+
+        previous_run =
+          create_completed_run(
+            base_date: Date.new(2026, 8, 31)
+          )
+
+        current_run =
+          create_completed_run(
+            base_date: Date.new(2026, 9, 23),
+            previous_run: previous_run
+          )
+
+        setting =
+          RfSetting.create!(
+            current_calculation_run: current_run
+          )
+
+        patch(
+          "/api/v1/rf_calculation_runs/#{previous_run.id}/restore",
+          params: {
+            rf_calculation: {
+              expected_current_run_id: current_run.id
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(
+          setting.reload.current_calculation_run
+        ).to eq(current_run)
+      end
+    end
+    it "選択した過去の計算履歴へ復元する" do
+      login!
+
+      oldest_run =
+        create_completed_run(
+          base_date: Date.new(2026, 7, 31)
+        )
+
+      middle_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31),
+          previous_run: oldest_run
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: middle_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{oldest_run.id}/restore",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: current_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(oldest_run)
+
+      expect(
+        response_body.dig(
+          "data",
+          "current_calculation_run_id"
+        )
+      ).to eq(oldest_run.id)
+    end
+
+    it "現在値が操作開始時から変わっている場合は409を返す" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{previous_run.id}/restore",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: previous_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:conflict)
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+
+      expect(response_body["message"])
+        .to eq("計算結果を復元できません")
+    end
+
+    it "現在値とつながっていない履歴には復元できない" do
+      login!
+
+      previous_run =
+        create_completed_run(
+          base_date: Date.new(2026, 8, 31)
+        )
+
+      current_run =
+        create_completed_run(
+          base_date: Date.new(2026, 9, 23),
+          previous_run: previous_run
+        )
+
+      unrelated_run =
+        create_completed_run(
+          base_date: Date.new(2026, 7, 31)
+        )
+
+      RfSetting.create!(
+        current_calculation_run: current_run
+      )
+
+      patch(
+        "/api/v1/rf_calculation_runs/#{unrelated_run.id}/restore",
+        params: {
+          rf_calculation: {
+            expected_current_run_id: current_run.id
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(
+        RfSetting.first.current_calculation_run
+      ).to eq(current_run)
+    end
+  end
+
+  private
+
+  def create_completed_run(base_date:, previous_run: nil)
+    RfCalculationRun.create!(
+      rf_rule_set: rule_set,
+      previous_run: previous_run,
+      started_by_staff: login_staff,
+      base_date: base_date,
+      aggregation_started_on:
+        base_date.advance(months: -60),
+      frequency_started_on:
+        base_date.advance(months: -12),
+      status: "completed",
+      customer_count: 10,
+      excluded_count: 1,
+      completed_at: Time.current
+    )
+  end
+end

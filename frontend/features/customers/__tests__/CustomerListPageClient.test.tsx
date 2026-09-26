@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CustomerListPageClient } from "../components/list/CustomerListPageClient";
 import userEvent from "@testing-library/user-event";
@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   updateCustomer: vi.fn(),
   hideCustomer: vi.fn(),
   restoreCustomer: vi.fn(),
+  fetchStandardCodes: vi.fn(),
 }));
 
 vi.mock("../api/customer-api", () => ({
@@ -19,6 +20,47 @@ vi.mock("../api/customer-api", () => ({
   hideCustomer: mocks.hideCustomer,
   restoreCustomer: mocks.restoreCustomer,
 }));
+
+vi.mock("@/features/standard-codes/api/standard-code-api", () => ({
+  fetchStandardCodes: mocks.fetchStandardCodes,
+}));
+
+beforeEach(() => {
+  mocks.fetchStandardCodes.mockResolvedValue({
+    status: "success",
+    data: {
+      standard_masters: [
+        {
+          id: 6,
+          system_key: "customer_rank",
+          display_code: "00006",
+          name: "顧客ランク",
+          description: null,
+          position: 6,
+          active: true,
+          items: [
+            {
+              id: 61,
+              display_code: "00061",
+              label: "Aランク",
+              description: null,
+              position: 1,
+              active: true,
+            },
+            {
+              id: 66,
+              display_code: "00066",
+              label: "Rランク",
+              description: "RFランク集計対象外",
+              position: 6,
+              active: true,
+            },
+          ],
+        },
+      ],
+    },
+  });
+});
 
 describe("CustomerListPageClient", () => {
   it("取得した顧客を一覧に表示する", async () => {
@@ -708,6 +750,7 @@ describe("CustomerListPageClient", () => {
       expect(mocks.createCustomer).toHaveBeenCalledWith({
         customer: {
           customer_kind: "individual",
+          customer_rank_id: null,
           name: "山田 太郎",
           kana: "ヤマダ タロウ",
           postal_code: null,
@@ -806,6 +849,14 @@ describe("CustomerListPageClient", () => {
       phone_number: "09012345678",
       email: null,
       birthday: null,
+
+      customer_rank_id: 61,
+      customer_rank: {
+        id: 61,
+        code: "A",
+        label: "Aランク",
+      },
+
       company_name: null,
       company_name_kana: null,
       company_postal_code: null,
@@ -846,6 +897,41 @@ describe("CustomerListPageClient", () => {
       },
     });
 
+    mocks.fetchStandardCodes.mockResolvedValueOnce({
+      status: "success",
+      data: {
+        standard_masters: [
+          {
+            id: 6,
+            system_key: "customer_rank",
+            display_code: "00006",
+            name: "顧客ランク",
+            description: null,
+            position: 6,
+            active: true,
+            items: [
+              {
+                id: 61,
+                display_code: "00061",
+                label: "Aランク",
+                description: null,
+                position: 1,
+                active: false,
+              },
+              {
+                id: 66,
+                display_code: "00066",
+                label: "Rランク",
+                description: "RFランク集計対象外",
+                position: 6,
+                active: true,
+              },
+            ],
+          },
+        ],
+      },
+    });
+
     render(<CustomerListPageClient />);
 
     expect(await screen.findByText("山田 太郎")).toBeInTheDocument();
@@ -862,6 +948,24 @@ describe("CustomerListPageClient", () => {
       }),
     ).toBeInTheDocument();
 
+    const customerRankSelect = screen.getByRole("combobox", {
+      name: "顧客ランク",
+    });
+
+    await waitFor(() => {
+      expect(customerRankSelect).toHaveTextContent(
+        "Aランク（無効・現在設定中）",
+      );
+    });
+
+    await user.click(customerRankSelect);
+
+    await user.click(
+      await screen.findByRole("option", {
+        name: "Rランク",
+      }),
+    );
+
     const nameInput = screen.getByRole("textbox", {
       name: "顧客名",
     });
@@ -876,6 +980,11 @@ describe("CustomerListPageClient", () => {
         name: "更新内容を確認",
       }),
     );
+
+    const confirmDialog = screen.getByRole("alertdialog");
+
+    expect(within(confirmDialog).getByText("顧客ランク")).toBeInTheDocument();
+    expect(within(confirmDialog).getByText("Rランク")).toBeInTheDocument();
 
     expect(
       screen.getByRole("heading", {
@@ -893,6 +1002,7 @@ describe("CustomerListPageClient", () => {
       expect(mocks.updateCustomer).toHaveBeenCalledWith(1, {
         customer: {
           customer_kind: "individual",
+          customer_rank_id: 66,
           name: "山田 次郎",
           kana: "ヤマダ タロウ",
           postal_code: null,
@@ -913,5 +1023,40 @@ describe("CustomerListPageClient", () => {
     });
 
     expect(mocks.fetchCustomers).toHaveBeenCalledTimes(2);
+  });
+
+  it("顧客ランクの選択肢を取得できない場合はエラーを表示する", async () => {
+    const user = userEvent.setup();
+
+    mocks.fetchCustomers.mockResolvedValue({
+      status: "success",
+      data: {
+        customers: [],
+        pagination: {
+          current_page: 1,
+          per_page: 20,
+          total_pages: 1,
+          total_count: 0,
+        },
+      },
+    });
+
+    mocks.fetchStandardCodes.mockRejectedValueOnce(new Error("API通信エラー"));
+
+    render(<CustomerListPageClient />);
+
+    expect(
+      await screen.findByText("顧客が登録されていません"),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "顧客を登録",
+      }),
+    );
+
+    expect(
+      await screen.findByText("顧客ランクの選択肢を取得できませんでした。"),
+    ).toBeInTheDocument();
   });
 });

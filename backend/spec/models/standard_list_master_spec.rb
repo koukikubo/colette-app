@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe StandardListMaster, type: :model do
-subject(:standard_list_master) do
+  subject(:standard_list_master) do
     build(:standard_list_master)
   end
 
