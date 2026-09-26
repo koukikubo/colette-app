@@ -502,6 +502,8 @@ RSpec.describe "Api::V1::RfRuleSets",
           position: 1
         )
 
+      create_no_visit_rank!(rf_rank_master)
+
       rule_set.rank_mappings.create!(
         rf_recency_rule: recency_rule,
         rf_frequency_rule: frequency_rule,
@@ -536,6 +538,8 @@ RSpec.describe "Api::V1::RfRuleSets",
           version: 1,
           status: "draft"
         )
+
+      create_no_visit_rank!
 
       post(
         "/api/v1/rf_rule_sets/#{rule_set.id}/validate",
@@ -1030,6 +1034,24 @@ RSpec.describe "Api::V1::RfRuleSets",
   )
   end
 
+  def create_no_visit_rank!(rf_rank_master = nil)
+    rf_rank_master ||=
+      create(
+        :standard_master,
+        system_key: "rf_rank",
+        name: "RFランク"
+      )
+
+    create(
+      :standard_list_master,
+      standard_master: rf_rank_master,
+      code: "N",
+      label: "未分類",
+      position: 7,
+      active: true
+    )
+  end
+
   def create_valid_rule_structure!(rule_set)
     rf_rank_master =
       create(
@@ -1046,6 +1068,8 @@ RSpec.describe "Api::V1::RfRuleSets",
         label: "Aランク",
         position: 1
       )
+
+    create_no_visit_rank!(rf_rank_master)
 
     recency_rule =
       rule_set.recency_rules.create!(
