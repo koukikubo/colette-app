@@ -27,6 +27,16 @@ RSpec.describe Rf::RuleSetValidator do
     )
   end
 
+  let!(:no_visit_rank) do
+    create(
+      :standard_list_master,
+      standard_master: rf_rank_master,
+      code: "N",
+      label: "未分類",
+      active: true
+    )
+  end
+
   before do
     @r1 = RfRecencyRule.create!(
       rf_rule_set: rule_set,
@@ -120,6 +130,41 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:inactive_rf_rank)
+    end
+
+    it "Nランクが存在しない場合は無効になる" do
+      no_visit_rank.destroy!
+
+      result = described_class.call(rule_set)
+
+      expect(result.error_codes)
+        .to include(:no_visit_rank_missing)
+
+      expect(result.errors).to include(
+        {
+          code: :no_visit_rank_missing,
+          message:
+            "来店実績がない顧客に使用する有効なNランクが登録されていません"
+        }
+      )
+    end
+
+    it "Nランクが無効な場合は無効になる" do
+      no_visit_rank.update!(active: false)
+
+      result = described_class.call(rule_set)
+
+      expect(result.error_codes)
+        .to include(:no_visit_rank_missing)
+    end
+
+    it "RFランクマスタが無効な場合は無効になる" do
+      rf_rank_master.update!(active: false)
+
+      result = described_class.call(rule_set)
+
+      expect(result.error_codes)
+        .to include(:no_visit_rank_missing)
     end
   end
 end

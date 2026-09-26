@@ -897,6 +897,41 @@ describe("CustomerListPageClient", () => {
       },
     });
 
+    mocks.fetchStandardCodes.mockResolvedValueOnce({
+      status: "success",
+      data: {
+        standard_masters: [
+          {
+            id: 6,
+            system_key: "customer_rank",
+            display_code: "00006",
+            name: "顧客ランク",
+            description: null,
+            position: 6,
+            active: true,
+            items: [
+              {
+                id: 61,
+                display_code: "00061",
+                label: "Aランク",
+                description: null,
+                position: 1,
+                active: false,
+              },
+              {
+                id: 66,
+                display_code: "00066",
+                label: "Rランク",
+                description: "RFランク集計対象外",
+                position: 6,
+                active: true,
+              },
+            ],
+          },
+        ],
+      },
+    });
+
     render(<CustomerListPageClient />);
 
     expect(await screen.findByText("山田 太郎")).toBeInTheDocument();
@@ -918,7 +953,9 @@ describe("CustomerListPageClient", () => {
     });
 
     await waitFor(() => {
-      expect(customerRankSelect).toHaveTextContent("Aランク");
+      expect(customerRankSelect).toHaveTextContent(
+        "Aランク（無効・現在設定中）",
+      );
     });
 
     await user.click(customerRankSelect);

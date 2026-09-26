@@ -296,6 +296,7 @@ export function CustomerForm({
                   {customerRankOptions.map((option) => (
                     <SelectItem key={option.id} value={String(option.id)}>
                       {option.label}
+                      {!option.active ? "（無効・現在設定中）" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -101,10 +101,14 @@ export function CustomerFormDialog({
           (standardMaster) => standardMaster.system_key === "customer_rank",
         );
 
-        const activeOptions =
-          customerRankMaster?.items?.filter((option) => option.active) ?? [];
+        const currentCustomerRankId = customer?.customer_rank_id ?? null;
 
-        setCustomerRankOptions(activeOptions);
+        const selectableOptions =
+          customerRankMaster?.items?.filter(
+            (option) => option.active || option.id === currentCustomerRankId,
+          ) ?? [];
+
+        setCustomerRankOptions(selectableOptions);
       } catch (error) {
         if (controller.signal.aborted) {
           return;
@@ -125,7 +129,7 @@ export function CustomerFormDialog({
     return () => {
       controller.abort();
     };
-  }, [open]);
+  }, [open, customer?.customer_rank_id]);
 
   function handleRequestConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -210,9 +214,15 @@ export function CustomerFormDialog({
     onOpenChange(false);
   }
 
-  const selectedCustomerRankLabel =
-    customerRankOptions.find((option) => option.id === values.customerRankId)
-      ?.label ?? null;
+  const selectedCustomerRank = customerRankOptions.find(
+    (option) => option.id === values.customerRankId,
+  );
+
+  const selectedCustomerRankLabel = selectedCustomerRank
+    ? `${selectedCustomerRank.label}${
+        selectedCustomerRank.active ? "" : "（無効・現在設定中）"
+      }`
+    : null;
 
   return (
     <>

@@ -43,6 +43,7 @@ module Rf
 
       validate_mappings
       validate_active_rf_ranks
+      validate_no_visit_rank
 
       result
     end
@@ -151,15 +152,36 @@ module Rf
           .rank_mappings
           .includes(rf_rank: :standard_master)
           .any? do |mapping|
-            !mapping.rf_rank.active? ||
-              !mapping.rf_rank.standard_master.active?
-          end
+          !mapping.rf_rank.active? ||
+            !mapping.rf_rank.standard_master.active?
+        end
 
       return unless has_inactive_rank
 
       add_error(
         :inactive_rf_rank,
         "無効なRFランクが使用されています"
+      )
+    end
+
+    def validate_no_visit_rank
+      no_visit_rank_exists =
+        StandardListMaster
+          .joins(:standard_master)
+          .exists?(
+            code: "N",
+            active: true,
+            standard_masters: {
+              system_key: "rf_rank",
+              active: true
+            }
+          )
+
+      return if no_visit_rank_exists
+
+      add_error(
+        :no_visit_rank_missing,
+        "来店実績がない顧客に使用する有効なNランクが登録されていません"
       )
     end
 
