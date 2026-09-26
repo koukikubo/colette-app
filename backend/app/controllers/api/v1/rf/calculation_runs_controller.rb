@@ -2,6 +2,14 @@ class Api::V1::Rf::CalculationRunsController <
   Api::V1::BaseController
   include ApiPagination
 
+  before_action :require_owner!,
+              only: %i[
+                create
+                activate
+                restore
+                rollback
+              ]
+
   def index
     pagination = pagination_params
     return unless pagination
@@ -62,7 +70,7 @@ class Api::V1::Rf::CalculationRunsController <
             .as_json
       }
     )
-end
+  end
 
   def create
     base_date = parsed_base_date
@@ -206,7 +214,7 @@ end
       errors: [ error.message ],
       status: :conflict
     )
-end
+  end
 
   def rollback
     expected_current_run_id =
@@ -238,12 +246,12 @@ end
       errors: [ error.message ],
       status: :unprocessable_content
     )
-    rescue Rf::CalculationRollback::StaleRunError => error
-      render_error(
-        message: "計算結果を復元できません",
-        errors: [ error.message ],
-        status: :conflict
-      )
+  rescue Rf::CalculationRollback::StaleRunError => error
+    render_error(
+      message: "計算結果を復元できません",
+      errors: [ error.message ],
+      status: :conflict
+    )
   end
 
   private
@@ -356,5 +364,5 @@ end
     end
 
     ids
-end
+  end
 end

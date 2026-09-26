@@ -4,6 +4,36 @@ RSpec.describe "Api::V1::RfCalculationRunHistories",
                type: :request do
   include_context "authenticated request"
 
+  let(:login_role_code) { "owner" }
+
+  let(:login_staff) do
+    staff_master =
+      create(
+        :staff_master,
+        role_code: login_role_code
+      )
+
+    create(
+      :staff,
+      staff_master: staff_master,
+      password: login_password,
+      password_confirmation: login_password
+    )
+  end
+
+  let(:login_staff) do
+    create(
+      :staff,
+      staff_master:
+        create(
+          :staff_master,
+          role_code: "owner"
+        ),
+      password: login_password,
+      password_confirmation: login_password
+    )
+  end
+
   def response_body
     JSON.parse(response.body)
   end
@@ -155,6 +185,58 @@ RSpec.describe "Api::V1::RfCalculationRunHistories",
   end
 
   describe "PATCH /api/v1/rf_calculation_runs/:id/restore" do
+    context "operatorが操作した場合" do
+      let(:login_staff) do
+        staff_master =
+          create(
+            :staff_master,
+            role_code: "operator"
+          )
+
+        create(
+          :staff,
+          staff_master: staff_master,
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+      it "403を返し、選択した履歴へ復元しない" do
+        login!
+
+        previous_run =
+          create_completed_run(
+            base_date: Date.new(2026, 8, 31)
+          )
+
+        current_run =
+          create_completed_run(
+            base_date: Date.new(2026, 9, 23),
+            previous_run: previous_run
+          )
+
+        setting =
+          RfSetting.create!(
+            current_calculation_run: current_run
+          )
+
+        patch(
+          "/api/v1/rf_calculation_runs/#{previous_run.id}/restore",
+          params: {
+            rf_calculation: {
+              expected_current_run_id: current_run.id
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(
+          setting.reload.current_calculation_run
+        ).to eq(current_run)
+      end
+    end
     it "選択した過去の計算履歴へ復元する" do
       login!
 

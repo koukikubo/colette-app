@@ -3,6 +3,19 @@ require "rails_helper"
 RSpec.describe "Api::V1::RfCalculationRuns",
                type: :request do
   include_context "authenticated request"
+  # 操作はオーナーのみ
+  let(:login_staff) do
+    create(
+      :staff,
+      staff_master:
+        create(
+          :staff_master,
+          role_code: "owner"
+        ),
+      password: login_password,
+      password_confirmation: login_password
+    )
+  end
 
   def response_body
     JSON.parse(response.body)
@@ -34,6 +47,45 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       )
 
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "operatorが操作した場合" do
+      let(:login_staff) do
+        staff_master =
+          create(
+            :staff_master,
+            role_code: "operator"
+          )
+
+        create(
+          :staff,
+          staff_master: staff_master,
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+      it "403を返し、RF計算を作成しない" do
+        login!
+
+        expect do
+          post(
+            "/api/v1/rf_calculation_runs",
+            params: {
+              rf_calculation: {
+                rf_rule_set_id: rule_set.id,
+                base_date: "2026-09-22"
+              }
+            },
+            headers: authenticated_headers,
+            as: :json
+          )
+        end.not_to change(RfCalculationRun, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response_body["status"]).to eq("error")
+        expect(response_body["message"])
+          .to eq("この操作を行う権限がありません")
+      end
     end
 
     it "RFランクの計算結果を作成する" do
@@ -334,6 +386,39 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       expect(response).to have_http_status(:unauthorized)
     end
 
+    context "operatorが操作した場合" do
+      let(:login_staff) do
+        staff_master =
+          create(
+            :staff_master,
+            role_code: "operator"
+          )
+
+        create(
+          :staff,
+          staff_master: staff_master,
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+      it "403を返し、計算結果を適用しない" do
+        login!
+
+        expect do
+          patch(
+            "/api/v1/rf_calculation_runs/#{calculation_run.id}/activate",
+            headers: authenticated_headers,
+            as: :json
+          )
+        end.not_to change(RfSetting, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response_body["status"]).to eq("error")
+        expect(response_body["message"])
+          .to eq("この操作を行う権限がありません")
+      end
+    end
+
     it "計算完了済みの結果を現在値として適用する" do
       login!
 
@@ -435,6 +520,59 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       )
 
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "operatorが操作した場合" do
+      let(:login_staff) do
+        staff_master =
+          create(
+            :staff_master,
+            role_code: "operator"
+          )
+
+        create(
+          :staff,
+          staff_master: staff_master,
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+      it "403を返し、現在の計算結果を変更しない" do
+        login!
+
+        previous_run =
+          create_completed_run(
+            base_date: Date.new(2026, 8, 31)
+          )
+
+        current_run =
+          create_completed_run(
+            base_date: Date.new(2026, 9, 22),
+            previous_run: previous_run
+          )
+
+        setting =
+          RfSetting.create!(
+            current_calculation_run: current_run
+          )
+
+        patch(
+          "/api/v1/rf_calculation_runs/rollback",
+          params: {
+            rf_calculation: {
+              expected_current_run_id: current_run.id
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+
+        expect(
+          setting.reload.current_calculation_run
+        ).to eq(current_run)
+      end
     end
 
     it "ひとつ前の計算結果へ戻す" do
@@ -571,6 +709,72 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       expect(response_body["message"])
         .to eq("計算結果を復元できません")
+    end
+  end
+
+  describe "権限制御" do
+    context "operatorでログインしている場合" do
+      let(:login_staff) do
+        create(
+          :staff,
+          staff_master:
+            create(
+              :staff_master,
+              role_code: "operator"
+            ),
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+
+      it "RFランクを計算できない" do
+        login!
+
+        post(
+          "/api/v1/rf_calculation_runs",
+          params: {
+            rf_calculation: {
+              rf_rule_set_id: rule_set.id,
+              base_date: "2026-09-23"
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response_body["message"])
+          .to eq("この操作を行う権限がありません")
+      end
+
+      it "計算結果を適用できない" do
+        login!
+
+        patch(
+          "/api/v1/rf_calculation_runs/999999/activate",
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "計算結果をロールバックできない" do
+        login!
+
+        patch(
+          "/api/v1/rf_calculation_runs/rollback",
+          params: {
+            rf_calculation: {
+              expected_current_run_id: 1
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+      end
     end
   end
 
