@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api/api-client";
 import type {
   ChangeCustomerVisibilityRequest,
   CreateCustomerRequest,
+  CustomerDetailResponse,
   CustomerListParams,
   CustomerListResponse,
   CustomerReservationListParams,
@@ -104,7 +105,7 @@ export function fetchCustomerReservations(
  * 指定した顧客を取得する。
  */
 export function fetchCustomer(id: number) {
-  return apiFetch<CustomerResponse>(buildCustomerPath(id), {
+  return apiFetch<CustomerDetailResponse>(buildCustomerPath(id), {
     cache: "no-store",
   });
 }

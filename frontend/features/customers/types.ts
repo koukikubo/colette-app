@@ -16,6 +16,23 @@ export type CustomerStaffSummary = {
   name: string | null;
 };
 
+// 顧客ランク・RFランクの共通表示情報
+export type RankSummary = {
+  id: number;
+  code: string;
+  label: string;
+};
+
+// RFランクを判定したときの型
+export type CustomerRfRankBasis = {
+  calculation_run_id: number;
+  base_date: string;
+  recency_days: number | null;
+  frequency_count: number | null;
+  last_visit_on: string | null;
+  exclusion_reason: string | null;
+};
+
 export type Customer = {
   id: number;
   customer_kind: CustomerKind;
@@ -28,6 +45,9 @@ export type Customer = {
   phone_number: string | null;
   email: string | null;
   birthday: string | null;
+
+  customer_rank_id: number | null;
+  customer_rank: RankSummary | null;
 
   company_name: string | null;
   company_name_kana: string | null;
@@ -48,6 +68,12 @@ export type Customer = {
 
   created_at: string;
   updated_at: string;
+};
+
+// 顧客詳細APIでのみ返される情報
+export type CustomerDetail = Customer & {
+  current_rf_rank: RankSummary | null;
+  rf_rank_basis: CustomerRfRankBasis | null;
 };
 
 export type CustomerListParams = {
@@ -106,6 +132,10 @@ export type CustomerData = {
   customer: Customer;
 };
 
+export type CustomerDetailData = {
+  customer: CustomerDetail;
+};
+
 export type CustomerReservationListParams = {
   page?: number;
   per_page?: number;
@@ -130,6 +160,8 @@ export type ApiErrorResponse = {
 export type CustomerListResponse = ApiSuccessResponse<CustomerListData>;
 
 export type CustomerResponse = ApiSuccessResponse<CustomerData>;
+
+export type CustomerDetailResponse = ApiSuccessResponse<CustomerDetailData>;
 
 export type CustomerReservationListResponse =
   ApiSuccessResponse<CustomerReservationListData>;

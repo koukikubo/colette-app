@@ -8,6 +8,7 @@ import {
   PencilIcon,
   ShieldCheckIcon,
   UserIcon,
+  ChartNoAxesCombinedIcon,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { fetchCustomer } from "../../api/customer-api";
-import type { Customer } from "../../types";
+import type { Customer, CustomerDetail } from "../../types";
 import {
   formatCustomerPhoneNumber,
   formatCustomerPostalCode,
@@ -87,6 +88,26 @@ function formatDateTime(value: string | null | undefined) {
 
 function customerKindLabel(customerKind: Customer["customer_kind"]) {
   return customerKind === "corporate" ? "法人" : "個人";
+}
+
+function rfRankDisplayValue(customer: CustomerDetail) {
+  if (customer.current_rf_rank) {
+    return customer.current_rf_rank.label;
+  }
+
+  if (customer.rf_rank_basis?.exclusion_reason) {
+    return "RF計算対象外";
+  }
+
+  return "未計算";
+}
+
+function rfExclusionReasonMessage(reason: string) {
+  if (reason === "manual_customer_rank") {
+    return "手動の顧客ランクが設定されているため、RF計算の対象外です。";
+  }
+
+  return `RF計算の対象外です。（理由: ${reason}）`;
 }
 
 function DetailItem({ label, value, wide = false }: DetailItemProps) {
@@ -181,7 +202,7 @@ function CustomerDetailSkeleton() {
 export function CustomerDetailPageClient({
   customerId,
 }: CustomerDetailPageClientProps) {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customer, setCustomer] = useState<CustomerDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -437,6 +458,76 @@ export function CustomerDetailPageClient({
               </dl>
             </DetailSection>
           )}
+
+          <DetailSection
+            title="顧客ランク"
+            description="手動設定の顧客ランクと、来店履歴から計算されたRFランクです。"
+            icon={
+              <ChartNoAxesCombinedIcon className="size-5" aria-hidden="true" />
+            }
+          >
+            <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
+              <DetailItem
+                label="手動設定の顧客ランク"
+                value={customer.customer_rank?.label ?? "未設定"}
+              />
+
+              {!customer.rf_rank_basis && (
+                <p className="mt-6 rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
+                  現在適用中のRF計算結果はありません。
+                </p>
+              )}
+
+              {customer.rf_rank_basis?.exclusion_reason && (
+                <Alert className="mt-6">
+                  <AlertTitle>RF計算対象外</AlertTitle>
+
+                  <AlertDescription>
+                    {rfExclusionReasonMessage(
+                      customer.rf_rank_basis.exclusion_reason,
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <DetailItem
+                label="現在のRFランク"
+                value={rfRankDisplayValue(customer)}
+              />
+
+              {customer.rf_rank_basis && (
+                <>
+                  <DetailItem
+                    label="RF計算基準日"
+                    value={formatDate(customer.rf_rank_basis.base_date)}
+                  />
+
+                  <DetailItem
+                    label="最終来店日"
+                    value={formatDate(customer.rf_rank_basis.last_visit_on)}
+                  />
+
+                  <DetailItem
+                    label="最終来店からの経過日数"
+                    value={
+                      customer.rf_rank_basis.recency_days === null
+                        ? "-"
+                        : `${customer.rf_rank_basis.recency_days}日`
+                    }
+                  />
+
+                  <DetailItem
+                    label="期間内の来店回数"
+                    value={
+                      customer.rf_rank_basis.frequency_count === null
+                        ? "-"
+                        : `${customer.rf_rank_basis.frequency_count}回`
+                    }
+                  />
+                </>
+              )}
+            </dl>
+          </DetailSection>
 
           <DetailSection
             title="管理情報"

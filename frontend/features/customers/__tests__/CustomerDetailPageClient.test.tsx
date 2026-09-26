@@ -1,11 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { CustomerDetailPageClient } from "../components/detail/CustomerDetailPageClient";
-import type { Customer } from "../types";
+import type { CustomerDetail } from "../types";
 
 const mocks = vi.hoisted(() => ({
   fetchCustomer: vi.fn(),
@@ -26,7 +26,9 @@ vi.mock("../components/detail/CustomerReservationHistory", () => ({
   ),
 }));
 
-function createCustomer(overrides: Partial<Customer> = {}): Customer {
+function createCustomer(
+  overrides: Partial<CustomerDetail> = {},
+): CustomerDetail {
   return {
     id: 10,
     customer_kind: "individual",
@@ -37,6 +39,8 @@ function createCustomer(overrides: Partial<Customer> = {}): Customer {
     phone_number: "09012345678",
     email: "taro@example.com",
     birthday: "1990-01-02",
+    customer_rank_id: null,
+    customer_rank: null,
     company_name: null,
     company_name_kana: null,
     company_postal_code: null,
@@ -49,6 +53,8 @@ function createCustomer(overrides: Partial<Customer> = {}): Customer {
     lock_version: 2,
     created_by_staff: { id: 1, code: "001", name: "店主" },
     updated_by_staff: { id: 2, code: "002", name: "担当者" },
+    current_rf_rank: null,
+    rf_rank_basis: null,
     created_at: "2026-09-01T10:00:00+09:00",
     updated_at: "2026-09-02T11:30:00+09:00",
     ...overrides,
@@ -145,5 +151,119 @@ describe("CustomerDetailPageClient", () => {
         "顧客情報の取得中に予期しないエラーが発生しました。",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("顧客ランクと現在のRFランク、その判定根拠を表示する", async () => {
+    mocks.fetchCustomer.mockResolvedValue({
+      data: {
+        customer: createCustomer({
+          customer_rank_id: 8,
+          customer_rank: {
+            id: 8,
+            code: "VIP",
+            label: "VIP顧客",
+          },
+          current_rf_rank: {
+            id: 20,
+            code: "A",
+            label: "Aランク",
+          },
+          rf_rank_basis: {
+            calculation_run_id: 5,
+            base_date: "2026-09-26",
+            recency_days: 20,
+            frequency_count: 3,
+            last_visit_on: "2026-09-06",
+            exclusion_reason: null,
+          },
+        }),
+      },
+    });
+
+    render(<CustomerDetailPageClient customerId={10} />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "顧客ランク",
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("VIP顧客")).toBeInTheDocument();
+    expect(screen.getByText("Aランク")).toBeInTheDocument();
+    expect(screen.getByText("2026/09/26")).toBeInTheDocument();
+    expect(screen.getByText("2026/09/06")).toBeInTheDocument();
+    expect(screen.getByText("20日")).toBeInTheDocument();
+    expect(screen.getByText("3回")).toBeInTheDocument();
+  });
+
+  it("現在適用中のRF計算結果がない場合は未計算と表示する", async () => {
+    mocks.fetchCustomer.mockResolvedValue({
+      data: {
+        customer: createCustomer({
+          current_rf_rank: null,
+          rf_rank_basis: null,
+        }),
+      },
+    });
+
+    render(<CustomerDetailPageClient customerId={10} />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "顧客ランク",
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("未計算")).toBeInTheDocument();
+
+    expect(
+      screen.getByText("現在適用中のRF計算結果はありません。"),
+    ).toBeInTheDocument();
+  });
+
+  it("手動の顧客ランクが設定されている場合はRF計算対象外と表示する", async () => {
+    mocks.fetchCustomer.mockResolvedValue({
+      data: {
+        customer: createCustomer({
+          customer_rank_id: 8,
+          customer_rank: {
+            id: 8,
+            code: "VIP",
+            label: "VIP顧客",
+          },
+          current_rf_rank: null,
+          rf_rank_basis: {
+            calculation_run_id: 5,
+            base_date: "2026-09-26",
+            recency_days: null,
+            frequency_count: 0,
+            last_visit_on: null,
+            exclusion_reason: "manual_customer_rank",
+          },
+        }),
+      },
+    });
+
+    render(<CustomerDetailPageClient customerId={10} />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "顧客ランク",
+      }),
+    ).toBeInTheDocument();
+
+    const exclusionAlert = screen.getByRole("alert");
+
+    expect(
+      within(exclusionAlert).getByText("RF計算対象外"),
+    ).toBeInTheDocument();
+
+    expect(
+      within(exclusionAlert).getByText(
+        "手動の顧客ランクが設定されているため、RF計算の対象外です。",
+      ),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("VIP顧客")).toBeInTheDocument();
   });
 });
