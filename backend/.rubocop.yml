@@ -15,7 +15,3 @@ Layout/IndentationConsistency:
 Layout/IndentationWidth:
   Enabled: true
   Width: 2
-
-Layout/BlockAlignment:
-  Enabled: true
-  EnforcedStyleAlignWith: start_of_line
