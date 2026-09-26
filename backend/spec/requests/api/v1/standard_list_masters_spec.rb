@@ -82,16 +82,16 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
           json.dig("data", "standard_list_masters")
 
       expect(records).to be_an(Array)
-        expect(records.size).to eq(2)
+      expect(records.size).to eq(2)
 
-        expect(
-          records.map { |record| record["label"] }
-        ).to eq(
-          [
-            "男性",
-            "女性"
-          ]
-        )
+      expect(
+        records.map { |record| record["label"] }
+      ).to eq(
+        [
+          "男性",
+          "女性"
+        ]
+      )
     end
 
     it "指定した基本コードの選択肢だけを取得できる" do

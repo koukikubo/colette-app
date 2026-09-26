@@ -112,10 +112,10 @@ RSpec.describe Reservations::TableAssignmentValidator do
           restaurant_master_ids: [ restaurant_master.id ]
         )
       end.to raise_error(ActiveRecord::RecordInvalid) { |error|
-        expect(
-          error.record.errors.details[:restaurant_master_ids]
-        ).to include(error: :insufficient_capacity)
-      }
+               expect(
+                 error.record.errors.details[:restaurant_master_ids]
+               ).to include(error: :insufficient_capacity)
+             }
     end
 
     it "選択した複数の予約席の合計定員が予約人数以上の場合はエラーにしない" do

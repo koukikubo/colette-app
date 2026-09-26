@@ -30,8 +30,8 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     standard_list_master =
       @standard_master.standard_list_masters.new(standard_list_master_params)
 
-      standard_list_master.position =
-      @standard_master.standard_list_masters.maximum(:position).to_i + 1
+    standard_list_master.position =
+    @standard_master.standard_list_masters.maximum(:position).to_i + 1
 
     standard_list_master.save!
 

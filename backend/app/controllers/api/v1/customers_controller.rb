@@ -43,11 +43,14 @@ class Api::V1::CustomersController < Api::V1::BaseController
       **pagination
     )
 
+    serialized_customers =
+      paginated_customers[:records].map do |customer|
+        serialize_customer(customer)
+      end
+
     render_success(
       data: {
-        customers: paginated_customers[:records].map do |customer|
-          serialize_customer(customer)
-        end,
+        customers: serialized_customers,
         pagination: paginated_customers[:metadata]
       }
     )
@@ -155,7 +158,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
         :rf_calculation_run
       )
       .find_by(customer_id: customer.id)
-end
+  end
 
   def customer_create_params
     params.expect(

@@ -302,11 +302,11 @@ standard_master_seeds.each do |master_seed|
     .where(position: seed_positions)
     .order(:id)
     .each_with_index do |item, index|
-      item.update_columns(
-        active: false,
-        position: next_position + index
-      )
-    end
+    item.update_columns(
+      active: false,
+      position: next_position + index
+    )
+  end
 
   obsolete_items.update_all(active: false)
 
