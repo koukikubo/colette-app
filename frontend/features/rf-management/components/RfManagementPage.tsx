@@ -1,3 +1,5 @@
+import { RfCurrentSettingsSection } from "./RfCurrentSettingsSection";
+
 export function RfManagementPage() {
   return (
     <main className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
@@ -8,6 +10,8 @@ export function RfManagementPage() {
           公開中の判定ルールと、RFランクの計算履歴を確認します。
         </p>
       </header>
+
+      <RfCurrentSettingsSection />
     </main>
   );
 }
