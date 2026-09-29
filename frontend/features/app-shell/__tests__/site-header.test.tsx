@@ -40,6 +40,10 @@ describe("SiteHeader", () => {
     ["/reservations/30/edit", "予約管理", "予約編集"],
     ["/customers", "顧客管理", "顧客一覧"],
     ["/customers/10", "顧客管理", "顧客詳細"],
+    ["/rf-management", "統一RFマスタ", "設定一覧"],
+    ["/rf-management/new", "統一RFマスタ", "新規登録"],
+    ["/rf-management/10", "統一RFマスタ", "設定詳細"],
+    ["/rf-management/10/edit", "統一RFマスタ", "設定編集"],
   ])("%sでは、%sと%sを現在地として表示する", (pathname, section, page) => {
     mocks.usePathname.mockReturnValue(pathname);
 
@@ -61,7 +65,7 @@ describe("SiteHeader", () => {
     ["/dashboard", "ダッシュボード"],
     ["/restaurant-masters", "予約テーブルマスタ"],
     ["/staff-masters", "担当者マスタ"],
-    ["/standard-codes", "基本コード・選択肢コード"],
+    ["/standard-codes", "基本コードマスタ"],
   ])("%sでは、%sを現在地として表示する", (pathname, section) => {
     mocks.usePathname.mockReturnValue(pathname);
 

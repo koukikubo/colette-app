@@ -30,6 +30,7 @@ describe("AppSidebar", () => {
       ["予約管理", "/reservations"],
       ["お知らせ", "/announcements"],
       ["顧客ノート", "/customer-notes"],
+      ["統一RFマスタ", "/rf-management"],
     ];
 
     expectedLinks.forEach(([name, href]) => {
@@ -47,9 +48,10 @@ describe("AppSidebar", () => {
     expect(screen.getByText("管理メニュー")).toBeInTheDocument();
 
     const expectedLinks = [
-      ["基本コード・選択肢コード", "/standard-codes"],
+      ["基本コードマスタ", "/standard-codes"],
       ["担当者マスタ", "/staff-masters"],
       ["予約テーブルマスタ", "/restaurant-masters"],
+      ["統一RFマスタ", "/rf-management"],
     ];
 
     expectedLinks.forEach(([name, href]) => {
