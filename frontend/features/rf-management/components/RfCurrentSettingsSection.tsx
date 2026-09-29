@@ -6,13 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useRfSettings } from "../hooks/useRfSettings";
 import type { RfCalculationStatus } from "../types";
-
-const STATUS_LABELS: Record<RfCalculationStatus, string> = {
-  pending: "実行待ち",
-  processing: "計算中",
-  completed: "計算完了",
-  failed: "失敗",
-};
+import { RF_CALCULATION_STATUS_LABELS } from "../constants";
 
 function formatDate(date: string) {
   return date.replaceAll("-", "/");
@@ -122,7 +116,7 @@ export function RfCurrentSettingsSection() {
               <CardTitle>現在の計算結果</CardTitle>
               {calculationRun && (
                 <Badge variant="outline">
-                  {STATUS_LABELS[calculationRun.status]}
+                  {RF_CALCULATION_STATUS_LABELS[calculationRun.status]}
                 </Badge>
               )}
             </div>

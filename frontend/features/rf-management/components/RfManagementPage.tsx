@@ -1,4 +1,5 @@
 import { RfCurrentSettingsSection } from "./RfCurrentSettingsSection";
+import { RfCalculationHistorySection } from "./RfCalculationHistorySection";
 
 export function RfManagementPage() {
   return (
@@ -12,6 +13,7 @@ export function RfManagementPage() {
       </header>
 
       <RfCurrentSettingsSection />
+      <RfCalculationHistorySection />
     </main>
   );
 }
