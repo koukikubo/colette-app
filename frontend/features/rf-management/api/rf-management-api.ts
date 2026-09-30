@@ -8,6 +8,9 @@ import type {
   RfRuleSetListResponse,
   RfRuleSetResponse,
   RfSettingsResponse,
+  RfRuleSetInput,
+  RfRuleSetUpdateInput,
+  RfRuleSetValidationResponse,
 } from "../types";
 
 const RF_SETTINGS_PATH = "/api/v1/rf_settings";
@@ -106,4 +109,57 @@ export function fetchRfCalculationResults(
       signal,
     },
   );
+}
+
+function ruleSetPath(id: number) {
+  return `${RF_RULE_SETS_PATH}/${encodeURIComponent(String(id))}`;
+}
+
+// 下書きを作成する。
+export function createRfRuleSet(input: RfRuleSetInput) {
+  return apiFetch<RfRuleSetResponse>(RF_RULE_SETS_PATH, {
+    method: "POST",
+    body: { rf_rule_set: input },
+  });
+}
+
+// 下書きの基本設定・条件・対応表をまとめて更新する。
+export function updateRfRuleSet(id: number, input: RfRuleSetUpdateInput) {
+  return apiFetch<RfRuleSetResponse>(ruleSetPath(id), {
+    method: "PATCH",
+    body: { rf_rule_set: input },
+  });
+}
+
+// 保存済みのルールを検証する。
+// HTTP成功でもvalidation.validがfalseの場合がある。
+export function validateRfRuleSet(id: number) {
+  return apiFetch<RfRuleSetValidationResponse>(`${ruleSetPath(id)}/validate`, {
+    method: "POST",
+  });
+}
+
+export function publishRfRuleSet(id: number, lockVersion: number) {
+  return apiFetch<RfRuleSetResponse>(`${ruleSetPath(id)}/publish`, {
+    method: "PATCH",
+    body: { rf_rule_set: { lock_version: lockVersion } },
+  });
+}
+
+export function archiveRfRuleSet(id: number, lockVersion: number) {
+  return apiFetch<RfRuleSetResponse>(`${ruleSetPath(id)}/archive`, {
+    method: "PATCH",
+    body: { rf_rule_set: { lock_version: lockVersion } },
+  });
+}
+
+// 削除APIは204 No Contentを返す。
+export async function deleteRfRuleSet(
+  id: number,
+  lockVersion: number,
+): Promise<void> {
+  await apiFetch<null>(ruleSetPath(id), {
+    method: "DELETE",
+    body: { rf_rule_set: { lock_version: lockVersion } },
+  });
 }

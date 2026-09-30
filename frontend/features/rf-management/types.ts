@@ -211,3 +211,40 @@ export type RfCustomerRankResultListResponse = ApiSuccessResponse<{
   results: RfCustomerRankResult[];
   pagination: Pagination;
 }>;
+
+// 保存時にはDBのIDではなく、条件コードで対応表を関連付ける。
+export type RfRecencyRuleInput = Omit<RfRecencyRule, "id">;
+export type RfFrequencyRuleInput = Omit<RfFrequencyRule, "id">;
+
+export type RfRankMappingInput = {
+  recency_code: string;
+  frequency_code: string;
+  rf_rank_id: number;
+};
+
+// 更新APIは条件・対応表をまとめて置き換えるため、全項目を必須にする。
+export type RfRuleSetInput = {
+  name: string;
+  aggregation_months: number;
+  frequency_window_months: number;
+  recency_rules: RfRecencyRuleInput[];
+  frequency_rules: RfFrequencyRuleInput[];
+  rank_mappings: RfRankMappingInput[];
+};
+
+export type RfRuleSetUpdateInput = RfRuleSetInput & {
+  lock_version: number;
+};
+
+export type RfRuleSetValidationIssue = {
+  code: string;
+  message: string;
+};
+
+export type RfRuleSetValidationResponse = ApiSuccessResponse<{
+  validation: {
+    valid: boolean;
+    errors: RfRuleSetValidationIssue[];
+    warnings: RfRuleSetValidationIssue[];
+  };
+}>;
