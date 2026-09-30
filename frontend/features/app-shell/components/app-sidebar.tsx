@@ -13,6 +13,7 @@ import {
   SettingsIcon,
   UserRoundIcon,
   UsersIcon,
+  ChartNoAxesCombinedIcon,
 } from "lucide-react";
 
 import {
@@ -77,7 +78,7 @@ const data = {
    */
   masterMenu: [
     {
-      name: "基本コード・選択肢コード",
+      name: "基本コードマスタ",
       url: "/standard-codes",
       icon: <SettingsIcon />,
     },
@@ -90,6 +91,11 @@ const data = {
       name: "予約テーブルマスタ",
       url: "/restaurant-masters",
       icon: <Armchair />,
+    },
+    {
+      name: "統一RFマスタ",
+      url: "/rf-management",
+      icon: <ChartNoAxesCombinedIcon />,
     },
   ],
 

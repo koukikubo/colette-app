@@ -35,11 +35,27 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     return { section: "予約管理", page: "予約編集" };
   }
 
+  if (pathname === "/rf-management/new") {
+    return { section: "統一RFマスタ", page: "新規登録" };
+  }
+
+  if (/^\/rf-management\/[^/]+\/edit$/.test(pathname)) {
+    return { section: "統一RFマスタ", page: "設定編集" };
+  }
+
+  if (/^\/rf-management\/[^/]+$/.test(pathname)) {
+    return { section: "統一RFマスタ", page: "設定詳細" };
+  }
+
+  if (pathname === "/rf-management") {
+    return { section: "統一RFマスタ", page: "設定一覧" };
+  }
+
   const pageTitles: Record<string, string> = {
     "/dashboard": "ダッシュボード",
     "/restaurant-masters": "予約テーブルマスタ",
     "/staff-masters": "担当者マスタ",
-    "/standard-codes": "基本コード・選択肢コード",
+    "/standard-codes": "基本コードマスタ",
   };
 
   return { section: pageTitles[pathname] ?? "Colette" };
