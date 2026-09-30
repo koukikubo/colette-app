@@ -11,6 +11,22 @@ vi.mock("../../hooks/useRfCalculationRuns", () => ({
   useRfCalculationRuns: mocks.useRfCalculationRuns,
 }));
 
+vi.mock("../../components/RfCalculationRunDetailDrawer", () => ({
+  RfCalculationRunDetailDrawer: ({
+    open,
+    calculationRunId,
+  }: {
+    open: boolean;
+    calculationRunId: number | null;
+    onOpenChange: (open: boolean) => void;
+  }) =>
+    open ? (
+      <div role="dialog" aria-label="RF計算履歴の詳細">
+        選択中の履歴ID: {calculationRunId}
+      </div>
+    ) : null,
+}));
+
 describe("RfCalculationHistorySection", () => {
   beforeEach(() => {
     mocks.useRfCalculationRuns.mockReset();
@@ -60,6 +76,18 @@ describe("RfCalculationHistorySection", () => {
     expect(screen.getByText("未分類 2名")).toBeInTheDocument();
     expect(screen.getByText("管理者")).toBeInTheDocument();
     expect(screen.getByText("現在適用中")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "計算履歴20の詳細を開く",
+      }),
+    );
+
+    expect(
+      screen.getByRole("dialog", {
+        name: "RF計算履歴の詳細",
+      }),
+    ).toHaveTextContent("選択中の履歴ID: 20");
   });
 
   it("履歴がない場合は空表示をする", () => {

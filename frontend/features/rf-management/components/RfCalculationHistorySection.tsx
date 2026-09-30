@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,14 +14,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePagination } from "@/hooks/usePagination";
 
 import { useRfCalculationRuns } from "../hooks/useRfCalculationRuns";
-import type { RfCalculationStatus } from "../types";
 import { RF_CALCULATION_STATUS_LABELS } from "../constants";
+
+import { ChevronRightIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { RfCalculationRunDetailDrawer } from "./RfCalculationRunDetailDrawer";
 
 function formatDate(date: string) {
   return date.replaceAll("-", "/");
 }
 
 export function RfCalculationHistorySection() {
+  const [selectedCalculationRunId, setSelectedCalculationRunId] = useState<
+    number | null
+  >(null);
+
   const { currentPage, setCurrentPage } = usePagination({
     initialPerPage: 10,
   });
@@ -130,12 +139,25 @@ export function RfCalculationHistorySection() {
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 md:justify-end">
+                  <div className="flex flex-wrap items-center gap-2 md:justify-end">
                     <Badge variant="outline">
                       {RF_CALCULATION_STATUS_LABELS[calculationRun.status]}
                     </Badge>
 
                     {calculationRun.current && <Badge>現在適用中</Badge>}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      aria-label={`計算履歴${calculationRun.id}の詳細を開く`}
+                      onClick={() =>
+                        setSelectedCalculationRunId(calculationRun.id)
+                      }
+                    >
+                      詳細
+                      <ChevronRightIcon aria-hidden="true" />
+                    </Button>
                   </div>
                 </li>
               ))}
@@ -155,6 +177,16 @@ export function RfCalculationHistorySection() {
           </CardFooter>
         )}
       </Card>
+
+      <RfCalculationRunDetailDrawer
+        open={selectedCalculationRunId !== null}
+        calculationRunId={selectedCalculationRunId}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setSelectedCalculationRunId(null);
+          }
+        }}
+      />
     </section>
   );
 }
