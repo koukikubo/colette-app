@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useRfSettings } from "../hooks/useRfSettings";
-import type { RfCalculationStatus } from "../types";
 import { RF_CALCULATION_STATUS_LABELS } from "../constants";
 
 function formatDate(date: string) {
