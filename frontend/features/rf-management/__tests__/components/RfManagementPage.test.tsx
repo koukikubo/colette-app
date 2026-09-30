@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { RfManagementPage } from "../../components/RfManagementPage";
+
+vi.mock("../../components/RfRuleSetsSection", () => ({
+  RfRuleSetsSection: () => <div data-testid="rf-rule-sets-section" />,
+}));
 
 describe("RfManagementPage", () => {
   it("統一RFマスタ画面の見出しと説明を表示する", () => {
@@ -14,9 +18,9 @@ describe("RfManagementPage", () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText(
-        "公開中の判定ルールと、RFランクの計算履歴を確認します。",
-      ),
+      screen.getByText("RFルールの設定と、RFランクの計算履歴を管理します。"),
     ).toBeInTheDocument();
+
+    expect(screen.getByTestId("rf-rule-sets-section")).toBeInTheDocument();
   });
 });

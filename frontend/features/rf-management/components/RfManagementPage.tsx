@@ -1,4 +1,5 @@
 import { RfCurrentSettingsSection } from "./RfCurrentSettingsSection";
+import { RfRuleSetsSection } from "./RfRuleSetsSection";
 import { RfCalculationHistorySection } from "./RfCalculationHistorySection";
 
 export function RfManagementPage() {
@@ -8,11 +9,12 @@ export function RfManagementPage() {
         <h1 className="text-2xl font-semibold tracking-tight">統一RFマスタ</h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          公開中の判定ルールと、RFランクの計算履歴を確認します。
+          RFルールの設定と、RFランクの計算履歴を管理します。
         </p>
       </header>
 
       <RfCurrentSettingsSection />
+      <RfRuleSetsSection />
       <RfCalculationHistorySection />
     </main>
   );
