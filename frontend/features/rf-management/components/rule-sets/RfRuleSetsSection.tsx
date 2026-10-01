@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -23,16 +22,21 @@ import {
   createRfRuleSet,
   fetchRfRuleSet,
   updateRfRuleSet,
+  archiveRfRuleSet,
 } from "../../api/rf-management-api";
+
 import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
 import { useRfRuleSets } from "../../hooks/useRfRuleSets";
-import type { RfRuleSet } from "../../types";
+import type { RfRuleSet, RfRuleSetSummary } from "../../types";
 import {
   buildCreateRfRuleSetInput,
   buildUpdateRfRuleSetInput,
   type RfRuleSetBasicValues,
 } from "../../utils/rf-rule-set-input";
 import { RfRuleSetBasicFormDialog } from "./RfRuleSetBasicFormDialog";
+
+import { ArchiveIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { RfRuleSetArchiveDialog } from "./RfRuleSetArchiveDialog";
 
 type FormMode = "create" | "edit";
 
@@ -77,6 +81,15 @@ export function RfRuleSetsSection() {
     reloadKey,
   });
 
+  const [archiveTarget, setArchiveTarget] = useState<RfRuleSetSummary | null>(
+    null,
+  );
+
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveErrorMessage, setArchiveErrorMessage] = useState<string | null>(
+    null,
+  );
+
   function openCreateForm() {
     setFormMode("create");
     setSelectedRuleSet(null);
@@ -103,6 +116,11 @@ export function RfRuleSetsSection() {
     } finally {
       setLoadingRuleSetId(null);
     }
+  }
+
+  function openArchiveDialog(ruleSet: RfRuleSetSummary) {
+    setArchiveTarget(ruleSet);
+    setArchiveErrorMessage(null);
   }
 
   async function handleSubmit(values: RfRuleSetBasicValues) {
@@ -139,6 +157,35 @@ export function RfRuleSetsSection() {
       setFormErrorMessage(mutationErrorMessage(error));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleArchive() {
+    if (!archiveTarget) return;
+
+    setIsArchiving(true);
+    setArchiveErrorMessage(null);
+
+    try {
+      // 一覧レスポンスにはlock_versionがないため、詳細APIから最新値を取得する。
+      const detailResponse = await fetchRfRuleSet(archiveTarget.id);
+
+      await archiveRfRuleSet(
+        archiveTarget.id,
+        detailResponse.data.rule_set.lock_version,
+      );
+
+      setArchiveTarget(null);
+      setCurrentPage(1);
+      setReloadKey((current) => current + 1);
+    } catch (error) {
+      setArchiveErrorMessage(
+        error instanceof ApiClientError
+          ? (error.errorMessages[0] ?? error.message)
+          : "RFルールをアーカイブできませんでした。",
+      );
+    } finally {
+      setIsArchiving(false);
     }
   }
 
@@ -224,25 +271,41 @@ export function RfRuleSetsSection() {
                   </div>
                 </dl>
 
-                {isOwner && ruleSet.status === "draft" && (
+                {isOwner && (
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={loadingRuleSetId !== null}
-                      onClick={() => void openEditForm(ruleSet.id)}
-                    >
-                      <PencilIcon />
-                      {loadingRuleSetId === ruleSet.id
-                        ? "読み込み中..."
-                        : "基本設定を編集"}
-                    </Button>
+                    {ruleSet.status === "draft" && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={loadingRuleSetId !== null}
+                          onClick={() => void openEditForm(ruleSet.id)}
+                        >
+                          <PencilIcon />
+                          {loadingRuleSetId === ruleSet.id
+                            ? "読み込み中..."
+                            : "基本設定を編集"}
+                        </Button>
 
-                    <Button asChild>
-                      <Link href={`/rf-management/${ruleSet.id}/edit`}>
-                        条件と対応表を設定
-                      </Link>
-                    </Button>
+                        <Button asChild>
+                          <Link href={`/rf-management/${ruleSet.id}/edit`}>
+                            条件と対応表を設定
+                          </Link>
+                        </Button>
+                      </>
+                    )}
+
+                    {ruleSet.status === "published" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isArchiving}
+                        onClick={() => openArchiveDialog(ruleSet)}
+                      >
+                        <ArchiveIcon />
+                        アーカイブ
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -291,6 +354,20 @@ export function RfRuleSetsSection() {
           }
         }}
         onSubmit={handleSubmit}
+      />
+
+      <RfRuleSetArchiveDialog
+        open={archiveTarget !== null}
+        ruleSetName={archiveTarget?.name ?? ""}
+        isSubmitting={isArchiving}
+        errorMessage={archiveErrorMessage}
+        onOpenChange={(open) => {
+          if (open) return;
+
+          setArchiveTarget(null);
+          setArchiveErrorMessage(null);
+        }}
+        onConfirm={() => void handleArchive()}
       />
     </section>
   );

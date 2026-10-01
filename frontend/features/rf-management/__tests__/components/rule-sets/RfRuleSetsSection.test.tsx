@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   fetchRfRuleSet: vi.fn(),
   updateRfRuleSet: vi.fn(),
   push: vi.fn(),
+  archiveRfRuleSet: vi.fn(),
 }));
 
 vi.mock("@/features/staff-auth/hooks/use-auth", () => ({
@@ -27,6 +28,7 @@ vi.mock("../../../api/rf-management-api", () => ({
   createRfRuleSet: mocks.createRfRuleSet,
   fetchRfRuleSet: mocks.fetchRfRuleSet,
   updateRfRuleSet: mocks.updateRfRuleSet,
+  archiveRfRuleSet: mocks.archiveRfRuleSet,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -102,6 +104,14 @@ const publishedRuleSetSummary = {
   published_at: "2026-09-30T00:00:00Z",
 };
 
+const publishedRuleSet = {
+  ...publishedRuleSetSummary,
+  lock_version: 5,
+  recency_rules: [],
+  frequency_rules: [],
+  rank_mappings: [],
+};
+
 const draftRuleSet = {
   ...draftRuleSetSummary,
   lock_version: 3,
@@ -168,6 +178,16 @@ describe("RfRuleSetsSection", () => {
         rule_set: draftRuleSet,
       },
     });
+
+    mocks.archiveRfRuleSet.mockResolvedValue({
+      data: {
+        rule_set: {
+          ...publishedRuleSet,
+          status: "archived",
+          lock_version: 6,
+        },
+      },
+    });
   });
 
   it("RFルール一覧と状態を表示する", () => {
@@ -221,6 +241,12 @@ describe("RfRuleSetsSection", () => {
     expect(
       screen.queryByRole("link", {
         name: "条件と対応表を設定",
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: "アーカイブ",
       }),
     ).not.toBeInTheDocument();
   });
@@ -347,5 +373,47 @@ describe("RfRuleSetsSection", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "RFルールを取得できませんでした。",
     );
+  });
+
+  it("ownerが公開中ルールをアーカイブできる", async () => {
+    const user = userEvent.setup();
+
+    mocks.fetchRfRuleSet.mockResolvedValueOnce({
+      data: {
+        rule_set: publishedRuleSet,
+      },
+    });
+
+    render(<RfRuleSetsSection />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "アーカイブ",
+      }),
+    );
+
+    expect(
+      screen.getByRole("alertdialog", {
+        name: "公開中のRFルールをアーカイブしますか？",
+      }),
+    ).toHaveTextContent("公開中RFルール");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "アーカイブする",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(8);
+    });
+
+    await waitFor(() => {
+      expect(mocks.archiveRfRuleSet).toHaveBeenCalledWith(8, 5);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
   });
 });
