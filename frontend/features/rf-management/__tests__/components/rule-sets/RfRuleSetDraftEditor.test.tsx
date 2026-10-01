@@ -10,10 +10,12 @@ import type { RfRuleSet } from "../../../types";
 const mocks = vi.hoisted(() => ({
   updateRfRuleSet: vi.fn(),
   useRfRankOptions: vi.fn(),
+  validateRfRuleSet: vi.fn(),
 }));
 
 vi.mock("../../../api/rf-management-api", () => ({
   updateRfRuleSet: mocks.updateRfRuleSet,
+  validateRfRuleSet: mocks.validateRfRuleSet,
 }));
 
 vi.mock("../../../hooks/useRfRankOptions", () => ({
@@ -91,6 +93,16 @@ describe("RfRuleSetDraftEditor", () => {
       ],
       isLoading: false,
       errorMessage: null,
+    });
+
+    mocks.validateRfRuleSet.mockResolvedValue({
+      data: {
+        validation: {
+          valid: true,
+          errors: [],
+          warnings: [],
+        },
+      },
     });
   });
 
@@ -300,7 +312,7 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "RFランク対応表を保存",
+        name: "RFランク対応表を保存して検証",
       }),
     );
 
@@ -320,8 +332,63 @@ describe("RfRuleSetDraftEditor", () => {
       );
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "RFランク対応表を保存しました。",
+    expect(mocks.validateRfRuleSet).toHaveBeenCalledWith(7);
+
+    expect(await screen.findByText("Step 5：検証結果")).toBeInTheDocument();
+
+    expect(screen.getByRole("status")).toHaveTextContent("公開できる状態です");
+  });
+
+  it("検証エラーがある場合は修正内容を表示する", async () => {
+    const user = userEvent.setup();
+
+    mocks.validateRfRuleSet.mockResolvedValue({
+      data: {
+        validation: {
+          valid: false,
+          errors: [
+            {
+              code: "mapping_missing",
+              message: "RFランクが未設定の組み合わせがあります。",
+            },
+          ],
+          warnings: [],
+        },
+      },
+    });
+
+    render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件へ",
+      }),
     );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件を保存",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Frequency条件を保存",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "RFランク対応表を保存して検証",
+      }),
+    );
+
+    expect(await screen.findByText("Step 5：検証結果")).toBeInTheDocument();
+
+    expect(screen.getByRole("alert")).toHaveTextContent("修正が必要です");
+
+    expect(
+      screen.getByText("RFランクが未設定の組み合わせがあります。"),
+    ).toBeInTheDocument();
   });
 });

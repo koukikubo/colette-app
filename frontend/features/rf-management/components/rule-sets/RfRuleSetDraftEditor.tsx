@@ -12,25 +12,32 @@ import {
 } from "@/components/ui/card";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { updateRfRuleSet } from "../../api/rf-management-api";
+import {
+  updateRfRuleSet,
+  validateRfRuleSet,
+} from "../../api/rf-management-api";
+
 import type {
   RfFrequencyRuleInput,
   RfRecencyRuleInput,
   RfRankMappingInput,
   RfRuleSet,
   RfRuleSetUpdateInput,
+  RfRuleSetValidation,
 } from "../../types";
+
 import { buildUpdateRfRuleSetInput } from "../../utils/rf-rule-set-input";
 import { RfRecencyRulesEditor } from "./RfRecencyRulesEditor";
 import { RfFrequencyRulesEditor } from "./RfFrequencyRulesEditor";
 import { useRfRankOptions } from "../../hooks/useRfRankOptions";
 import { RfRankMappingEditor } from "./RfRankMappingEditor";
+import { RfRuleSetValidationResult } from "./RfRuleSetValidationResult";
 
 type RfRuleSetDraftEditorProps = {
   ruleSet: RfRuleSet;
 };
 
-type EditorStep = 1 | 2 | 3 | 4;
+type EditorStep = 1 | 2 | 3 | 4 | 5;
 
 const EDITOR_STEPS = [
   "基本設定",
@@ -61,6 +68,18 @@ function saveErrorMessage(error: unknown) {
   return error.errorMessages[0] ?? error.message;
 }
 
+function validationErrorMessage(error: unknown) {
+  if (!(error instanceof ApiClientError)) {
+    return "RFルールを検証できませんでした。";
+  }
+
+  if (error.status === 409) {
+    return "ほかの担当者によって更新されています。画面を再読み込みして、もう一度操作してください。";
+  }
+
+  return error.errorMessages[0] ?? error.message;
+}
+
 export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
   const {
     options: rankOptions,
@@ -75,6 +94,9 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [validation, setValidation] = useState<RfRuleSetValidation | null>(
+    null,
+  );
 
   function updateRecencyRules(recencyRules: RfRecencyRuleInput[]) {
     const availableCodes = new Set(recencyRules.map((rule) => rule.code));
@@ -155,19 +177,23 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     }
   }
 
-  async function saveRankMappings() {
+  async function saveAndValidateRankMappings() {
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setValidation(null);
 
     try {
-      const response = await updateRfRuleSet(ruleSet.id, values);
+      const updateResponse = await updateRfRuleSet(ruleSet.id, values);
 
-      setValues(initialEditorValues(response.data.rule_set));
+      setValues(initialEditorValues(updateResponse.data.rule_set));
 
-      setSuccessMessage("RFランク対応表を保存しました。");
+      const validationResponse = await validateRfRuleSet(ruleSet.id);
+
+      setValidation(validationResponse.data.validation);
+      setCurrentStep(5);
     } catch (error) {
-      setErrorMessage(saveErrorMessage(error));
+      setErrorMessage(validationErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -391,9 +417,47 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
             <Button
               type="button"
               disabled={isSubmitting || isRankOptionsLoading}
-              onClick={() => void saveRankMappings()}
+              onClick={() => void saveAndValidateRankMappings()}
             >
-              {isSubmitting ? "保存中..." : "RFランク対応表を保存"}
+              {isSubmitting ? "検証中..." : "RFランク対応表を保存して検証"}
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {currentStep === 5 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 5：検証結果</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {errorMessage && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {errorMessage}
+              </div>
+            )}
+
+            {validation ? (
+              <RfRuleSetValidationResult validation={validation} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                検証結果を取得できませんでした。
+              </p>
+            )}
+          </CardContent>
+
+          <CardFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setCurrentStep(4)}
+            >
+              RFランク対応表へ戻る
             </Button>
           </CardFooter>
         </Card>
