@@ -16,18 +16,21 @@ import { updateRfRuleSet } from "../../api/rf-management-api";
 import type {
   RfFrequencyRuleInput,
   RfRecencyRuleInput,
+  RfRankMappingInput,
   RfRuleSet,
   RfRuleSetUpdateInput,
 } from "../../types";
 import { buildUpdateRfRuleSetInput } from "../../utils/rf-rule-set-input";
 import { RfRecencyRulesEditor } from "./RfRecencyRulesEditor";
 import { RfFrequencyRulesEditor } from "./RfFrequencyRulesEditor";
+import { useRfRankOptions } from "../../hooks/useRfRankOptions";
+import { RfRankMappingEditor } from "./RfRankMappingEditor";
 
 type RfRuleSetDraftEditorProps = {
   ruleSet: RfRuleSet;
 };
 
-type EditorStep = 1 | 2 | 3;
+type EditorStep = 1 | 2 | 3 | 4;
 
 const EDITOR_STEPS = [
   "基本設定",
@@ -59,8 +62,12 @@ function saveErrorMessage(error: unknown) {
 }
 
 export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
+  const {
+    options: rankOptions,
+    isLoading: isRankOptionsLoading,
+    errorMessage: rankOptionsErrorMessage,
+  } = useRfRankOptions();
   const [currentStep, setCurrentStep] = useState<EditorStep>(1);
-
   const [values, setValues] = useState<RfRuleSetUpdateInput>(() =>
     initialEditorValues(ruleSet),
   );
@@ -101,6 +108,15 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     setSuccessMessage(null);
   }
 
+  function updateRankMappings(rankMappings: RfRankMappingInput[]) {
+    setValues((current) => ({
+      ...current,
+      rank_mappings: rankMappings,
+    }));
+
+    setSuccessMessage(null);
+  }
+
   async function saveRecencyRules() {
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -131,6 +147,25 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
       setValues(initialEditorValues(response.data.rule_set));
 
       setSuccessMessage("Frequency条件を保存しました。");
+      setCurrentStep(4);
+    } catch (error) {
+      setErrorMessage(saveErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function saveRankMappings() {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await updateRfRuleSet(ruleSet.id, values);
+
+      setValues(initialEditorValues(response.data.rule_set));
+
+      setSuccessMessage("RFランク対応表を保存しました。");
     } catch (error) {
       setErrorMessage(saveErrorMessage(error));
     } finally {
@@ -300,6 +335,65 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               onClick={() => void saveFrequencyRules()}
             >
               {isSubmitting ? "保存中..." : "Frequency条件を保存"}
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {currentStep === 4 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 4：RFランク対応表</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {(errorMessage || rankOptionsErrorMessage) && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {errorMessage ?? rankOptionsErrorMessage}
+              </div>
+            )}
+
+            {successMessage && (
+              <div role="status" className="rounded-lg border p-3 text-sm">
+                {successMessage}
+              </div>
+            )}
+
+            {isRankOptionsLoading ? (
+              <p className="text-sm text-muted-foreground">
+                RFランクを読み込んでいます。
+              </p>
+            ) : (
+              <RfRankMappingEditor
+                recencyRules={values.recency_rules}
+                frequencyRules={values.frequency_rules}
+                mappings={values.rank_mappings}
+                rankOptions={rankOptions}
+                disabled={isSubmitting}
+                onChange={updateRankMappings}
+              />
+            )}
+          </CardContent>
+
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setCurrentStep(3)}
+            >
+              Frequency条件へ戻る
+            </Button>
+
+            <Button
+              type="button"
+              disabled={isSubmitting || isRankOptionsLoading}
+              onClick={() => void saveRankMappings()}
+            >
+              {isSubmitting ? "保存中..." : "RFランク対応表を保存"}
             </Button>
           </CardFooter>
         </Card>

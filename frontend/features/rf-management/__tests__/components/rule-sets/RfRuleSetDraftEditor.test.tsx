@@ -9,10 +9,15 @@ import type { RfRuleSet } from "../../../types";
 
 const mocks = vi.hoisted(() => ({
   updateRfRuleSet: vi.fn(),
+  useRfRankOptions: vi.fn(),
 }));
 
 vi.mock("../../../api/rf-management-api", () => ({
   updateRfRuleSet: mocks.updateRfRuleSet,
+}));
+
+vi.mock("../../../hooks/useRfRankOptions", () => ({
+  useRfRankOptions: mocks.useRfRankOptions,
 }));
 
 const ruleSet: RfRuleSet = {
@@ -71,6 +76,21 @@ describe("RfRuleSetDraftEditor", () => {
           lock_version: 4,
         },
       },
+    });
+
+    mocks.useRfRankOptions.mockReturnValue({
+      options: [
+        {
+          id: 31,
+          label: "Aランク",
+        },
+        {
+          id: 32,
+          label: "Bランク",
+        },
+      ],
+      isLoading: false,
+      errorMessage: null,
     });
   });
 
@@ -236,6 +256,72 @@ describe("RfRuleSetDraftEditor", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Frequency条件を保存しました。",
+    );
+  });
+
+  it("RFランク対応表を変更して保存する", async () => {
+    const user = userEvent.setup();
+
+    render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件へ",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件を保存",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Frequency条件を保存",
+      }),
+    );
+
+    expect(
+      await screen.findByText("Step 4：RFランク対応表"),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("combobox", {
+        name: "90日以内・1回以上のRFランク",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("option", {
+        name: "Bランク",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "RFランク対応表を保存",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.updateRfRuleSet).toHaveBeenLastCalledWith(
+        7,
+        expect.objectContaining({
+          lock_version: 4,
+          rank_mappings: [
+            {
+              recency_code: "R1",
+              frequency_code: "F1",
+              rf_rank_id: 32,
+            },
+          ],
+        }),
+      );
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "RFランク対応表を保存しました。",
     );
   });
 });
