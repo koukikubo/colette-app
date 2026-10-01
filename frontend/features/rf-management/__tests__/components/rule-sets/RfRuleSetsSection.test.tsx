@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updateRfRuleSet: vi.fn(),
   push: vi.fn(),
   archiveRfRuleSet: vi.fn(),
+  deleteRfRuleSet: vi.fn(),
 }));
 
 vi.mock("@/features/staff-auth/hooks/use-auth", () => ({
@@ -29,6 +30,7 @@ vi.mock("../../../api/rf-management-api", () => ({
   fetchRfRuleSet: mocks.fetchRfRuleSet,
   updateRfRuleSet: mocks.updateRfRuleSet,
   archiveRfRuleSet: mocks.archiveRfRuleSet,
+  deleteRfRuleSet: mocks.deleteRfRuleSet,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -188,6 +190,8 @@ describe("RfRuleSetsSection", () => {
         },
       },
     });
+
+    mocks.deleteRfRuleSet.mockResolvedValue(undefined);
   });
 
   it("RFルール一覧と状態を表示する", () => {
@@ -247,6 +251,12 @@ describe("RfRuleSetsSection", () => {
     expect(
       screen.queryByRole("button", {
         name: "アーカイブ",
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: "削除",
       }),
     ).not.toBeInTheDocument();
   });
@@ -410,6 +420,42 @@ describe("RfRuleSetsSection", () => {
 
     await waitFor(() => {
       expect(mocks.archiveRfRuleSet).toHaveBeenCalledWith(8, 5);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("ownerが下書きルールを削除できる", async () => {
+    const user = userEvent.setup();
+
+    render(<RfRuleSetsSection />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "削除",
+      }),
+    );
+
+    expect(
+      screen.getByRole("alertdialog", {
+        name: "下書きのRFルールを削除しますか？",
+      }),
+    ).toHaveTextContent("下書きRFルール");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "削除する",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(7);
+    });
+
+    await waitFor(() => {
+      expect(mocks.deleteRfRuleSet).toHaveBeenCalledWith(7, 3);
     });
 
     await waitFor(() => {

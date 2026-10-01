@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 import { ApiClientError } from "@/lib/api/api-client";
@@ -23,6 +24,7 @@ import {
   fetchRfRuleSet,
   updateRfRuleSet,
   archiveRfRuleSet,
+  deleteRfRuleSet,
 } from "../../api/rf-management-api";
 
 import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
@@ -35,8 +37,9 @@ import {
 } from "../../utils/rf-rule-set-input";
 import { RfRuleSetBasicFormDialog } from "./RfRuleSetBasicFormDialog";
 
-import { ArchiveIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { ArchiveIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { RfRuleSetArchiveDialog } from "./RfRuleSetArchiveDialog";
+import { RfRuleSetDeleteDialog } from "./RfRuleSetDeleteDialog";
 
 type FormMode = "create" | "edit";
 
@@ -89,6 +92,14 @@ export function RfRuleSetsSection() {
   const [archiveErrorMessage, setArchiveErrorMessage] = useState<string | null>(
     null,
   );
+  const [deleteTarget, setDeleteTarget] = useState<RfRuleSetSummary | null>(
+    null,
+  );
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  );
 
   function openCreateForm() {
     setFormMode("create");
@@ -121,6 +132,11 @@ export function RfRuleSetsSection() {
   function openArchiveDialog(ruleSet: RfRuleSetSummary) {
     setArchiveTarget(ruleSet);
     setArchiveErrorMessage(null);
+  }
+
+  function openDeleteDialog(ruleSet: RfRuleSetSummary) {
+    setDeleteTarget(ruleSet);
+    setDeleteErrorMessage(null);
   }
 
   async function handleSubmit(values: RfRuleSetBasicValues) {
@@ -186,6 +202,35 @@ export function RfRuleSetsSection() {
       );
     } finally {
       setIsArchiving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
+    setDeleteErrorMessage(null);
+
+    try {
+      // 削除直前に最新のlock_versionを取得する。
+      const detailResponse = await fetchRfRuleSet(deleteTarget.id);
+
+      await deleteRfRuleSet(
+        deleteTarget.id,
+        detailResponse.data.rule_set.lock_version,
+      );
+
+      setDeleteTarget(null);
+      setCurrentPage(1);
+      setReloadKey((current) => current + 1);
+    } catch (error) {
+      setDeleteErrorMessage(
+        error instanceof ApiClientError
+          ? (error.errorMessages[0] ?? error.message)
+          : "RFルールを削除できませんでした。",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -292,6 +337,16 @@ export function RfRuleSetsSection() {
                             条件と対応表を設定
                           </Link>
                         </Button>
+
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={isDeleting}
+                          onClick={() => openDeleteDialog(ruleSet)}
+                        >
+                          <Trash2Icon />
+                          削除
+                        </Button>
                       </>
                     )}
 
@@ -368,6 +423,20 @@ export function RfRuleSetsSection() {
           setArchiveErrorMessage(null);
         }}
         onConfirm={() => void handleArchive()}
+      />
+
+      <RfRuleSetDeleteDialog
+        open={deleteTarget !== null}
+        ruleSetName={deleteTarget?.name ?? ""}
+        isSubmitting={isDeleting}
+        errorMessage={deleteErrorMessage}
+        onOpenChange={(open) => {
+          if (open) return;
+
+          setDeleteTarget(null);
+          setDeleteErrorMessage(null);
+        }}
+        onConfirm={() => void handleDelete()}
       />
     </section>
   );
