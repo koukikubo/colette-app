@@ -11,15 +11,26 @@ const mocks = vi.hoisted(() => ({
   updateRfRuleSet: vi.fn(),
   useRfRankOptions: vi.fn(),
   validateRfRuleSet: vi.fn(),
+  publishRfRuleSet: vi.fn(),
+  routerPush: vi.fn(),
+  routerRefresh: vi.fn(),
+}));
+
+vi.mock("../../../hooks/useRfRankOptions", () => ({
+  useRfRankOptions: mocks.useRfRankOptions,
 }));
 
 vi.mock("../../../api/rf-management-api", () => ({
   updateRfRuleSet: mocks.updateRfRuleSet,
   validateRfRuleSet: mocks.validateRfRuleSet,
+  publishRfRuleSet: mocks.publishRfRuleSet,
 }));
 
-vi.mock("../../../hooks/useRfRankOptions", () => ({
-  useRfRankOptions: mocks.useRfRankOptions,
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mocks.routerPush,
+    refresh: mocks.routerRefresh,
+  }),
 }));
 
 const ruleSet: RfRuleSet = {
@@ -101,6 +112,17 @@ describe("RfRuleSetDraftEditor", () => {
           valid: true,
           errors: [],
           warnings: [],
+        },
+      },
+    });
+
+    mocks.publishRfRuleSet.mockResolvedValue({
+      data: {
+        rule_set: {
+          ...ruleSet,
+          status: "published",
+          lock_version: 5,
+          published_at: "2026-10-01T03:00:00Z",
         },
       },
     });
@@ -390,5 +412,62 @@ describe("RfRuleSetDraftEditor", () => {
     expect(
       screen.getByText("RFランクが未設定の組み合わせがあります。"),
     ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: "公開確認へ",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("検証済みのRFルールを公開して一覧へ戻る", async () => {
+    const user = userEvent.setup();
+
+    render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件へ",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件を保存",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Frequency条件を保存",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "RFランク対応表を保存して検証",
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "公開確認へ",
+      }),
+    );
+
+    expect(screen.getByText("Step 6：公開確認")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "このRFルールを公開",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.publishRfRuleSet).toHaveBeenCalledWith(7, 4);
+    });
+
+    expect(mocks.routerPush).toHaveBeenCalledWith("/rf-management");
+    expect(mocks.routerRefresh).toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import { ApiClientError } from "@/lib/api/api-client";
 import {
   updateRfRuleSet,
   validateRfRuleSet,
+  publishRfRuleSet,
 } from "../../api/rf-management-api";
 
 import type {
@@ -37,7 +39,7 @@ type RfRuleSetDraftEditorProps = {
   ruleSet: RfRuleSet;
 };
 
-type EditorStep = 1 | 2 | 3 | 4 | 5;
+type EditorStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 const EDITOR_STEPS = [
   "基本設定",
@@ -81,6 +83,7 @@ function validationErrorMessage(error: unknown) {
 }
 
 export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
+  const router = useRouter();
   const {
     options: rankOptions,
     isLoading: isRankOptionsLoading,
@@ -192,6 +195,23 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
       setValidation(validationResponse.data.validation);
       setCurrentStep(5);
+    } catch (error) {
+      setErrorMessage(validationErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function publishRuleSet() {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      await publishRfRuleSet(ruleSet.id, values.lock_version);
+
+      router.push("/rf-management");
+      router.refresh();
     } catch (error) {
       setErrorMessage(validationErrorMessage(error));
     } finally {
@@ -430,7 +450,6 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
           <CardHeader>
             <CardTitle>Step 5：検証結果</CardTitle>
           </CardHeader>
-
           <CardContent className="space-y-4">
             {errorMessage && (
               <div
@@ -449,8 +468,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               </p>
             )}
           </CardContent>
-
-          <CardFooter>
+          <CardFooter className="flex justify-between">
             <Button
               type="button"
               variant="outline"
@@ -458,6 +476,100 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               onClick={() => setCurrentStep(4)}
             >
               RFランク対応表へ戻る
+            </Button>
+
+            {validation?.valid && (
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setCurrentStep(6)}
+              >
+                公開確認へ
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      )}
+
+      {currentStep === 6 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 6：公開確認</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-5">
+            {errorMessage && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {errorMessage}
+              </div>
+            )}
+
+            <div className="rounded-lg border p-4">
+              <p className="font-medium">{values.name}</p>
+
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <dt className="text-sm text-muted-foreground">集計期間</dt>
+                  <dd className="mt-1 font-medium">
+                    {values.aggregation_months}か月
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-muted-foreground">
+                    来店回数の対象期間
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {values.frequency_window_months}か月
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-muted-foreground">Recency条件</dt>
+                  <dd className="mt-1 font-medium">
+                    {values.recency_rules.length}件
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm text-muted-foreground">
+                    Frequency条件
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {values.frequency_rules.length}件
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-4 text-sm">
+              <p className="font-medium">公開後の動作</p>
+              <p className="mt-1 text-muted-foreground">
+                このルールが新しい公開中ルールになります。
+                現在公開中のルールがある場合は、自動的にアーカイブされます。
+              </p>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setCurrentStep(5)}
+            >
+              検証結果へ戻る
+            </Button>
+
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => void publishRuleSet()}
+            >
+              {isSubmitting ? "公開中..." : "このRFルールを公開"}
             </Button>
           </CardFooter>
         </Card>
