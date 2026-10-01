@@ -221,6 +221,12 @@ describe("RfRuleSetsSection", () => {
         name: "条件と対応表を設定",
       }),
     ).toHaveAttribute("href", "/rf-management/7/edit");
+
+    expect(
+      screen.getByRole("button", {
+        name: "設定内容を見る",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("operatorには作成・編集ボタンを表示しない", () => {
@@ -259,6 +265,57 @@ describe("RfRuleSetsSection", () => {
         name: "削除",
       }),
     ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", {
+        name: "設定内容を見る",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("アーカイブ済みルールの用途と設定内容を確認できる", async () => {
+    const user = userEvent.setup();
+    const archivedRuleSetSummary = {
+      ...publishedRuleSetSummary,
+      id: 9,
+      name: "過去のRFルール",
+      status: "archived" as const,
+    };
+    const archivedRuleSet = {
+      ...publishedRuleSet,
+      ...archivedRuleSetSummary,
+      lock_version: 6,
+    };
+
+    mocks.useRfRuleSets.mockReturnValue({
+      ruleSets: [archivedRuleSetSummary],
+      pagination: {
+        current_page: 1,
+        per_page: 10,
+        total_pages: 1,
+        total_count: 1,
+      },
+      isLoading: false,
+      errorMessage: null,
+    });
+    mocks.fetchRfRuleSet.mockResolvedValueOnce({
+      data: { rule_set: archivedRuleSet },
+    });
+
+    render(<RfRuleSetsSection />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "設定内容を見る",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "RFルールの設定内容" }),
+    ).toHaveTextContent(
+      "このルールは過去の履歴として保存されています。編集・再公開・削除はできません。",
+    );
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(9);
   });
 
   it("ownerが新しいdraftルールを作成できる", async () => {

@@ -37,9 +37,16 @@ import {
 } from "../../utils/rf-rule-set-input";
 import { RfRuleSetBasicFormDialog } from "./RfRuleSetBasicFormDialog";
 
-import { ArchiveIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ArchiveIcon,
+  EyeIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { RfRuleSetArchiveDialog } from "./RfRuleSetArchiveDialog";
 import { RfRuleSetDeleteDialog } from "./RfRuleSetDeleteDialog";
+import { RfRuleSetDetailDialog } from "./RfRuleSetDetailDialog";
 
 type FormMode = "create" | "edit";
 
@@ -77,6 +84,11 @@ export function RfRuleSetsSection() {
   const [loadingRuleSetId, setLoadingRuleSetId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRuleSet, setDetailRuleSet] = useState<RfRuleSet | null>(null);
+  const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(
+    null,
+  );
 
   const { ruleSets, pagination, isLoading, errorMessage } = useRfRuleSets({
     page: currentPage,
@@ -137,6 +149,27 @@ export function RfRuleSetsSection() {
   function openDeleteDialog(ruleSet: RfRuleSetSummary) {
     setDeleteTarget(ruleSet);
     setDeleteErrorMessage(null);
+  }
+
+  async function openDetailDialog(id: number) {
+    setDetailOpen(true);
+    setDetailRuleSet(null);
+    setDetailErrorMessage(null);
+    setLoadingRuleSetId(id);
+
+    try {
+      const response = await fetchRfRuleSet(id);
+
+      setDetailRuleSet(response.data.rule_set);
+    } catch (error) {
+      setDetailErrorMessage(
+        error instanceof ApiClientError
+          ? error.message
+          : "RFルールの設定内容を取得できませんでした。",
+      );
+    } finally {
+      setLoadingRuleSetId(null);
+    }
   }
 
   async function handleSubmit(values: RfRuleSetBasicValues) {
@@ -316,53 +349,69 @@ export function RfRuleSetsSection() {
                   </div>
                 </dl>
 
-                {isOwner && (
-                  <div className="mt-4 flex flex-wrap justify-end gap-2">
-                    {ruleSet.status === "draft" && (
-                      <>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  {ruleSet.status !== "draft" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={loadingRuleSetId !== null}
+                      onClick={() => void openDetailDialog(ruleSet.id)}
+                    >
+                      <EyeIcon />
+                      {loadingRuleSetId === ruleSet.id
+                        ? "読み込み中..."
+                        : "設定内容を見る"}
+                    </Button>
+                  )}
+
+                  {isOwner && (
+                    <>
+                      {ruleSet.status === "draft" && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={loadingRuleSetId !== null}
+                            onClick={() => void openEditForm(ruleSet.id)}
+                          >
+                            <PencilIcon />
+                            {loadingRuleSetId === ruleSet.id
+                              ? "読み込み中..."
+                              : "基本設定を編集"}
+                          </Button>
+
+                          <Button asChild>
+                            <Link href={`/rf-management/${ruleSet.id}/edit`}>
+                              条件と対応表を設定
+                            </Link>
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={isDeleting}
+                            onClick={() => openDeleteDialog(ruleSet)}
+                          >
+                            <Trash2Icon />
+                            削除
+                          </Button>
+                        </>
+                      )}
+
+                      {ruleSet.status === "published" && (
                         <Button
                           type="button"
                           variant="outline"
-                          disabled={loadingRuleSetId !== null}
-                          onClick={() => void openEditForm(ruleSet.id)}
+                          disabled={isArchiving}
+                          onClick={() => openArchiveDialog(ruleSet)}
                         >
-                          <PencilIcon />
-                          {loadingRuleSetId === ruleSet.id
-                            ? "読み込み中..."
-                            : "基本設定を編集"}
+                          <ArchiveIcon />
+                          アーカイブ
                         </Button>
-
-                        <Button asChild>
-                          <Link href={`/rf-management/${ruleSet.id}/edit`}>
-                            条件と対応表を設定
-                          </Link>
-                        </Button>
-
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          disabled={isDeleting}
-                          onClick={() => openDeleteDialog(ruleSet)}
-                        >
-                          <Trash2Icon />
-                          削除
-                        </Button>
-                      </>
-                    )}
-
-                    {ruleSet.status === "published" && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isArchiving}
-                        onClick={() => openArchiveDialog(ruleSet)}
-                      >
-                        <ArchiveIcon />
-                        アーカイブ
-                      </Button>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -437,6 +486,21 @@ export function RfRuleSetsSection() {
           setDeleteErrorMessage(null);
         }}
         onConfirm={() => void handleDelete()}
+      />
+
+      <RfRuleSetDetailDialog
+        open={detailOpen}
+        ruleSet={detailRuleSet}
+        isLoading={detailOpen && loadingRuleSetId !== null}
+        errorMessage={detailErrorMessage}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+
+          if (!open) {
+            setDetailRuleSet(null);
+            setDetailErrorMessage(null);
+          }
+        }}
       />
     </section>
   );
