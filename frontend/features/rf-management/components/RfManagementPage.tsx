@@ -1,6 +1,6 @@
-import { RfCurrentSettingsSection } from "./RfCurrentSettingsSection";
-import { RfRuleSetsSection } from "./RfRuleSetsSection";
-import { RfCalculationHistorySection } from "./RfCalculationHistorySection";
+import { RfCurrentSettingsSection } from "./settings/RfCurrentSettingsSection";
+import { RfRuleSetsSection } from "./rule-sets/RfRuleSetsSection";
+import { RfCalculationHistorySection } from "./calculation/RfCalculationHistorySection";
 
 export function RfManagementPage() {
   return (

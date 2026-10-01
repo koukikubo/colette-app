@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RfRuleSetEditorPage } from "../../components/RfRuleSetEditorPage";
+import { RfRuleSetEditorPage } from "../../../components/rule-sets/RfRuleSetEditorPage";
 
 const mocks = vi.hoisted(() => ({
   useAuth: vi.fn(),
@@ -12,11 +12,11 @@ vi.mock("@/features/staff-auth/hooks/use-auth", () => ({
   useAuth: mocks.useAuth,
 }));
 
-vi.mock("../../hooks/useRfRuleSetDetail", () => ({
+vi.mock("../../../hooks/useRfRuleSetDetail", () => ({
   useRfRuleSetDetail: mocks.useRfRuleSetDetail,
 }));
 
-vi.mock("../../components/RfRuleSetDraftEditor", () => ({
+vi.mock("../../../components/rule-sets/RfRuleSetDraftEditor", () => ({
   RfRuleSetDraftEditor: ({ ruleSet }: { ruleSet: { id: number } }) => (
     <div data-testid="rf-rule-set-draft-editor">編集対象ID: {ruleSet.id}</div>
   ),

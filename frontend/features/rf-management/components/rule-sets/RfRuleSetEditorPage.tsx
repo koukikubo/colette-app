@@ -5,8 +5,8 @@ import { RfRuleSetDraftEditor } from "./RfRuleSetDraftEditor";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 
-import { RF_RULE_SET_STATUS_LABELS } from "../constants";
-import { useRfRuleSetDetail } from "../hooks/useRfRuleSetDetail";
+import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
+import { useRfRuleSetDetail } from "../../hooks/useRfRuleSetDetail";
 
 type RfRuleSetEditorPageProps = {
   ruleSetId: number;

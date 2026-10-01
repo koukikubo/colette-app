@@ -14,8 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import type { RfRuleSet } from "../types";
-import type { RfRuleSetBasicValues } from "../utils/rf-rule-set-input";
+import type { RfRuleSet } from "../../types";
+import type { RfRuleSetBasicValues } from "../../utils/rf-rule-set-input";
 
 type FormMode = "create" | "edit";
 

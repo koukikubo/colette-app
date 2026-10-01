@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RfCurrentSettingsSection } from "../../components/RfCurrentSettingsSection";
+import { RfCurrentSettingsSection } from "../../../components/settings/RfCurrentSettingsSection";
 
 const mocks = vi.hoisted(() => ({
   useRfSettings: vi.fn(),
 }));
 
-vi.mock("../../hooks/useRfSettings", () => ({
+vi.mock("../../../hooks/useRfSettings", () => ({
   useRfSettings: mocks.useRfSettings,
 }));
 

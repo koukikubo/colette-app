@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { RfRuleSetsSection } from "../../components/RfRuleSetsSection";
+import { RfRuleSetsSection } from "../../../components/rule-sets/RfRuleSetsSection";
 
 const mocks = vi.hoisted(() => ({
   useAuth: vi.fn(),
@@ -19,11 +19,11 @@ vi.mock("@/features/staff-auth/hooks/use-auth", () => ({
   useAuth: mocks.useAuth,
 }));
 
-vi.mock("../../hooks/useRfRuleSets", () => ({
+vi.mock("../../../hooks/useRfRuleSets", () => ({
   useRfRuleSets: mocks.useRfRuleSets,
 }));
 
-vi.mock("../../api/rf-management-api", () => ({
+vi.mock("../../../api/rf-management-api", () => ({
   createRfRuleSet: mocks.createRfRuleSet,
   fetchRfRuleSet: mocks.fetchRfRuleSet,
   updateRfRuleSet: mocks.updateRfRuleSet,
@@ -35,7 +35,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("../../components/RfRuleSetBasicFormDialog", () => ({
+vi.mock("../../../components/rule-sets/RfRuleSetBasicFormDialog", () => ({
   RfRuleSetBasicFormDialog: ({
     open,
     mode,

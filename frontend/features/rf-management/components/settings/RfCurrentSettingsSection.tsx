@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useRfSettings } from "../hooks/useRfSettings";
-import { RF_CALCULATION_STATUS_LABELS } from "../constants";
+import { useRfSettings } from "../../hooks/useRfSettings";
+import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
 
 function formatDate(date: string) {
   return date.replaceAll("-", "/");

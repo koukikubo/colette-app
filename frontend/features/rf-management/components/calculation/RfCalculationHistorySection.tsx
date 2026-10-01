@@ -13,8 +13,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePagination } from "@/hooks/usePagination";
 
-import { useRfCalculationRuns } from "../hooks/useRfCalculationRuns";
-import { RF_CALCULATION_STATUS_LABELS } from "../constants";
+import { useRfCalculationRuns } from "../../hooks/useRfCalculationRuns";
+import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
 
 import { ChevronRightIcon } from "lucide-react";
 

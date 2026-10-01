@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/card";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { updateRfRuleSet } from "../api/rf-management-api";
+import { updateRfRuleSet } from "../../api/rf-management-api";
 import type {
   RfRecencyRuleInput,
   RfRuleSet,
   RfRuleSetUpdateInput,
-} from "../types";
-import { buildUpdateRfRuleSetInput } from "../utils/rf-rule-set-input";
+} from "../../types";
+import { buildUpdateRfRuleSetInput } from "../../utils/rf-rule-set-input";
 import { RfRecencyRulesEditor } from "./RfRecencyRulesEditor";
 
 type RfRuleSetDraftEditorProps = {

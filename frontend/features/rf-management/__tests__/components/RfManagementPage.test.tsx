@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { RfManagementPage } from "../../components/RfManagementPage";
 
-vi.mock("../../components/RfRuleSetsSection", () => ({
+vi.mock("../../components/rule-sets/RfRuleSetsSection", () => ({
   RfRuleSetsSection: () => <div data-testid="rf-rule-sets-section" />,
 }));
 

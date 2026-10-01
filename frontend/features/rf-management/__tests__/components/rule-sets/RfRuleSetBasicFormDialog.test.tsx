@@ -2,8 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RfRuleSetBasicFormDialog } from "../../components/RfRuleSetBasicFormDialog";
-import type { RfRuleSet } from "../../types";
+import { RfRuleSetBasicFormDialog } from "../../../components/rule-sets/RfRuleSetBasicFormDialog";
+import type { RfRuleSet } from "../../../types";
 
 const mocks = {
   onOpenChange: vi.fn(),

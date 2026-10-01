@@ -1,17 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RfCalculationRunDetailDrawer } from "../../components/RfCalculationRunDetailDrawer";
+import { RfCalculationRunDetailDrawer } from "../../../components/calculation/RfCalculationRunDetailDrawer";
 
 const mocks = vi.hoisted(() => ({
   useRfCalculationRunDetail: vi.fn(),
 }));
 
-vi.mock("../../hooks/useRfCalculationRunDetail", () => ({
+vi.mock("../../../hooks/useRfCalculationRunDetail", () => ({
   useRfCalculationRunDetail: mocks.useRfCalculationRunDetail,
 }));
 
-vi.mock("../../components/RfCalculationResultsSection", () => ({
+vi.mock("../../../components/calculation/RfCalculationResultsSection", () => ({
   RfCalculationResultsSection: ({
     calculationRunId,
   }: {

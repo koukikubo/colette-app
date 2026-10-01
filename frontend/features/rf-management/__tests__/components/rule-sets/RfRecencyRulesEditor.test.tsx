@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
-import { RfRecencyRulesEditor } from "../../components/RfRecencyRulesEditor";
-import type { RfRecencyRuleInput } from "../../types";
+import { RfRecencyRulesEditor } from "../../../components/rule-sets/RfRecencyRulesEditor";
+import type { RfRecencyRuleInput } from "../../../types";
 
 function TestEditor({
   initialRules = [],

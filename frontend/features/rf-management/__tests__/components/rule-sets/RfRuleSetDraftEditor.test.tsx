@@ -3,15 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "@/lib/api/api-client";
-import { RfRuleSetDraftEditor } from "../../components/RfRuleSetDraftEditor";
+import { RfRuleSetDraftEditor } from "../../../components/rule-sets/RfRuleSetDraftEditor";
 
-import type { RfRuleSet } from "../../types";
+import type { RfRuleSet } from "../../../types";
 
 const mocks = vi.hoisted(() => ({
   updateRfRuleSet: vi.fn(),
 }));
 
-vi.mock("../../api/rf-management-api", () => ({
+vi.mock("../../../api/rf-management-api", () => ({
   updateRfRuleSet: mocks.updateRfRuleSet,
 }));
 
