@@ -231,16 +231,16 @@ export type RfRuleSetInput = {
   frequency_rules: RfFrequencyRuleInput[];
   rank_mappings: RfRankMappingInput[];
 };
-
+// RFルールセット更新APIのリクエスト
 export type RfRuleSetUpdateInput = RfRuleSetInput & {
   lock_version: number;
 };
-
+// RFルールセットの検証結果
 export type RfRuleSetValidationIssue = {
   code: string;
   message: string;
 };
-
+// RFルールセットの検証APIのレスポンス
 export type RfRuleSetValidationResponse = ApiSuccessResponse<{
   validation: {
     valid: boolean;
@@ -248,3 +248,7 @@ export type RfRuleSetValidationResponse = ApiSuccessResponse<{
     warnings: RfRuleSetValidationIssue[];
   };
 }>;
+
+// RFランク対応表の選択肢。
+// 基本コードマスタの有効なRFランクから生成する。
+export type RfRankOption = Pick<RfRank, "id" | "label">;
