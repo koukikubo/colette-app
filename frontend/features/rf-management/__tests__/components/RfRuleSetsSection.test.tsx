@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   createRfRuleSet: vi.fn(),
   fetchRfRuleSet: vi.fn(),
   updateRfRuleSet: vi.fn(),
+  push: vi.fn(),
 }));
 
 vi.mock("@/features/staff-auth/hooks/use-auth", () => ({
@@ -26,6 +27,12 @@ vi.mock("../../api/rf-management-api", () => ({
   createRfRuleSet: mocks.createRfRuleSet,
   fetchRfRuleSet: mocks.fetchRfRuleSet,
   updateRfRuleSet: mocks.updateRfRuleSet,
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mocks.push,
+  }),
 }));
 
 vi.mock("../../components/RfRuleSetBasicFormDialog", () => ({
@@ -184,6 +191,12 @@ describe("RfRuleSetsSection", () => {
         name: "基本設定を編集",
       }),
     ).toHaveLength(1);
+
+    expect(
+      screen.getByRole("link", {
+        name: "条件と対応表を設定",
+      }),
+    ).toHaveAttribute("href", "/rf-management/7/edit");
   });
 
   it("operatorには作成・編集ボタンを表示しない", () => {
@@ -202,6 +215,12 @@ describe("RfRuleSetsSection", () => {
     expect(
       screen.queryByRole("button", {
         name: "基本設定を編集",
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("link", {
+        name: "条件と対応表を設定",
       }),
     ).not.toBeInTheDocument();
   });
@@ -241,11 +260,7 @@ describe("RfRuleSetsSection", () => {
     });
 
     await waitFor(() => {
-      expect(mocks.useRfRuleSets).toHaveBeenLastCalledWith({
-        page: 1,
-        perPage: 10,
-        reloadKey: 1,
-      });
+      expect(mocks.push).toHaveBeenCalledWith("/rf-management/7/edit");
     });
   });
 

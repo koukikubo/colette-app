@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { PencilIcon, PlusIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +56,7 @@ function mutationErrorMessage(error: unknown) {
 }
 
 export function RfRuleSetsSection() {
+  const router = useRouter();
   const { staff } = useAuth();
   const isOwner = staff?.staff_master.role_code === "owner";
 
@@ -108,7 +111,15 @@ export function RfRuleSetsSection() {
 
     try {
       if (formMode === "create") {
-        await createRfRuleSet(buildCreateRfRuleSetInput(values));
+        const response = await createRfRuleSet(
+          buildCreateRfRuleSetInput(values),
+        );
+
+        setFormOpen(false);
+        setSelectedRuleSet(null);
+
+        router.push(`/rf-management/${response.data.rule_set.id}/edit`);
+        return;
       } else {
         if (!selectedRuleSet) {
           throw new Error("編集するRFルールが選択されていません。");
@@ -214,7 +225,7 @@ export function RfRuleSetsSection() {
                 </dl>
 
                 {isOwner && ruleSet.status === "draft" && (
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
                     <Button
                       type="button"
                       variant="outline"
@@ -225,6 +236,12 @@ export function RfRuleSetsSection() {
                       {loadingRuleSetId === ruleSet.id
                         ? "読み込み中..."
                         : "基本設定を編集"}
+                    </Button>
+
+                    <Button asChild>
+                      <Link href={`/rf-management/${ruleSet.id}/edit`}>
+                        条件と対応表を設定
+                      </Link>
                     </Button>
                   </div>
                 )}
