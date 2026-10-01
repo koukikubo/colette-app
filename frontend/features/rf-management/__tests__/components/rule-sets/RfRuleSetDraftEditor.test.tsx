@@ -180,4 +180,62 @@ describe("RfRuleSetDraftEditor", () => {
       "ほかの担当者によって更新されています。画面を再読み込みして、もう一度操作してください。",
     );
   });
+
+  it("Frequency条件を削除すると対応表から取り除いて保存する", async () => {
+    const user = userEvent.setup();
+
+    render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件へ",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Recency条件を保存",
+      }),
+    );
+
+    expect(
+      await screen.findByText("Step 3：Frequency条件"),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "F1を削除",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Frequency条件を保存",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.updateRfRuleSet).toHaveBeenLastCalledWith(7, {
+        name: "下書きRFルール",
+        aggregation_months: 60,
+        frequency_window_months: 12,
+        lock_version: 4,
+        recency_rules: [
+          {
+            code: "R1",
+            label: "90日以内",
+            min_days: 0,
+            max_days: 90,
+            position: 1,
+          },
+        ],
+        frequency_rules: [],
+        rank_mappings: [],
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Frequency条件を保存しました。",
+    );
+  });
 });
