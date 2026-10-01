@@ -241,12 +241,14 @@ export type RfRuleSetValidationIssue = {
   message: string;
 };
 // RFルールセットの検証APIのレスポンス
+export type RfRuleSetValidation = {
+  valid: boolean;
+  errors: RfRuleSetValidationIssue[];
+  warnings: RfRuleSetValidationIssue[];
+};
+
 export type RfRuleSetValidationResponse = ApiSuccessResponse<{
-  validation: {
-    valid: boolean;
-    errors: RfRuleSetValidationIssue[];
-    warnings: RfRuleSetValidationIssue[];
-  };
+  validation: RfRuleSetValidation;
 }>;
 
 // RFランク対応表の選択肢。
