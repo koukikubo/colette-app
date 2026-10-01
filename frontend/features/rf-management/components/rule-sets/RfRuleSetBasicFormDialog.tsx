@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 
 import type { RfRuleSet } from "../../types";
 import type { RfRuleSetBasicValues } from "../../utils/rf-rule-set-input";
+import { RfHelpTooltip } from "./RfHelpTooltip";
 
 type FormMode = "create" | "edit";
 
@@ -115,7 +116,7 @@ function BasicForm({
         </DialogTitle>
 
         <DialogDescription>
-          まずルール名と集計期間を設定します。R条件・F条件と対応表は次のStepで設定します。
+          まずルール名と集計期間を設定します。最終来店日からの期間、来店回数、RFランクは次の画面で設定します。
         </DialogDescription>
       </DialogHeader>
 
@@ -147,7 +148,12 @@ function BasicForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="rf-aggregation-months">全体の集計期間</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="rf-aggregation-months">全体の集計期間</Label>
+            <RfHelpTooltip label="全体の集計期間">
+              RFランクの判定に使う予約履歴を、何か月前まで確認するかを設定します。
+            </RfHelpTooltip>
+          </div>
           <div className="flex items-center gap-2">
             <Input
               id="rf-aggregation-months"
@@ -165,12 +171,19 @@ function BasicForm({
             <span className="text-sm text-muted-foreground">か月</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Recency計算で参照する来店履歴の期間です。
+            最終来店日を確認するために、予約履歴をさかのぼる期間です。
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="rf-frequency-window-months">来店回数の対象期間</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="rf-frequency-window-months">
+              来店回数の対象期間
+            </Label>
+            <RfHelpTooltip label="来店回数の対象期間">
+              全体の集計期間のうち、直近何か月の来店回数を数えるかを設定します。
+            </RfHelpTooltip>
+          </div>
           <div className="flex items-center gap-2">
             <Input
               id="rf-frequency-window-months"
@@ -188,7 +201,7 @@ function BasicForm({
             <span className="text-sm text-muted-foreground">か月</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Frequencyの来店回数を数える期間です。全体の集計期間以下に設定します。
+            来店回数を数える期間です。全体の集計期間以下に設定します。
           </p>
         </div>
       </div>

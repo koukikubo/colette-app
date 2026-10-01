@@ -96,7 +96,7 @@ module Rf
         )
       end || raise(
         ActiveRecord::RecordNotFound,
-        "該当するR条件がありません"
+        "最終来店日からの期間に該当する条件がありません"
       )
     end
 
@@ -109,7 +109,7 @@ module Rf
         )
       end || raise(
         ActiveRecord::RecordNotFound,
-        "該当するF条件がありません"
+        "来店回数に該当する条件がありません"
       )
     end
 

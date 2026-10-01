@@ -35,7 +35,7 @@ export function buildUpdateRfRuleSetInput(
 
     if (!recencyCode || !frequencyCode) {
       throw new Error(
-        "RFランク対応表に存在しないR条件またはF条件が含まれています。",
+        "RFランク対応表に、現在の期間または来店回数に存在しない条件が含まれています。",
       );
     }
 

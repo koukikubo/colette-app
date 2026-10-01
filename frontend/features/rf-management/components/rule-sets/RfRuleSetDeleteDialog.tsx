@@ -40,7 +40,7 @@ export function RfRuleSetDeleteDialog({
           <AlertDialogTitle>下書きのRFルールを削除しますか？</AlertDialogTitle>
 
           <AlertDialogDescription>
-            「{ruleSetName}」と、そのRecency条件・Frequency条件・
+            「{ruleSetName}」と、その最終来店日からの期間・来店回数の条件・
             RFランク対応表を削除します。この操作は取り消せません。
           </AlertDialogDescription>
         </AlertDialogHeader>

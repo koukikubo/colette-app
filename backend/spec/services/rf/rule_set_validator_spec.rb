@@ -98,6 +98,13 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:recency_gap)
+      expect(result.errors).to include(
+        {
+          code: :recency_gap,
+          message:
+            "「90日以内」と「91日以上」の間で、91日から99日までが未設定です"
+        }
+      )
     end
 
     it "F条件が重複している場合は無効になる" do
@@ -106,6 +113,13 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:frequency_overlap)
+      expect(result.errors).to include(
+        {
+          code: :frequency_overlap,
+          message:
+            "「2回以下」と「3回以上」で、2回から2回までが重複しています"
+        }
+      )
     end
 
     it "最後のR条件に上限が設定されている場合は無効になる" do
@@ -114,6 +128,12 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:recency_upper_limit)
+      expect(result.errors).to include(
+        {
+          code: :recency_upper_limit,
+          message: "最後の最終来店日からの期間は上限なしにしてください"
+        }
+      )
     end
 
     it "RとFの組み合わせが不足している場合は無効になる" do
@@ -122,6 +142,9 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:mapping_missing)
+      expect(result.errors.last[:message]).to include(
+        "「91日以上 × 3回以上」のRFランクを選択してください"
+      )
     end
 
     it "無効なRFランクを使用している場合は無効になる" do
