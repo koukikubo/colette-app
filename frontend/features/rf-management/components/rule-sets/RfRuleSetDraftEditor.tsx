@@ -29,10 +29,18 @@ import type {
 } from "../../types";
 
 import { buildUpdateRfRuleSetInput } from "../../utils/rf-rule-set-input";
-import { RfRecencyRulesEditor } from "./RfRecencyRulesEditor";
+import {
+  validateFrequencyRules,
+  validateRankMappings,
+  validateRecencyRules,
+} from "../../utils/rf-rule-draft-validation";
 import { RfFrequencyRulesEditor } from "./RfFrequencyRulesEditor";
 import { useRfRankOptions } from "../../hooks/useRfRankOptions";
+import { RfHelpTooltip } from "./RfHelpTooltip";
+import { RfInlineValidation } from "./RfInlineValidation";
 import { RfRankMappingEditor } from "./RfRankMappingEditor";
+import { RfRecencyRulesEditor } from "./RfRecencyRulesEditor";
+import { RfRuleSetPreviewTable } from "./RfRuleSetPreviewTable";
 import { RfRuleSetValidationResult } from "./RfRuleSetValidationResult";
 
 type RfRuleSetDraftEditorProps = {
@@ -43,8 +51,8 @@ type EditorStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 const EDITOR_STEPS = [
   "基本設定",
-  "Recency条件",
-  "Frequency条件",
+  "最終来店日からの期間",
+  "来店回数",
   "RFランク対応表",
   "検証結果",
   "公開確認",
@@ -82,6 +90,22 @@ function validationErrorMessage(error: unknown) {
   return error.errorMessages[0] ?? error.message;
 }
 
+function stepForValidationErrors(validation: RfRuleSetValidation): EditorStep {
+  const codes = validation.errors.map((issue) => issue.code);
+
+  if (codes.some((code) => code.startsWith("recency_"))) return 2;
+  if (codes.some((code) => code.startsWith("frequency_"))) return 3;
+  if (
+    codes.some(
+      (code) => code.startsWith("mapping_") || code === "inactive_rf_rank",
+    )
+  ) {
+    return 4;
+  }
+
+  return 1;
+}
+
 export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
   const router = useRouter();
   const {
@@ -100,6 +124,13 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
   const [validation, setValidation] = useState<RfRuleSetValidation | null>(
     null,
   );
+  const recencyIssues = validateRecencyRules(values.recency_rules);
+  const frequencyIssues = validateFrequencyRules(values.frequency_rules);
+  const mappingIssues = validateRankMappings(
+    values.recency_rules,
+    values.frequency_rules,
+    values.rank_mappings,
+  );
 
   function updateRecencyRules(recencyRules: RfRecencyRuleInput[]) {
     const availableCodes = new Set(recencyRules.map((rule) => rule.code));
@@ -115,6 +146,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     }));
 
     setSuccessMessage(null);
+    setValidation(null);
   }
 
   function updateFrequencyRules(frequencyRules: RfFrequencyRuleInput[]) {
@@ -131,6 +163,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     }));
 
     setSuccessMessage(null);
+    setValidation(null);
   }
 
   function updateRankMappings(rankMappings: RfRankMappingInput[]) {
@@ -140,6 +173,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     }));
 
     setSuccessMessage(null);
+    setValidation(null);
   }
 
   async function saveRecencyRules() {
@@ -152,7 +186,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
       setValues(initialEditorValues(response.data.rule_set));
 
-      setSuccessMessage("Recency条件を保存しました。");
+      setSuccessMessage("最終来店日からの期間を保存しました。");
       setCurrentStep(3);
     } catch (error) {
       setErrorMessage(saveErrorMessage(error));
@@ -171,7 +205,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
       setValues(initialEditorValues(response.data.rule_set));
 
-      setSuccessMessage("Frequency条件を保存しました。");
+      setSuccessMessage("来店回数の条件を保存しました。");
       setCurrentStep(4);
     } catch (error) {
       setErrorMessage(saveErrorMessage(error));
@@ -259,8 +293,11 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               </div>
 
               <div>
-                <dt className="text-sm text-muted-foreground">
+                <dt className="flex items-center gap-1 text-sm text-muted-foreground">
                   全体の集計期間
+                  <RfHelpTooltip label="全体の集計期間">
+                    RFランクを計算するときに、予約履歴をさかのぼって確認する期間です。
+                  </RfHelpTooltip>
                 </dt>
                 <dd className="mt-1 font-medium">
                   {values.aggregation_months}か月
@@ -268,8 +305,11 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               </div>
 
               <div>
-                <dt className="text-sm text-muted-foreground">
+                <dt className="flex items-center gap-1 text-sm text-muted-foreground">
                   来店回数の対象期間
+                  <RfHelpTooltip label="来店回数の対象期間">
+                    全体の集計期間のうち、来店回数を数える直近の期間です。
+                  </RfHelpTooltip>
                 </dt>
                 <dd className="mt-1 font-medium">
                   {values.frequency_window_months}か月
@@ -280,7 +320,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
           <CardFooter className="justify-end">
             <Button type="button" onClick={() => setCurrentStep(2)}>
-              Recency条件へ
+              最終来店日からの期間へ
             </Button>
           </CardFooter>
         </Card>
@@ -289,7 +329,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
       {currentStep === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>Step 2：Recency条件</CardTitle>
+            <CardTitle>Step 2：最終来店日からの期間</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -313,6 +353,15 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               disabled={isSubmitting}
               onChange={updateRecencyRules}
             />
+
+            <RfInlineValidation issues={recencyIssues} />
+
+            <RfRuleSetPreviewTable
+              recencyRules={values.recency_rules}
+              frequencyRules={values.frequency_rules}
+              mappings={values.rank_mappings}
+              rankOptions={rankOptions}
+            />
           </CardContent>
 
           <CardFooter className="flex justify-between">
@@ -327,10 +376,10 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
             <Button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || recencyIssues.length > 0}
               onClick={() => void saveRecencyRules()}
             >
-              {isSubmitting ? "保存中..." : "Recency条件を保存"}
+              {isSubmitting ? "保存中..." : "最終来店日からの期間を保存"}
             </Button>
           </CardFooter>
         </Card>
@@ -339,7 +388,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
       {currentStep === 3 && (
         <Card>
           <CardHeader>
-            <CardTitle>Step 3：Frequency条件</CardTitle>
+            <CardTitle>Step 3：対象期間内の来店回数</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -363,6 +412,15 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               disabled={isSubmitting}
               onChange={updateFrequencyRules}
             />
+
+            <RfInlineValidation issues={frequencyIssues} />
+
+            <RfRuleSetPreviewTable
+              recencyRules={values.recency_rules}
+              frequencyRules={values.frequency_rules}
+              mappings={values.rank_mappings}
+              rankOptions={rankOptions}
+            />
           </CardContent>
 
           <CardFooter className="flex justify-between">
@@ -372,15 +430,15 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               disabled={isSubmitting}
               onClick={() => setCurrentStep(2)}
             >
-              Recency条件へ戻る
+              最終来店日からの期間へ戻る
             </Button>
 
             <Button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || frequencyIssues.length > 0}
               onClick={() => void saveFrequencyRules()}
             >
-              {isSubmitting ? "保存中..." : "Frequency条件を保存"}
+              {isSubmitting ? "保存中..." : "来店回数の条件を保存"}
             </Button>
           </CardFooter>
         </Card>
@@ -422,6 +480,8 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
                 onChange={updateRankMappings}
               />
             )}
+
+            <RfInlineValidation issues={mappingIssues} />
           </CardContent>
 
           <CardFooter className="flex justify-between">
@@ -431,12 +491,18 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               disabled={isSubmitting}
               onClick={() => setCurrentStep(3)}
             >
-              Frequency条件へ戻る
+              来店回数の条件へ戻る
             </Button>
 
             <Button
               type="button"
-              disabled={isSubmitting || isRankOptionsLoading}
+              disabled={
+                isSubmitting ||
+                isRankOptionsLoading ||
+                recencyIssues.length > 0 ||
+                frequencyIssues.length > 0 ||
+                mappingIssues.length > 0
+              }
               onClick={() => void saveAndValidateRankMappings()}
             >
               {isSubmitting ? "検証中..." : "RFランク対応表を保存して検証"}
@@ -473,9 +539,17 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               type="button"
               variant="outline"
               disabled={isSubmitting}
-              onClick={() => setCurrentStep(4)}
+              onClick={() =>
+                setCurrentStep(
+                  validation && !validation.valid
+                    ? stepForValidationErrors(validation)
+                    : 4,
+                )
+              }
             >
-              RFランク対応表へ戻る
+              {validation?.valid
+                ? "RFランク対応表へ戻る"
+                : "問題のある設定を修正する"}
             </Button>
 
             {validation?.valid && (
@@ -528,7 +602,9 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
                 </div>
 
                 <div>
-                  <dt className="text-sm text-muted-foreground">Recency条件</dt>
+                  <dt className="text-sm text-muted-foreground">
+                    最終来店日からの期間
+                  </dt>
                   <dd className="mt-1 font-medium">
                     {values.recency_rules.length}件
                   </dd>
@@ -536,7 +612,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
                 <div>
                   <dt className="text-sm text-muted-foreground">
-                    Frequency条件
+                    来店回数の条件
                   </dt>
                   <dd className="mt-1 font-medium">
                     {values.frequency_rules.length}件
@@ -544,6 +620,13 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
                 </div>
               </dl>
             </div>
+
+            <RfRuleSetPreviewTable
+              recencyRules={values.recency_rules}
+              frequencyRules={values.frequency_rules}
+              mappings={values.rank_mappings}
+              rankOptions={rankOptions}
+            />
 
             <div className="rounded-lg border bg-muted/30 p-4 text-sm">
               <p className="font-medium">公開後の動作</p>

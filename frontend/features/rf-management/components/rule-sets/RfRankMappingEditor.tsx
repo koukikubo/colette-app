@@ -22,6 +22,7 @@ import type {
   RfRankOption,
   RfRecencyRuleInput,
 } from "../../types";
+import { RfHelpTooltip } from "./RfHelpTooltip";
 
 type RfRankMappingEditorProps = {
   recencyRules: RfRecencyRuleInput[];
@@ -80,7 +81,7 @@ export function RfRankMappingEditor({
     return (
       <div className="rounded-lg border border-dashed p-6 text-center">
         <p className="text-sm text-muted-foreground">
-          対応表を作成するには、Recency条件とFrequency条件が必要です。
+          対応表を作成するには、最終来店日からの期間と来店回数の条件が必要です。
         </p>
       </div>
     );
@@ -89,23 +90,25 @@ export function RfRankMappingEditor({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-        <p className="font-medium">RFランク対応表</p>
+        <div className="flex items-center gap-1">
+          <p className="font-medium">RFランク対応表</p>
+          <RfHelpTooltip label="RFランク対応表">
+            顧客の最終来店日からの期間と来店回数を照らし合わせ、交差した欄のRFランクを付与します。
+          </RfHelpTooltip>
+        </div>
         <p className="mt-1 text-muted-foreground">
-          Recency条件とFrequency条件の組み合わせごとにRFランクを選択します。
+          すべての組み合わせにRFランクを選択してください。
         </p>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Recency / Frequency</TableHead>
+            <TableHead>最終来店日からの期間 / 来店回数</TableHead>
 
             {frequencyRules.map((frequencyRule) => (
               <TableHead key={frequencyRule.code}>
                 <span className="block">{frequencyRule.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {frequencyRule.code}
-                </span>
               </TableHead>
             ))}
           </TableRow>
@@ -116,9 +119,6 @@ export function RfRankMappingEditor({
             <TableRow key={recencyRule.code}>
               <TableHead scope="row">
                 <span className="block">{recencyRule.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {recencyRule.code}
-                </span>
               </TableHead>
 
               {frequencyRules.map((frequencyRule) => {

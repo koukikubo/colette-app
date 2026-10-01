@@ -23,32 +23,30 @@ function TestEditor({
 }
 
 describe("RfRecencyRulesEditor", () => {
-  it("Recency条件を追加して入力できる", async () => {
+  it("最終来店日からの期間を追加して入力できる", async () => {
     const user = userEvent.setup();
 
     render(<TestEditor />);
 
     expect(
-      screen.getByText("Recency条件がまだ登録されていません。"),
+      screen.getByText("最終来店日からの期間がまだ登録されていません。"),
     ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件を追加",
+        name: "最終来店日からの期間を追加",
       }),
     );
 
-    expect(screen.getByText("内部コード：R1")).toBeInTheDocument();
-
     await user.type(
       screen.getByRole("textbox", {
-        name: "R1の表示名",
+        name: "条件1の表示名",
       }),
       "90日以内",
     );
 
     const maximum = screen.getByRole("spinbutton", {
-      name: "R1の終了日数",
+      name: "条件1の終了日数",
     });
 
     await user.type(maximum, "90");
@@ -90,7 +88,7 @@ describe("RfRecencyRulesEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "R2を上へ移動",
+        name: "条件2を上へ移動",
       }),
     );
 
@@ -142,7 +140,7 @@ describe("RfRecencyRulesEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "R1を削除",
+        name: "条件1を削除",
       }),
     );
 

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import type { RfRecencyRuleInput } from "../../types";
+import { RfHelpTooltip } from "./RfHelpTooltip";
 
 type RfRecencyRulesEditorProps = {
   rules: RfRecencyRuleInput[];
@@ -89,17 +90,22 @@ export function RfRecencyRulesEditor({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-        <p className="font-medium">Recency条件</p>
+        <div className="flex items-center gap-1">
+          <p className="font-medium">最終来店日からの期間</p>
+          <RfHelpTooltip label="最終来店日からの期間">
+            顧客の最終来店日から、計算基準日までに経過した日数でグループを分けます。
+          </RfHelpTooltip>
+        </div>
         <p className="mt-1 text-muted-foreground">
-          最終来店日から何日経過しているかを、重複や空白がない範囲に分けます。
-          最後の条件は上限なしにしてください。
+          0日から順番に、空白や重複がないように期間を分けます。
+          最後の条件だけ、終了日数を空欄にしてください。
         </p>
       </div>
 
       {rules.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Recency条件がまだ登録されていません。
+            最終来店日からの期間がまだ登録されていません。
           </p>
         </div>
       ) : (
@@ -109,9 +115,6 @@ export function RfRecencyRulesEditor({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">条件 {index + 1}</p>
-                  <p className="text-xs text-muted-foreground">
-                    内部コード：{rule.code}
-                  </p>
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -120,7 +123,7 @@ export function RfRecencyRulesEditor({
                     variant="ghost"
                     size="icon"
                     disabled={disabled || index === 0}
-                    aria-label={`${rule.code}を上へ移動`}
+                    aria-label={`条件${index + 1}を上へ移動`}
                     onClick={() => moveRule(index, -1)}
                   >
                     <ArrowUpIcon aria-hidden="true" />
@@ -131,7 +134,7 @@ export function RfRecencyRulesEditor({
                     variant="ghost"
                     size="icon"
                     disabled={disabled || index === rules.length - 1}
-                    aria-label={`${rule.code}を下へ移動`}
+                    aria-label={`条件${index + 1}を下へ移動`}
                     onClick={() => moveRule(index, 1)}
                   >
                     <ArrowDownIcon aria-hidden="true" />
@@ -142,7 +145,7 @@ export function RfRecencyRulesEditor({
                     variant="ghost"
                     size="icon"
                     disabled={disabled}
-                    aria-label={`${rule.code}を削除`}
+                    aria-label={`条件${index + 1}を削除`}
                     onClick={() => removeRule(index)}
                   >
                     <Trash2Icon aria-hidden="true" />
@@ -155,7 +158,7 @@ export function RfRecencyRulesEditor({
                   <Label htmlFor={`${rule.code}-label`}>表示名</Label>
                   <Input
                     id={`${rule.code}-label`}
-                    aria-label={`${rule.code}の表示名`}
+                    aria-label={`条件${index + 1}の表示名`}
                     value={rule.label}
                     disabled={disabled}
                     placeholder="例：90日以内"
@@ -171,7 +174,7 @@ export function RfRecencyRulesEditor({
                   <Label htmlFor={`${rule.code}-minimum`}>開始日数</Label>
                   <Input
                     id={`${rule.code}-minimum`}
-                    aria-label={`${rule.code}の開始日数`}
+                    aria-label={`条件${index + 1}の開始日数`}
                     type="number"
                     min={0}
                     step={1}
@@ -189,7 +192,7 @@ export function RfRecencyRulesEditor({
                   <Label htmlFor={`${rule.code}-maximum`}>終了日数</Label>
                   <Input
                     id={`${rule.code}-maximum`}
-                    aria-label={`${rule.code}の終了日数`}
+                    aria-label={`条件${index + 1}の終了日数`}
                     type="number"
                     min={0}
                     step={1}
@@ -222,7 +225,7 @@ export function RfRecencyRulesEditor({
         onClick={addRule}
       >
         <PlusIcon aria-hidden="true" />
-        Recency条件を追加
+        最終来店日からの期間を追加
       </Button>
     </div>
   );

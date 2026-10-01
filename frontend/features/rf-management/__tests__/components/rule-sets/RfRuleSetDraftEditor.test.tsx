@@ -49,9 +49,9 @@ const ruleSet: RfRuleSet = {
     {
       id: 11,
       code: "R1",
-      label: "90日以内",
+      label: "すべての期間",
       min_days: 0,
-      max_days: 90,
+      max_days: null,
       position: 1,
     },
   ],
@@ -59,8 +59,8 @@ const ruleSet: RfRuleSet = {
     {
       id: 21,
       code: "F1",
-      label: "1回以上",
-      min_visits: 1,
+      label: "0回以上",
+      min_visits: 0,
       max_visits: null,
       position: 1,
     },
@@ -128,7 +128,7 @@ describe("RfRuleSetDraftEditor", () => {
     });
   });
 
-  it("基本設定からRecency条件へ移動する", async () => {
+  it("基本設定から最終来店の期間設定へ移動する", async () => {
     const user = userEvent.setup();
 
     render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
@@ -137,20 +137,22 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
-    expect(screen.getByText("Step 2：Recency条件")).toBeInTheDocument();
+    expect(
+      screen.getByText("Step 2：最終来店日からの期間"),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("textbox", {
-        name: "R1の表示名",
+        name: "条件1の表示名",
       }),
-    ).toHaveValue("90日以内");
+    ).toHaveValue("すべての期間");
   });
 
-  it("削除したR条件を対応表から取り除いて保存する", async () => {
+  it("最終来店の期間をすべて削除するとその場で修正を案内する", async () => {
     const user = userEvent.setup();
 
     mocks.updateRfRuleSet.mockResolvedValue({
@@ -168,45 +170,25 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
     await user.click(
       screen.getByRole("button", {
-        name: "R1を削除",
+        name: "条件1を削除",
       }),
     );
 
-    await user.click(
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "最終来店日からの期間を1件以上追加してください。",
+    );
+    expect(
       screen.getByRole("button", {
-        name: "Recency条件を保存",
+        name: "最終来店日からの期間を保存",
       }),
-    );
-
-    await waitFor(() => {
-      expect(mocks.updateRfRuleSet).toHaveBeenCalledWith(7, {
-        name: "下書きRFルール",
-        aggregation_months: 60,
-        frequency_window_months: 12,
-        lock_version: 3,
-        recency_rules: [],
-        frequency_rules: [
-          {
-            code: "F1",
-            label: "1回以上",
-            min_visits: 1,
-            max_visits: null,
-            position: 1,
-          },
-        ],
-        rank_mappings: [],
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Recency条件を保存しました。",
-    );
+    ).toBeDisabled();
+    expect(mocks.updateRfRuleSet).not.toHaveBeenCalled();
   });
 
   it("競合した場合は再読み込みを案内する", async () => {
@@ -220,13 +202,13 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件を保存",
+        name: "最終来店日からの期間を保存",
       }),
     );
 
@@ -235,62 +217,41 @@ describe("RfRuleSetDraftEditor", () => {
     );
   });
 
-  it("Frequency条件を削除すると対応表から取り除いて保存する", async () => {
+  it("来店回数の条件をすべて削除するとその場で修正を案内する", async () => {
     const user = userEvent.setup();
 
     render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件を保存",
+        name: "最終来店日からの期間を保存",
       }),
     );
 
     expect(
-      await screen.findByText("Step 3：Frequency条件"),
+      await screen.findByText("Step 3：対象期間内の来店回数"),
     ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: "F1を削除",
+        name: "条件1を削除",
       }),
     );
 
-    await user.click(
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "対象期間内の来店回数を1件以上追加してください。",
+    );
+    expect(
       screen.getByRole("button", {
-        name: "Frequency条件を保存",
+        name: "来店回数の条件を保存",
       }),
-    );
-
-    await waitFor(() => {
-      expect(mocks.updateRfRuleSet).toHaveBeenLastCalledWith(7, {
-        name: "下書きRFルール",
-        aggregation_months: 60,
-        frequency_window_months: 12,
-        lock_version: 4,
-        recency_rules: [
-          {
-            code: "R1",
-            label: "90日以内",
-            min_days: 0,
-            max_days: 90,
-            position: 1,
-          },
-        ],
-        frequency_rules: [],
-        rank_mappings: [],
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Frequency条件を保存しました。",
-    );
+    ).toBeDisabled();
   });
 
   it("RFランク対応表を変更して保存する", async () => {
@@ -300,19 +261,19 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件を保存",
+        name: "最終来店日からの期間を保存",
       }),
     );
 
     await user.click(
       await screen.findByRole("button", {
-        name: "Frequency条件を保存",
+        name: "来店回数の条件を保存",
       }),
     );
 
@@ -322,7 +283,7 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("combobox", {
-        name: "90日以内・1回以上のRFランク",
+        name: "すべての期間・0回以上のRFランク",
       }),
     );
 
@@ -383,19 +344,19 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件を保存",
+        name: "最終来店日からの期間を保存",
       }),
     );
 
     await user.click(
       await screen.findByRole("button", {
-        name: "Frequency条件を保存",
+        name: "来店回数の条件を保存",
       }),
     );
 
@@ -427,19 +388,19 @@ describe("RfRuleSetDraftEditor", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件へ",
+        name: "最終来店日からの期間へ",
       }),
     );
 
     await user.click(
       screen.getByRole("button", {
-        name: "Recency条件を保存",
+        name: "最終来店日からの期間を保存",
       }),
     );
 
     await user.click(
       await screen.findByRole("button", {
-        name: "Frequency条件を保存",
+        name: "来店回数の条件を保存",
       }),
     );
 

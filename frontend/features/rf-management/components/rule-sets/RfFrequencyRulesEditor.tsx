@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import type { RfFrequencyRuleInput } from "../../types";
+import { RfHelpTooltip } from "./RfHelpTooltip";
 
 type RfFrequencyRulesEditorProps = {
   rules: RfFrequencyRuleInput[];
@@ -85,17 +86,22 @@ export function RfFrequencyRulesEditor({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-        <p className="font-medium">Frequency条件</p>
+        <div className="flex items-center gap-1">
+          <p className="font-medium">対象期間内の来店回数</p>
+          <RfHelpTooltip label="対象期間内の来店回数">
+            基本設定で指定した期間内に、来店済みとなった予約の回数でグループを分けます。
+          </RfHelpTooltip>
+        </div>
         <p className="mt-1 text-muted-foreground">
-          対象期間内の来店回数を、重複や空白がない範囲に分けます。
-          最後の条件は上限なしにしてください。
+          0回から順番に、空白や重複がないように回数を分けます。
+          最後の条件だけ、最大来店回数を空欄にしてください。
         </p>
       </div>
 
       {rules.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Frequency条件がまだ登録されていません。
+            対象期間内の来店回数がまだ登録されていません。
           </p>
         </div>
       ) : (
@@ -105,9 +111,6 @@ export function RfFrequencyRulesEditor({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">条件 {index + 1}</p>
-                  <p className="text-xs text-muted-foreground">
-                    内部コード：{rule.code}
-                  </p>
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -116,7 +119,7 @@ export function RfFrequencyRulesEditor({
                     variant="ghost"
                     size="icon"
                     disabled={disabled || index === 0}
-                    aria-label={`${rule.code}を上へ移動`}
+                    aria-label={`条件${index + 1}を上へ移動`}
                     onClick={() => moveRule(index, -1)}
                   >
                     <ArrowUpIcon aria-hidden="true" />
@@ -127,7 +130,7 @@ export function RfFrequencyRulesEditor({
                     variant="ghost"
                     size="icon"
                     disabled={disabled || index === rules.length - 1}
-                    aria-label={`${rule.code}を下へ移動`}
+                    aria-label={`条件${index + 1}を下へ移動`}
                     onClick={() => moveRule(index, 1)}
                   >
                     <ArrowDownIcon aria-hidden="true" />
@@ -138,7 +141,7 @@ export function RfFrequencyRulesEditor({
                     variant="ghost"
                     size="icon"
                     disabled={disabled}
-                    aria-label={`${rule.code}を削除`}
+                    aria-label={`条件${index + 1}を削除`}
                     onClick={() => removeRule(index)}
                   >
                     <Trash2Icon aria-hidden="true" />
@@ -151,7 +154,7 @@ export function RfFrequencyRulesEditor({
                   <Label htmlFor={`${rule.code}-label`}>表示名</Label>
                   <Input
                     id={`${rule.code}-label`}
-                    aria-label={`${rule.code}の表示名`}
+                    aria-label={`条件${index + 1}の表示名`}
                     value={rule.label}
                     disabled={disabled}
                     placeholder="例：3回以上"
@@ -165,7 +168,7 @@ export function RfFrequencyRulesEditor({
                   <Label htmlFor={`${rule.code}-minimum`}>最小来店回数</Label>
                   <Input
                     id={`${rule.code}-minimum`}
-                    aria-label={`${rule.code}の最小来店回数`}
+                    aria-label={`条件${index + 1}の最小来店回数`}
                     type="number"
                     min={0}
                     step={1}
@@ -183,7 +186,7 @@ export function RfFrequencyRulesEditor({
                   <Label htmlFor={`${rule.code}-maximum`}>最大来店回数</Label>
                   <Input
                     id={`${rule.code}-maximum`}
-                    aria-label={`${rule.code}の最大来店回数`}
+                    aria-label={`条件${index + 1}の最大来店回数`}
                     type="number"
                     min={0}
                     step={1}
@@ -213,7 +216,7 @@ export function RfFrequencyRulesEditor({
         onClick={addRule}
       >
         <PlusIcon aria-hidden="true" />
-        Frequency条件を追加
+        来店回数の条件を追加
       </Button>
     </div>
   );

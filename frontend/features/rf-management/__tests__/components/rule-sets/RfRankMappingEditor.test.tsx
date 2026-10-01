@@ -50,7 +50,7 @@ function TestEditor() {
 }
 
 describe("RfRankMappingEditor", () => {
-  it("RecencyとFrequencyの組み合わせにRFランクを設定する", async () => {
+  it("最終来店日からの期間と来店回数の組み合わせにRFランクを設定する", async () => {
     const user = userEvent.setup();
 
     render(<TestEditor />);
@@ -91,7 +91,7 @@ describe("RfRankMappingEditor", () => {
 
     expect(
       screen.getByText(
-        "対応表を作成するには、Recency条件とFrequency条件が必要です。",
+        "対応表を作成するには、最終来店日からの期間と来店回数の条件が必要です。",
       ),
     ).toBeInTheDocument();
   });

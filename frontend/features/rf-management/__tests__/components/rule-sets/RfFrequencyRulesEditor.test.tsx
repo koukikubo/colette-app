@@ -18,32 +18,30 @@ function TestEditor() {
 }
 
 describe("RfFrequencyRulesEditor", () => {
-  it("Frequency条件を追加して入力できる", async () => {
+  it("来店回数の条件を追加して入力できる", async () => {
     const user = userEvent.setup();
 
     render(<TestEditor />);
 
     expect(
-      screen.getByText("Frequency条件がまだ登録されていません。"),
+      screen.getByText("対象期間内の来店回数がまだ登録されていません。"),
     ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: "Frequency条件を追加",
+        name: "来店回数の条件を追加",
       }),
     );
 
-    expect(screen.getByText("内部コード：F1")).toBeInTheDocument();
-
     await user.type(
       screen.getByRole("textbox", {
-        name: "F1の表示名",
+        name: "条件1の表示名",
       }),
       "3回以上",
     );
 
     const minimum = screen.getByRole("spinbutton", {
-      name: "F1の最小来店回数",
+      name: "条件1の最小来店回数",
     });
 
     await user.clear(minimum);
