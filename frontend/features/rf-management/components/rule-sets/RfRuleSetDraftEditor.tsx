@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import {
   Card,
   CardContent,
@@ -12,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ApiClientError } from "@/lib/api/api-client";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 
 import {
   updateRfRuleSet,
@@ -117,6 +119,12 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
   const [values, setValues] = useState<RfRuleSetUpdateInput>(() =>
     initialEditorValues(ruleSet),
   );
+  const [savedValues, setSavedValues] = useState<RfRuleSetUpdateInput>(() =>
+    initialEditorValues(ruleSet),
+  );
+  const isDirty = JSON.stringify(values) !== JSON.stringify(savedValues);
+  const { discardDialogOpen, confirmDiscard, handleDiscardDialogOpenChange } =
+    useUnsavedChangesGuard(isDirty);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -184,7 +192,10 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     try {
       const response = await updateRfRuleSet(ruleSet.id, values);
 
-      setValues(initialEditorValues(response.data.rule_set));
+      const persistedValues = initialEditorValues(response.data.rule_set);
+
+      setValues(persistedValues);
+      setSavedValues(persistedValues);
 
       setSuccessMessage("最終来店日からの期間を保存しました。");
       setCurrentStep(3);
@@ -203,7 +214,10 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     try {
       const response = await updateRfRuleSet(ruleSet.id, values);
 
-      setValues(initialEditorValues(response.data.rule_set));
+      const persistedValues = initialEditorValues(response.data.rule_set);
+
+      setValues(persistedValues);
+      setSavedValues(persistedValues);
 
       setSuccessMessage("来店回数の条件を保存しました。");
       setCurrentStep(4);
@@ -223,7 +237,10 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     try {
       const updateResponse = await updateRfRuleSet(ruleSet.id, values);
 
-      setValues(initialEditorValues(updateResponse.data.rule_set));
+      const persistedValues = initialEditorValues(updateResponse.data.rule_set);
+
+      setValues(persistedValues);
+      setSavedValues(persistedValues);
 
       const validationResponse = await validateRfRuleSet(ruleSet.id);
 
@@ -657,6 +674,11 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
           </CardFooter>
         </Card>
       )}
+      <ConfirmDiscardChangesDialog
+        open={discardDialogOpen}
+        onOpenChange={handleDiscardDialogOpenChange}
+        onConfirm={confirmDiscard}
+      />
     </div>
   );
 }

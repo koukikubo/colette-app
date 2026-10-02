@@ -217,6 +217,52 @@ describe("RfRuleSetDraftEditor", () => {
     );
   });
 
+  it("未保存の変更がある状態で画面を移動すると破棄確認を表示する", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <a href="/dashboard">ダッシュボードへ移動</a>
+        <RfRuleSetDraftEditor ruleSet={ruleSet} />
+      </>,
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "最終来店日からの期間へ",
+      }),
+    );
+
+    const labelInput = screen.getByRole("textbox", {
+      name: "条件1の表示名",
+    });
+
+    await user.clear(labelInput);
+    await user.type(labelInput, "変更した条件");
+    await user.click(
+      screen.getByRole("link", {
+        name: "ダッシュボードへ移動",
+      }),
+    );
+
+    expect(
+      screen.getByRole("alertdialog", {
+        name: "入力内容を破棄しますか？",
+      }),
+    ).toHaveTextContent(
+      "保存されていない変更があります。このまま移動すると、入力内容は失われます。",
+    );
+    expect(mocks.routerPush).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "破棄して移動",
+      }),
+    );
+
+    expect(mocks.routerPush).toHaveBeenCalledWith("/dashboard");
+  });
+
   it("来店回数の条件をすべて削除するとその場で修正を案内する", async () => {
     const user = userEvent.setup();
 
