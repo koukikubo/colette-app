@@ -11,8 +11,14 @@ function formatDate(date: string) {
   return date.replaceAll("-", "/");
 }
 
-export function RfCurrentSettingsSection() {
-  const { settings, isLoading, errorMessage } = useRfSettings();
+type RfCurrentSettingsSectionProps = {
+  reloadKey?: number;
+};
+
+export function RfCurrentSettingsSection({
+  reloadKey = 0,
+}: RfCurrentSettingsSectionProps) {
+  const { settings, isLoading, errorMessage } = useRfSettings(reloadKey);
 
   if (isLoading) {
     return (

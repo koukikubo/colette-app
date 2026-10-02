@@ -1,8 +1,14 @@
+"use client";
+
+import { useState } from "react";
+
 import { RfCurrentSettingsSection } from "./settings/RfCurrentSettingsSection";
 import { RfRuleSetsSection } from "./rule-sets/RfRuleSetsSection";
 import { RfCalculationHistorySection } from "./calculation/RfCalculationHistorySection";
 
 export function RfManagementPage() {
+  const [settingsReloadKey, setSettingsReloadKey] = useState(0);
+
   return (
     <main className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <header className="border-b pb-5">
@@ -13,8 +19,10 @@ export function RfManagementPage() {
         </p>
       </header>
 
-      <RfCurrentSettingsSection />
-      <RfRuleSetsSection />
+      <RfCurrentSettingsSection reloadKey={settingsReloadKey} />
+      <RfRuleSetsSection
+        onSettingsChanged={() => setSettingsReloadKey((current) => current + 1)}
+      />
       <RfCalculationHistorySection />
     </main>
   );

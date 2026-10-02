@@ -23,9 +23,10 @@ describe("RfCurrentSettingsSection", () => {
       errorMessage: null,
     });
 
-    render(<RfCurrentSettingsSection />);
+    render(<RfCurrentSettingsSection reloadKey={3} />);
 
     expect(screen.getByText("RF設定を読み込んでいます。")).toBeInTheDocument();
+    expect(mocks.useRfSettings).toHaveBeenCalledWith(3);
   });
 
   it("公開中のルールと現在の計算結果を表示する", () => {
