@@ -7,3 +7,7 @@ export async function GET(request: Request) {
 
   return proxyRequest(request, `${RF_RULE_SETS_PATH}${search}`);
 }
+
+export async function POST(request: Request) {
+  return proxyRequest(request, RF_RULE_SETS_PATH);
+}

@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { RF_CALCULATION_STATUS_LABELS } from "../constants";
-import { useRfCalculationRunDetail } from "../hooks/useRfCalculationRunDetail";
+import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
+import { useRfCalculationRunDetail } from "../../hooks/useRfCalculationRunDetail";
 import { RfCalculationResultsSection } from "./RfCalculationResultsSection";
 
 type RfCalculationRunDetailDrawerProps = {

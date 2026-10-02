@@ -134,14 +134,14 @@ module Rf
           find_rule!(
             recency_rules,
             mapping_attributes[:recency_code],
-            "R条件"
+            "最終来店日からの期間"
           )
 
         frequency_rule =
           find_rule!(
             frequency_rules,
             mapping_attributes[:frequency_code],
-            "F条件"
+            "来店回数の条件"
           )
 
         rule_set.rank_mappings.create!(

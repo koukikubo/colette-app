@@ -1,17 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RfCalculationHistorySection } from "../../components/RfCalculationHistorySection";
+import { RfCalculationHistorySection } from "../../../components/calculation/RfCalculationHistorySection";
 
 const mocks = vi.hoisted(() => ({
   useRfCalculationRuns: vi.fn(),
 }));
 
-vi.mock("../../hooks/useRfCalculationRuns", () => ({
+vi.mock("../../../hooks/useRfCalculationRuns", () => ({
   useRfCalculationRuns: mocks.useRfCalculationRuns,
 }));
 
-vi.mock("../../components/RfCalculationRunDetailDrawer", () => ({
+vi.mock("../../../components/calculation/RfCalculationRunDetailDrawer", () => ({
   RfCalculationRunDetailDrawer: ({
     open,
     calculationRunId,

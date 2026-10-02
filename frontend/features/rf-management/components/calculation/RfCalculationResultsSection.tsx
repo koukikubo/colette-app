@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePagination } from "@/hooks/usePagination";
 
-import { useRfCalculationResults } from "../hooks/useRfCalculationResults";
-import type { RfRank } from "../types";
+import { useRfCalculationResults } from "../../hooks/useRfCalculationResults";
+import type { RfRank } from "../../types";
 
 type RfCalculationResultsSectionProps = {
   calculationRunId: number;

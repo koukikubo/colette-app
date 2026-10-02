@@ -66,7 +66,7 @@ module Rf
       if ordered_records.empty?
         add_error(
           :"#{code_prefix}_missing",
-          "#{code_prefix}条件が登録されていません"
+          "#{range_title(code_prefix)}を1件以上追加してください"
         )
         return
       end
@@ -77,7 +77,7 @@ module Rf
       if first_minimum != 0
         add_error(
           :"#{code_prefix}_start",
-          "#{code_prefix}条件は0から開始してください"
+          "最初の#{range_title(code_prefix)}は0#{range_unit(code_prefix)}から開始してください"
         )
       end
 
@@ -91,7 +91,7 @@ module Rf
         if current_maximum.nil?
           add_error(
             :"#{code_prefix}_upper_limit",
-            "上限なしの#{code_prefix}条件は最後にしてください"
+            "「#{range_label(current)}」は上限なしのため、最後の条件にしてください"
           )
           next
         end
@@ -101,12 +101,16 @@ module Rf
         if following_minimum > expected_minimum
           add_error(
             :"#{code_prefix}_gap",
-            "#{code_prefix}条件に未定義の範囲があります"
+            "「#{range_label(current)}」と「#{range_label(following)}」の間で、" \
+              "#{expected_minimum}#{range_unit(code_prefix)}から" \
+              "#{following_minimum - 1}#{range_unit(code_prefix)}までが未設定です"
           )
         elsif following_minimum < expected_minimum
           add_error(
             :"#{code_prefix}_overlap",
-            "#{code_prefix}条件の範囲が重複しています"
+            "「#{range_label(current)}」と「#{range_label(following)}」で、" \
+              "#{following_minimum}#{range_unit(code_prefix)}から" \
+              "#{current_maximum}#{range_unit(code_prefix)}までが重複しています"
           )
         end
       end
@@ -115,7 +119,7 @@ module Rf
 
       add_error(
         :"#{code_prefix}_upper_limit",
-        "最後の#{code_prefix}条件は上限なしにしてください"
+        "最後の#{range_title(code_prefix)}は上限なしにしてください"
       )
     end
 
@@ -140,9 +144,22 @@ module Rf
 
       return if missing_pairs.empty?
 
+      missing_descriptions =
+        missing_pairs.first(5).filter_map do |recency_id, frequency_id|
+          recency = recency_rules.find { |rule| rule.id == recency_id }
+          frequency = frequency_rules.find { |rule| rule.id == frequency_id }
+
+          next if recency.nil? || frequency.nil?
+
+          "「#{range_label(recency)} × #{range_label(frequency)}」"
+        end
+
+      remaining_count = missing_pairs.length - missing_descriptions.length
+      suffix = remaining_count.positive? ? "（ほか#{remaining_count}件）" : ""
+
       add_error(
         :mapping_missing,
-        "RFランクが設定されていないR・Fの組み合わせがあります"
+        "#{missing_descriptions.join('、')}のRFランクを選択してください#{suffix}"
       )
     end
 
@@ -190,6 +207,18 @@ module Rf
         code: code,
         message: message
       }
+    end
+
+    def range_title(code_prefix)
+      code_prefix == :recency ? "最終来店日からの期間" : "対象期間内の来店回数"
+    end
+
+    def range_unit(code_prefix)
+      code_prefix == :recency ? "日" : "回"
+    end
+
+    def range_label(record)
+      record.label.presence || "名称未設定の条件"
     end
   end
 end

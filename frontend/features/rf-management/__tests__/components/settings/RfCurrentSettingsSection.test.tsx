@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RfCurrentSettingsSection } from "../../components/RfCurrentSettingsSection";
+import { RfCurrentSettingsSection } from "../../../components/settings/RfCurrentSettingsSection";
 
 const mocks = vi.hoisted(() => ({
   useRfSettings: vi.fn(),
 }));
 
-vi.mock("../../hooks/useRfSettings", () => ({
+vi.mock("../../../hooks/useRfSettings", () => ({
   useRfSettings: mocks.useRfSettings,
 }));
 
@@ -23,9 +23,10 @@ describe("RfCurrentSettingsSection", () => {
       errorMessage: null,
     });
 
-    render(<RfCurrentSettingsSection />);
+    render(<RfCurrentSettingsSection reloadKey={3} />);
 
     expect(screen.getByText("RF設定を読み込んでいます。")).toBeInTheDocument();
+    expect(mocks.useRfSettings).toHaveBeenCalledWith(3);
   });
 
   it("公開中のルールと現在の計算結果を表示する", () => {

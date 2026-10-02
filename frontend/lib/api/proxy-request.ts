@@ -48,8 +48,10 @@ export async function proxyRequest(
   if (setCookie) {
     responseHeaders.set("Set-Cookie", setCookie);
   }
-  // クライアントにレスポンスを返す
-  return new Response(responseBody, {
+  // 204・205・304は本文を持たないレスポンスとして返す。
+  const hasNoBody = [204, 205, 304].includes(upstream.status);
+
+  return new Response(hasNoBody ? null : responseBody, {
     status: upstream.status,
     headers: responseHeaders,
   });
