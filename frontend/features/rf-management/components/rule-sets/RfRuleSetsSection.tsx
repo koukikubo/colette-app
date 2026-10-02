@@ -29,7 +29,7 @@ import {
 
 import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
 import { useRfRuleSets } from "../../hooks/useRfRuleSets";
-import type { RfRuleSet, RfRuleSetSummary } from "../../types";
+import type { RfRuleSet } from "../../types";
 import {
   buildCreateRfRuleSetInput,
   buildUpdateRfRuleSetInput,
@@ -69,7 +69,13 @@ function mutationErrorMessage(error: unknown) {
   return error.errorMessages[0] ?? error.message;
 }
 
-export function RfRuleSetsSection() {
+type RfRuleSetsSectionProps = {
+  onSettingsChanged?: () => void;
+};
+
+export function RfRuleSetsSection({
+  onSettingsChanged,
+}: RfRuleSetsSectionProps) {
   const router = useRouter();
   const { staff } = useAuth();
   const isOwner = staff?.staff_master.role_code === "owner";
@@ -96,17 +102,13 @@ export function RfRuleSetsSection() {
     reloadKey,
   });
 
-  const [archiveTarget, setArchiveTarget] = useState<RfRuleSetSummary | null>(
-    null,
-  );
+  const [archiveTarget, setArchiveTarget] = useState<RfRuleSet | null>(null);
 
   const [isArchiving, setIsArchiving] = useState(false);
   const [archiveErrorMessage, setArchiveErrorMessage] = useState<string | null>(
     null,
   );
-  const [deleteTarget, setDeleteTarget] = useState<RfRuleSetSummary | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = useState<RfRuleSet | null>(null);
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
@@ -141,14 +143,46 @@ export function RfRuleSetsSection() {
     }
   }
 
-  function openArchiveDialog(ruleSet: RfRuleSetSummary) {
-    setArchiveTarget(ruleSet);
+  async function openArchiveDialog(id: number) {
     setArchiveErrorMessage(null);
+
+    setLoadingRuleSetId(id);
+
+    try {
+      const response = await fetchRfRuleSet(id);
+
+      // 確認画面で利用者が確認した時点のバージョンを保持する。
+      setArchiveTarget(response.data.rule_set);
+    } catch (error) {
+      setFormErrorMessage(
+        error instanceof ApiClientError
+          ? error.message
+          : "RFルールの詳細を取得できませんでした。",
+      );
+    } finally {
+      setLoadingRuleSetId(null);
+    }
   }
 
-  function openDeleteDialog(ruleSet: RfRuleSetSummary) {
-    setDeleteTarget(ruleSet);
+  async function openDeleteDialog(id: number) {
     setDeleteErrorMessage(null);
+
+    setLoadingRuleSetId(id);
+
+    try {
+      const response = await fetchRfRuleSet(id);
+
+      // 確認後に別の担当者の変更を誤って削除しないよう、取得時のバージョンを保持する。
+      setDeleteTarget(response.data.rule_set);
+    } catch (error) {
+      setFormErrorMessage(
+        error instanceof ApiClientError
+          ? error.message
+          : "RFルールの詳細を取得できませんでした。",
+      );
+    } finally {
+      setLoadingRuleSetId(null);
+    }
   }
 
   async function openDetailDialog(id: number) {
@@ -216,17 +250,12 @@ export function RfRuleSetsSection() {
     setArchiveErrorMessage(null);
 
     try {
-      // 一覧レスポンスにはlock_versionがないため、詳細APIから最新値を取得する。
-      const detailResponse = await fetchRfRuleSet(archiveTarget.id);
-
-      await archiveRfRuleSet(
-        archiveTarget.id,
-        detailResponse.data.rule_set.lock_version,
-      );
+      await archiveRfRuleSet(archiveTarget.id, archiveTarget.lock_version);
 
       setArchiveTarget(null);
       setCurrentPage(1);
       setReloadKey((current) => current + 1);
+      onSettingsChanged?.();
     } catch (error) {
       setArchiveErrorMessage(
         error instanceof ApiClientError
@@ -245,13 +274,7 @@ export function RfRuleSetsSection() {
     setDeleteErrorMessage(null);
 
     try {
-      // 削除直前に最新のlock_versionを取得する。
-      const detailResponse = await fetchRfRuleSet(deleteTarget.id);
-
-      await deleteRfRuleSet(
-        deleteTarget.id,
-        detailResponse.data.rule_set.lock_version,
-      );
+      await deleteRfRuleSet(deleteTarget.id, deleteTarget.lock_version);
 
       setDeleteTarget(null);
       setCurrentPage(1);
@@ -389,8 +412,8 @@ export function RfRuleSetsSection() {
                           <Button
                             type="button"
                             variant="destructive"
-                            disabled={isDeleting}
-                            onClick={() => openDeleteDialog(ruleSet)}
+                            disabled={loadingRuleSetId !== null || isDeleting}
+                            onClick={() => void openDeleteDialog(ruleSet.id)}
                           >
                             <Trash2Icon />
                             削除
@@ -402,8 +425,8 @@ export function RfRuleSetsSection() {
                         <Button
                           type="button"
                           variant="outline"
-                          disabled={isArchiving}
-                          onClick={() => openArchiveDialog(ruleSet)}
+                          disabled={loadingRuleSetId !== null || isArchiving}
+                          onClick={() => void openArchiveDialog(ruleSet.id)}
                         >
                           <ArchiveIcon />
                           アーカイブ

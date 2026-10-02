@@ -444,6 +444,7 @@ describe("RfRuleSetsSection", () => {
 
   it("ownerが公開中ルールをアーカイブできる", async () => {
     const user = userEvent.setup();
+    const onSettingsChanged = vi.fn();
 
     mocks.fetchRfRuleSet.mockResolvedValueOnce({
       data: {
@@ -451,7 +452,7 @@ describe("RfRuleSetsSection", () => {
       },
     });
 
-    render(<RfRuleSetsSection />);
+    render(<RfRuleSetsSection onSettingsChanged={onSettingsChanged} />);
 
     await user.click(
       screen.getByRole("button", {
@@ -460,10 +461,14 @@ describe("RfRuleSetsSection", () => {
     );
 
     expect(
-      screen.getByRole("alertdialog", {
+      await screen.findByRole("alertdialog", {
         name: "公開中のRFルールをアーカイブしますか？",
       }),
     ).toHaveTextContent("公開中RFルール");
+
+    // 確認画面を開いた時点のlock_versionを保持する。
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(8);
 
     await user.click(
       screen.getByRole("button", {
@@ -472,12 +477,11 @@ describe("RfRuleSetsSection", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(8);
-    });
-
-    await waitFor(() => {
       expect(mocks.archiveRfRuleSet).toHaveBeenCalledWith(8, 5);
     });
+
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledTimes(1);
+    expect(onSettingsChanged).toHaveBeenCalledTimes(1);
 
     await waitFor(() => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
@@ -496,10 +500,14 @@ describe("RfRuleSetsSection", () => {
     );
 
     expect(
-      screen.getByRole("alertdialog", {
+      await screen.findByRole("alertdialog", {
         name: "下書きのRFルールを削除しますか？",
       }),
     ).toHaveTextContent("下書きRFルール");
+
+    // 確認画面を開いた時点のlock_versionを保持する。
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(7);
 
     await user.click(
       screen.getByRole("button", {
@@ -508,12 +516,10 @@ describe("RfRuleSetsSection", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.fetchRfRuleSet).toHaveBeenCalledWith(7);
-    });
-
-    await waitFor(() => {
       expect(mocks.deleteRfRuleSet).toHaveBeenCalledWith(7, 3);
     });
+
+    expect(mocks.fetchRfRuleSet).toHaveBeenCalledTimes(1);
 
     await waitFor(() => {
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
