@@ -88,7 +88,7 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       end
     end
 
-    it "RFランクの計算結果を作成する" do
+    it "RFランク計算を受け付ける" do
       login!
 
       calculation_run =
@@ -100,11 +100,10 @@ RSpec.describe "Api::V1::RfCalculationRuns",
             Date.new(2021, 9, 22),
           frequency_started_on:
             Date.new(2025, 9, 22),
-          status: "completed",
-          completed_at: Time.current
+          status: "pending"
         )
 
-      allow(Rf::CalculationRunner)
+      allow(Rf::CalculationRunStarter)
         .to receive(:call)
         .and_return(calculation_run)
 
@@ -120,15 +119,16 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         as: :json
       )
 
-      expect(response).to have_http_status(:created)
+      expect(response).to have_http_status(:accepted)
 
-      expect(Rf::CalculationRunner)
+      expect(Rf::CalculationRunStarter)
         .to have_received(:call)
         .with(
           rule_set: rule_set,
           base_date: Date.new(2026, 9, 22),
           started_by_staff: login_staff
         )
+        .once
 
       expect(
         response_body.dig(
@@ -138,20 +138,13 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         )
       ).to eq(calculation_run.id)
 
-      preview =
+      expect(
         response_body.dig(
           "data",
           "calculation_run",
-          "preview"
+          "status"
         )
-
-      expect(preview).to include(
-        "changed_count" => 0,
-        "unchanged_count" => 0,
-        "excluded_count" => 0
-      )
-
-      expect(preview["rank_transitions"]).to eq([])
+      ).to eq("pending")
 
       expect(RfSetting.count).to eq(0)
     end
@@ -179,10 +172,10 @@ RSpec.describe "Api::V1::RfCalculationRuns",
     it "無効なRFルールの場合は422を返す" do
       login!
 
-      allow(Rf::CalculationRunner)
+      allow(Rf::CalculationRunStarter)
         .to receive(:call)
         .and_raise(
-          Rf::CalculationRunner::InvalidRuleSetError,
+          Rf::CalculationRunStarter::InvalidRuleSetError,
           "公開済みのRFルールを指定してください"
         )
 

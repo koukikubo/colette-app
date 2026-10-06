@@ -77,7 +77,7 @@ class Api::V1::Rf::CalculationRunsController <
     return if performed?
 
     calculation_run =
-      Rf::CalculationRunner.call(
+      Rf::CalculationRunStarter.call(
         rule_set: rf_rule_set,
         base_date: base_date,
         started_by_staff: current_staff
@@ -90,9 +90,9 @@ class Api::V1::Rf::CalculationRunsController <
             .new(calculation_run)
             .as_json
       },
-      status: :created
+      status: :accepted
     )
-  rescue Rf::CalculationRunner::InvalidRuleSetError => error
+  rescue Rf::CalculationRunStarter::InvalidRuleSetError => error
     render_error(
       message: "RFランクを計算できません",
       errors: [ error.message ],
