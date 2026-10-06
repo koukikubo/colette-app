@@ -23,7 +23,32 @@ vi.mock("../../components/settings/RfCurrentSettingsSection", () => ({
 }));
 
 vi.mock("../../components/calculation/RfCalculationHistorySection", () => ({
-  RfCalculationHistorySection: () => null,
+  RfCalculationHistorySection: ({
+    reloadKey,
+    onApplied,
+  }: {
+    reloadKey: number;
+    onApplied: () => void;
+  }) => (
+    <div>
+      <div data-testid="calculation-reload-key">{reloadKey}</div>
+      <button type="button" onClick={onApplied}>
+        RF計算結果を適用
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock("../../components/calculation/RfCalculationExecutionSection", () => ({
+  RfCalculationExecutionSection: ({
+    onCalculationCompleted,
+  }: {
+    onCalculationCompleted: () => void;
+  }) => (
+    <button type="button" onClick={onCalculationCompleted}>
+      RF計算を完了
+    </button>
+  ),
 }));
 
 describe("RfManagementPage", () => {
@@ -59,5 +84,38 @@ describe("RfManagementPage", () => {
     );
 
     expect(screen.getByTestId("settings-reload-key")).toHaveTextContent("1");
+  });
+
+  it("RF計算完了後に現在設定と計算履歴を再取得させる", async () => {
+    const user = userEvent.setup();
+
+    render(<RfManagementPage />);
+
+    expect(screen.getByTestId("settings-reload-key")).toHaveTextContent("0");
+    expect(screen.getByTestId("calculation-reload-key")).toHaveTextContent("0");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "RF計算を完了",
+      }),
+    );
+
+    expect(screen.getByTestId("settings-reload-key")).toHaveTextContent("1");
+    expect(screen.getByTestId("calculation-reload-key")).toHaveTextContent("1");
+  });
+
+  it("RF計算結果の適用後に現在設定と計算履歴を再取得させる", async () => {
+    const user = userEvent.setup();
+
+    render(<RfManagementPage />);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "RF計算結果を適用",
+      }),
+    );
+
+    expect(screen.getByTestId("settings-reload-key")).toHaveTextContent("1");
+    expect(screen.getByTestId("calculation-reload-key")).toHaveTextContent("1");
   });
 });

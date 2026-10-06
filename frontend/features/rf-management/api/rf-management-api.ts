@@ -11,6 +11,9 @@ import type {
   RfRuleSetInput,
   RfRuleSetUpdateInput,
   RfRuleSetValidationResponse,
+  RfCalculationRunActivationResponse,
+  RfCalculationRunCreateResponse,
+  RfCalculationRunInput,
 } from "../types";
 
 const RF_SETTINGS_PATH = "/api/v1/rf_settings";
@@ -63,6 +66,24 @@ export function fetchRfRuleSet(id: number, signal?: AbortSignal) {
     {
       cache: "no-store",
       signal,
+    },
+  );
+}
+
+export function createRfCalculationRun(input: RfCalculationRunInput) {
+  return apiFetch<RfCalculationRunCreateResponse>(RF_CALCULATION_RUNS_PATH, {
+    method: "POST",
+    body: {
+      rf_calculation: input,
+    },
+  });
+}
+
+export function activateRfCalculationRun(id: number) {
+  return apiFetch<RfCalculationRunActivationResponse>(
+    `${RF_CALCULATION_RUNS_PATH}/${encodeURIComponent(String(id))}/activate`,
+    {
+      method: "PATCH",
     },
   );
 }

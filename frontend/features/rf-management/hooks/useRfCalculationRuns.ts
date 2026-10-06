@@ -11,11 +11,13 @@ import type { RfCalculationRunSummary } from "../types";
 type UseRfCalculationRunsOptions = {
   page?: number;
   perPage?: number;
+  reloadKey?: number;
 };
 
 export function useRfCalculationRuns({
   page = 1,
   perPage = 10,
+  reloadKey,
 }: UseRfCalculationRunsOptions = {}) {
   const [calculationRuns, setCalculationRuns] = useState<
     RfCalculationRunSummary[]
@@ -23,9 +25,11 @@ export function useRfCalculationRuns({
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pollingKey, setPollingKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
+    let pollingTimer: ReturnType<typeof setTimeout> | undefined;
 
     async function loadCalculationRuns() {
       setIsLoading(true);
@@ -42,6 +46,18 @@ export function useRfCalculationRuns({
 
         setCalculationRuns(response.data.calculation_runs);
         setPagination(response.data.pagination);
+
+        const hasRunningCalculation = response.data.calculation_runs.some(
+          (calculationRun) =>
+            calculationRun.status === "pending" ||
+            calculationRun.status === "processing",
+        );
+
+        if (hasRunningCalculation && !controller.signal.aborted) {
+          pollingTimer = setTimeout(() => {
+            setPollingKey((current) => current + 1);
+          }, 2_000);
+        }
       } catch (error) {
         if (controller.signal.aborted) {
           return;
@@ -65,8 +81,12 @@ export function useRfCalculationRuns({
 
     return () => {
       controller.abort();
+
+      if (pollingTimer) {
+        clearTimeout(pollingTimer);
+      }
     };
-  }, [page, perPage]);
+  }, [page, perPage, reloadKey, pollingKey]);
 
   return {
     calculationRuns,

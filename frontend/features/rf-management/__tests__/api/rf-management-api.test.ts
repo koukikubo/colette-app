@@ -9,6 +9,8 @@ import {
   fetchRfRuleSet,
   fetchRfRuleSets,
   fetchRfSettings,
+  activateRfCalculationRun,
+  createRfCalculationRun,
 } from "../../api/rf-management-api";
 
 vi.mock("@/lib/api/api-client", () => ({
@@ -53,6 +55,34 @@ describe("RF管理API", () => {
       cache: "no-store",
       signal: undefined,
     });
+  });
+
+  it("RF計算を実行する", () => {
+    createRfCalculationRun({
+      rf_rule_set_id: 3,
+      base_date: "2026-10-02",
+    });
+
+    expect(mockedApiFetch).toHaveBeenCalledWith("/api/v1/rf_calculation_runs", {
+      method: "POST",
+      body: {
+        rf_calculation: {
+          rf_rule_set_id: 3,
+          base_date: "2026-10-02",
+        },
+      },
+    });
+  });
+
+  it("RF計算結果を適用する", () => {
+    activateRfCalculationRun(20);
+
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      "/api/v1/rf_calculation_runs/20/activate",
+      {
+        method: "PATCH",
+      },
+    );
   });
 
   it("RF計算履歴一覧をページ指定付きで取得する", () => {

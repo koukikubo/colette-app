@@ -109,6 +109,12 @@ export type RfCalculationPreview = {
   excluded_count: number;
   rank_transitions: RfRankTransition[];
 };
+
+export type RfCalculationRunInput = {
+  rf_rule_set_id: number;
+  base_date: string;
+};
+
 // RF計算結果の基本情報と集計結果。
 // GET /api/v1/rf_settingsのcurrent_calculation_runに対応する。
 export type RfCalculationRun = {
@@ -130,6 +136,7 @@ export type RfCalculationRun = {
   started_by_staff: RfStaffSummary | null;
   created_at: string;
 };
+
 // 計算履歴一覧の1行分。
 // GET /api/v1/rf_calculation_runsのcalculation_runs要素に対応する。
 export type RfCalculationRunSummary = {
@@ -206,6 +213,18 @@ export type RfCalculationRunListResponse = ApiSuccessResponse<{
 export type RfCalculationRunResponse = ApiSuccessResponse<{
   calculation_run: RfCalculationRunDetail;
 }>;
+
+// POST /api/v1/rf_calculation_runsのレスポンス。
+export type RfCalculationRunCreateResponse = ApiSuccessResponse<{
+  calculation_run: RfCalculationRun;
+}>;
+
+// PATCH /api/v1/rf_calculation_runs/:id/activateのレスポンス。
+export type RfCalculationRunActivationResponse = ApiSuccessResponse<{
+  calculation_run: RfCalculationRun;
+  current_calculation_run_id: number;
+}>;
+
 // GET /api/v1/rf_calculation_runs/:id/resultsのレスポンス。
 export type RfCustomerRankResultListResponse = ApiSuccessResponse<{
   results: RfCustomerRankResult[];

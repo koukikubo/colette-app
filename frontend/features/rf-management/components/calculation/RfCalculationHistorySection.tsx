@@ -21,11 +21,19 @@ import { ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RfCalculationRunDetailDrawer } from "./RfCalculationRunDetailDrawer";
 
+type RfCalculationHistorySectionProps = {
+  reloadKey?: number;
+  onApplied?: () => void;
+};
+
 function formatDate(date: string) {
   return date.replaceAll("-", "/");
 }
 
-export function RfCalculationHistorySection() {
+export function RfCalculationHistorySection({
+  reloadKey = 0,
+  onApplied,
+}: RfCalculationHistorySectionProps) {
   const [selectedCalculationRunId, setSelectedCalculationRunId] = useState<
     number | null
   >(null);
@@ -38,6 +46,7 @@ export function RfCalculationHistorySection() {
     useRfCalculationRuns({
       page: currentPage,
       perPage: 10,
+      reloadKey,
     });
 
   if (isLoading) {
@@ -181,6 +190,7 @@ export function RfCalculationHistorySection() {
       <RfCalculationRunDetailDrawer
         open={selectedCalculationRunId !== null}
         calculationRunId={selectedCalculationRunId}
+        onApplied={onApplied}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setSelectedCalculationRunId(null);
