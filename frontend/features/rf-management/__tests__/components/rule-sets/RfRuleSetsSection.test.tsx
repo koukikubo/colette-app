@@ -390,9 +390,7 @@ describe("RfRuleSetsSection", () => {
 
     render(<RfRuleSetsSection />);
 
-    await user.click(
-      screen.getByRole("button", { name: "下書きとして複製" }),
-    );
+    await user.click(screen.getByRole("button", { name: "下書きとして複製" }));
 
     await waitFor(() => {
       expect(mocks.createRfRuleSet).toHaveBeenCalledWith({
