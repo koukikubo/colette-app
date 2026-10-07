@@ -48,6 +48,22 @@ describe("RF管理API", () => {
     );
   });
 
+  it("RFルールセット一覧を状態指定付きで取得する", () => {
+    fetchRfRuleSets({
+      page: 1,
+      per_page: 10,
+      status: "archived",
+    });
+
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      "/api/v1/rf_rule_sets?page=1&per_page=10&status=archived",
+      {
+        cache: "no-store",
+        signal: undefined,
+      },
+    );
+  });
+
   it("RFルールセット詳細を取得する", () => {
     fetchRfRuleSet(10);
 
@@ -84,6 +100,8 @@ describe("RF管理API", () => {
       },
     );
   });
+
+
 
   it("RF計算履歴一覧をページ指定付きで取得する", () => {
     fetchRfCalculationRuns({

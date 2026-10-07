@@ -29,7 +29,7 @@ import {
 
 import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
 import { useRfRuleSets } from "../../hooks/useRfRuleSets";
-import type { RfRuleSet } from "../../types";
+import type { RfRuleSet, RfRuleSetStatus } from "../../types";
 import {
   buildCreateRfRuleSetInput,
   buildUpdateRfRuleSetInput,
@@ -39,6 +39,7 @@ import { RfRuleSetBasicFormDialog } from "./RfRuleSetBasicFormDialog";
 
 import {
   ArchiveIcon,
+  CopyIcon,
   EyeIcon,
   PencilIcon,
   PlusIcon,
@@ -81,6 +82,8 @@ export function RfRuleSetsSection({
   const isOwner = staff?.staff_master.role_code === "owner";
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStatus, setSelectedStatus] =
+    useState<RfRuleSetStatus>("draft");
   const [reloadKey, setReloadKey] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>("create");
@@ -100,6 +103,7 @@ export function RfRuleSetsSection({
     page: currentPage,
     perPage: 10,
     reloadKey,
+    status: selectedStatus,
   });
 
   const [archiveTarget, setArchiveTarget] = useState<RfRuleSet | null>(null);
@@ -290,6 +294,66 @@ export function RfRuleSetsSection({
     }
   }
 
+  async function handleDuplicate(id: number) {
+    setLoadingRuleSetId(id);
+    setFormErrorMessage(null);
+
+    try {
+      const response = await fetchRfRuleSet(id);
+      const source = response.data.rule_set;
+      const recencyCodes = new Map(
+        source.recency_rules.map((rule) => [rule.id, rule.code]),
+      );
+      const frequencyCodes = new Map(
+        source.frequency_rules.map((rule) => [rule.id, rule.code]),
+      );
+
+      const created = await createRfRuleSet({
+        name: `${source.name}（コピー）`,
+        aggregation_months: source.aggregation_months,
+        frequency_window_months: source.frequency_window_months,
+        recency_rules: source.recency_rules.map(
+          ({ code, label, min_days, max_days, position }) => ({
+            code,
+            label,
+            min_days,
+            max_days,
+            position,
+          }),
+        ),
+        frequency_rules: source.frequency_rules.map(
+          ({ code, label, min_visits, max_visits, position }) => ({
+            code,
+            label,
+            min_visits,
+            max_visits,
+            position,
+          }),
+        ),
+        rank_mappings: source.rank_mappings.flatMap((mapping) => {
+          const recencyCode = recencyCodes.get(mapping.recency_rule_id);
+          const frequencyCode = frequencyCodes.get(mapping.frequency_rule_id);
+
+          return recencyCode && frequencyCode
+            ? [
+                {
+                  recency_code: recencyCode,
+                  frequency_code: frequencyCode,
+                  rf_rank_id: mapping.rf_rank.id,
+                },
+              ]
+            : [];
+        }),
+      });
+
+      router.push(`/rf-management/${created.data.rule_set.id}/edit`);
+    } catch (error) {
+      setFormErrorMessage(mutationErrorMessage(error));
+    } finally {
+      setLoadingRuleSetId(null);
+    }
+  }
+
   return (
     <section aria-labelledby="rf-rule-sets-heading">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -298,7 +362,7 @@ export function RfRuleSetsSection({
             RFルール
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            下書き・公開中・アーカイブ済みのルールを確認します。
+            用途ごとに状態を切り替えて、RFルールを管理します。
           </p>
         </div>
 
@@ -308,6 +372,35 @@ export function RfRuleSetsSection({
             新しいルールを作成
           </Button>
         )}
+      </div>
+
+      <div
+        role="tablist"
+        aria-label="RFルールの状態"
+        className="mb-4 inline-flex flex-wrap gap-1 rounded-lg bg-muted p-1"
+      >
+        {(
+          [
+            ["draft", "下書き"],
+            ["published", "公開中"],
+            ["archived", "アーカイブ"],
+          ] as const
+        ).map(([status, label]) => (
+          <Button
+            key={status}
+            type="button"
+            role="tab"
+            size="sm"
+            variant={selectedStatus === status ? "default" : "ghost"}
+            aria-selected={selectedStatus === status}
+            onClick={() => {
+              setSelectedStatus(status);
+              setCurrentPage(1);
+            }}
+          >
+            {label}
+          </Button>
+        ))}
       </div>
 
       {isLoading ? (
@@ -326,7 +419,11 @@ export function RfRuleSetsSection({
       ) : ruleSets.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            RFルールはまだ登録されていません。
+            {selectedStatus === "draft"
+              ? "下書きのRFルールはありません。"
+              : selectedStatus === "published"
+                ? "公開中のRFルールはありません。"
+                : "アーカイブ済みのRFルールはありません。"}
           </CardContent>
         </Card>
       ) : (
@@ -430,6 +527,19 @@ export function RfRuleSetsSection({
                         >
                           <ArchiveIcon />
                           アーカイブ
+                        </Button>
+                      )}
+
+                      {ruleSet.status === "archived" && (
+                        <Button
+                          type="button"
+                          disabled={loadingRuleSetId !== null}
+                          onClick={() => void handleDuplicate(ruleSet.id)}
+                        >
+                          <CopyIcon />
+                          {loadingRuleSetId === ruleSet.id
+                            ? "複製中..."
+                            : "下書きとして複製"}
                         </Button>
                       )}
                     </>

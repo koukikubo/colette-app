@@ -197,11 +197,18 @@ describe("RfRuleSetsSection", () => {
   it("RFルール一覧と状態を表示する", () => {
     render(<RfRuleSetsSection />);
 
+    expect(mocks.useRfRuleSets).toHaveBeenCalledWith({
+      page: 1,
+      perPage: 10,
+      reloadKey: 0,
+      status: "draft",
+    });
+
     expect(screen.getByText("下書きRFルール")).toBeInTheDocument();
     expect(screen.getByText("公開中RFルール")).toBeInTheDocument();
 
-    expect(screen.getByText("下書き")).toBeInTheDocument();
-    expect(screen.getByText("公開中")).toBeInTheDocument();
+    expect(screen.getAllByText("下書き")).toHaveLength(2);
+    expect(screen.getAllByText("公開中")).toHaveLength(2);
 
     expect(
       screen.getByRole("button", {
@@ -352,6 +359,51 @@ describe("RfRuleSetsSection", () => {
       });
     });
 
+    await waitFor(() => {
+      expect(mocks.push).toHaveBeenCalledWith("/rf-management/7/edit");
+    });
+  });
+
+  it("ownerがアーカイブ済みルールを下書きとして複製できる", async () => {
+    const user = userEvent.setup();
+    const archivedRuleSetSummary = {
+      ...publishedRuleSetSummary,
+      id: 9,
+      name: "過去のRFルール",
+      status: "archived" as const,
+    };
+    const archivedRuleSet = {
+      ...publishedRuleSet,
+      ...archivedRuleSetSummary,
+      lock_version: 6,
+    };
+
+    mocks.useRfRuleSets.mockReturnValue({
+      ruleSets: [archivedRuleSetSummary],
+      pagination: null,
+      isLoading: false,
+      errorMessage: null,
+    });
+    mocks.fetchRfRuleSet.mockResolvedValueOnce({
+      data: { rule_set: archivedRuleSet },
+    });
+
+    render(<RfRuleSetsSection />);
+
+    await user.click(
+      screen.getByRole("button", { name: "下書きとして複製" }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.createRfRuleSet).toHaveBeenCalledWith({
+        name: "過去のRFルール（コピー）",
+        aggregation_months: 60,
+        frequency_window_months: 12,
+        recency_rules: [],
+        frequency_rules: [],
+        rank_mappings: [],
+      });
+    });
     await waitFor(() => {
       expect(mocks.push).toHaveBeenCalledWith("/rf-management/7/edit");
     });

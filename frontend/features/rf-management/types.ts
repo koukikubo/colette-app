@@ -198,6 +198,7 @@ export type RfRuleSetListParams = RfListParams & {
 // GET /api/v1/rf_settingsのレスポンス。
 export type RfSettingsResponse = ApiSuccessResponse<{
   published_rule_set: RfRuleSet | null;
+  applied_rule_set: RfRuleSet | null;
   current_calculation_run: RfCalculationRun | null;
 }>;
 // GET /api/v1/rf_rule_setsのレスポンス。

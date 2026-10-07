@@ -5,6 +5,7 @@ import type {
   RfCalculationRunResponse,
   RfCustomerRankResultListResponse,
   RfListParams,
+  RfRuleSetListParams,
   RfRuleSetListResponse,
   RfRuleSetResponse,
   RfSettingsResponse,
@@ -21,7 +22,7 @@ const RF_RULE_SETS_PATH = "/api/v1/rf_rule_sets";
 const RF_CALCULATION_RUNS_PATH = "/api/v1/rf_calculation_runs";
 
 // page・per_pageを一覧APIのクエリ文字列へ変換する。
-function buildPaginatedPath(path: string, params: RfListParams = {}) {
+function buildPaginatedPath(path: string, params: RfRuleSetListParams = {}) {
   const searchParams = new URLSearchParams();
 
   if (params.page !== undefined) {
@@ -30,6 +31,10 @@ function buildPaginatedPath(path: string, params: RfListParams = {}) {
 
   if (params.per_page !== undefined) {
     searchParams.set("per_page", String(params.per_page));
+  }
+
+  if (params.status !== undefined) {
+    searchParams.set("status", params.status);
   }
 
   const queryString = searchParams.toString();
@@ -47,7 +52,7 @@ export function fetchRfSettings(signal?: AbortSignal) {
 
 // RFルールセット一覧を取得する。
 export function fetchRfRuleSets(
-  params: RfListParams = {},
+  params: RfRuleSetListParams = {},
   signal?: AbortSignal,
 ) {
   return apiFetch<RfRuleSetListResponse>(
@@ -87,6 +92,7 @@ export function activateRfCalculationRun(id: number) {
     },
   );
 }
+
 
 // RF計算履歴一覧を取得する。
 export function fetchRfCalculationRuns(

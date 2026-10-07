@@ -21,6 +21,7 @@ type RfRuleSetPreviewTableProps = {
   frequencyRules: RfFrequencyRuleInput[];
   mappings: RfRankMappingInput[];
   rankOptions: RfRankOption[];
+  heading?: string;
 };
 
 function recencyLabel(rule: RfRecencyRuleInput) {
@@ -44,14 +45,15 @@ export function RfRuleSetPreviewTable({
   frequencyRules,
   mappings,
   rankOptions,
+  heading = "設定プレビュー",
 }: RfRuleSetPreviewTableProps) {
   return (
     <section aria-labelledby="rf-rule-preview-heading" className="space-y-3">
       <div className="flex items-center gap-1">
         <h3 id="rf-rule-preview-heading" className="font-medium">
-          設定プレビュー
+          {heading}
         </h3>
-        <RfHelpTooltip label="設定プレビュー">
+        <RfHelpTooltip label={heading}>
           行は最終来店日からの期間、列は対象期間内の来店回数です。交差する欄が顧客に付与されるRFランクです。
         </RfHelpTooltip>
       </div>

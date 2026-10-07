@@ -198,4 +198,47 @@ describe("RfCalculationHistorySection", () => {
 
     expect(onApplied).toHaveBeenCalledOnce();
   });
+
+  it("未適用の完了結果を対応が必要な処理として表示する", () => {
+    mocks.useRfCalculationRuns.mockReturnValue({
+      calculationRuns: [
+        {
+          id: 21,
+          previous_run_id: 20,
+          rule_set: { id: 4, name: "新しいRFルール", version: 4 },
+          base_date: "2026-10-07",
+          status: "completed",
+          customer_count: 120,
+          excluded_count: 8,
+          unmatched_count: 2,
+          started_by_staff: null,
+          current: false,
+          restorable: false,
+        },
+        {
+          id: 20,
+          previous_run_id: null,
+          rule_set: { id: 3, name: "標準RFルール", version: 3 },
+          base_date: "2026-09-29",
+          status: "completed",
+          customer_count: 120,
+          excluded_count: 8,
+          unmatched_count: 2,
+          started_by_staff: null,
+          current: true,
+          restorable: false,
+        },
+      ],
+      pagination: null,
+      isLoading: false,
+      errorMessage: null,
+    });
+
+    render(<RfCalculationHistorySection />);
+
+    expect(screen.getByText("RF計算が完了しました")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "結果を確認して適用" }),
+    ).toBeInTheDocument();
+  });
 });

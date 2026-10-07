@@ -21,7 +21,7 @@ type RfRuleSetDetailDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-function previewValues(ruleSet: RfRuleSet) {
+export function previewValues(ruleSet: RfRuleSet) {
   const recencyRules = ruleSet.recency_rules.map((rule) => ({
     code: rule.code,
     label: rule.label,
