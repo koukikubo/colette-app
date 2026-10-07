@@ -2,6 +2,16 @@
 
 puts "ページネーション確認用の顧客データを作成します"
 
+customer_ranks =
+  StandardListMaster
+    .joins(:standard_master)
+    .where(
+      standard_masters: {
+        system_key: "customer_rank"
+      }
+    )
+    .index_by(&:code)
+
 seed_staff =
   Staff
     .joins(:staff_master)
@@ -42,6 +52,12 @@ Customer.transaction do
     email = format("customer%04d@seed.colette.test", number)
 
     customer = Customer.find_or_initialize_by(email: email)
+    customer_rank_code =
+      if (number % 23).zero?
+        "R"
+      else
+        %w[A B C D E][number % 5]
+      end
 
     customer.assign_attributes(
       customer_kind: corporate ? "corporate" : "individual",
@@ -72,7 +88,9 @@ Customer.transaction do
       memo: "ページネーション確認用のSeed顧客",
       hidden_at: (Time.current if (number % 20).zero?),
       created_by_staff: customer.created_by_staff || seed_staff,
-      updated_by_staff: seed_staff
+      updated_by_staff: seed_staff,
+      customer_rank:
+        customer_ranks.fetch(customer_rank_code),
     )
 
     customer.save!
