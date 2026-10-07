@@ -231,6 +231,9 @@ export type RfCalculationRunActivationResponse = ApiSuccessResponse<{
   current_calculation_run_id: number;
 }>;
 
+export type RfCalculationRunRestoreResponse =
+  RfCalculationRunActivationResponse;
+
 // GET /api/v1/rf_calculation_runs/:id/resultsのレスポンス。
 export type RfCustomerRankResultListResponse = ApiSuccessResponse<{
   results: RfCustomerRankResult[];

@@ -11,6 +11,7 @@ import {
   fetchRfSettings,
   activateRfCalculationRun,
   createRfCalculationRun,
+  restoreRfCalculationRun,
 } from "../../api/rf-management-api";
 
 vi.mock("@/lib/api/api-client", () => ({
@@ -101,7 +102,21 @@ describe("RF管理API", () => {
     );
   });
 
+  it("過去のRF計算結果を復元する", () => {
+    restoreRfCalculationRun(19, 20);
 
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      "/api/v1/rf_calculation_runs/19/restore",
+      {
+        method: "PATCH",
+        body: {
+          rf_calculation: {
+            expected_current_run_id: 20,
+          },
+        },
+      },
+    );
+  });
 
   it("RF計算履歴一覧をページ指定付きで取得する", () => {
     fetchRfCalculationRuns({

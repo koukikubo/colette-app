@@ -10,6 +10,7 @@ vi.mock("@/lib/api/proxy-request", () => ({
 
 import { POST } from "@/app/api/v1/rf_calculation_runs/route";
 import { PATCH } from "@/app/api/v1/rf_calculation_runs/[id]/activate/route";
+import { PATCH as RESTORE } from "@/app/api/v1/rf_calculation_runs/[id]/restore/route";
 
 describe("RF計算APIルート", () => {
   beforeEach(() => {
@@ -58,6 +59,24 @@ describe("RF計算APIルート", () => {
     expect(mocks.proxyRequest).toHaveBeenCalledWith(
       request,
       "/api/v1/rf_calculation_runs/20/activate",
+    );
+  });
+
+  it("過去の計算結果の復元リクエストをRailsへ中継する", async () => {
+    const response = new Response(null, { status: 200 });
+    mocks.proxyRequest.mockResolvedValue(response);
+    const request = new Request(
+      "http://localhost/api/v1/rf_calculation_runs/19/restore",
+      { method: "PATCH" },
+    );
+
+    await expect(
+      RESTORE(request, { params: Promise.resolve({ id: "19" }) }),
+    ).resolves.toBe(response);
+
+    expect(mocks.proxyRequest).toHaveBeenCalledWith(
+      request,
+      "/api/v1/rf_calculation_runs/19/restore",
     );
   });
 });

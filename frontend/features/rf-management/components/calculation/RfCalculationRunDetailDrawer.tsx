@@ -21,8 +21,13 @@ import { useRfCalculationRunDetail } from "../../hooks/useRfCalculationRunDetail
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { activateRfCalculationRun } from "../../api/rf-management-api";
+import {
+  activateRfCalculationRun,
+  fetchRfSettings,
+  restoreRfCalculationRun,
+} from "../../api/rf-management-api";
 import { RfCalculationActivationDialog } from "./RfCalculationActivationDialog";
+import { RfCalculationRestoreDialog } from "./RfCalculationRestoreDialog";
 
 type RfCalculationRunDetailDrawerProps = {
   open: boolean;
@@ -47,6 +52,18 @@ function activationErrorMessage(error: unknown) {
   return error.errorMessages[0] ?? error.message;
 }
 
+function restoreErrorMessage(error: unknown) {
+  if (!(error instanceof ApiClientError)) {
+    return "過去のRF計算結果を復元できませんでした。";
+  }
+
+  if (error.status === 409) {
+    return "現在適用中のRFランクが変更されています。再読み込みして、もう一度操作してください。";
+  }
+
+  return error.errorMessages[0] ?? error.message;
+}
+
 export function RfCalculationRunDetailDrawer({
   open,
   calculationRunId,
@@ -63,11 +80,16 @@ export function RfCalculationRunDetailDrawer({
   const [activationDialogOpen, setActivationDialogOpen] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const canActivate =
     isOwner &&
     calculationRun?.status === "completed" &&
-    !calculationRun.current;
+    !calculationRun.current &&
+    !calculationRun.restorable;
+  const canRestore = isOwner && Boolean(calculationRun?.restorable);
 
   async function handleActivate() {
     if (!calculationRun) return;
@@ -88,7 +110,31 @@ export function RfCalculationRunDetailDrawer({
     }
   }
 
+  async function handleRestore() {
+    if (!calculationRun) return;
 
+    setIsRestoring(true);
+    setRestoreError(null);
+
+    try {
+      const settings = await fetchRfSettings();
+      const currentRunId = settings.data.current_calculation_run?.id;
+
+      if (!currentRunId) {
+        throw new Error("現在適用中のRF計算結果がありません。");
+      }
+
+      await restoreRfCalculationRun(calculationRun.id, currentRunId);
+
+      setRestoreDialogOpen(false);
+      onOpenChange(false);
+      onApplied?.();
+    } catch (error) {
+      setRestoreError(restoreErrorMessage(error));
+    } finally {
+      setIsRestoring(false);
+    }
+  }
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange} direction="right">
@@ -279,7 +325,7 @@ export function RfCalculationRunDetailDrawer({
               </div>
             )}
           </div>
-          {canActivate && (
+          {(canActivate || canRestore) && (
             <DrawerFooter className="shrink-0 border-t bg-background">
               {canActivate && (
                 <Button
@@ -290,6 +336,18 @@ export function RfCalculationRunDetailDrawer({
                   }}
                 >
                   計算結果を適用
+                </Button>
+              )}
+              {canRestore && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRestoreError(null);
+                    setRestoreDialogOpen(true);
+                  }}
+                >
+                  この結果に戻す
                 </Button>
               )}
             </DrawerFooter>
@@ -311,6 +369,19 @@ export function RfCalculationRunDetailDrawer({
         onConfirm={() => void handleActivate()}
       />
 
+      <RfCalculationRestoreDialog
+        open={restoreDialogOpen}
+        isSubmitting={isRestoring}
+        errorMessage={restoreError}
+        onOpenChange={(nextOpen) => {
+          setRestoreDialogOpen(nextOpen);
+
+          if (!nextOpen) {
+            setRestoreError(null);
+          }
+        }}
+        onConfirm={() => void handleRestore()}
+      />
     </>
   );
 }

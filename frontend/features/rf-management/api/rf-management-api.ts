@@ -15,6 +15,7 @@ import type {
   RfCalculationRunActivationResponse,
   RfCalculationRunCreateResponse,
   RfCalculationRunInput,
+  RfCalculationRunRestoreResponse,
 } from "../types";
 
 const RF_SETTINGS_PATH = "/api/v1/rf_settings";
@@ -93,6 +94,22 @@ export function activateRfCalculationRun(id: number) {
   );
 }
 
+export function restoreRfCalculationRun(
+  id: number,
+  expectedCurrentRunId: number,
+) {
+  return apiFetch<RfCalculationRunRestoreResponse>(
+    `${RF_CALCULATION_RUNS_PATH}/${encodeURIComponent(String(id))}/restore`,
+    {
+      method: "PATCH",
+      body: {
+        rf_calculation: {
+          expected_current_run_id: expectedCurrentRunId,
+        },
+      },
+    },
+  );
+}
 
 // RF計算履歴一覧を取得する。
 export function fetchRfCalculationRuns(

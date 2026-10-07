@@ -6,6 +6,8 @@ import { RfCalculationRunDetailDrawer } from "../../../components/calculation/Rf
 
 const mocks = vi.hoisted(() => ({
   activateRfCalculationRun: vi.fn(),
+  fetchRfSettings: vi.fn(),
+  restoreRfCalculationRun: vi.fn(),
   useAuth: vi.fn(),
   useRfCalculationRunDetail: vi.fn(),
 }));
@@ -16,6 +18,8 @@ vi.mock("@/features/staff-auth/hooks/use-auth", () => ({
 
 vi.mock("../../../api/rf-management-api", () => ({
   activateRfCalculationRun: mocks.activateRfCalculationRun,
+  fetchRfSettings: mocks.fetchRfSettings,
+  restoreRfCalculationRun: mocks.restoreRfCalculationRun,
 }));
 
 vi.mock("../../../hooks/useRfCalculationRunDetail", () => ({
@@ -26,6 +30,10 @@ describe("RfCalculationRunDetailDrawer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.activateRfCalculationRun.mockResolvedValue({});
+    mocks.fetchRfSettings.mockResolvedValue({
+      data: { current_calculation_run: { id: 20 } },
+    });
+    mocks.restoreRfCalculationRun.mockResolvedValue({});
     mocks.useAuth.mockReturnValue({
       staff: {
         staff_master: {
@@ -274,5 +282,56 @@ describe("RfCalculationRunDetailDrawer", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("ownerが復元可能な過去の計算結果に戻せる", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    const onApplied = vi.fn();
 
+    mocks.useRfCalculationRunDetail.mockReturnValue({
+      calculationRun: {
+        id: 19,
+        previous_run_id: 18,
+        base_date: "2026-09-28",
+        aggregation_started_on: "2021-09-28",
+        frequency_started_on: "2025-09-28",
+        status: "completed",
+        customer_count: 100,
+        excluded_count: 0,
+        unmatched_count: 0,
+        rank_counts: [],
+        preview: {
+          changed_count: 0,
+          unchanged_count: 100,
+          excluded_count: 0,
+          rank_transitions: [],
+          rank_comparisons: [],
+        },
+        started_by_staff: null,
+        current: false,
+        restorable: true,
+      },
+      isLoading: false,
+      errorMessage: null,
+    });
+
+    render(
+      <RfCalculationRunDetailDrawer
+        open
+        calculationRunId={19}
+        onOpenChange={onOpenChange}
+        onApplied={onApplied}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "この結果に戻す" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(
+      within(dialog).getByRole("button", { name: "この結果に戻す" }),
+    );
+
+    expect(mocks.fetchRfSettings).toHaveBeenCalledOnce();
+    expect(mocks.restoreRfCalculationRun).toHaveBeenCalledWith(19, 20);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onApplied).toHaveBeenCalledOnce();
+  });
 });
