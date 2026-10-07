@@ -11,12 +11,12 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
+  DrawerFooter,
 } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
 import { useRfCalculationRunDetail } from "../../hooks/useRfCalculationRunDetail";
-import { RfCalculationResultsSection } from "./RfCalculationResultsSection";
 
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 import { ApiClientError } from "@/lib/api/api-client";
@@ -87,6 +87,8 @@ export function RfCalculationRunDetailDrawer({
       setIsActivating(false);
     }
   }
+
+
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange} direction="right">
@@ -221,51 +223,77 @@ export function RfCalculationRunDetailDrawer({
                   </dl>
                 </section>
 
-                <section aria-labelledby="rank-count-heading">
-                  <h3 id="rank-count-heading" className="font-semibold">
-                    ランク別人数
+                <section aria-labelledby="rank-comparison-heading">
+                  <h3 id="rank-comparison-heading" className="font-semibold">
+                    ランク構成の変化
                   </h3>
 
-                  {calculationRun.rank_counts.length === 0 ? (
+                  {calculationRun.previous_run_id === null && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      初回計算のため、変更前の人数は0名として表示しています。
+                    </p>
+                  )}
+
+                  {calculationRun.preview.rank_comparisons.length === 0 ? (
                     <p className="mt-3 text-sm text-muted-foreground">
                       ランク別の集計結果はありません。
                     </p>
                   ) : (
-                    <ul className="mt-3 flex flex-wrap gap-2">
-                      {calculationRun.rank_counts.map((rankCount) => (
-                        <li key={rankCount.id}>
-                          <Badge variant="secondary">
-                            {rankCount.label} {rankCount.count}名
-                          </Badge>
-                        </li>
-                      ))}
+                    <ul className="mt-3 space-y-2">
+                      {calculationRun.preview.rank_comparisons.map(
+                        (comparison) => (
+                          <li
+                            key={comparison.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4"
+                          >
+                            <span className="font-medium">
+                              {comparison.label}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <span>{comparison.before_count}名</span>
+
+                              <span aria-hidden="true">→</span>
+
+                              <span className="font-semibold">
+                                {comparison.after_count}名
+                              </span>
+
+                              <Badge
+                                variant={
+                                  comparison.delta === 0
+                                    ? "outline"
+                                    : "secondary"
+                                }
+                              >
+                                {comparison.delta > 0 ? "+" : ""}
+                                {comparison.delta}
+                              </Badge>
+                            </div>
+                          </li>
+                        ),
+                      )}
                     </ul>
                   )}
                 </section>
-
-                <RfCalculationResultsSection
-                  key={calculationRun.id}
-                  calculationRunId={calculationRun.id}
-                />
-              </div>
-            )}
-
-            {canActivate && (
-              <div className="border-t p-4">
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setActivationError(null);
-                      setActivationDialogOpen(true);
-                    }}
-                  >
-                    計算結果を適用
-                  </Button>
-                </div>
               </div>
             )}
           </div>
+          {canActivate && (
+            <DrawerFooter className="shrink-0 border-t bg-background">
+              {canActivate && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setActivationError(null);
+                    setActivationDialogOpen(true);
+                  }}
+                >
+                  計算結果を適用
+                </Button>
+              )}
+            </DrawerFooter>
+          )}
         </DrawerContent>
       </Drawer>
 
@@ -282,6 +310,7 @@ export function RfCalculationRunDetailDrawer({
         }}
         onConfirm={() => void handleActivate()}
       />
+
     </>
   );
 }

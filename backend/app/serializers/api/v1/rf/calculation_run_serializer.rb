@@ -49,6 +49,20 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
       rank_transitions:
         preview.rank_transitions.map do |transition|
           serialize_transition(transition)
+        end,
+
+      rank_comparisons:
+        preview.rank_comparisons.map do |comparison|
+          {
+            id: comparison.rf_rank.id,
+            code: comparison.rf_rank.code,
+            label: comparison.rf_rank.label,
+            before_count: comparison.before_count,
+            after_count: comparison.after_count,
+            delta:
+              comparison.after_count -
+                comparison.before_count
+          }
         end
     }
   end

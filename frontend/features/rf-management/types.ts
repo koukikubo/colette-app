@@ -108,6 +108,7 @@ export type RfCalculationPreview = {
   unchanged_count: number;
   excluded_count: number;
   rank_transitions: RfRankTransition[];
+  rank_comparisons: RfRankComparison[];
 };
 
 export type RfCalculationRunInput = {
@@ -189,6 +190,10 @@ export type RfCustomerRankResult = {
 export type RfListParams = {
   page?: number;
   per_page?: number;
+};
+
+export type RfRuleSetListParams = RfListParams & {
+  status?: RfRuleSetStatus;
 };
 // GET /api/v1/rf_settingsのレスポンス。
 export type RfSettingsResponse = ApiSuccessResponse<{
@@ -273,3 +278,10 @@ export type RfRuleSetValidationResponse = ApiSuccessResponse<{
 // RFランク対応表の選択肢。
 // 基本コードマスタの有効なRFランクから生成する。
 export type RfRankOption = Pick<RfRank, "id" | "label">;
+
+// RF計算結果のランク比較情報。
+export type RfRankComparison = RfRank & {
+  before_count: number;
+  after_count: number;
+  delta: number;
+};

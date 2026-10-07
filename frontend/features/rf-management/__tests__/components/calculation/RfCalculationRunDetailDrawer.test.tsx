@@ -22,14 +22,6 @@ vi.mock("../../../hooks/useRfCalculationRunDetail", () => ({
   useRfCalculationRunDetail: mocks.useRfCalculationRunDetail,
 }));
 
-vi.mock("../../../components/calculation/RfCalculationResultsSection", () => ({
-  RfCalculationResultsSection: ({
-    calculationRunId,
-  }: {
-    calculationRunId: number;
-  }) => <div>顧客別判定結果: {calculationRunId}</div>,
-}));
-
 describe("RfCalculationRunDetailDrawer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,6 +39,7 @@ describe("RfCalculationRunDetailDrawer", () => {
     mocks.useRfCalculationRunDetail.mockReturnValue({
       calculationRun: {
         id: 20,
+        previous_run_id: 19,
         base_date: "2026-09-29",
         aggregation_started_on: "2021-09-29",
         frequency_started_on: "2025-09-29",
@@ -68,6 +61,30 @@ describe("RfCalculationRunDetailDrawer", () => {
             count: 40,
           },
         ],
+        preview: {
+          changed_count: 15,
+          unchanged_count: 97,
+          excluded_count: 8,
+          rank_transitions: [],
+          rank_comparisons: [
+            {
+              id: 1,
+              code: "A",
+              label: "Aランク",
+              before_count: 20,
+              after_count: 25,
+              delta: 5,
+            },
+            {
+              id: 2,
+              code: "B",
+              label: "Bランク",
+              before_count: 50,
+              after_count: 40,
+              delta: -10,
+            },
+          ],
+        },
         started_by_staff: {
           id: 1,
           code: "00001",
@@ -94,11 +111,17 @@ describe("RfCalculationRunDetailDrawer", () => {
     expect(screen.getByText("対象 120名")).toBeInTheDocument();
     expect(screen.getByText("対象外 8名")).toBeInTheDocument();
     expect(screen.getByText("未分類 2名")).toBeInTheDocument();
-    expect(screen.getByText("Aランク 25名")).toBeInTheDocument();
-    expect(screen.getByText("Bランク 40名")).toBeInTheDocument();
     expect(screen.getByText("管理者")).toBeInTheDocument();
     expect(screen.getByText("現在適用中")).toBeInTheDocument();
-    expect(screen.getByText("顧客別判定結果: 20")).toBeInTheDocument();
+    expect(screen.getByText("ランク構成の変化")).toBeInTheDocument();
+    expect(screen.getByText("Aランク")).toBeInTheDocument();
+    expect(screen.getByText("Bランク")).toBeInTheDocument();
+    expect(screen.getByText("20名")).toBeInTheDocument();
+    expect(screen.getByText("25名")).toBeInTheDocument();
+    expect(screen.getByText("+5")).toBeInTheDocument();
+    expect(screen.getByText("50名")).toBeInTheDocument();
+    expect(screen.getByText("40名")).toBeInTheDocument();
+    expect(screen.getByText("-10")).toBeInTheDocument();
   });
 
   it("閉じている場合は履歴を取得しない", () => {
@@ -147,6 +170,7 @@ describe("RfCalculationRunDetailDrawer", () => {
     mocks.useRfCalculationRunDetail.mockReturnValue({
       calculationRun: {
         id: 20,
+        previous_run_id: null,
         base_date: "2026-09-29",
         aggregation_started_on: "2021-09-29",
         frequency_started_on: "2025-09-29",
@@ -155,10 +179,18 @@ describe("RfCalculationRunDetailDrawer", () => {
         excluded_count: 8,
         unmatched_count: 2,
         rank_counts: [],
+        preview: {
+          changed_count: 0,
+          unchanged_count: 0,
+          excluded_count: 8,
+          rank_transitions: [],
+          rank_comparisons: [],
+        },
         started_by_staff: null,
         current: false,
         restorable: false,
       },
+
       isLoading: false,
       errorMessage: null,
     });
@@ -202,6 +234,7 @@ describe("RfCalculationRunDetailDrawer", () => {
     mocks.useRfCalculationRunDetail.mockReturnValue({
       calculationRun: {
         id: 20,
+        previous_run_id: null,
         base_date: "2026-09-29",
         aggregation_started_on: "2021-09-29",
         frequency_started_on: "2025-09-29",
@@ -210,10 +243,18 @@ describe("RfCalculationRunDetailDrawer", () => {
         excluded_count: 8,
         unmatched_count: 2,
         rank_counts: [],
+        preview: {
+          changed_count: 0,
+          unchanged_count: 0,
+          excluded_count: 8,
+          rank_transitions: [],
+          rank_comparisons: [],
+        },
         started_by_staff: null,
         current: false,
         restorable: false,
       },
+
       isLoading: false,
       errorMessage: null,
     });
@@ -232,4 +273,6 @@ describe("RfCalculationRunDetailDrawer", () => {
       }),
     ).not.toBeInTheDocument();
   });
+
+
 });
