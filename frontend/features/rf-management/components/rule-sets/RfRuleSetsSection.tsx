@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,7 +26,6 @@ import {
   deleteRfRuleSet,
 } from "../../api/rf-management-api";
 
-import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
 import { useRfRuleSets } from "../../hooks/useRfRuleSets";
 import type { RfRuleSet, RfRuleSetStatus } from "../../types";
 import {
@@ -35,6 +33,7 @@ import {
   buildUpdateRfRuleSetInput,
   type RfRuleSetBasicValues,
 } from "../../utils/rf-rule-set-input";
+import { RfRuleSetStatusBadge } from "../status/RfStatusBadge";
 import { RfRuleSetBasicFormDialog } from "./RfRuleSetBasicFormDialog";
 
 import {
@@ -439,9 +438,7 @@ export function RfRuleSetsSection({
                     </p>
                   </div>
 
-                  <Badge variant="outline">
-                    {RF_RULE_SET_STATUS_LABELS[ruleSet.status]}
-                  </Badge>
+                  <RfRuleSetStatusBadge status={ruleSet.status} />
                 </div>
               </CardHeader>
 

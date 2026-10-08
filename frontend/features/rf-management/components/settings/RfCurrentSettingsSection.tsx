@@ -1,13 +1,16 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
 import { useRfSettings } from "../../hooks/useRfSettings";
 import { previewValues } from "../rule-sets/RfRuleSetDetailDialog";
 import { RfRuleSetPreviewTable } from "../rule-sets/RfRuleSetPreviewTable";
+import {
+  RfCalculationStatusBadge,
+  RfCurrentStatusBadge,
+  RfRuleSetStatusBadge,
+} from "../status/RfStatusBadge";
 
 function formatDate(date: string) {
   return date.replaceAll("-", "/");
@@ -91,9 +94,10 @@ export function RfCurrentSettingsSection({
               )}
             </div>
             {calculationRun && (
-              <Badge>
-                {RF_CALCULATION_STATUS_LABELS[calculationRun.status]}
-              </Badge>
+              <div className="flex flex-wrap gap-2">
+                <RfCalculationStatusBadge status={calculationRun.status} />
+                <RfCurrentStatusBadge />
+              </div>
             )}
           </div>
         </CardHeader>
@@ -172,7 +176,7 @@ export function RfCurrentSettingsSection({
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle>次回計算に使用するルール</CardTitle>
-            {publishedRuleSet && <Badge variant="outline">公開中</Badge>}
+            {publishedRuleSet && <RfRuleSetStatusBadge status="published" />}
           </div>
         </CardHeader>
         <CardContent>

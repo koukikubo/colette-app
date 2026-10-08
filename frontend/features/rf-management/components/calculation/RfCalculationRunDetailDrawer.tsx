@@ -15,8 +15,11 @@ import {
 } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
 import { useRfCalculationRunDetail } from "../../hooks/useRfCalculationRunDetail";
+import {
+  RfCalculationStatusBadge,
+  RfCurrentStatusBadge,
+} from "../status/RfStatusBadge";
 
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 import { ApiClientError } from "@/lib/api/api-client";
@@ -193,11 +196,11 @@ export function RfCalculationRunDetailDrawer({
                     </h3>
 
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        {RF_CALCULATION_STATUS_LABELS[calculationRun.status]}
-                      </Badge>
+                      <RfCalculationStatusBadge
+                        status={calculationRun.status}
+                      />
 
-                      {calculationRun.current && <Badge>現在適用中</Badge>}
+                      {calculationRun.current && <RfCurrentStatusBadge />}
                     </div>
                   </div>
 

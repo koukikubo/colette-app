@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
 import type { RfRankMappingInput, RfRankOption, RfRuleSet } from "../../types";
+import { RfRuleSetStatusBadge } from "../status/RfStatusBadge";
 import { RfRuleSetPreviewTable } from "./RfRuleSetPreviewTable";
 
 type RfRuleSetDetailDialogProps = {
@@ -109,9 +108,7 @@ export function RfRuleSetDetailDialog({
                   バージョン {ruleSet.version}
                 </p>
               </div>
-              <Badge variant="outline">
-                {RF_RULE_SET_STATUS_LABELS[ruleSet.status]}
-              </Badge>
+              <RfRuleSetStatusBadge status={ruleSet.status} />
 
               <dl className="grid w-full gap-4 sm:grid-cols-2">
                 <div>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -14,7 +13,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePagination } from "@/hooks/usePagination";
 
 import { useRfCalculationRuns } from "../../hooks/useRfCalculationRuns";
-import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
+import {
+  RfCalculationStatusBadge,
+  RfCurrentStatusBadge,
+} from "../status/RfStatusBadge";
 
 import {
   CheckCircle2Icon,
@@ -214,11 +216,9 @@ export function RfCalculationHistorySection({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                    <Badge variant="outline">
-                      {RF_CALCULATION_STATUS_LABELS[calculationRun.status]}
-                    </Badge>
+                    <RfCalculationStatusBadge status={calculationRun.status} />
 
-                    {calculationRun.current && <Badge>現在適用中</Badge>}
+                    {calculationRun.current && <RfCurrentStatusBadge />}
 
                     <Button
                       type="button"
