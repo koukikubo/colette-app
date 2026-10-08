@@ -25,15 +25,16 @@ export function useRfCalculationRuns({
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [pollingKey, setPollingKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     let pollingTimer: ReturnType<typeof setTimeout> | undefined;
 
-    async function loadCalculationRuns() {
-      setIsLoading(true);
-      setErrorMessage(null);
+    async function loadCalculationRuns(isBackgroundRefresh = false) {
+      if (!isBackgroundRefresh) {
+        setIsLoading(true);
+        setErrorMessage(null);
+      }
 
       try {
         const response = await fetchRfCalculationRuns(
@@ -55,11 +56,19 @@ export function useRfCalculationRuns({
 
         if (hasRunningCalculation && !controller.signal.aborted) {
           pollingTimer = setTimeout(() => {
-            setPollingKey((current) => current + 1);
+            void loadCalculationRuns(true);
           }, 2_000);
         }
       } catch (error) {
         if (controller.signal.aborted) {
+          return;
+        }
+
+        if (isBackgroundRefresh) {
+          pollingTimer = setTimeout(() => {
+            void loadCalculationRuns(true);
+          }, 2_000);
+
           return;
         }
 
@@ -71,7 +80,7 @@ export function useRfCalculationRuns({
             : "RF計算履歴を取得できませんでした。",
         );
       } finally {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && !isBackgroundRefresh) {
           setIsLoading(false);
         }
       }
@@ -86,7 +95,7 @@ export function useRfCalculationRuns({
         clearTimeout(pollingTimer);
       }
     };
-  }, [page, perPage, reloadKey, pollingKey]);
+  }, [page, perPage, reloadKey]);
 
   return {
     calculationRuns,
