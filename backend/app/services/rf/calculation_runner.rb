@@ -11,10 +11,18 @@ module Rf
     end
 
     def call
-      calculation_run.update!(
-        status: "processing",
-        started_at: Time.current
-      )
+      claimed = calculation_run.with_lock do
+        next false unless calculation_run.status == "pending"
+
+        calculation_run.update!(
+          status: "processing",
+          started_at: Time.current
+        )
+
+        true
+      end
+
+      return calculation_run unless claimed
 
       calculate_all_customers!(calculation_run)
 
@@ -103,6 +111,9 @@ module Rf
     def mark_as_failed(calculation_run, error)
       return if calculation_run.blank?
       return unless calculation_run.persisted?
+
+      calculation_run.reload
+      return unless calculation_run.status == "processing"
 
       calculation_run.update!(
         status: "failed",

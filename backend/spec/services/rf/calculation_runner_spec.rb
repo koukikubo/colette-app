@@ -172,4 +172,48 @@ RSpec.describe Rf::CalculationRunner do
       )
       .once
   end
+
+  it "計算完了済みの履歴は再計算しない" do
+    create(:customer)
+
+    calculation_run.update!(
+      status: "completed",
+      completed_at: Time.current
+    )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+
+    result =
+      described_class.call(
+        calculation_run: calculation_run
+      )
+
+    expect(result).to eq(calculation_run)
+    expect(result.reload.status).to eq("completed")
+    expect(result.started_at).to be_nil
+    expect(result.customer_rf_rank_results).to be_empty
+
+    expect(Rf::CustomerRankCalculator)
+      .not_to have_received(:call)
+  end
+
+  it "別のジョブが処理中の履歴は再計算しない" do
+    calculation_run.update!(
+      status: "processing",
+      started_at: 1.minute.ago
+    )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+
+    described_class.call(
+      calculation_run: calculation_run
+    )
+
+    expect(calculation_run.reload.status).to eq("processing")
+
+    expect(Rf::CustomerRankCalculator)
+      .not_to have_received(:call)
+  end
 end
