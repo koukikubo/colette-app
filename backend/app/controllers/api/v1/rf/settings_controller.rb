@@ -4,6 +4,8 @@ class Api::V1::Rf::SettingsController < Api::V1::BaseController
       data: {
         published_rule_set:
           serialize_rule_set(published_rule_set),
+        applied_rule_set:
+          serialize_rule_set(applied_rule_set),
         current_calculation_run:
           serialize_calculation_run(
             current_calculation_run
@@ -37,6 +39,19 @@ class Api::V1::Rf::SettingsController < Api::V1::BaseController
         )
         .first
         &.current_calculation_run
+  end
+
+  def applied_rule_set
+    return nil if current_calculation_run.nil?
+
+    @applied_rule_set ||=
+      RfRuleSet
+        .includes(
+          :recency_rules,
+          :frequency_rules,
+          rank_mappings: :rf_rank
+        )
+        .find(current_calculation_run.rf_rule_set_id)
   end
 
   def serialize_rule_set(rule_set)

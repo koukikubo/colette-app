@@ -6,18 +6,20 @@ import { ApiClientError } from "@/lib/api/api-client";
 import type { Pagination } from "@/lib/api/pagination";
 
 import { fetchRfRuleSets } from "../api/rf-management-api";
-import type { RfRuleSetSummary } from "../types";
+import type { RfRuleSetStatus, RfRuleSetSummary } from "../types";
 
 type UseRfRuleSetsOptions = {
   page?: number;
   perPage?: number;
   reloadKey?: number;
+  status?: RfRuleSetStatus;
 };
 
 export function useRfRuleSets({
   page = 1,
   perPage = 10,
   reloadKey = 0,
+  status,
 }: UseRfRuleSetsOptions = {}) {
   const [ruleSets, setRuleSets] = useState<RfRuleSetSummary[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -36,6 +38,7 @@ export function useRfRuleSets({
           {
             page,
             per_page: perPage,
+            ...(status ? { status } : {}),
           },
           controller.signal,
         );
@@ -64,7 +67,7 @@ export function useRfRuleSets({
     void loadRuleSets();
 
     return () => controller.abort();
-  }, [page, perPage, reloadKey]);
+  }, [page, perPage, reloadKey, status]);
 
   return {
     ruleSets,

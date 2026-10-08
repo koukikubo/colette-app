@@ -61,6 +61,10 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
       ).to eq(calculation_run.id)
 
       expect(
+        data.dig("applied_rule_set", "id")
+      ).to eq(rule_set.id)
+
+      expect(
         data.dig(
           "current_calculation_run",
           "excluded_count"
@@ -78,6 +82,13 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
         response_body.dig(
           "data",
           "current_calculation_run"
+        )
+      ).to be_nil
+
+      expect(
+        response_body.dig(
+          "data",
+          "applied_rule_set"
         )
       ).to be_nil
     end

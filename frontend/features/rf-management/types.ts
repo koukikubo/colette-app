@@ -108,7 +108,14 @@ export type RfCalculationPreview = {
   unchanged_count: number;
   excluded_count: number;
   rank_transitions: RfRankTransition[];
+  rank_comparisons: RfRankComparison[];
 };
+
+export type RfCalculationRunInput = {
+  rf_rule_set_id: number;
+  base_date: string;
+};
+
 // RF計算結果の基本情報と集計結果。
 // GET /api/v1/rf_settingsのcurrent_calculation_runに対応する。
 export type RfCalculationRun = {
@@ -130,6 +137,7 @@ export type RfCalculationRun = {
   started_by_staff: RfStaffSummary | null;
   created_at: string;
 };
+
 // 計算履歴一覧の1行分。
 // GET /api/v1/rf_calculation_runsのcalculation_runs要素に対応する。
 export type RfCalculationRunSummary = {
@@ -183,9 +191,14 @@ export type RfListParams = {
   page?: number;
   per_page?: number;
 };
+
+export type RfRuleSetListParams = RfListParams & {
+  status?: RfRuleSetStatus;
+};
 // GET /api/v1/rf_settingsのレスポンス。
 export type RfSettingsResponse = ApiSuccessResponse<{
   published_rule_set: RfRuleSet | null;
+  applied_rule_set: RfRuleSet | null;
   current_calculation_run: RfCalculationRun | null;
 }>;
 // GET /api/v1/rf_rule_setsのレスポンス。
@@ -206,6 +219,21 @@ export type RfCalculationRunListResponse = ApiSuccessResponse<{
 export type RfCalculationRunResponse = ApiSuccessResponse<{
   calculation_run: RfCalculationRunDetail;
 }>;
+
+// POST /api/v1/rf_calculation_runsのレスポンス。
+export type RfCalculationRunCreateResponse = ApiSuccessResponse<{
+  calculation_run: RfCalculationRun;
+}>;
+
+// PATCH /api/v1/rf_calculation_runs/:id/activateのレスポンス。
+export type RfCalculationRunActivationResponse = ApiSuccessResponse<{
+  calculation_run: RfCalculationRun;
+  current_calculation_run_id: number;
+}>;
+
+export type RfCalculationRunRestoreResponse =
+  RfCalculationRunActivationResponse;
+
 // GET /api/v1/rf_calculation_runs/:id/resultsのレスポンス。
 export type RfCustomerRankResultListResponse = ApiSuccessResponse<{
   results: RfCustomerRankResult[];
@@ -254,3 +282,10 @@ export type RfRuleSetValidationResponse = ApiSuccessResponse<{
 // RFランク対応表の選択肢。
 // 基本コードマスタの有効なRFランクから生成する。
 export type RfRankOption = Pick<RfRank, "id" | "label">;
+
+// RF計算結果のランク比較情報。
+export type RfRankComparison = RfRank & {
+  before_count: number;
+  after_count: number;
+  delta: number;
+};

@@ -20,6 +20,19 @@ RSpec.describe Rf::CalculationRunner do
     )
   end
 
+  let(:calculation_run) do
+    RfCalculationRun.create!(
+      rf_rule_set: rule_set,
+      started_by_staff: staff,
+      base_date: base_date,
+      aggregation_started_on:
+        base_date.advance(months: -60),
+      frequency_started_on:
+        base_date.advance(months: -12),
+      status: "pending"
+    )
+  end
+
   let(:rf_rank) do
     master = create(
       :standard_master,
@@ -50,19 +63,6 @@ RSpec.describe Rf::CalculationRunner do
     )
   end
 
-  let(:valid_rule_result) do
-    Rf::RuleSetValidator::Result.new(
-      errors: [],
-      warnings: []
-    )
-  end
-
-  before do
-    allow(Rf::RuleSetValidator)
-      .to receive(:call)
-      .and_return(valid_rule_result)
-  end
-
   it "表示中の全顧客について計算結果を保存する" do
     first_customer = create(:customer)
     second_customer = create(:customer)
@@ -80,12 +80,11 @@ RSpec.describe Rf::CalculationRunner do
       .to receive(:call)
       .and_return(calculation_result)
 
-    calculation_run =
-      described_class.call(
-        rule_set: rule_set,
-        base_date: base_date,
-        started_by_staff: staff
-      )
+    described_class.call(
+      calculation_run: calculation_run
+    )
+
+    calculation_run.reload
 
     expect(calculation_run.status).to eq("completed")
     expect(calculation_run.customer_count).to eq(2)
@@ -109,16 +108,14 @@ RSpec.describe Rf::CalculationRunner do
 
     expect do
       described_class.call(
-        rule_set: rule_set,
-        base_date: base_date,
-        started_by_staff: staff
+        calculation_run: calculation_run
       )
     end.to raise_error(
       StandardError,
       "計算に失敗しました"
     )
 
-    calculation_run = RfCalculationRun.last
+    calculation_run.reload
 
     expect(calculation_run.status).to eq("failed")
     expect(calculation_run.failure_message)
@@ -127,23 +124,6 @@ RSpec.describe Rf::CalculationRunner do
     expect(
       calculation_run.customer_rf_rank_results
     ).to be_empty
-  end
-
-  it "公開前のRFルールでは計算を開始しない" do
-    rule_set.update!(status: "draft")
-
-    expect do
-      described_class.call(
-        rule_set: rule_set,
-        base_date: base_date,
-        started_by_staff: staff
-      )
-    end.to raise_error(
-      Rf::CalculationRunner::InvalidRuleSetError,
-      "公開済みのRFルールを指定してください"
-    )
-
-    expect(RfCalculationRun.count).to eq(0)
   end
 
   it "顧客ランクRの顧客をRF計算対象外にする" do
@@ -166,15 +146,13 @@ RSpec.describe Rf::CalculationRunner do
       .to receive(:call)
       .and_return(calculation_result)
 
-    calculation_run =
+    result =
       described_class.call(
-        rule_set: rule_set,
-        base_date: base_date,
-        started_by_staff: staff
+        calculation_run: calculation_run
       )
 
     excluded_result =
-      calculation_run
+      result
         .customer_rf_rank_results
         .find_by!(customer: excluded_customer)
 
@@ -193,5 +171,49 @@ RSpec.describe Rf::CalculationRunner do
         base_date: base_date
       )
       .once
+  end
+
+  it "計算完了済みの履歴は再計算しない" do
+    create(:customer)
+
+    calculation_run.update!(
+      status: "completed",
+      completed_at: Time.current
+    )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+
+    result =
+      described_class.call(
+        calculation_run: calculation_run
+      )
+
+    expect(result).to eq(calculation_run)
+    expect(result.reload.status).to eq("completed")
+    expect(result.started_at).to be_nil
+    expect(result.customer_rf_rank_results).to be_empty
+
+    expect(Rf::CustomerRankCalculator)
+      .not_to have_received(:call)
+  end
+
+  it "別のジョブが処理中の履歴は再計算しない" do
+    calculation_run.update!(
+      status: "processing",
+      started_at: 1.minute.ago
+    )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+
+    described_class.call(
+      calculation_run: calculation_run
+    )
+
+    expect(calculation_run.reload.status).to eq("processing")
+
+    expect(Rf::CustomerRankCalculator)
+      .not_to have_received(:call)
   end
 end

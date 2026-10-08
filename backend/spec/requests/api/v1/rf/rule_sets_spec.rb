@@ -90,6 +90,50 @@ RSpec.describe "Api::V1::RfRuleSets",
         )
       ).to eq(2)
     end
+
+    it "指定した状態のRFルールだけを返す" do
+      login!
+
+      draft_rule_set =
+        create_rule_set(
+          name: "編集中RFルール",
+          version: 2,
+          status: "draft"
+        )
+
+      create_rule_set(
+        name: "アーカイブ済みRFルール",
+        version: 1,
+        status: "archived"
+      )
+
+      get(
+        "/api/v1/rf_rule_sets",
+        params: {
+          page: 1,
+          per_page: 20,
+          status: "draft"
+        },
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+      expect(
+        response_body.dig("data", "rule_sets").pluck("id")
+      ).to eq([ draft_rule_set.id ])
+    end
+
+    it "不正な状態を指定した場合は400を返す" do
+      login!
+
+      get(
+        "/api/v1/rf_rule_sets",
+        params: { status: "unknown" },
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:bad_request)
+    end
   end
 
   describe "GET /api/v1/rf_rule_sets/:id" do

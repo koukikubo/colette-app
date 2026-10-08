@@ -5,6 +5,7 @@ module Rf
       :unchanged_count,
       :excluded_count,
       :rank_transitions,
+      :rank_comparisons,
       keyword_init: true
     )
 
@@ -12,6 +13,13 @@ module Rf
       :from_rf_rank,
       :to_rf_rank,
       :count,
+      keyword_init: true
+    )
+
+    RankComparison = Struct.new(
+      :rf_rank,
+      :before_count,
+      :after_count,
       keyword_init: true
     )
 
@@ -62,7 +70,8 @@ module Rf
         unchanged_count: unchanged_count,
         excluded_count: excluded_count,
         rank_transitions:
-          sorted_transitions(transition_counts)
+          sorted_transitions(transition_counts),
+        rank_comparisons: build_rank_comparisons
       )
     end
 
@@ -129,6 +138,39 @@ module Rf
           transition.to_rf_rank.position
         ]
       end
+    end
+
+    def build_rank_comparisons
+      before_counts =
+        rank_counts_for(calculation_run.previous_run)
+
+      after_counts =
+        rank_counts_for(calculation_run)
+
+      rank_ids =
+        (before_counts.keys + after_counts.keys).uniq
+
+      StandardListMaster
+        .where(id: rank_ids)
+        .order(:position, :id)
+        .map do |rank|
+          RankComparison.new(
+            rf_rank: rank,
+            before_count: before_counts.fetch(rank.id, 0),
+            after_count: after_counts.fetch(rank.id, 0)
+          )
+        end
+    end
+
+    def rank_counts_for(run)
+      return {} if run.nil?
+
+      run
+        .customer_rf_rank_results
+        .where(exclusion_reason: nil)
+        .where.not(rf_rank_id: nil)
+        .group(:rf_rank_id)
+        .count
     end
   end
 end

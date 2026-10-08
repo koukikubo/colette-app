@@ -1,30 +1,28 @@
 module Rf
   class CalculationRunner
-    class InvalidRuleSetError < StandardError; end
-
-    def self.call(rule_set:, base_date:, started_by_staff: nil)
+    def self.call(calculation_run:)
       new(
-        rule_set: rule_set,
-        base_date: base_date,
-        started_by_staff: started_by_staff
+        calculation_run: calculation_run
       ).call
     end
 
-    def initialize(rule_set:, base_date:, started_by_staff:)
-      @rule_set = rule_set
-      @base_date = base_date.to_date
-      @started_by_staff = started_by_staff
+    def initialize(calculation_run:)
+      @calculation_run = calculation_run
     end
 
     def call
-      validate_rule_set!
+      claimed = calculation_run.with_lock do
+        next false unless calculation_run.status == "pending"
 
-      calculation_run = create_calculation_run!
+        calculation_run.update!(
+          status: "processing",
+          started_at: Time.current
+        )
 
-      calculation_run.update!(
-        status: "processing",
-        started_at: Time.current
-      )
+        true
+      end
+
+      return calculation_run unless claimed
 
       calculate_all_customers!(calculation_run)
 
@@ -32,44 +30,17 @@ module Rf
     rescue StandardError => error
       mark_as_failed(calculation_run, error)
       raise
-    end
+  end
 
     private
+    attr_reader :calculation_run
 
-    attr_reader :rule_set, :base_date, :started_by_staff
-
-    def validate_rule_set!
-      unless rule_set.status == "published"
-        raise InvalidRuleSetError,
-              "公開済みのRFルールを指定してください"
-      end
-
-      validation_result =
-        Rf::RuleSetValidator.call(rule_set)
-
-      return if validation_result.valid?
-
-      messages =
-        validation_result
-          .errors
-          .map { |error| error[:message] }
-
-      raise InvalidRuleSetError, messages.join(" / ")
+    def rule_set
+      calculation_run.rf_rule_set
     end
 
-    def create_calculation_run!
-      RfCalculationRun.create!(
-        rf_rule_set: rule_set,
-        previous_run: current_calculation_run,
-        started_by_staff: started_by_staff,
-        base_date: base_date,
-        aggregation_started_on: base_date.advance(
-          months: -rule_set.aggregation_months
-        ),
-        frequency_started_on: base_date.advance(
-          months: -rule_set.frequency_window_months
-        )
-      )
+    def base_date
+      calculation_run.base_date
     end
 
     def calculate_all_customers!(calculation_run)
@@ -137,13 +108,12 @@ module Rf
         .where(hidden_at: nil)
     end
 
-    def current_calculation_run
-      RfSetting.first&.current_calculation_run
-    end
-
     def mark_as_failed(calculation_run, error)
       return if calculation_run.blank?
       return unless calculation_run.persisted?
+
+      calculation_run.reload
+      return unless calculation_run.status == "processing"
 
       calculation_run.update!(
         status: "failed",

@@ -5,8 +5,8 @@ import { RfRuleSetDraftEditor } from "./RfRuleSetDraftEditor";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
 
-import { RF_RULE_SET_STATUS_LABELS } from "../../constants";
 import { useRfRuleSetDetail } from "../../hooks/useRfRuleSetDetail";
+import { RfRuleSetStatusBadge } from "../status/RfStatusBadge";
 
 type RfRuleSetEditorPageProps = {
   ruleSetId: number;
@@ -96,9 +96,7 @@ export function RfRuleSetEditorPage({ ruleSetId }: RfRuleSetEditorPageProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline">
-            {RF_RULE_SET_STATUS_LABELS[ruleSet.status]}
-          </Badge>
+          <RfRuleSetStatusBadge status={ruleSet.status} />
 
           <Badge variant="secondary">バージョン {ruleSet.version}</Badge>
         </div>

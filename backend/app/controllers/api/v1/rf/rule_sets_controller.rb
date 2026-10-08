@@ -16,13 +16,27 @@ class Api::V1::Rf::RuleSetsController <
     pagination = pagination_params
     return unless pagination
 
+    rule_sets =
+      RfRuleSet
+        .includes(
+          created_by_staff: :staff_master
+        )
+
+    if params[:status].present?
+      unless RfRuleSet::STATUSES.include?(params[:status])
+        return render_error(
+          message: "RFルールの状態が不正です",
+          errors: [ "statusが不正です" ],
+          status: :bad_request
+        )
+      end
+
+      rule_sets = rule_sets.where(status: params[:status])
+    end
+
     paginated_rule_sets =
       paginate(
-        RfRuleSet
-          .includes(
-            created_by_staff: :staff_master
-          )
-          .order(version: :desc),
+        rule_sets.order(version: :desc),
         **pagination
       )
 

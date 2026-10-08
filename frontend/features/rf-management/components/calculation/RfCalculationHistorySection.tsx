@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -14,18 +13,33 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePagination } from "@/hooks/usePagination";
 
 import { useRfCalculationRuns } from "../../hooks/useRfCalculationRuns";
-import { RF_CALCULATION_STATUS_LABELS } from "../../constants";
+import {
+  RfCalculationStatusBadge,
+  RfCurrentStatusBadge,
+} from "../status/RfStatusBadge";
 
-import { ChevronRightIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  ChevronRightIcon,
+  LoaderCircleIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RfCalculationRunDetailDrawer } from "./RfCalculationRunDetailDrawer";
+
+type RfCalculationHistorySectionProps = {
+  reloadKey?: number;
+  onApplied?: () => void;
+};
 
 function formatDate(date: string) {
   return date.replaceAll("-", "/");
 }
 
-export function RfCalculationHistorySection() {
+export function RfCalculationHistorySection({
+  reloadKey = 0,
+  onApplied,
+}: RfCalculationHistorySectionProps) {
   const [selectedCalculationRunId, setSelectedCalculationRunId] = useState<
     number | null
   >(null);
@@ -38,6 +52,7 @@ export function RfCalculationHistorySection() {
     useRfCalculationRuns({
       page: currentPage,
       perPage: 10,
+      reloadKey,
     });
 
   if (isLoading) {
@@ -78,14 +93,75 @@ export function RfCalculationHistorySection() {
     );
   }
 
+  const currentRun = calculationRuns.find((run) => run.current);
+  const runningRun = calculationRuns.find(
+    (run) => run.status === "pending" || run.status === "processing",
+  );
+  const completedRun = calculationRuns.find(
+    (run) =>
+      run.status === "completed" &&
+      !run.current &&
+      !run.restorable &&
+      (currentRun
+        ? run.previous_run_id === currentRun.id
+        : run.previous_run_id === null),
+  );
+  const attentionRun =
+    currentPage === 1 ? (runningRun ?? completedRun) : undefined;
+
   return (
-    <section aria-labelledby="rf-calculation-history-heading">
-      <h2
-        id="rf-calculation-history-heading"
-        className="mb-3 text-lg font-semibold"
-      >
+    <section
+      aria-labelledby="rf-calculation-history-heading"
+      className="space-y-4"
+    >
+      <h2 id="rf-calculation-history-heading" className="text-lg font-semibold">
         計算履歴
       </h2>
+
+      {attentionRun && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              {attentionRun.status === "completed" ? (
+                <CheckCircle2Icon
+                  className="mt-0.5 size-5 text-green-600"
+                  aria-hidden="true"
+                />
+              ) : (
+                <LoaderCircleIcon
+                  className="mt-0.5 size-5 animate-spin text-primary"
+                  aria-hidden="true"
+                />
+              )}
+              <div>
+                <p className="font-semibold">
+                  {attentionRun.status === "completed"
+                    ? "RF計算が完了しました"
+                    : "RF計算を実行しています"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {attentionRun.rule_set.name}・計算基準日{" "}
+                  {formatDate(attentionRun.base_date)}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {attentionRun.status === "completed"
+                    ? "変更内容を確認して、顧客のRFランクへ適用してください。"
+                    : "画面を離れても計算は継続します。再表示すると最新状態を確認できます。"}
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setSelectedCalculationRunId(attentionRun.id)}
+            >
+              {attentionRun.status === "completed"
+                ? "結果を確認して適用"
+                : "進捗を確認"}
+              <ChevronRightIcon aria-hidden="true" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="border-b">
@@ -140,11 +216,9 @@ export function RfCalculationHistorySection() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                    <Badge variant="outline">
-                      {RF_CALCULATION_STATUS_LABELS[calculationRun.status]}
-                    </Badge>
+                    <RfCalculationStatusBadge status={calculationRun.status} />
 
-                    {calculationRun.current && <Badge>現在適用中</Badge>}
+                    {calculationRun.current && <RfCurrentStatusBadge />}
 
                     <Button
                       type="button"
@@ -181,6 +255,7 @@ export function RfCalculationHistorySection() {
       <RfCalculationRunDetailDrawer
         open={selectedCalculationRunId !== null}
         calculationRunId={selectedCalculationRunId}
+        onApplied={onApplied}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setSelectedCalculationRunId(null);

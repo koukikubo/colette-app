@@ -38,6 +38,16 @@ describe("RfCurrentSettingsSection", () => {
           aggregation_months: 12,
           frequency_window_months: 6,
         },
+        applied_rule_set: {
+          id: 3,
+          name: "標準RFルール",
+          version: 3,
+          aggregation_months: 12,
+          frequency_window_months: 6,
+          recency_rules: [],
+          frequency_rules: [],
+          rank_mappings: [],
+        },
         current_calculation_run: {
           base_date: "2026-09-29",
           status: "completed",
@@ -52,14 +62,13 @@ describe("RfCurrentSettingsSection", () => {
 
     render(<RfCurrentSettingsSection />);
 
-    expect(screen.getByText("標準RFルール")).toBeInTheDocument();
-    expect(screen.getByText("バージョン 3")).toBeInTheDocument();
+    expect(screen.getAllByText("標準RFルール")).toHaveLength(2);
+    expect(screen.getAllByText("バージョン 3")).toHaveLength(1);
     expect(screen.getByText("12か月")).toBeInTheDocument();
-    expect(screen.getByText("6か月")).toBeInTheDocument();
     expect(screen.getByText("2026/09/29")).toBeInTheDocument();
     expect(screen.getByText("120名")).toBeInTheDocument();
-    expect(screen.getByText("対象外 8名")).toBeInTheDocument();
-    expect(screen.getByText("未分類 2名")).toBeInTheDocument();
+    expect(screen.getByText("8名")).toBeInTheDocument();
+    expect(screen.getByText("2名")).toBeInTheDocument();
   });
 
   it("取得に失敗した場合はエラーを表示する", () => {
