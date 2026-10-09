@@ -233,42 +233,49 @@ standard_master_seeds = [
         code: "A",
         label: "Aランク",
         description: "来店時期・回数ともに高い顧客",
+        display_color: "#059669",
         position: 1
       },
       {
         code: "B",
         label: "Bランク",
         description: "継続的な来店がある顧客",
+        B: "#0D9488",
         position: 2
       },
       {
         code: "C",
         label: "Cランク",
         description: "標準的な来店実績の顧客",
+        C: "#2563EB",
         position: 3
       },
       {
         code: "D",
         label: "Dランク",
         description: "一定期間来店がない顧客",
+        D: "#D97706",
         position: 4
       },
       {
         code: "E",
         label: "Eランク",
         description: "来店回数が少ない新規・低頻度顧客",
+        E: "#EA580C",
         position: 5
       },
       {
         code: "Z",
         label: "Zランク",
         description: "長期間来店がない休眠顧客",
+        Z: "#64748B",
         position: 6
       },
       {
         code: "N",
         label: "未分類",
         description: "RFランクの判定に必要な来店実績がない顧客",
+        N: "#94A3B8",
         position: 7
       }
     ]
@@ -326,6 +333,7 @@ standard_master_seeds.each do |master_seed|
       code: item_seed[:code],
       label: item_seed[:label],
       description: item_seed[:description],
+      display_color: item_seed[:display_color],
       active: true,
       position: item_seed[:position]
     )

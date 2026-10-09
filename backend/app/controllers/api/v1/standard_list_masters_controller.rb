@@ -62,6 +62,17 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     )
   end
 
+  def standard_list_master_params
+    params.expect(
+      standard_list_master: %i[
+        label
+        description
+        active
+        display_color
+      ]
+    )
+  end
+
   private
 
   def set_standard_master
@@ -75,6 +86,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
         label
         description
         active
+        display_color
       ]
       )
   end

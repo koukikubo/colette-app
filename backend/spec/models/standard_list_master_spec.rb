@@ -126,5 +126,35 @@ RSpec.describe StandardListMaster, type: :model do
         ]
       )
     end
+
+    it "表示色が#RRGGBB形式なら有効になる" do
+      standard_list_master.display_color = "#12ABEF"
+
+      expect(standard_list_master).to be_valid
+    end
+
+    it "表示色がnilでも有効になる" do
+      standard_list_master.display_color = nil
+
+      expect(standard_list_master).to be_valid
+    end
+
+    it "表示色が#RRGGBB形式でなければ無効になる" do
+      invalid_colors = [
+        "red",
+        "#FFF",
+        "059669",
+        "#GGGGGG"
+      ]
+
+      invalid_colors.each do |color|
+        standard_list_master.display_color = color
+
+        expect(standard_list_master).to be_invalid
+        expect(
+          standard_list_master.errors[:display_color]
+        ).to be_present
+      end
+    end
   end
 end

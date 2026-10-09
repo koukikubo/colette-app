@@ -178,6 +178,7 @@ RSpec.describe "Api::V1::RfRuleSets",
           standard_master: rf_rank_master,
           code: "A",
           label: "Aランク",
+          display_color: "#059669",
           position: 1
         )
 
@@ -233,7 +234,8 @@ RSpec.describe "Api::V1::RfRuleSets",
       ).to include(
         "id" => rf_rank.id,
         "code" => "A",
-        "label" => "Aランク"
+        "label" => "Aランク",
+        "display_color" => "#059669"
       )
     end
 

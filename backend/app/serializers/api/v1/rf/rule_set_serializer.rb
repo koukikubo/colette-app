@@ -73,7 +73,8 @@ class Api::V1::Rf::RuleSetSerializer < ApplicationSerializer
         rf_rank: {
           id: mapping.rf_rank.id,
           code: mapping.rf_rank.code,
-          label: mapping.rf_rank.label
+          label: mapping.rf_rank.label,
+          display_color: mapping.rf_rank.display_color
         }
       }
     end

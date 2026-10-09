@@ -58,6 +58,7 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
         :standard_list_master,
         standard_master: standard_master,
         label: "男性",
+        display_color: "#059669",
         position: 10
       )
     end
@@ -140,6 +141,25 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
       expect(json["status"]).to eq("error")
       expect(json["message"]).to eq("データが見つかりませんでした")
     end
+
+    it "設定された表示色を返す" do
+  get(
+    "/api/v1/standard_masters/#{standard_master.id}/items",
+    headers: json_headers
+  )
+
+  expect(response).to have_http_status(:ok)
+
+  records =
+    json.dig("data", "standard_list_masters")
+
+  first_record =
+    records.find do |record|
+      record["id"] == first_item.id
+    end
+
+  expect(first_record["display_color"]).to eq("#059669")
+end
   end
 
   describe "GET /api/v1/standard_masters/:standard_master_id/items/:id" do
@@ -438,6 +458,62 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
 
       expect(response).to have_http_status(:not_found)
       expect(other_item.reload.label).to eq("予約確定")
+    end
+
+    it "表示色を更新できる" do
+      patch(
+        "/api/v1/standard_masters/" \
+        "#{standard_master.id}/items/" \
+        "#{standard_list_master.id}",
+        params: {
+          standard_list_master: {
+            display_color: "#2563EB"
+          }
+        },
+        headers: csrf_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      expect(
+        standard_list_master.reload.display_color
+      ).to eq("#2563EB")
+
+      expect(
+        json.dig(
+          "data",
+          "standard_list_master",
+          "display_color"
+        )
+      ).to eq("#2563EB")
+    end
+
+    it "不正な表示色の場合は422を返す" do
+      standard_list_master.update!(
+        display_color: "#059669"
+      )
+
+      patch(
+        "/api/v1/standard_masters/" \
+        "#{standard_master.id}/items/" \
+        "#{standard_list_master.id}",
+        params: {
+          standard_list_master: {
+            display_color: "blue"
+          }
+        },
+        headers: csrf_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(
+        :unprocessable_content
+      )
+
+      expect(
+        standard_list_master.reload.display_color
+      ).to eq("#059669")
     end
   end
 end
