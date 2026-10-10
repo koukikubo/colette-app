@@ -51,6 +51,18 @@ vi.mock("../../components/calculation/RfCalculationExecutionSection", () => ({
   ),
 }));
 
+vi.mock("../../components/settings/RfRankColorSettingsSection", () => ({
+  RfRankColorSettingsSection: ({
+    onColorsChanged,
+  }: {
+    onColorsChanged: () => void;
+  }) => (
+    <button type="button" onClick={onColorsChanged}>
+      RFランクカラーを更新
+    </button>
+  ),
+}));
+
 describe("RfManagementPage", () => {
   it("統一RFマスタ画面の見出しと説明を表示する", () => {
     render(<RfManagementPage />);
@@ -67,6 +79,9 @@ describe("RfManagementPage", () => {
 
     expect(
       screen.getByRole("button", { name: "RFルールを更新" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "RFランクカラーを更新" }),
     ).toBeInTheDocument();
   });
 
@@ -117,5 +132,17 @@ describe("RfManagementPage", () => {
 
     expect(screen.getByTestId("settings-reload-key")).toHaveTextContent("1");
     expect(screen.getByTestId("calculation-reload-key")).toHaveTextContent("1");
+  });
+
+  it("RFランクカラー更新後に現在設定を再取得させる", async () => {
+    const user = userEvent.setup();
+
+    render(<RfManagementPage />);
+
+    await user.click(
+      screen.getByRole("button", { name: "RFランクカラーを更新" }),
+    );
+
+    expect(screen.getByTestId("settings-reload-key")).toHaveTextContent("1");
   });
 });

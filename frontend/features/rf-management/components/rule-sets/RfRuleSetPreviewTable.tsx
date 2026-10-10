@@ -92,7 +92,20 @@ export function RfRuleSetPreviewTable({
                     return (
                       <TableCell key={frequencyRule.code}>
                         {rank ? (
-                          <Badge variant="secondary">{rank.label}</Badge>
+                          <Badge
+                            variant="secondary"
+                            style={
+                              rank.display_color
+                                ? {
+                                    borderColor: rank.display_color,
+                                    backgroundColor: `${rank.display_color}1A`,
+                                    color: rank.display_color,
+                                  }
+                                : undefined
+                            }
+                          >
+                            {rank.label}
+                          </Badge>
                         ) : (
                           <span className="text-muted-foreground">未設定</span>
                         )}

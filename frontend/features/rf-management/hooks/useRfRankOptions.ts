@@ -44,6 +44,7 @@ export function useRfRankOptions() {
           .map((item) => ({
             id: item.id,
             label: item.label,
+            display_color: item.display_color,
           }));
 
         setLoadResult({

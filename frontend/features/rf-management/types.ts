@@ -31,6 +31,7 @@ export type RfRank = {
   id: number;
   code: string;
   label: string;
+  display_color: string | null;
 };
 
 // Recency条件。最終来店日からの経過日数範囲を表す。
@@ -281,7 +282,9 @@ export type RfRuleSetValidationResponse = ApiSuccessResponse<{
 
 // RFランク対応表の選択肢。
 // 基本コードマスタの有効なRFランクから生成する。
-export type RfRankOption = Pick<RfRank, "id" | "label">;
+export type RfRankOption = Pick<RfRank, "id" | "label"> & {
+  display_color?: string | null;
+};
 
 // RF計算結果のランク比較情報。
 export type RfRankComparison = RfRank & {

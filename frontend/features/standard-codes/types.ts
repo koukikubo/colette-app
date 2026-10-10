@@ -5,6 +5,7 @@ export type StandardListCode = {
   description: string | null;
   position: number;
   active: boolean;
+  display_color: string | null;
 };
 
 export type StandardCode = {
@@ -29,3 +30,8 @@ export type StandardListCodeFormValues = {
   description: string | null;
   active: boolean;
 };
+
+export type StandardListCodeUpdateValues =
+  Partial<StandardListCodeFormValues> & {
+    display_color?: string | null;
+  };

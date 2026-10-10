@@ -234,6 +234,9 @@ describe("RfRuleSetsSection", () => {
         name: "設定内容を見る",
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "アーカイブの説明" }),
+    ).toBeInTheDocument();
   });
 
   it("operatorには作成・編集ボタンを表示しない", () => {

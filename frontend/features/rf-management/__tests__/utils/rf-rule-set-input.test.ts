@@ -65,6 +65,7 @@ describe("RFルール入力変換", () => {
             id: 31,
             code: "A",
             label: "Aランク",
+            display_color: "#059669",
           },
         },
       ],
