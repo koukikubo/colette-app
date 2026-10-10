@@ -1,4 +1,10 @@
 class Api::V1::StandardListMastersController < Api::V1::BaseController
+  before_action :require_owner!,
+                only: %i[
+                  create
+                  update
+                ]
+
   before_action :set_standard_master
 
   def index
@@ -59,17 +65,6 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
             .new(standard_list_master)
             .as_json
       }
-    )
-  end
-
-  def standard_list_master_params
-    params.expect(
-      standard_list_master: %i[
-        label
-        description
-        active
-        display_color
-      ]
     )
   end
 

@@ -143,23 +143,23 @@ RSpec.describe "Api::V1::StandardListMasters", type: :request do
     end
 
     it "設定された表示色を返す" do
-  get(
-    "/api/v1/standard_masters/#{standard_master.id}/items",
-    headers: json_headers
-  )
+      get(
+        "/api/v1/standard_masters/#{standard_master.id}/items",
+        headers: json_headers
+      )
 
-  expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:ok)
 
-  records =
-    json.dig("data", "standard_list_masters")
+      records =
+        json.dig("data", "standard_list_masters")
 
-  first_record =
-    records.find do |record|
-      record["id"] == first_item.id
+      first_record =
+        records.find do |record|
+          record["id"] == first_item.id
+        end
+
+      expect(first_record["display_color"]).to eq("#059669")
     end
-
-  expect(first_record["display_color"]).to eq("#059669")
-end
   end
 
   describe "GET /api/v1/standard_masters/:standard_master_id/items/:id" do
@@ -226,6 +226,15 @@ end
   end
 
   describe "POST /api/v1/standard_masters/:standard_master_id/items" do
+    let(:login_staff) do
+      create(
+        :staff,
+        staff_master: create(:staff_master, role_code: "owner"),
+        password: login_password,
+        password_confirmation: login_password
+      )
+    end
+
     before do
       login!
     end
@@ -339,9 +348,42 @@ end
 
       expect(response).to have_http_status(:not_found)
     end
+
+    context "operatorでログインしている場合" do
+      let(:login_staff) do
+        create(
+          :staff,
+          staff_master: create(:staff_master, role_code: "operator"),
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+
+      it "選択肢コードを登録できない" do
+        expect do
+          post(
+            "/api/v1/standard_masters/#{standard_master.id}/items",
+            params: valid_params,
+            headers: authenticated_headers,
+            as: :json
+          )
+        end.not_to change(StandardListMaster, :count)
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
   end
 
   describe "PATCH /api/v1/standard_masters/:standard_master_id/items/:id" do
+    let(:login_staff) do
+      create(
+        :staff,
+        staff_master: create(:staff_master, role_code: "owner"),
+        password: login_password,
+        password_confirmation: login_password
+      )
+    end
+
     before do
       login!
     end
@@ -514,6 +556,35 @@ end
       expect(
         standard_list_master.reload.display_color
       ).to eq("#059669")
+    end
+
+    context "operatorでログインしている場合" do
+      let(:login_staff) do
+        create(
+          :staff,
+          staff_master: create(:staff_master, role_code: "operator"),
+          password: login_password,
+          password_confirmation: login_password
+        )
+      end
+
+      it "表示色を更新できない" do
+        patch(
+          "/api/v1/standard_masters/" \
+          "#{standard_master.id}/items/" \
+          "#{standard_list_master.id}",
+          params: {
+            standard_list_master: {
+              display_color: "#2563EB"
+            }
+          },
+          headers: authenticated_headers,
+          as: :json
+        )
+
+        expect(response).to have_http_status(:forbidden)
+        expect(standard_list_master.reload.display_color).to be_nil
+      end
     end
   end
 end
