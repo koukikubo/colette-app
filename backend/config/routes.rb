@@ -61,6 +61,11 @@ Rails.application.routes.draw do
           controller: "rf/settings",
           only: :show
 
+      resource :rf_analysis,
+          path: "rf_analysis",
+          controller: "rf/analysis",
+          only: :show
+
       resources :rf_calculation_runs,
           controller: "rf/calculation_runs",
           only: %i[index create show ] do
