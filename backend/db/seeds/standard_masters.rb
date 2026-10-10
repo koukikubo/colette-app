@@ -240,42 +240,42 @@ standard_master_seeds = [
         code: "B",
         label: "Bランク",
         description: "継続的な来店がある顧客",
-        B: "#0D9488",
+        display_color: "#0D9488",
         position: 2
       },
       {
         code: "C",
         label: "Cランク",
         description: "標準的な来店実績の顧客",
-        C: "#2563EB",
+        display_color: "#2563EB",
         position: 3
       },
       {
         code: "D",
         label: "Dランク",
         description: "一定期間来店がない顧客",
-        D: "#D97706",
+        display_color: "#D97706",
         position: 4
       },
       {
         code: "E",
         label: "Eランク",
         description: "来店回数が少ない新規・低頻度顧客",
-        E: "#EA580C",
+        display_color: "#EA580C",
         position: 5
       },
       {
         code: "Z",
         label: "Zランク",
         description: "長期間来店がない休眠顧客",
-        Z: "#64748B",
+        display_color: "#64748B",
         position: 6
       },
       {
         code: "N",
         label: "未分類",
         description: "RFランクの判定に必要な来店実績がない顧客",
-        N: "#94A3B8",
+        display_color: "#94A3B8",
         position: 7
       }
     ]
