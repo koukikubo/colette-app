@@ -3,6 +3,7 @@
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -18,12 +19,15 @@ type NavMainItem = {
 
 type NavMainProps = {
   items: NavMainItem[];
+  title: string;
 };
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({ items, title }: NavMainProps) {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
+        <SidebarGroupLabel>{title}</SidebarGroupLabel>
+
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.url}>
