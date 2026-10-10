@@ -53,6 +53,7 @@ export function previewValues(ruleSet: RfRuleSet) {
     rankOptionsById.set(mapping.rf_rank.id, {
       id: mapping.rf_rank.id,
       label: mapping.rf_rank.label,
+      display_color: mapping.rf_rank.display_color,
     });
     mappings.push({
       recency_code: recencyCode,

@@ -8,7 +8,8 @@ module Api
           label: resource.label,
           description: resource.description,
           position: resource.position,
-          active: resource.active
+          active: resource.active,
+          display_color: resource.display_color
         }
       end
     end

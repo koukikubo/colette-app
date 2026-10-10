@@ -13,6 +13,12 @@ class StandardListMaster < ApplicationRecord
             presence: true,
             numericality: { only_integer: true }
   validates :active, inclusion: { in: [ true, false ] }
+  validates :display_color,
+          format: {
+            with: /\A#[0-9A-Fa-f]{6}\z/,
+            message: "は#RRGGBB形式で入力してください"
+          },
+          allow_nil: true
 
   # 共通の検索条件
   scope :active, -> { where(active: true) }

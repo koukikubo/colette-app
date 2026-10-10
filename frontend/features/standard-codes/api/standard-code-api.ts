@@ -5,6 +5,7 @@ import type {
   StandardCodeFormValues,
   StandardListCode,
   StandardListCodeFormValues,
+  StandardListCodeUpdateValues,
 } from "@/features/standard-codes/types";
 
 type StandardCodesResponse = ApiSuccessResponse<{
@@ -82,7 +83,7 @@ export function createStandardListCode(
 export function updateStandardListCode(
   StandardMasterId: number,
   id: number,
-  values: StandardListCodeFormValues,
+  values: StandardListCodeUpdateValues,
 ) {
   return apiFetch<StandardListCodeResponse>(
     `/api/v1/standard_masters/${StandardMasterId}/items/${id}`,

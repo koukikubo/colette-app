@@ -42,6 +42,32 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
           completed_at: Time.current
         )
 
+      rf_rank_master =
+        create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+      rf_rank =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク",
+          display_color: "#059669",
+          position: 1
+        )
+
+      CustomerRfRankResult.create!(
+        rf_calculation_run: calculation_run,
+        customer: create(:customer),
+        rf_rank: rf_rank,
+        recency_days: 30,
+        frequency_count: 5,
+        last_visit_on: Date.new(2026, 8, 22)
+      )
+
       RfSetting.create!(
         current_calculation_run: calculation_run
       )
@@ -70,6 +96,22 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
           "excluded_count"
         )
       ).to eq(1)
+
+      rank_counts =
+        data.dig(
+          "current_calculation_run",
+          "rank_counts"
+        )
+
+      expect(rank_counts).to contain_exactly(
+        include(
+          "id" => rf_rank.id,
+          "code" => "A",
+          "label" => "Aランク",
+          "display_color" => "#059669",
+          "count" => 1
+        )
+      )
     end
 
     it "計算結果が未適用の場合はnilを返す" do

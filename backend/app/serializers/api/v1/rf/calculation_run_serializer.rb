@@ -56,6 +56,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
           {
             id: comparison.rf_rank.id,
             code: comparison.rf_rank.code,
+            display_color: comparison.rf_rank.display_color,
             label: comparison.rf_rank.label,
             before_count: comparison.before_count,
             after_count: comparison.after_count,
@@ -83,7 +84,8 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
     {
       id: rf_rank.id,
       code: rf_rank.code,
-      label: rf_rank.label
+      label: rf_rank.label,
+      display_color: rf_rank.display_color
     }
   end
 
@@ -103,7 +105,8 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
         id: rank.id,
         code: rank.code,
         label: rank.label,
-        count: counts.fetch(rank.id)
+        count: counts.fetch(rank.id),
+        display_color: rank.display_color
       }
     end
   end

@@ -54,6 +54,22 @@ describe("RfCurrentSettingsSection", () => {
           customer_count: 120,
           excluded_count: 8,
           unmatched_count: 2,
+          rank_counts: [
+            {
+              id: 31,
+              code: "A",
+              label: "Aランク",
+              display_color: "#059669",
+              count: 70,
+            },
+            {
+              id: 32,
+              code: "B",
+              label: "Bランク",
+              display_color: "#0D9488",
+              count: 40,
+            },
+          ],
         },
       },
       isLoading: false,
@@ -69,6 +85,11 @@ describe("RfCurrentSettingsSection", () => {
     expect(screen.getByText("120名")).toBeInTheDocument();
     expect(screen.getByText("8名")).toBeInTheDocument();
     expect(screen.getByText("2名")).toBeInTheDocument();
+    expect(screen.getByText("現在のランク別人数")).toBeInTheDocument();
+    expect(screen.getByText("Aランク")).toBeInTheDocument();
+    expect(screen.getByText("70名")).toBeInTheDocument();
+    expect(screen.getByText("Bランク")).toBeInTheDocument();
+    expect(screen.getByText("40名")).toBeInTheDocument();
   });
 
   it("取得に失敗した場合はエラーを表示する", () => {

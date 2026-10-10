@@ -7,9 +7,6 @@ import {
   Armchair,
   CalendarDaysIcon,
   LayoutDashboardIcon,
-  MegaphoneIcon,
-  NotebookPenIcon,
-  SearchIcon,
   SettingsIcon,
   UserRoundIcon,
   UsersIcon,
@@ -58,16 +55,6 @@ const data = {
       url: "/reservations",
       icon: <CalendarDaysIcon />,
     },
-    {
-      title: "お知らせ",
-      url: "/announcements",
-      icon: <MegaphoneIcon />,
-    },
-    {
-      title: "顧客ノート",
-      url: "/customer-notes",
-      icon: <NotebookPenIcon />,
-    },
   ],
 
   /**
@@ -98,25 +85,6 @@ const data = {
       icon: <ChartNoAxesCombinedIcon />,
     },
   ],
-
-  /**
-   * 検索メニュー。
-   *
-   * 顧客検索・予約検索など、
-   * 将来的に検索専用画面を作る場合はここに置きます。
-   */
-  searchMenu: [
-    {
-      name: "顧客検索",
-      url: "/customers/search",
-      icon: <SearchIcon />,
-    },
-    {
-      name: "予約検索",
-      url: "/reservations/search",
-      icon: <SearchIcon />,
-    },
-  ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -138,11 +106,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={data.navMain} />
-
+        <NavMain title="メインメニュー" items={data.navMain} />
         <NavDocuments title="管理メニュー" items={data.masterMenu} />
-
-        <NavDocuments title="検索メニュー" items={data.searchMenu} />
       </SidebarContent>
 
       <SidebarFooter>

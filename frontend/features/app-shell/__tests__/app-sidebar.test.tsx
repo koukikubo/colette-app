@@ -28,8 +28,6 @@ describe("AppSidebar", () => {
       ["ダッシュボード", "/dashboard"],
       ["顧客管理", "/customers"],
       ["予約管理", "/reservations"],
-      ["お知らせ", "/announcements"],
-      ["顧客ノート", "/customer-notes"],
       ["統一RFマスタ", "/rf-management"],
     ];
 
@@ -40,6 +38,10 @@ describe("AppSidebar", () => {
         }),
       ).toHaveAttribute("href", href);
     });
+
+    expect(screen.getByText("メインメニュー")).toBeInTheDocument();
+    expect(screen.queryByText("お知らせ")).not.toBeInTheDocument();
+    expect(screen.queryByText("顧客ノート")).not.toBeInTheDocument();
   });
 
   it("管理メニューへのリンクを表示する", () => {
@@ -63,22 +65,12 @@ describe("AppSidebar", () => {
     });
   });
 
-  it("検索メニューへのリンクを表示する", () => {
+  it("不要な検索メニューを表示しない", () => {
     renderAppSidebar();
 
-    expect(screen.getByText("検索メニュー")).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("link", {
-        name: "顧客検索",
-      }),
-    ).toHaveAttribute("href", "/customers/search");
-
-    expect(
-      screen.getByRole("link", {
-        name: "予約検索",
-      }),
-    ).toHaveAttribute("href", "/reservations/search");
+    expect(screen.queryByText("検索メニュー")).not.toBeInTheDocument();
+    expect(screen.queryByText("顧客検索")).not.toBeInTheDocument();
+    expect(screen.queryByText("予約検索")).not.toBeInTheDocument();
   });
 
   it("担当者メニューを表示する", () => {

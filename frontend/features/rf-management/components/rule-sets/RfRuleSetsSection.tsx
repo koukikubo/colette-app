@@ -47,6 +47,7 @@ import {
 import { RfRuleSetArchiveDialog } from "./RfRuleSetArchiveDialog";
 import { RfRuleSetDeleteDialog } from "./RfRuleSetDeleteDialog";
 import { RfRuleSetDetailDialog } from "./RfRuleSetDetailDialog";
+import { RfHelpTooltip } from "./RfHelpTooltip";
 
 type FormMode = "create" | "edit";
 
@@ -385,20 +386,26 @@ export function RfRuleSetsSection({
             ["archived", "アーカイブ"],
           ] as const
         ).map(([status, label]) => (
-          <Button
-            key={status}
-            type="button"
-            role="tab"
-            size="sm"
-            variant={selectedStatus === status ? "default" : "ghost"}
-            aria-selected={selectedStatus === status}
-            onClick={() => {
-              setSelectedStatus(status);
-              setCurrentPage(1);
-            }}
-          >
-            {label}
-          </Button>
+          <div key={status} className="flex items-center">
+            <Button
+              type="button"
+              role="tab"
+              size="sm"
+              variant={selectedStatus === status ? "default" : "ghost"}
+              aria-selected={selectedStatus === status}
+              onClick={() => {
+                setSelectedStatus(status);
+                setCurrentPage(1);
+              }}
+            >
+              {label}
+            </Button>
+            {status === "archived" && (
+              <RfHelpTooltip label="アーカイブ">
+                過去のRFルールを履歴として残す状態です。計算や編集には使用せず、必要な場合は下書きとして複製します。
+              </RfHelpTooltip>
+            )}
+          </div>
         ))}
       </div>
 
