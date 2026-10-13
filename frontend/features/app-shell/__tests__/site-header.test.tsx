@@ -66,6 +66,7 @@ describe("SiteHeader", () => {
     ["/restaurant-masters", "予約テーブルマスタ"],
     ["/staff-masters", "担当者マスタ"],
     ["/standard-codes", "基本コードマスタ"],
+    ["/rf-analysis", "統一RFランク表"],
   ])("%sでは、%sを現在地として表示する", (pathname, section) => {
     mocks.usePathname.mockReturnValue(pathname);
 
