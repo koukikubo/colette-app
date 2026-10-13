@@ -109,6 +109,31 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
     expect(cell.count).to eq(2)
     expect(cell.percentage).to eq(66.67)
     expect(cell.rf_rank).to eq(rank_a)
+
+    distribution =
+      result.rank_distribution.index_by do |item|
+        item.rf_rank.code
+      end
+
+    expect(distribution.fetch("A").count).to eq(2)
+    expect(distribution.fetch("A").percentage).to eq(66.67)
+
+    expect(distribution.fetch("N").count).to eq(1)
+    expect(distribution.fetch("N").percentage).to eq(33.33)
+
+    cell_count = result.cells.sum(&:count)
+
+    expect(
+      cell_count +
+        result.no_visit_count +
+        run.unmatched_count
+    ).to eq(result.eligible_count)
+
+    distribution_percentage =
+      result.rank_distribution.sum(&:percentage)
+
+    expect(distribution_percentage)
+      .to be_within(0.1).of(100.0)
   end
 
   it "1年前以前で最も新しい適用履歴と比較する" do

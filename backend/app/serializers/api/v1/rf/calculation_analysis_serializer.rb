@@ -24,6 +24,10 @@ class Api::V1::Rf::CalculationAnalysisSerializer <
         resource.frequency_rules.map do |rule|
           serialize_frequency_rule(rule)
         end,
+      rank_distribution:
+        resource.rank_distribution.map do |distribution|
+          serialize_rank_distribution(distribution)
+        end,
       cells:
         resource.cells.map do |cell|
           serialize_cell(cell)
@@ -112,6 +116,15 @@ class Api::V1::Rf::CalculationAnalysisSerializer <
       code: rank.code,
       label: rank.label,
       display_color: rank.display_color
+    }
+  end
+
+  def serialize_rank_distribution(distribution)
+    {
+      rf_rank:
+        serialize_rf_rank(distribution.rf_rank),
+      count: distribution.count,
+      percentage: distribution.percentage
     }
   end
 end

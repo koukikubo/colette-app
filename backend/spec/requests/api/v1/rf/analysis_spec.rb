@@ -126,6 +126,20 @@ RSpec.describe "Api::V1::RfAnalysis", type: :request do
           )
         )
       )
+
+      expect(
+        analysis["rank_distribution"]
+      ).to contain_exactly(
+        include(
+          "count" => 1,
+          "percentage" => 100.0,
+          "rf_rank" => include(
+            "code" => "A",
+            "label" => "Aランク",
+            "display_color" => "#059669"
+          )
+        )
+      )
     end
 
     it "適用中の計算結果がない場合はnilを返す" do

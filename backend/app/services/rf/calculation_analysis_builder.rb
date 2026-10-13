@@ -9,6 +9,7 @@ module Rf
       :no_visit_percentage,
       :recency_rules,
       :frequency_rules,
+      :rank_distribution,
       :cells,
       :comparison_run,
       :rank_comparisons,
@@ -18,6 +19,13 @@ module Rf
     Cell = Struct.new(
       :recency_rule,
       :frequency_rule,
+      :rf_rank,
+      :count,
+      :percentage,
+      keyword_init: true
+    )
+
+    RankDistribution = Struct.new(
       :rf_rank,
       :count,
       :percentage,
@@ -57,6 +65,7 @@ module Rf
           ),
         recency_rules: recency_rules,
         frequency_rules: frequency_rules,
+        rank_distribution: build_rank_distribution,
         cells: build_cells,
         comparison_run: comparison_run,
         rank_comparisons: build_rank_comparisons
@@ -139,6 +148,38 @@ module Rf
         calculated_results.count do |result|
           result.recency_days.nil?
         end
+    end
+
+    def build_rank_distribution
+      counts = rank_counts_for(calculation_run)
+      total = eligible_count(calculation_run)
+
+      rf_ranks.map do |rank|
+        count = counts.fetch(rank.id, 0)
+
+        RankDistribution.new(
+          rf_rank: rank,
+          count: count,
+          percentage: percentage(count, total)
+        )
+      end
+    end
+
+    def rf_ranks
+      @rf_ranks ||=
+        StandardListMaster
+          .joins(:standard_master)
+          .where(
+            standard_list_masters: {
+              active: true
+            },
+            standard_masters: {
+              system_key: "rf_rank",
+              active: true
+            }
+          )
+          .order(:position, :id)
+          .to_a
     end
 
     def build_cells
