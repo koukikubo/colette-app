@@ -56,6 +56,7 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     "/restaurant-masters": "予約テーブルマスタ",
     "/staff-masters": "担当者マスタ",
     "/standard-codes": "基本コードマスタ",
+    "/rf-analysis": "統一RFランク表",
   };
 
   return { section: pageTitles[pathname] ?? "Colette" };
