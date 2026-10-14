@@ -232,35 +232,35 @@ standard_master_seeds = [
       {
         code: "A",
         label: "Aランク",
-        description: "来店時期・回数ともに高い顧客",
+        description: "直近の来店があり、来店頻度が高い最優良顧客",
         display_color: "#059669",
         position: 1
       },
       {
         code: "B",
         label: "Bランク",
-        description: "継続的な来店がある顧客",
+        description: "比較的最近の来店があり、継続的に利用している常連顧客",
         display_color: "#0D9488",
         position: 2
       },
       {
         code: "C",
         label: "Cランク",
-        description: "標準的な来店実績の顧客",
+        description: "一定の来店実績がある標準・育成対象の顧客",
         display_color: "#2563EB",
         position: 3
       },
       {
         code: "D",
         label: "Dランク",
-        description: "一定期間来店がない顧客",
+        description: "一定期間来店がなく、再来店を促したい離反注意顧客",
         display_color: "#D97706",
         position: 4
       },
       {
         code: "E",
         label: "Eランク",
-        description: "来店回数が少ない新規・低頻度顧客",
+        description: "直近に初回または少数回来店した新規・低頻度顧客",
         display_color: "#EA580C",
         position: 5
       },
@@ -273,8 +273,8 @@ standard_master_seeds = [
       },
       {
         code: "N",
-        label: "未分類",
-        description: "RFランクの判定に必要な来店実績がない顧客",
+        label: "来店履歴なし",
+        description: "集計期間内に完了した来店履歴がない顧客",
         display_color: "#94A3B8",
         position: 7
       }

@@ -11,6 +11,7 @@ import {
   UserRoundIcon,
   UsersIcon,
   ChartNoAxesCombinedIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,11 @@ const data = {
       url: "/reservations",
       icon: <CalendarDaysIcon />,
     },
+    {
+      title: "統一RFランク表",
+      url: "/rf-analysis",
+      icon: <ChartNoAxesCombinedIcon />,
+    },
   ],
 
   /**
@@ -82,7 +88,7 @@ const data = {
     {
       name: "統一RFマスタ",
       url: "/rf-management",
-      icon: <ChartNoAxesCombinedIcon />,
+      icon: <SlidersHorizontalIcon />,
     },
   ],
 };

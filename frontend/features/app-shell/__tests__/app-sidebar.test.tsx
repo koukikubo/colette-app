@@ -28,6 +28,7 @@ describe("AppSidebar", () => {
       ["ダッシュボード", "/dashboard"],
       ["顧客管理", "/customers"],
       ["予約管理", "/reservations"],
+      ["統一RFランク表", "/rf-analysis"],
       ["統一RFマスタ", "/rf-management"],
     ];
 
