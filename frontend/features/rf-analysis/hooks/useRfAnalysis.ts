@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { RfAnalysis } from "../types/analysis";
-import { fetchRfAnalysis } from "../api/rf_analysis-api";
+import { fetchRfAnalysis } from "../api/rf-analysis-api";
 
 export function useRfAnalysis(reloadKey = 0) {
   const [analysis, setAnalysis] = useState<RfAnalysis | null>(null);

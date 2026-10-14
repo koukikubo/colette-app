@@ -79,7 +79,6 @@ describe("RfAnalysisSection", () => {
     render(<RfAnalysisSection />);
 
     expect(screen.getByText("2026年10月集計")).toBeInTheDocument();
-    expect(screen.getByText("計算基準日：2026/10/10")).toBeInTheDocument();
     expect(screen.getByText("計算対象")).toBeInTheDocument();
     expect(screen.getByText("100名")).toBeInTheDocument();
     expect(screen.getByText("計算対象外")).toBeInTheDocument();
@@ -87,9 +86,12 @@ describe("RfAnalysisSection", () => {
     expect(screen.getByText("未分類")).toBeInTheDocument();
     expect(screen.getAllByText("0名").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("現在適用中")).toBeInTheDocument();
-    expect(screen.getByText(/標準RFルール/)).toBeInTheDocument();
-    expect(screen.getByText(/バージョン 3/)).toBeInTheDocument();
-    expect(screen.getByText(/計算基準日：2026\/10\/10/)).toBeInTheDocument();
+
+    const calculationSummary = screen.getByText(/標準RFルール/);
+
+    expect(calculationSummary).toHaveTextContent("標準RFルール");
+    expect(calculationSummary).toHaveTextContent("バージョン 3");
+    expect(calculationSummary).toHaveTextContent("計算基準日：2026/10/10");
   });
 
   it("ランク別人数・条件表・1年前比較を表示する", () => {

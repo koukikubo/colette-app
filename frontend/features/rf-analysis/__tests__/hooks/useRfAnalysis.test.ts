@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   fetchRfAnalysis: vi.fn(),
 }));
 
-vi.mock("../../api/rf_analysis-api", () => ({
+vi.mock("../../api/rf-analysis-api", () => ({
   fetchRfAnalysis: mocks.fetchRfAnalysis,
 }));
 
