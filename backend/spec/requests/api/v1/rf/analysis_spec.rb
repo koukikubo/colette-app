@@ -140,6 +140,21 @@ RSpec.describe "Api::V1::RfAnalysis", type: :request do
           )
         )
       )
+
+      expect(
+        analysis.dig(
+          "calculation_run",
+          "rule_set"
+        )
+      ).to include(
+        "id" => rule_set.id,
+        "name" => "分析用RFルール",
+        "version" => 1
+      )
+
+      expect(
+        analysis["unmatched_percentage"]
+      ).to eq(0.0)
     end
 
     it "適用中の計算結果がない場合はnilを返す" do

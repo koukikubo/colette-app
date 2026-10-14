@@ -73,8 +73,9 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
     run =
       create_run(
         base_date: Date.new(2026, 10, 10),
-        customer_count: 4,
-        excluded_count: 1
+        customer_count: 5,
+        excluded_count: 1,
+        unmatched_count: 1
       )
 
     2.times do
@@ -93,6 +94,7 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
       frequency_count: 0
     )
 
+    create_unmatched_result(run)
     create_excluded_result(run)
 
     result =
@@ -100,14 +102,15 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
         calculation_run: run
       )
 
-    expect(result.eligible_count).to eq(3)
+    expect(result.eligible_count).to eq(4)
     expect(result.no_visit_count).to eq(1)
-    expect(result.no_visit_percentage).to eq(33.33)
+    expect(result.no_visit_percentage).to eq(25.0)
+    expect(result.unmatched_percentage).to eq(25.0)
 
     cell = result.cells.first
 
     expect(cell.count).to eq(2)
-    expect(cell.percentage).to eq(66.67)
+    expect(cell.percentage).to eq(50.0)
     expect(cell.rf_rank).to eq(rank_a)
 
     distribution =
@@ -116,23 +119,25 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
       end
 
     expect(distribution.fetch("A").count).to eq(2)
-    expect(distribution.fetch("A").percentage).to eq(66.67)
+    expect(distribution.fetch("A").percentage).to eq(50.0)
 
     expect(distribution.fetch("N").count).to eq(1)
-    expect(distribution.fetch("N").percentage).to eq(33.33)
+    expect(distribution.fetch("N").percentage).to eq(25.0)
 
     cell_count = result.cells.sum(&:count)
 
     expect(
-      cell_count +
+      result.cells.sum(&:count) +
         result.no_visit_count +
         run.unmatched_count
     ).to eq(result.eligible_count)
 
-    distribution_percentage =
-      result.rank_distribution.sum(&:percentage)
+    percentage_total =
+      result.cells.sum(&:percentage) +
+      result.no_visit_percentage +
+      result.unmatched_percentage
 
-    expect(distribution_percentage)
+    expect(percentage_total)
       .to be_within(0.1).of(100.0)
   end
 
@@ -226,7 +231,8 @@ end
     previous_run: nil,
     status: "completed",
     customer_count: 0,
-    excluded_count: 0
+    excluded_count: 0,
+    unmatched_count: 0
   )
     RfCalculationRun.create!(
       rf_rule_set: rule_set,
@@ -239,7 +245,7 @@ end
       status: status,
       customer_count: customer_count,
       excluded_count: excluded_count,
-      unmatched_count: 0,
+      unmatched_count: unmatched_count,
       completed_at:
         status == "completed" ? Time.current : nil
     )
@@ -266,6 +272,16 @@ end
       customer: create(:customer),
       exclusion_reason: "manual_customer_rank",
       frequency_count: 0
+    )
+  end
+
+  def create_unmatched_result(run)
+    run.customer_rf_rank_results.create!(
+      customer: create(:customer),
+      exclusion_reason: "no_matching_rule",
+      recency_days: 30,
+      frequency_count: 3,
+      last_visit_on: run.base_date - 30.days
     )
   end
 end

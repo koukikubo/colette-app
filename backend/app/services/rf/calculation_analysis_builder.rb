@@ -7,6 +7,7 @@ module Rf
       :eligible_count,
       :no_visit_count,
       :no_visit_percentage,
+      :unmatched_percentage,
       :recency_rules,
       :frequency_rules,
       :rank_distribution,
@@ -61,6 +62,11 @@ module Rf
         no_visit_percentage:
           percentage(
             no_visit_count,
+            eligible_count(calculation_run)
+          ),
+        unmatched_percentage:
+          percentage(
+            calculation_run.unmatched_count,
             eligible_count(calculation_run)
           ),
         recency_rules: recency_rules,
@@ -211,6 +217,8 @@ module Rf
       counts = Hash.new(0)
 
       results_with_visit.each do |result|
+        next if result.rf_rank_id.nil?
+
         recency_rule =
           find_recency_rule(result.recency_days)
 

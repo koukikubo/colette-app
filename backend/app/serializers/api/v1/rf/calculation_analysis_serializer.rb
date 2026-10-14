@@ -11,6 +11,8 @@ class Api::V1::Rf::CalculationAnalysisSerializer <
         resource.calculation_run.excluded_count,
       unmatched_count:
         resource.calculation_run.unmatched_count,
+      unmatched_percentage:
+        resource.unmatched_percentage,
       no_visit: {
         count: resource.no_visit_count,
         percentage:
@@ -42,7 +44,12 @@ class Api::V1::Rf::CalculationAnalysisSerializer <
     {
       id: run.id,
       base_date: run.base_date,
-      rf_rule_set_id: run.rf_rule_set_id
+      rf_rule_set_id: run.rf_rule_set_id,
+      rule_set: {
+        id: run.rf_rule_set.id,
+        name: run.rf_rule_set.name,
+        version: run.rf_rule_set.version
+      }
     }
   end
 
