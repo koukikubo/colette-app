@@ -174,18 +174,29 @@ module Rf
     def rf_ranks
       @rf_ranks ||=
         StandardListMaster
-          .joins(:standard_master)
-          .where(
-            standard_list_masters: {
-              active: true
-            },
-            standard_masters: {
-              system_key: "rf_rank",
-              active: true
-            }
-          )
+          .where(id: rf_rank_ids)
           .order(:position, :id)
           .to_a
+    end
+
+    def rf_rank_ids
+      @rf_rank_ids ||=
+        (
+          mapped_rf_rank_ids +
+          referenced_rf_rank_ids
+        ).uniq
+    end
+
+    def mapped_rf_rank_ids
+      rank_mappings.map(&:rf_rank_id)
+    end
+
+    def referenced_rf_rank_ids
+      calculation_run
+        .customer_rf_rank_results
+        .where.not(rf_rank_id: nil)
+        .distinct
+        .pluck(:rf_rank_id)
     end
 
     def build_cells
@@ -268,12 +279,16 @@ module Rf
       return @comparison_run if defined?(@comparison_run)
 
       target_date = calculation_run.base_date.prev_year
+      target_range =
+        target_date.beginning_of_month..
+          target_date.end_of_month
+
       run = calculation_run.previous_run
       candidates = []
 
       while run
         if run.status == "completed" &&
-            run.base_date <= target_date
+            target_range.cover?(run.base_date)
           candidates << run
         end
 
