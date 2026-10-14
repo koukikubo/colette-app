@@ -224,6 +224,65 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
     )
   end
 
+  it "前年同月の最新の適用履歴と比較する" do
+    current_run =
+      create_run(
+        base_date: Date.new(2026, 10, 10)
+      )
+
+    september_run =
+      create_run(
+        base_date: Date.new(2025, 9, 30)
+      )
+
+    october_run =
+      create_run(
+        base_date: Date.new(2025, 10, 31)
+      )
+
+    # current_runからprevious_runをたどれるように設定する
+
+    result =
+      described_class.call(
+        calculation_run: current_run
+      )
+
+    expect(result.comparison_run)
+      .to eq(october_run)
+
+    expect(result.comparison_run)
+      .not_to eq(september_run)
+  end
+
+  it "計算後に無効化されたRFランクも分布へ残す" do
+    run =
+      create_run(
+        base_date: Date.new(2026, 10, 10),
+        customer_count: 1
+      )
+
+    create_rank_result(
+      run,
+      rf_rank: rank_a
+    )
+
+    rank_a.update!(active: false)
+
+    result =
+      described_class.call(
+        calculation_run: run
+      )
+
+    distribution =
+      result.rank_distribution.find do |item|
+        item.rf_rank.id == rank_a.id
+      end
+
+    expect(distribution).to be_present
+    expect(distribution.count).to eq(1)
+    expect(distribution.percentage).to eq(100.0)
+  end
+
   private
 
   def create_run(
