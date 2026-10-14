@@ -10,6 +10,11 @@ export type RfAnalysisCalculationRun = {
   id: number;
   base_date: string;
   rf_rule_set_id: number;
+  rule_set: {
+    id: number;
+    name: string;
+    version: number;
+  };
 };
 
 export type RfAnalysisCell = {
@@ -52,6 +57,7 @@ export type RfAnalysis = {
   eligible_count: number;
   excluded_count: number;
   unmatched_count: number;
+  unmatched_percentage: number;
   no_visit: RfAnalysisNoVisit;
   recency_rules: RfRecencyRule[];
   frequency_rules: RfFrequencyRule[];

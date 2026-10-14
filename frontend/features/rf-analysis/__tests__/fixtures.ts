@@ -33,10 +33,16 @@ export const rfAnalysisFixture: RfAnalysis = {
     id: 20,
     base_date: "2026-10-10",
     rf_rule_set_id: 5,
+    rule_set: {
+      id: 5,
+      name: "標準RFルール",
+      version: 3,
+    },
   },
   eligible_count: 100,
   excluded_count: 8,
   unmatched_count: 0,
+  unmatched_percentage: 0,
   no_visit: {
     count: 10,
     percentage: 10,

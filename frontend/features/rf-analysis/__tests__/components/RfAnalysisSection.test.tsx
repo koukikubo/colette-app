@@ -86,6 +86,10 @@ describe("RfAnalysisSection", () => {
     expect(screen.getByText("8名")).toBeInTheDocument();
     expect(screen.getByText("未分類")).toBeInTheDocument();
     expect(screen.getAllByText("0名").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("現在適用中")).toBeInTheDocument();
+    expect(screen.getByText(/標準RFルール/)).toBeInTheDocument();
+    expect(screen.getByText(/バージョン 3/)).toBeInTheDocument();
+    expect(screen.getByText(/計算基準日：2026\/10\/10/)).toBeInTheDocument();
   });
 
   it("ランク別人数・条件表・1年前比較を表示する", () => {
