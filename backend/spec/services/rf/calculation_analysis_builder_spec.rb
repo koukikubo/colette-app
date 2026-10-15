@@ -285,6 +285,30 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
     expect(distribution.percentage).to eq(100.0)
   end
 
+  it "顧客が0人でも有効なNランクを分布へ残す" do
+    active_no_visit_rank = rank_n
+
+    run =
+      create_run(
+        base_date: Date.new(2026, 10, 10),
+        customer_count: 0
+      )
+
+    result =
+      described_class.call(
+        calculation_run: run
+      )
+
+    distribution =
+      result.rank_distribution.find do |item|
+        item.rf_rank.id == active_no_visit_rank.id
+      end
+
+    expect(distribution).to be_present
+    expect(distribution.count).to eq(0)
+    expect(distribution.percentage).to eq(0.0)
+  end
+
   private
 
   def create_run(

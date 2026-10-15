@@ -182,9 +182,25 @@ module Rf
     def rf_rank_ids
       @rf_rank_ids ||=
         (
+          active_rf_rank_ids +
           mapped_rf_rank_ids +
           referenced_rf_rank_ids
         ).uniq
+    end
+
+    def active_rf_rank_ids
+      StandardListMaster
+        .joins(:standard_master)
+        .where(
+          standard_list_masters: {
+            active: true
+          },
+          standard_masters: {
+            system_key: "rf_rank",
+            active: true
+          }
+        )
+        .pluck(:id)
     end
 
     def mapped_rf_rank_ids
