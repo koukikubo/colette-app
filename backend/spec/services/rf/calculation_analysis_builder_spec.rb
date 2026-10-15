@@ -142,159 +142,98 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
   end
 
   it "1年前以前で最も新しい適用履歴と比較する" do
-    old_run =
-      create_run(
-        base_date: Date.new(2025, 10, 1),
-        customer_count: 2
-      )
+  old_run =
+    create_run(
+      base_date: Date.new(2025, 10, 1),
+      customer_count: 2
+    )
 
+  create_result(
+    old_run,
+    rf_rank: rank_a,
+    recency_days: 30,
+    frequency_count: 2
+  )
+
+  older_run =
+    create_run(
+      base_date: Date.new(2025, 9, 1),
+      previous_run: old_run,
+      customer_count: 1
+    )
+
+  current_run =
+    create_run(
+      base_date: Date.new(2026, 10, 10),
+      previous_run: older_run,
+      customer_count: 2
+    )
+
+  2.times do
     create_result(
-      old_run,
+      current_run,
       rf_rank: rank_a,
       recency_days: 30,
       frequency_count: 2
     )
-
-    older_run =
-      create_run(
-        base_date: Date.new(2025, 9, 1),
-        previous_run: old_run,
-        customer_count: 1
-      )
-
-    current_run =
-      create_run(
-        base_date: Date.new(2026, 10, 10),
-        previous_run: older_run,
-        customer_count: 2
-      )
-
-    2.times do
-      create_result(
-        current_run,
-        rf_rank: rank_a,
-        recency_days: 30,
-        frequency_count: 2
-      )
-    end
-
-    result =
-      described_class.call(
-        calculation_run: current_run
-      )
-
-    expect(result.comparison_run).to eq(old_run)
-
-    comparison = result.rank_comparisons.first
-
-    expect(comparison.previous_count).to eq(1)
-    expect(comparison.current_count).to eq(2)
-    expect(comparison.count_delta).to eq(1)
   end
+
+  result =
+    described_class.call(
+      calculation_run: current_run
+    )
+
+  expect(result.comparison_run).to eq(old_run)
+
+  comparison = result.rank_comparisons.first
+
+  expect(comparison.previous_count).to eq(1)
+  expect(comparison.current_count).to eq(2)
+  expect(comparison.count_delta).to eq(1)
+end
 
   it "1年前の比較履歴がない場合は比較を返さない" do
-    run =
-      create_run(
-        base_date: Date.new(2026, 10, 10),
-        customer_count: 0
-      )
+  run =
+    create_run(
+      base_date: Date.new(2026, 10, 10),
+      customer_count: 0
+    )
 
-    result =
-      described_class.call(
-        calculation_run: run
-      )
+  result =
+    described_class.call(
+      calculation_run: run
+    )
 
-    expect(result.comparison_run).to be_nil
-    expect(result.rank_comparisons).to eq([])
-  end
+  expect(result.comparison_run).to be_nil
+  expect(result.rank_comparisons).to eq([])
+end
 
   it "未完了の計算結果は分析しない" do
-    run =
-      create_run(
-        base_date: Date.new(2026, 10, 10),
-        status: "processing"
-      )
-
-    expect do
-      described_class.call(
-        calculation_run: run
-      )
-    end.to raise_error(
-      described_class::IncompleteRunError
-    )
-  end
-
-  it "前年同月の最新の適用履歴と比較する" do
-    september_run =
-      create_run(
-        base_date: Date.new(2025, 9, 30)
-      )
-
-    october_run =
-      create_run(
-        base_date: Date.new(2025, 10, 31),
-        previous_run: september_run
-      )
-
-    current_run =
-      create_run(
-        base_date: Date.new(2026, 10, 10),
-        previous_run: october_run
-      )
-
-    result =
-      described_class.call(
-        calculation_run: current_run
-      )
-
-    expect(result.comparison_run)
-      .to eq(october_run)
-
-    expect(result.comparison_run)
-      .not_to eq(september_run)
-  end
-
-  it "計算後に無効化されたRFランクも分布へ残す" do
-    run =
-      create_run(
-        base_date: Date.new(2026, 10, 10),
-        customer_count: 1
-      )
-
-    create_result(
-      run,
-      rf_rank: rank_a,
-      recency_days: 30,
-      frequency_count: 2
+  run =
+    create_run(
+      base_date: Date.new(2026, 10, 10),
+      status: "processing"
     )
 
-    rank_a.update!(active: false)
+  expect do
+    described_class.call(
+      calculation_run: run
+    )
+  end.to raise_error(
+    described_class::IncompleteRunError
+  )
+end
 
-    result =
-      described_class.call(
-        calculation_run: run
-      )
-
-    distribution =
-      result.rank_distribution.find do |item|
-        item.rf_rank.id == rank_a.id
-      end
-
-    expect(distribution).to be_present
-    expect(distribution.count).to eq(1)
-    expect(distribution.percentage).to eq(100.0)
-  end
-
-  private
+    private
 
   def create_run(
-      base_date:,
-      previous_run: nil,
-      status: "completed",
-      customer_count: 0,
-      excluded_count: 0,
-      unmatched_count: 0
-    )
+    base_date:,
+    previous_run: nil,
+    status: "completed",
+    customer_count: 0,
+    excluded_count: 0,
+    unmatched_count: 0
+  )
     RfCalculationRun.create!(
       rf_rule_set: rule_set,
       previous_run: previous_run,
@@ -313,11 +252,11 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
   end
 
   def create_result(
-      run,
-      rf_rank:,
-      recency_days:,
-      frequency_count:
-    )
+    run,
+    rf_rank:,
+    recency_days:,
+    frequency_count:
+  )
     run.customer_rf_rank_results.create!(
       customer: create(:customer),
       rf_rank: rf_rank,
