@@ -225,11 +225,6 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
   end
 
   it "前年同月の最新の適用履歴と比較する" do
-    current_run =
-      create_run(
-        base_date: Date.new(2026, 10, 10)
-      )
-
     september_run =
       create_run(
         base_date: Date.new(2025, 9, 30)
@@ -237,10 +232,15 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
 
     october_run =
       create_run(
-        base_date: Date.new(2025, 10, 31)
+        base_date: Date.new(2025, 10, 31),
+        previous_run: september_run
       )
 
-    # current_runからprevious_runをたどれるように設定する
+    current_run =
+      create_run(
+        base_date: Date.new(2026, 10, 10),
+        previous_run: october_run
+      )
 
     result =
       described_class.call(
@@ -261,9 +261,11 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
         customer_count: 1
       )
 
-    create_rank_result(
+    create_result(
       run,
-      rf_rank: rank_a
+      rf_rank: rank_a,
+      recency_days: 30,
+      frequency_count: 2
     )
 
     rank_a.update!(active: false)
