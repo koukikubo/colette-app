@@ -197,7 +197,8 @@ module Rf
           },
           standard_masters: {
             system_key: "rf_rank",
-            active: true
+            active: true,
+            code: "N"
           }
         )
         .pluck(:id)
