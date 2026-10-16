@@ -193,12 +193,12 @@ module Rf
         .joins(:standard_master)
         .where(
           standard_list_masters: {
-            active: true
+            active: true,
+            code: "N"
           },
           standard_masters: {
             system_key: "rf_rank",
-            active: true,
-            code: "N"
+            active: true
           }
         )
         .pluck(:id)
