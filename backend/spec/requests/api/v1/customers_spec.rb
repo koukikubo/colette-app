@@ -24,6 +24,17 @@ RSpec.describe "Api::V1::Customers", type: :request do
     )
   end
 
+  let(:rf_rank) do
+    create(
+      :standard_list_master,
+      standard_master: rf_rank_master,
+      code: "A",
+      label: "Aランク",
+      position: 1,
+      display_color: "#059669"
+    )
+  end
+
   def response_body
     JSON.parse(response.body)
   end
@@ -373,7 +384,8 @@ RSpec.describe "Api::V1::Customers", type: :request do
         standard_master: rf_rank_master,
         code: "A",
         label: "Aランク",
-        position: 1
+        position: 1,
+        display_color: "#059669"
       )
     end
 
@@ -495,7 +507,8 @@ RSpec.describe "Api::V1::Customers", type: :request do
         {
           "id" => rf_rank.id,
           "code" => "A",
-          "label" => "Aランク"
+          "label" => "Aランク",
+          "display_color" => "#059669"
         }
       )
 
@@ -507,6 +520,15 @@ RSpec.describe "Api::V1::Customers", type: :request do
           "frequency_count" => 3,
           "last_visit_on" => "2026-09-06",
           "exclusion_reason" => nil
+        }
+      )
+
+      expect(response_customer["current_rf_rank"]).to eq(
+        {
+          "id" => rf_rank.id,
+          "code" => "A",
+          "label" => "Aランク",
+          "display_color" => "#059669"
         }
       )
     end

@@ -33,7 +33,8 @@ module Api
         {
           id: rf_rank.id,
           code: rf_rank.code,
-          label: rf_rank.label
+          label: rf_rank.label,
+          display_color: rf_rank.display_color
         }
       end
 

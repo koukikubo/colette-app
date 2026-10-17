@@ -23,6 +23,10 @@ export type RankSummary = {
   label: string;
 };
 
+export type RfRankSummary = RankSummary & {
+  display_color: string | null;
+};
+
 // RFランクを判定したときの型
 export type CustomerRfRankBasis = {
   calculation_run_id: number;
@@ -72,7 +76,7 @@ export type Customer = {
 
 // 顧客詳細APIでのみ返される情報
 export type CustomerDetail = Customer & {
-  current_rf_rank: RankSummary | null;
+  current_rf_rank: RfRankSummary | null;
   rf_rank_basis: CustomerRfRankBasis | null;
 };
 
