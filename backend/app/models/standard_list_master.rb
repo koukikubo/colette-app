@@ -20,7 +20,21 @@ class StandardListMaster < ApplicationRecord
           },
           allow_nil: true
 
+  validate :rf_rank_code_must_not_change, on: :update
+
   # 共通の検索条件
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
+
+  private
+
+  def rf_rank_code_must_not_change
+    return unless standard_master&.system_key == "rf_rank"
+    return unless will_save_change_to_code?
+
+    errors.add(
+      :code,
+      "はRFランクの内部識別子のため変更できません"
+    )
+  end
 end

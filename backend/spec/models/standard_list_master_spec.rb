@@ -60,6 +60,62 @@ RSpec.describe StandardListMaster, type: :model do
     end
   end
 
+  describe "RFランクの内部コード保護" do
+    let(:rf_rank_master) do
+      create(
+        :standard_master,
+        system_key: "rf_rank"
+      )
+    end
+
+    let(:rf_rank) do
+      create(
+        :standard_list_master,
+        standard_master: rf_rank_master,
+        code: "A"
+      )
+    end
+
+    it "RFランクを新規登録できる" do
+      rank = build(
+        :standard_list_master,
+        standard_master: rf_rank_master,
+        code: "S"
+      )
+
+      expect(rank.save).to be true
+    end
+
+    it "保存済みRFランクの内部コードを変更できない" do
+      expect(rf_rank.update(code: "S")).to be false
+
+      expect(rf_rank.errors[:code]).to include(
+        "はRFランクの内部識別子のため変更できません"
+      )
+      expect(rf_rank.reload.code).to eq("A")
+    end
+
+    it "RFランクを無効化できる" do
+      expect(rf_rank.update(active: false)).to be true
+      expect(rf_rank.reload.active).to be false
+    end
+
+    it "RFランク以外のコード変更には影響しない" do
+      master = create(
+        :standard_master,
+        system_key: "customer_rank"
+      )
+      rank = create(
+        :standard_list_master,
+        standard_master: master,
+        code: "A"
+      )
+
+      expect(rank.update(code: "S")).to be true
+      expect(rank.reload.code).to eq("S")
+    end
+  end
+
   describe ".active" do
     let(:standard_master) { create(:standard_master) }
 
