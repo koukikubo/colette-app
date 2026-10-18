@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_17_042052) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -161,6 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
     t.date "frequency_started_on", null: false
     t.integer "lock_version", default: 0, null: false
     t.bigint "previous_run_id"
+    t.jsonb "rf_rank_snapshots"
     t.bigint "rf_rule_set_id", null: false
     t.datetime "started_at"
     t.bigint "started_by_staff_id"

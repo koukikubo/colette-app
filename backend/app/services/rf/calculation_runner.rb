@@ -30,7 +30,7 @@ module Rf
     rescue StandardError => error
       mark_as_failed(calculation_run, error)
       raise
-  end
+    end
 
     private
     attr_reader :calculation_run
@@ -70,6 +70,7 @@ module Rf
           status: "completed",
           customer_count: customer_count,
           excluded_count: excluded_count,
+          rf_rank_snapshots: build_rf_rank_snapshots,
           unmatched_count: 0,
           completed_at: Time.current,
           failure_message: nil
@@ -100,6 +101,50 @@ module Rf
         frequency_count: calculation.frequency_count,
         last_visit_on: calculation.last_visit_on
       )
+    end
+
+    def build_rf_rank_snapshots
+      mapped_ids =
+        rule_set.rank_mappings.pluck(:rf_rank_id)
+
+      result_ids =
+        calculation_run
+          .customer_rf_rank_results
+          .where.not(rf_rank_id: nil)
+          .distinct
+          .pluck(:rf_rank_id)
+
+      rank_ids =
+        (mapped_ids + result_ids + active_no_visit_rank_ids).uniq
+
+      StandardListMaster
+        .where(id: rank_ids)
+        .ordered
+        .map do |rank|
+          {
+            "id" => rank.id,
+            "code" => rank.code,
+            "label" => rank.label,
+            "display_color" => rank.display_color,
+            "position" => rank.position
+          }
+        end
+    end
+
+    def active_no_visit_rank_ids
+      StandardListMaster
+        .joins(:standard_master)
+        .where(
+          standard_list_masters: {
+            active: true,
+            code: "N"
+          },
+          standard_masters: {
+            system_key: "rf_rank",
+            active: true
+          }
+        )
+        .pluck(:id)
     end
 
     def target_customers
