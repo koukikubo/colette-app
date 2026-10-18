@@ -97,16 +97,38 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
         .group(:rf_rank_id)
         .count
 
-    StandardListMaster
-      .where(id: counts.keys)
-      .order(:position, :id)
-      .map do |rank|
+    snapshots = resource.rf_rank_snapshots
+
+    ranks =
+      if snapshots.nil?
+        StandardListMaster
+          .where(id: counts.keys)
+          .ordered
+          .map do |rank|
+            {
+              "id" => rank.id,
+              "code" => rank.code,
+              "label" => rank.label,
+              "display_color" => rank.display_color,
+              "position" => rank.position
+            }
+          end
+      else
+        snapshots.sort_by do |rank|
+          [
+            rank.fetch("position"),
+            rank.fetch("id")
+          ]
+        end
+      end
+
+    ranks.map do |rank|
       {
-        id: rank.id,
-        code: rank.code,
-        label: rank.label,
-        count: counts.fetch(rank.id),
-        display_color: rank.display_color
+        id: rank.fetch("id"),
+        code: rank.fetch("code"),
+        label: rank.fetch("label"),
+        display_color: rank.fetch("display_color"),
+        count: counts.fetch(rank.fetch("id"), 0)
       }
     end
   end

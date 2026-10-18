@@ -23,6 +23,15 @@ module Rf
       keyword_init: true
     )
 
+    RankSnapshot = Struct.new(
+      :id,
+      :code,
+      :label,
+      :display_color,
+      :position,
+      keyword_init: true
+    )
+
     def self.call(calculation_run:)
       new(calculation_run: calculation_run).call
     end
@@ -121,8 +130,14 @@ module Rf
       transition =
         transition_counts[key] ||=
           Transition.new(
-            from_rf_rank: previous_result&.rf_rank,
-            to_rf_rank: current_result.rf_rank,
+            from_rf_rank: historical_rank(
+              calculation_run.previous_run,
+              previous_result&.rf_rank
+            ),
+            to_rf_rank: historical_rank(
+              calculation_run,
+              current_result.rf_rank
+            ),
             count: 0
           )
 
@@ -150,16 +165,30 @@ module Rf
       rank_ids =
         (before_counts.keys + after_counts.keys).uniq
 
-      StandardListMaster
-        .where(id: rank_ids)
-        .order(:position, :id)
-        .map do |rank|
-          RankComparison.new(
-            rf_rank: rank,
-            before_count: before_counts.fetch(rank.id, 0),
-            after_count: after_counts.fetch(rank.id, 0)
-          )
-        end
+      comparisons =
+        StandardListMaster
+          .where(id: rank_ids)
+          .map do |rank|
+            source_run =
+              if after_counts.key?(rank.id)
+                calculation_run
+              else
+                calculation_run.previous_run
+              end
+
+            RankComparison.new(
+              rf_rank: historical_rank(source_run, rank),
+              before_count: before_counts.fetch(rank.id, 0),
+              after_count: after_counts.fetch(rank.id, 0)
+            )
+          end
+
+      comparisons.sort_by do |comparison|
+        [
+          comparison.rf_rank.position,
+          comparison.rf_rank.id
+        ]
+      end
     end
 
     def rank_counts_for(run)
@@ -171,6 +200,29 @@ module Rf
         .where.not(rf_rank_id: nil)
         .group(:rf_rank_id)
         .count
+    end
+
+    def historical_rank(run, rank)
+      return nil if rank.nil?
+      return rank if run.rf_rank_snapshots.nil?
+
+      snapshot =
+        run.rf_rank_snapshots.find do |item|
+          item.fetch("id") == rank.id
+        end
+
+      if snapshot.nil?
+        raise KeyError,
+              "計算履歴にRFランクID #{rank.id}の保存情報がありません"
+      end
+
+      RankSnapshot.new(
+        id: snapshot.fetch("id"),
+        code: snapshot.fetch("code"),
+        label: snapshot.fetch("label"),
+        display_color: snapshot.fetch("display_color"),
+        position: snapshot.fetch("position")
+      )
     end
   end
 end
