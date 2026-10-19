@@ -309,6 +309,162 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
     expect(distribution.percentage).to eq(0.0)
   end
 
+  it "マスタ変更後も保存したランク情報と並び順で分析する" do
+    run = create_run(
+      base_date: Date.new(2026, 10, 10),
+      customer_count: 1
+    )
+
+    create_result(
+      run,
+      rf_rank: rank_a,
+      recency_days: 30,
+      frequency_count: 2
+    )
+
+    run.update!(
+      rf_rank_snapshots: [ rank_a, rank_n ].map do |rank|
+        rank.attributes.slice(
+          "id",
+          "code",
+          "label",
+          "display_color",
+          "position"
+        )
+      end
+    )
+
+    rank_a.update!(
+      label: "変更後のA",
+      display_color: "#FF0000",
+      position: 10
+    )
+
+    rank_n.update!(active: false)
+
+    create(
+      :standard_list_master,
+      standard_master: rf_rank_master,
+      code: "X",
+      label: "無関係なランク",
+      position: 3,
+      active: true
+    )
+
+    result = described_class.call(
+      calculation_run: run.reload
+    )
+
+    expect(
+      result.rank_distribution.map do |distribution|
+        [
+          distribution.rf_rank.code,
+          distribution.rf_rank.label,
+          distribution.rf_rank.display_color,
+          distribution.count
+        ]
+      end
+    ).to eq(
+      [
+        [ "A", "Aランク", "#059669", 1 ],
+        [ "N", "Nランク", "#64748B", 0 ]
+      ]
+    )
+
+    cell = result.cells.first
+
+    expect(cell.rf_rank.label).to eq("Aランク")
+    expect(cell.rf_rank.display_color).to eq("#059669")
+    expect(cell.count).to eq(1)
+  end
+
+  it "前年比較に今回と前年の保存済みランク情報を使用する" do
+  previous_run = create_run(
+    base_date: Date.new(2025, 10, 10),
+    customer_count: 1
+  )
+
+  create_result(
+    previous_run,
+    rf_rank: rank_n,
+    recency_days: nil,
+    frequency_count: 0
+  )
+
+  previous_run.update!(
+    rf_rank_snapshots: [
+      {
+        "id" => rank_n.id,
+        "code" => "N",
+        "label" => "前年のNランク",
+        "display_color" => "#123456",
+        "position" => 2
+      }
+    ]
+  )
+
+  current_run = create_run(
+    base_date: Date.new(2026, 10, 10),
+    previous_run: previous_run,
+    customer_count: 1
+  )
+
+  create_result(
+    current_run,
+    rf_rank: rank_a,
+    recency_days: 30,
+    frequency_count: 2
+  )
+
+  current_run.update!(
+    rf_rank_snapshots: [ rank_a, rank_n ].map do |rank|
+      rank.attributes.slice(
+        "id",
+        "code",
+        "label",
+        "display_color",
+        "position"
+      )
+    end
+  )
+
+  rank_a.update!(
+    label: "変更後のA",
+    display_color: "#FF0000",
+    position: 10
+  )
+
+  rank_n.update!(
+    label: "変更後のN",
+    display_color: "#FFFF00",
+    active: false
+  )
+
+  result = described_class.call(
+    calculation_run: current_run.reload
+  )
+
+  expect(result.comparison_run).to eq(previous_run)
+
+  expect(
+    result.rank_comparisons.map do |comparison|
+      [
+        comparison.rf_rank.code,
+        comparison.rf_rank.label,
+        comparison.rf_rank.display_color,
+        comparison.current_count,
+        comparison.previous_count,
+        comparison.count_delta
+      ]
+    end
+  ).to eq(
+    [
+      [ "A", "Aランク", "#059669", 1, 0, 1 ],
+      [ "N", "前年のNランク", "#123456", 0, 1, -1 ]
+    ]
+  )
+end
+
   private
 
   def create_run(
