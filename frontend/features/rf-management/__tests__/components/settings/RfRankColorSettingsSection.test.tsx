@@ -39,6 +39,7 @@ const rfRankMasterResponse = {
             position: 1,
             active: true,
             display_color: "#059669",
+            default_display_color: "#059669",
           },
           {
             id: 32,
@@ -48,6 +49,7 @@ const rfRankMasterResponse = {
             position: 2,
             active: true,
             display_color: "#0D9488",
+            default_display_color: "#0D9488",
           },
         ],
       },
@@ -111,5 +113,40 @@ describe("RfRankColorSettingsSection", () => {
     expect(
       screen.queryByRole("button", { name: "カラー設定を保存" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "初期色へ戻す" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("初期色を選択し、保存すると反映できる", async () => {
+    const user = userEvent.setup();
+    const response = structuredClone(rfRankMasterResponse);
+
+    response.data.standard_masters[0].items[0].display_color = "#123456";
+
+    mocks.fetchStandardCodes.mockResolvedValue(response);
+
+    render(<RfRankColorSettingsSection />);
+
+    const colorInput = await screen.findByLabelText("Aランクの表示色");
+
+    expect(colorInput).toHaveValue("#123456");
+
+    await user.click(screen.getByRole("button", { name: "初期色へ戻す" }));
+
+    expect(colorInput).toHaveValue("#059669");
+    expect(mocks.updateStandardListCode).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "カラー設定を保存" }));
+
+    await waitFor(() => {
+      expect(mocks.updateStandardListCode).toHaveBeenCalledWith(7, 31, {
+        display_color: "#059669",
+      });
+    });
+
+    expect(
+      await screen.findByText("RFランクのカラー設定を保存しました。"),
+    ).toBeInTheDocument();
   });
 });

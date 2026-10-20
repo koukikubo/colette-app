@@ -2,7 +2,7 @@ module Api
   module V1
     class StandardListMasterSerializer < ApplicationSerializer
       def as_json
-        {
+        data = {
           id: resource.id,
           display_code: resource.id.to_s.rjust(5, "0"),
           label: resource.label,
@@ -11,6 +11,14 @@ module Api
           active: resource.active,
           display_color: resource.display_color
         }
+
+        default_color = resource.default_display_color
+
+        return data if default_color.nil?
+
+        data.merge(
+          default_display_color: default_color
+        )
       end
     end
   end

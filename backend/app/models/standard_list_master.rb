@@ -1,4 +1,15 @@
 class StandardListMaster < ApplicationRecord
+  # RFランクのデフォルトカラー
+  RF_RANK_DEFAULT_COLORS = {
+    "A" => "#059669",
+    "B" => "#0D9488",
+    "C" => "#2563EB",
+    "D" => "#D97706",
+    "E" => "#EA580C",
+    "Z" => "#64748B",
+    "N" => "#94A3B8"
+  }.freeze
+
   belongs_to :standard_master
 
   has_many :restaurant_masters,
@@ -25,6 +36,12 @@ class StandardListMaster < ApplicationRecord
   # 共通の検索条件
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
+
+  def default_display_color
+    return nil unless standard_master&.system_key == "rf_rank"
+
+    RF_RANK_DEFAULT_COLORS.fetch(code, "#64748B")
+  end
 
   private
 

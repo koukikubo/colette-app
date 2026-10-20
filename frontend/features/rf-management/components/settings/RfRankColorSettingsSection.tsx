@@ -104,6 +104,22 @@ export function RfRankColorSettingsSection({
     setSuccessMessage(null);
   }
 
+  function resetColors() {
+    if (!isOwner || isSaving) return;
+
+    setRanks((current) =>
+      current.map((rank) => ({
+        ...rank,
+        display_color: rank.default_display_color ?? FALLBACK_COLOR,
+      })),
+    );
+
+    setErrorMessage(null);
+    setSuccessMessage(
+      "初期色を選択しました。「カラー設定を保存」で反映されます。",
+    );
+  }
+
   async function saveColors() {
     if (masterId === null || changedRanks.length === 0) return;
 
@@ -223,13 +239,24 @@ export function RfRankColorSettingsSection({
                 </div>
 
                 {isOwner && (
-                  <Button
-                    type="button"
-                    disabled={changedRanks.length === 0 || isSaving}
-                    onClick={() => void saveColors()}
-                  >
-                    {isSaving ? "保存中..." : "カラー設定を保存"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSaving || ranks.length === 0}
+                      onClick={resetColors}
+                    >
+                      初期色へ戻す
+                    </Button>
+
+                    <Button
+                      type="button"
+                      disabled={changedRanks.length === 0 || isSaving}
+                      onClick={() => void saveColors()}
+                    >
+                      {isSaving ? "保存中..." : "カラー設定を保存"}
+                    </Button>
+                  </div>
                 )}
               </div>
             </>
