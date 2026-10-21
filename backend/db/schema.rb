@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_17_042052) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_041048) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -175,7 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_042052) do
     t.index ["status"], name: "index_rf_calculation_runs_on_status"
     t.check_constraint "customer_count >= 0", name: "check_rf_calculation_runs_customer_count"
     t.check_constraint "excluded_count >= 0", name: "check_rf_calculation_runs_excluded_count"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying]::text[])", name: "check_rf_calculation_runs_status"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'processing'::character varying::text, 'completed'::character varying::text, 'failed'::character varying::text])", name: "check_rf_calculation_runs_status"
     t.check_constraint "unmatched_count >= 0", name: "check_rf_calculation_runs_unmatched_count"
   end
 
@@ -233,6 +233,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_042052) do
     t.integer "lock_version", default: 0, null: false
     t.string "name", null: false
     t.datetime "published_at"
+    t.jsonb "rf_rank_snapshots"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "version", null: false
@@ -241,7 +242,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_042052) do
     t.check_constraint "aggregation_months > 0", name: "check_rf_rule_sets_aggregation_months"
     t.check_constraint "frequency_window_months <= aggregation_months", name: "check_rf_rule_sets_frequency_within_aggregation"
     t.check_constraint "frequency_window_months > 0", name: "check_rf_rule_sets_frequency_window_months"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying]::text[])", name: "check_rf_rule_sets_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'published'::character varying::text, 'archived'::character varying::text])", name: "check_rf_rule_sets_status"
   end
 
   create_table "rf_settings", force: :cascade do |t|

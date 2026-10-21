@@ -249,6 +249,66 @@ RSpec.describe "Api::V1::RfRuleSets",
 
       expect(response).to have_http_status(:not_found)
     end
+
+    it "アーカイブ後にマスタを変更しても保存したランク情報を返す" do
+      login!
+
+      rule_set = create_rule_set(
+        name: "履歴確認用ルール",
+        version: 1,
+        status: "published",
+        published_at: Time.current
+      )
+
+      create_valid_rule_structure!(rule_set)
+
+      rank = rule_set.rank_mappings.first!.rf_rank
+      rank.update!(display_color: "#059669")
+
+      patch(
+        "/api/v1/rf_rule_sets/#{rule_set.id}/archive",
+        params: {
+          rf_rule_set: {
+            lock_version: rule_set.lock_version
+          }
+        },
+        headers: authenticated_headers,
+        as: :json
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      rank.update!(
+        label: "変更後の名称",
+        display_color: "#FF0000",
+        active: false
+      )
+
+      get(
+        "/api/v1/rf_rule_sets/#{rule_set.id}",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      response_rule_set = response_body.dig(
+        "data",
+        "rule_set"
+      )
+
+      expect(response_rule_set["status"]).to eq("archived")
+
+      expect(
+        response_rule_set["rank_mappings"].first["rf_rank"]
+      ).to eq(
+        {
+          "id" => rank.id,
+          "code" => "A",
+          "label" => "Aランク",
+          "display_color" => "#059669"
+        }
+      )
+    end
   end
 
   describe "POST /api/v1/rf_rule_sets" do
@@ -632,6 +692,40 @@ RSpec.describe "Api::V1::RfRuleSets",
 
       create_valid_rule_structure!(draft_rule_set)
 
+      rank = draft_rule_set.rank_mappings.first!.rf_rank
+
+      recency_rule = current_rule_set.recency_rules.create!(
+        code: "R1",
+        label: "全期間",
+        min_days: 0,
+        max_days: nil,
+        position: 1
+      )
+
+      frequency_rule = current_rule_set.frequency_rules.create!(
+        code: "F1",
+        label: "0回以上",
+        min_visits: 0,
+        max_visits: nil,
+        position: 1
+      )
+
+      current_rule_set.rank_mappings.create!(
+        rf_recency_rule: recency_rule,
+        rf_frequency_rule: frequency_rule,
+        rf_rank: rank
+      )
+
+      expected_snapshots = [
+        rank.attributes.slice(
+          "id",
+          "code",
+          "label",
+          "display_color",
+          "position"
+        )
+      ]
+
       patch(
         "/api/v1/rf_rule_sets/#{draft_rule_set.id}/publish",
         params: {
@@ -648,6 +742,10 @@ RSpec.describe "Api::V1::RfRuleSets",
       expect(draft_rule_set.reload.status).to eq("published")
       expect(draft_rule_set.published_at).to be_present
       expect(current_rule_set.reload.status).to eq("archived")
+      expect(current_rule_set.reload.rf_rank_snapshots)
+        .to eq(expected_snapshots)
+
+      expect(draft_rule_set.reload.rf_rank_snapshots).to be_nil
     end
 
     it "検証エラーがあるdraftは公開しない" do
@@ -688,6 +786,21 @@ RSpec.describe "Api::V1::RfRuleSets",
           published_at: Time.current
         )
 
+      create_valid_rule_structure!(rule_set)
+
+      rank = rule_set.rank_mappings.first!.rf_rank
+      rank.update!(display_color: "#059669")
+
+      expected_snapshots = [
+        rank.attributes.slice(
+          "id",
+          "code",
+          "label",
+          "display_color",
+          "position"
+        )
+      ]
+
       patch(
         "/api/v1/rf_rule_sets/#{rule_set.id}/archive",
         params: {
@@ -705,6 +818,17 @@ RSpec.describe "Api::V1::RfRuleSets",
 
       expect(rule_set.status).to eq("archived")
       expect(rule_set.lock_version).to eq(1)
+
+      expect(rule_set.rf_rank_snapshots)
+        .to eq(expected_snapshots)
+
+      rank.update!(
+        label: "変更後の名称",
+        display_color: "#FF0000"
+      )
+
+      expect(rule_set.reload.rf_rank_snapshots)
+        .to eq(expected_snapshots)
     end
 
     it "draftのRFルールはアーカイブできない" do

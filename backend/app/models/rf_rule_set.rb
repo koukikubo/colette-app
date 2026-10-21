@@ -50,6 +50,22 @@ class RfRuleSet < ApplicationRecord
 
   validate :frequency_window_must_fit_within_aggregation
 
+  def build_rf_rank_snapshots
+    rank_ids = rank_mappings.select(:rf_rank_id)
+
+    StandardListMaster
+      .where(id: rank_ids)
+      .ordered
+      .map do |rank|
+        {
+          "id" => rank.id,
+          "code" => rank.code,
+          "label" => rank.label,
+          "display_color" => rank.display_color,
+          "position" => rank.position
+        }
+      end
+  end
   private
 
   def frequency_window_must_fit_within_aggregation
