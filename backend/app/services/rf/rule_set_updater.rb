@@ -70,6 +70,10 @@ module Rf
     end
 
     def update_rule_set!
+      if attributes.key?(:no_visit_rank_id)
+        rule_set.no_visit_rank_id = attributes[:no_visit_rank_id]
+      end
+
       rule_set.update!(
         name: attributes[:name],
         aggregation_months:

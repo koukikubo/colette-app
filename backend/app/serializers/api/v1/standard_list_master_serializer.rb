@@ -4,7 +4,7 @@ module Api
       def as_json
         data = {
           id: resource.id,
-          display_code: resource.id.to_s.rjust(5, "0"),
+          display_code: resource.display_code,
           label: resource.label,
           description: resource.description,
           position: resource.position,

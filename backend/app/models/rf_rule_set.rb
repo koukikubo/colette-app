@@ -5,6 +5,16 @@ class RfRuleSet < ApplicationRecord
              class_name: "Staff",
              optional: true
 
+  belongs_to :no_visit_rank,
+             class_name: "StandardListMaster",
+             optional: true
+
+  validates :no_visit_rank,
+            presence: true,
+            if: -> { no_visit_rank_id.present? }
+  validates :no_visit_rank,
+            standard_list_category: { system_key: "rf_rank" }
+
   has_many :recency_rules,
            class_name: "RfRecencyRule",
            dependent: :restrict_with_error
@@ -51,7 +61,7 @@ class RfRuleSet < ApplicationRecord
   validate :frequency_window_must_fit_within_aggregation
 
   def build_rf_rank_snapshots
-    rank_ids = rank_mappings.select(:rf_rank_id)
+    rank_ids = (rank_mappings.pluck(:rf_rank_id) + [ no_visit_rank_id ]).compact.uniq
 
     StandardListMaster
       .where(id: rank_ids)
@@ -59,7 +69,7 @@ class RfRuleSet < ApplicationRecord
       .map do |rank|
         {
           "id" => rank.id,
-          "code" => rank.code,
+          "display_code" => rank.display_code,
           "label" => rank.label,
           "display_color" => rank.display_color,
           "position" => rank.position

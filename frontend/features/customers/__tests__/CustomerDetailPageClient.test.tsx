@@ -165,7 +165,7 @@ describe("CustomerDetailPageClient", () => {
           },
           current_rf_rank: {
             id: 20,
-            code: "A",
+            display_code: "00020",
             label: "Aランク",
             display_color: "#059669",
           },
@@ -203,7 +203,7 @@ describe("CustomerDetailPageClient", () => {
     expect(colorIndicator).toHaveStyle({
       backgroundColor: "#059669",
     });
-    expect(screen.getByText("（A）")).toBeInTheDocument();
+    expect(screen.getByText("（00020）")).toBeInTheDocument();
   });
 
   it("RFランクの色が未設定の場合は灰色で表示する", async () => {
@@ -218,7 +218,7 @@ describe("CustomerDetailPageClient", () => {
           },
           current_rf_rank: {
             id: 20,
-            code: "A",
+            display_code: "00020",
             label: "Aランク",
             display_color: null,
           },
@@ -256,7 +256,7 @@ describe("CustomerDetailPageClient", () => {
     expect(colorIndicator).toHaveStyle({
       backgroundColor: "#64748B",
     });
-    expect(screen.getByText("（A）")).toBeInTheDocument();
+    expect(screen.getByText("（00020）")).toBeInTheDocument();
   });
 
   it("現在適用中のRF計算結果がない場合は未計算と表示する", async () => {

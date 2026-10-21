@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Api::V1::StandardListMasterSerializer do
-  def serialize_rank(code:, system_key: "rf_rank")
+  def serialize_rank(code:, system_key: "rf_rank", initial_display_color: nil)
     master = build(
       :standard_master,
       system_key: system_key
@@ -12,18 +12,19 @@ RSpec.describe Api::V1::StandardListMasterSerializer do
       standard_master: master,
       code: code,
       label: "変更された表示名",
-      display_color: "#FF0000"
+      display_color: "#FF0000",
+      initial_display_color: initial_display_color
     )
 
     described_class.new(rank).as_json
   end
 
-  it "RFランクの現在色とコードに対応する初期色を返す" do
-    StandardListMaster::RF_RANK_DEFAULT_COLORS.each do |code, color|
-      data = serialize_rank(code: code)
+  it "旧コードに依存せず保存済みの初期色と現在色を返す" do
+    [ "A", "S", nil ].each do |code|
+      data = serialize_rank(code: code, initial_display_color: "#123456")
 
       expect(data[:display_color]).to eq("#FF0000")
-      expect(data[:default_display_color]).to eq(color)
+      expect(data[:default_display_color]).to eq("#123456")
     end
   end
 

@@ -23,7 +23,8 @@ export type RankSummary = {
   label: string;
 };
 
-export type RfRankSummary = RankSummary & {
+export type RfRankSummary = Omit<RankSummary, "code"> & {
+  display_code: string;
   display_color: string | null;
 };
 

@@ -6,7 +6,7 @@ export type RfStaffSummary = {
 
 export type RfRank = {
   id: number;
-  code: string;
+  display_code: string;
   label: string;
   display_color: string | null;
 };

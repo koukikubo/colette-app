@@ -120,7 +120,7 @@ class Api::V1::Rf::CalculationAnalysisSerializer <
   def serialize_rf_rank(rank)
     {
       id: rank.id,
-      code: rank.code,
+      display_code: rank.display_code,
       label: rank.label,
       display_color: rank.display_color
     }

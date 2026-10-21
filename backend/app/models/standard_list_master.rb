@@ -1,14 +1,5 @@
 class StandardListMaster < ApplicationRecord
-  # RFランクのデフォルトカラー
-  RF_RANK_DEFAULT_COLORS = {
-    "A" => "#059669",
-    "B" => "#0D9488",
-    "C" => "#2563EB",
-    "D" => "#D97706",
-    "E" => "#EA580C",
-    "Z" => "#64748B",
-    "N" => "#94A3B8"
-  }.freeze
+  RF_RANK_FALLBACK_COLOR = "#64748B".freeze
 
   belongs_to :standard_master
 
@@ -24,34 +15,40 @@ class StandardListMaster < ApplicationRecord
             presence: true,
             numericality: { only_integer: true }
   validates :active, inclusion: { in: [ true, false ] }
-  validates :display_color,
+  validates :display_color, :initial_display_color,
           format: {
             with: /\A#[0-9A-Fa-f]{6}\z/,
             message: "は#RRGGBB形式で入力してください"
           },
           allow_nil: true
 
-  validate :rf_rank_code_must_not_change, on: :update
+  before_validation :set_initial_rf_rank_color, on: :create
 
   # 共通の検索条件
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
+  scope :active_rf_ranks, -> {
+    joins(:standard_master).where(
+      active: true,
+      standard_masters: { system_key: "rf_rank", active: true }
+    )
+  }
+
+  def display_code
+    id.to_s.rjust(5, "0")
+  end
 
   def default_display_color
     return nil unless standard_master&.system_key == "rf_rank"
 
-    RF_RANK_DEFAULT_COLORS.fetch(code, "#64748B")
+    initial_display_color || RF_RANK_FALLBACK_COLOR
   end
 
   private
 
-  def rf_rank_code_must_not_change
+  def set_initial_rf_rank_color
     return unless standard_master&.system_key == "rf_rank"
-    return unless will_save_change_to_code?
 
-    errors.add(
-      :code,
-      "はRFランクの内部識別子のため変更できません"
-    )
+    self.initial_display_color ||= display_color || RF_RANK_FALLBACK_COLOR
   end
 end

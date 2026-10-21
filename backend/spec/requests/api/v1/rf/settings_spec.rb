@@ -106,7 +106,7 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
       expect(rank_counts).to contain_exactly(
         include(
           "id" => rf_rank.id,
-          "code" => "A",
+          "display_code" => rf_rank.display_code,
           "label" => "Aランク",
           "display_color" => "#059669",
           "count" => 1

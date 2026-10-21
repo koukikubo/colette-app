@@ -123,7 +123,7 @@ module Rf
         .map do |rank|
           {
             "id" => rank.id,
-            "code" => rank.code,
+            "display_code" => rank.display_code,
             "label" => rank.label,
             "display_color" => rank.display_color,
             "position" => rank.position
@@ -133,17 +133,8 @@ module Rf
 
     def active_no_visit_rank_ids
       StandardListMaster
-        .joins(:standard_master)
-        .where(
-          standard_list_masters: {
-            active: true,
-            code: "N"
-          },
-          standard_masters: {
-            system_key: "rf_rank",
-            active: true
-          }
-        )
+        .active_rf_ranks
+        .where(id: rule_set.no_visit_rank_id)
         .pluck(:id)
     end
 

@@ -3,6 +3,7 @@ class Api::V1::Rf::RuleSetSerializer < ApplicationSerializer
     {
       id: resource.id,
       name: resource.name,
+      no_visit_rank_id: resource.no_visit_rank_id,
       version: resource.version,
       aggregation_months: resource.aggregation_months,
       frequency_window_months:
@@ -91,7 +92,7 @@ class Api::V1::Rf::RuleSetSerializer < ApplicationSerializer
 
       return {
         id: snapshot.fetch("id"),
-        code: snapshot.fetch("code"),
+        display_code: snapshot.fetch("display_code") { snapshot.fetch("id").to_s.rjust(5, "0") },
         label: snapshot.fetch("label"),
         display_color: snapshot.fetch("display_color")
       }
@@ -101,7 +102,7 @@ class Api::V1::Rf::RuleSetSerializer < ApplicationSerializer
 
     {
       id: rank.id,
-      code: rank.code,
+      display_code: rank.display_code,
       label: rank.label,
       display_color: rank.display_color
     }

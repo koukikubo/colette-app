@@ -55,7 +55,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
         preview.rank_comparisons.map do |comparison|
           {
             id: comparison.rf_rank.id,
-            code: comparison.rf_rank.code,
+            display_code: comparison.rf_rank.display_code,
             display_color: comparison.rf_rank.display_color,
             label: comparison.rf_rank.label,
             before_count: comparison.before_count,
@@ -83,7 +83,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
 
     {
       id: rf_rank.id,
-      code: rf_rank.code,
+      display_code: rf_rank.display_code,
       label: rf_rank.label,
       display_color: rf_rank.display_color
     }
@@ -107,7 +107,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
           .map do |rank|
             {
               "id" => rank.id,
-              "code" => rank.code,
+              "display_code" => rank.display_code,
               "label" => rank.label,
               "display_color" => rank.display_color,
               "position" => rank.position
@@ -125,7 +125,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
     ranks.map do |rank|
       {
         id: rank.fetch("id"),
-        code: rank.fetch("code"),
+        display_code: rank.fetch("display_code") { rank.fetch("id").to_s.rjust(5, "0") },
         label: rank.fetch("label"),
         display_color: rank.fetch("display_color"),
         count: counts.fetch(rank.fetch("id"), 0)

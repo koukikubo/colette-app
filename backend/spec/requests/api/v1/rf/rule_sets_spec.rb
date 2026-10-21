@@ -233,7 +233,7 @@ RSpec.describe "Api::V1::RfRuleSets",
           .dig("rank_mappings", 0, "rf_rank")
       ).to include(
         "id" => rf_rank.id,
-        "code" => "A",
+        "display_code" => rf_rank.display_code,
         "label" => "Aランク",
         "display_color" => "#059669"
       )
@@ -303,7 +303,7 @@ RSpec.describe "Api::V1::RfRuleSets",
       ).to eq(
         {
           "id" => rank.id,
-          "code" => "A",
+          "display_code" => rank.display_code,
           "label" => "Aランク",
           "display_color" => "#059669"
         }
@@ -608,7 +608,7 @@ RSpec.describe "Api::V1::RfRuleSets",
           position: 1
         )
 
-      create_no_visit_rank!(rf_rank_master)
+      rule_set.update_column(:no_visit_rank_id, create_no_visit_rank!(rf_rank_master).id)
 
       rule_set.rank_mappings.create!(
         rf_recency_rule: recency_rule,
@@ -645,7 +645,7 @@ RSpec.describe "Api::V1::RfRuleSets",
           status: "draft"
         )
 
-      create_no_visit_rank!
+      rule_set.update_column(:no_visit_rank_id, create_no_visit_rank!.id)
 
       post(
         "/api/v1/rf_rule_sets/#{rule_set.id}/validate",
@@ -716,15 +716,10 @@ RSpec.describe "Api::V1::RfRuleSets",
         rf_rank: rank
       )
 
-      expected_snapshots = [
-        rank.attributes.slice(
-          "id",
-          "code",
-          "label",
-          "display_color",
-          "position"
-        )
-      ]
+      expected_snapshots = [ rank ].map do |item|
+        item.attributes.slice("id", "label", "display_color", "position")
+          .merge("display_code" => item.display_code)
+      end
 
       patch(
         "/api/v1/rf_rule_sets/#{draft_rule_set.id}/publish",
@@ -791,15 +786,10 @@ RSpec.describe "Api::V1::RfRuleSets",
       rank = rule_set.rank_mappings.first!.rf_rank
       rank.update!(display_color: "#059669")
 
-      expected_snapshots = [
-        rank.attributes.slice(
-          "id",
-          "code",
-          "label",
-          "display_color",
-          "position"
-        )
-      ]
+      expected_snapshots = [ rank, rule_set.no_visit_rank ].sort_by { |item| [ item.position, item.id ] }.map do |item|
+        item.attributes.slice("id", "label", "display_color", "position")
+          .merge("display_code" => item.display_code)
+      end
 
       patch(
         "/api/v1/rf_rule_sets/#{rule_set.id}/archive",
@@ -1239,7 +1229,7 @@ RSpec.describe "Api::V1::RfRuleSets",
         position: 1
       )
 
-    create_no_visit_rank!(rf_rank_master)
+    rule_set.update_column(:no_visit_rank_id, create_no_visit_rank!(rf_rank_master).id)
 
     recency_rule =
       rule_set.recency_rules.create!(

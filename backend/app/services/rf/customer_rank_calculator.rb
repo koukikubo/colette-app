@@ -128,16 +128,7 @@ module Rf
     end
 
     def no_visit_rank
-      StandardListMaster
-        .joins(:standard_master)
-        .find_by!(
-          code: "N",
-          active: true,
-          standard_masters: {
-            system_key: "rf_rank",
-            active: true
-          }
-        )
+      StandardListMaster.active_rf_ranks.find(rule_set.no_visit_rank_id)
     end
   end
 end

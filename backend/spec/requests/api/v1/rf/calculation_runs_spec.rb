@@ -335,13 +335,13 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       expect(result["previous_rf_rank"]).to include(
         "id" => rank_b.id,
-        "code" => "B",
+        "display_code" => rank_b.display_code,
         "label" => "Bランク"
       )
 
       expect(result["rf_rank"]).to include(
         "id" => rank_a.id,
-        "code" => "A",
+        "display_code" => rank_a.display_code,
         "label" => "Aランク"
       )
 

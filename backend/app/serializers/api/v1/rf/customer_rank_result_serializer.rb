@@ -39,7 +39,7 @@ class Api::V1::Rf::CustomerRankResultSerializer <
 
     {
       id: rf_rank.id,
-      code: rf_rank.code,
+      display_code: rf_rank.display_code,
       label: rf_rank.label
     }
   end

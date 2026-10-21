@@ -57,14 +57,14 @@ describe("RfCurrentSettingsSection", () => {
           rank_counts: [
             {
               id: 31,
-              code: "A",
+              display_code: "00031",
               label: "Aランク",
               display_color: "#059669",
               count: 70,
             },
             {
               id: 32,
-              code: "B",
+              display_code: "00032",
               label: "Bランク",
               display_color: "#0D9488",
               count: 40,

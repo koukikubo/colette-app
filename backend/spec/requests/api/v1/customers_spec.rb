@@ -506,7 +506,7 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(response_customer["current_rf_rank"]).to eq(
         {
           "id" => rf_rank.id,
-          "code" => "A",
+          "display_code" => rf_rank.display_code,
           "label" => "Aランク",
           "display_color" => "#059669"
         }
@@ -526,7 +526,7 @@ RSpec.describe "Api::V1::Customers", type: :request do
       expect(response_customer["current_rf_rank"]).to eq(
         {
           "id" => rf_rank.id,
-          "code" => "A",
+          "display_code" => rf_rank.display_code,
           "label" => "Aランク",
           "display_color" => "#059669"
         }

@@ -60,7 +60,7 @@ RSpec.describe StandardListMaster, type: :model do
     end
   end
 
-  describe "RFランクの内部コード保護" do
+  describe "RFランクの識別情報" do
     let(:rf_rank_master) do
       create(
         :standard_master,
@@ -86,13 +86,13 @@ RSpec.describe StandardListMaster, type: :model do
       expect(rank.save).to be true
     end
 
-    it "保存済みRFランクの内部コードを変更できない" do
-      expect(rf_rank.update(code: "S")).to be false
+    it "旧コードを消してもIDと表示用コードを維持する" do
+      original_id = rf_rank.id
+      original_display_code = rf_rank.display_code
 
-      expect(rf_rank.errors[:code]).to include(
-        "はRFランクの内部識別子のため変更できません"
-      )
-      expect(rf_rank.reload.code).to eq("A")
+      expect(rf_rank.update(code: nil)).to be true
+      expect(rf_rank.reload.id).to eq(original_id)
+      expect(rf_rank.display_code).to eq(original_display_code)
     end
 
     it "RFランクを無効化できる" do
@@ -113,6 +113,47 @@ RSpec.describe StandardListMaster, type: :model do
 
       expect(rank.update(code: "S")).to be true
       expect(rank.reload.code).to eq("S")
+    end
+  end
+
+  describe "RFランクの初期色" do
+    let(:master) { create(:standard_master, system_key: "rf_rank") }
+
+    it "コードなしで登録しても登録時の表示色を初期色として保存する" do
+      rank = create(:standard_list_master, standard_master: master,
+                    code: nil, display_color: "#123456")
+
+      expect(rank.reload.default_display_color).to eq("#123456")
+      rank.update!(display_color: "#ABCDEF", label: "改名後")
+      expect(rank.reload.default_display_color).to eq("#123456")
+    end
+
+    it "表示色が未指定なら共通初期色を保存する" do
+      rank = create(:standard_list_master, standard_master: master, code: nil)
+
+      expect(rank.reload.initial_display_color).to eq("#64748B")
+    end
+
+    it "明示された初期色を保持する" do
+      rank = create(:standard_list_master, standard_master: master,
+                    initial_display_color: "#654321", display_color: "#123456")
+
+      expect(rank.reload.default_display_color).to eq("#654321")
+    end
+
+    it "初期色の形式を検証する" do
+      rank = build(:standard_list_master, standard_master: master,
+                   initial_display_color: "red")
+
+      expect(rank).to be_invalid
+      expect(rank.errors[:initial_display_color]).to be_present
+    end
+
+    it "RFランク以外には初期色を自動設定しない" do
+      rank = create(:standard_list_master, display_color: "#123456")
+
+      expect(rank.reload.initial_display_color).to be_nil
+      expect(rank.default_display_color).to be_nil
     end
   end
 

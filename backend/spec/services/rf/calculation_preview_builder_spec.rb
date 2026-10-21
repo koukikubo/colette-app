@@ -159,7 +159,7 @@ RSpec.describe Rf::CalculationPreviewBuilder do
     expect(
       preview.rank_comparisons.map do |comparison|
         [
-          comparison.rf_rank.code,
+          comparison.rf_rank.display_code,
           comparison.rf_rank.label,
           comparison.rf_rank.display_color,
           comparison.before_count,
@@ -168,8 +168,8 @@ RSpec.describe Rf::CalculationPreviewBuilder do
       end
     ).to eq(
       [
-        [ "A", "Aランク", "#059669", 0, 1 ],
-        [ "B", "Bランク", "#2563EB", 1, 0 ]
+        [ rank_a.display_code, "Aランク", "#059669", 0, 1 ],
+        [ rank_b.display_code, "Bランク", "#2563EB", 1, 0 ]
       ]
     )
   end

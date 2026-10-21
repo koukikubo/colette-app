@@ -4,7 +4,7 @@ module Rf
 
     RankSnapshot = Struct.new(
       :id,
-      :code,
+      :display_code,
       :label,
       :display_color,
       :position,
@@ -94,7 +94,7 @@ module Rf
     def snapshot_rank(snapshot)
       RankSnapshot.new(
         id: snapshot.fetch("id"),
-        code: snapshot.fetch("code"),
+        display_code: snapshot.fetch("display_code") { snapshot.fetch("id").to_s.rjust(5, "0") },
         label: snapshot.fetch("label"),
         display_color: snapshot.fetch("display_color"),
         position: snapshot.fetch("position")
@@ -215,17 +215,8 @@ module Rf
 
     def active_rf_rank_ids
       StandardListMaster
-        .joins(:standard_master)
-        .where(
-          standard_list_masters: {
-            active: true,
-            code: "N"
-          },
-          standard_masters: {
-            system_key: "rf_rank",
-            active: true
-          }
-        )
+        .active_rf_ranks
+        .where(id: rule_set.no_visit_rank_id)
         .pluck(:id)
     end
 

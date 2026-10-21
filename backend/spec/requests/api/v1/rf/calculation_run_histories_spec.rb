@@ -218,7 +218,7 @@ RSpec.describe "Api::V1::RfCalculationRunHistories",
         rf_rank_snapshots: [
           {
             "id" => rank.id,
-            "code" => "A",
+            "display_code" => rank.display_code,
             "label" => "Aランク",
             "display_color" => "#059669",
             "position" => 1
@@ -249,7 +249,7 @@ RSpec.describe "Api::V1::RfCalculationRunHistories",
         [
           {
             "id" => rank.id,
-            "code" => "A",
+            "display_code" => rank.display_code,
             "label" => "Aランク",
             "display_color" => "#059669",
             "count" => 1

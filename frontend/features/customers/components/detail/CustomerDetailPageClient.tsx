@@ -505,7 +505,7 @@ export function CustomerDetailPageClient({
                       />
                       <span>{customer.current_rf_rank.label}</span>
                       <span className="text-xs text-muted-foreground">
-                        （{customer.current_rf_rank.code}）
+                        （{customer.current_rf_rank.display_code}）
                       </span>
                     </span>
                   ) : (

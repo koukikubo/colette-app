@@ -25,7 +25,7 @@ module Rf
 
     RankSnapshot = Struct.new(
       :id,
-      :code,
+      :display_code,
       :label,
       :display_color,
       :position,
@@ -218,7 +218,7 @@ module Rf
 
       RankSnapshot.new(
         id: snapshot.fetch("id"),
-        code: snapshot.fetch("code"),
+        display_code: snapshot.fetch("display_code") { snapshot.fetch("id").to_s.rjust(5, "0") },
         label: snapshot.fetch("label"),
         display_color: snapshot.fetch("display_color"),
         position: snapshot.fetch("position")
