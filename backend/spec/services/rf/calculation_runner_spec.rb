@@ -63,6 +63,25 @@ RSpec.describe Rf::CalculationRunner do
     )
   end
 
+  it "顧客0人でも指定したコードなしランクを保存し、無関係なランクを追加しない" do
+    custom_rank = create(:standard_list_master, standard_master: rf_rank.standard_master,
+                         code: nil, label: "未訪問", display_color: "#123456")
+    create(:standard_list_master, standard_master: rf_rank.standard_master, code: "N")
+    rule_set.update!(no_visit_rank: custom_rank)
+
+    described_class.call(calculation_run: calculation_run)
+
+    expect(calculation_run.reload.rf_rank_snapshots).to eq([
+      {
+        "id" => custom_rank.id,
+        "display_code" => custom_rank.display_code,
+        "label" => "未訪問",
+        "display_color" => "#123456",
+        "position" => custom_rank.position
+      }
+    ])
+  end
+
   it "表示中の全顧客について計算結果を保存する" do
     first_customer = create(:customer)
     second_customer = create(:customer)

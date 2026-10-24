@@ -294,6 +294,7 @@ describe("RfRuleSetsSection", () => {
     const archivedRuleSet = {
       ...publishedRuleSet,
       ...archivedRuleSetSummary,
+      no_visit_rank_id: 99,
       lock_version: 6,
     };
 
@@ -354,6 +355,7 @@ describe("RfRuleSetsSection", () => {
     await waitFor(() => {
       expect(mocks.createRfRuleSet).toHaveBeenCalledWith({
         name: "新しいRFルール",
+        no_visit_rank_id: null,
         aggregation_months: 60,
         frequency_window_months: 12,
         recency_rules: [],
@@ -379,6 +381,7 @@ describe("RfRuleSetsSection", () => {
       ...publishedRuleSet,
       ...archivedRuleSetSummary,
       lock_version: 6,
+      no_visit_rank_id: 99,
     };
 
     mocks.useRfRuleSets.mockReturnValue({
@@ -398,6 +401,7 @@ describe("RfRuleSetsSection", () => {
     await waitFor(() => {
       expect(mocks.createRfRuleSet).toHaveBeenCalledWith({
         name: "過去のRFルール（コピー）",
+        no_visit_rank_id: 99,
         aggregation_months: 60,
         frequency_window_months: 12,
         recency_rules: [],
@@ -440,6 +444,7 @@ describe("RfRuleSetsSection", () => {
     await waitFor(() => {
       expect(mocks.updateRfRuleSet).toHaveBeenCalledWith(7, {
         name: "編集後のRFルール",
+        no_visit_rank_id: null,
         aggregation_months: 36,
         frequency_window_months: 6,
         lock_version: 3,

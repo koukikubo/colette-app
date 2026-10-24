@@ -20,7 +20,10 @@ module Rf
         ensure_lock_version!
 
         rule_set.update!(
-          status: "archived"
+          status: "archived",
+          rf_rank_snapshots:
+            rule_set.rf_rank_snapshots ||
+              rule_set.build_rf_rank_snapshots
         )
 
         rule_set.reload

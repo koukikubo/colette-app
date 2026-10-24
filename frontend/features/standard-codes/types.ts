@@ -6,6 +6,7 @@ export type StandardListCode = {
   position: number;
   active: boolean;
   display_color: string | null;
+  default_display_color?: string;
 };
 
 export type StandardCode = {

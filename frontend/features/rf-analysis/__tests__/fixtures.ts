@@ -2,28 +2,28 @@ import type { RfAnalysis } from "../types/analysis";
 
 const rankA = {
   id: 1,
-  code: "A",
+  display_code: "00001",
   label: "Aランク",
   display_color: "#059669",
 };
 
 const rankB = {
   id: 2,
-  code: "B",
+  display_code: "00002",
   label: "Bランク",
   display_color: "#2563EB",
 };
 
 const rankN = {
   id: 3,
-  code: "N",
+  display_code: "00003",
   label: "Nランク",
   display_color: "#64748B",
 };
 
 const rankC = {
   id: 4,
-  code: "C",
+  display_code: "00004",
   label: "Cランク",
   display_color: "#D97706",
 };

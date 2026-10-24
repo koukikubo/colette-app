@@ -42,44 +42,75 @@ visit_patterns = [
   []                        # N想定
 ].freeze
 
-customers.find_each.with_index do |customer, index|
-  offsets = visit_patterns[index % visit_patterns.length]
+previous_visit_patterns = [
+  [ 10, 25, 40, 55, 70, 85 ],
+  [ 20, 45, 75, 100 ],
+  [ 30, 120 ],
+  [ 120 ],
+  [ 400 ],
+  [ 800 ],
+  []
+].freeze
 
-  offsets.each do |days_ago|
-    visit_date = base_date - days_ago.days
+datasets = [
+  {
+    base_date: base_date.prev_year,
+    patterns: previous_visit_patterns,
+    index_shift: 2
+  },
+  {
+    base_date: base_date,
+    patterns: visit_patterns,
+    index_shift: 0
+  }
+].freeze
 
-    starts_at =
-      Time.zone.local(
-        visit_date.year,
-        visit_date.month,
-        visit_date.day,
-        18,
-        0
-      )
+Reservation.transaction do
+  customers.find_each.with_index do |customer, index|
+    datasets.each do |dataset|
+      patterns = dataset.fetch(:patterns)
+      pattern_index =
+        (index + dataset.fetch(:index_shift)) % patterns.length
 
-    ends_at = starts_at + 2.hours
+      offsets = patterns.fetch(pattern_index)
 
-    reservation =
-      Reservation.find_or_initialize_by(
-        customer: customer,
-        starts_at: starts_at
-      )
+      offsets.each do |days_ago|
+        visit_date = dataset.fetch(:base_date) - days_ago.days
 
-    reservation.assign_attributes(
-      reservation_name: customer.name,
-      reservation_phone_number:
-        customer.phone_number || "09000000000",
-      ends_at: ends_at,
-      guest_count: 2,
-      requested_restaurant_master_type: seat_type,
-      reservation_status: reservation_status,
-      completed_at: ends_at,
-      canceled_at: nil,
-      created_by_staff: staff,
-      updated_by_staff: staff
-    )
+        starts_at =
+          Time.zone.local(
+            visit_date.year,
+            visit_date.month,
+            visit_date.day,
+            18,
+            0
+          )
 
-    reservation.save!
+        ends_at = starts_at + 2.hours
+
+        reservation =
+          Reservation.find_or_initialize_by(
+            customer: customer,
+            starts_at: starts_at
+          )
+
+        reservation.assign_attributes(
+          reservation_name: customer.name,
+          reservation_phone_number:
+            customer.phone_number || "09000000000",
+          ends_at: ends_at,
+          guest_count: 2,
+          requested_restaurant_master_type: seat_type,
+          reservation_status: reservation_status,
+          completed_at: ends_at,
+          canceled_at: nil,
+          created_by_staff: staff,
+          updated_by_staff: staff
+        )
+
+        reservation.save!
+      end
+    end
   end
 end
 

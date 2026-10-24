@@ -492,7 +492,26 @@ export function CustomerDetailPageClient({
 
               <DetailItem
                 label="現在のRFランク"
-                value={rfRankDisplayValue(customer)}
+                value={
+                  customer.current_rf_rank ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="size-3 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor:
+                            customer.current_rf_rank.display_color ?? "#64748B",
+                        }}
+                      />
+                      <span>{customer.current_rf_rank.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        （{customer.current_rf_rank.display_code}）
+                      </span>
+                    </span>
+                  ) : (
+                    rfRankDisplayValue(customer)
+                  )
+                }
               />
 
               {customer.rf_rank_basis && (

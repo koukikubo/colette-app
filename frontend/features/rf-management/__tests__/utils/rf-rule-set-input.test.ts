@@ -16,6 +16,7 @@ describe("RFルール入力変換", () => {
       }),
     ).toEqual({
       name: "新しいRFルール",
+      no_visit_rank_id: null,
       aggregation_months: 60,
       frequency_window_months: 12,
       recency_rules: [],
@@ -26,6 +27,7 @@ describe("RFルール入力変換", () => {
 
   it("基本設定の更新時に条件と対応表を維持する", () => {
     const ruleSet: RfRuleSet = {
+      no_visit_rank_id: 99,
       id: 7,
       name: "更新前",
       version: 2,
@@ -63,7 +65,7 @@ describe("RFルール入力変換", () => {
           frequency_rule_id: 21,
           rf_rank: {
             id: 31,
-            code: "A",
+            display_code: "00031",
             label: "Aランク",
             display_color: "#059669",
           },
@@ -79,6 +81,7 @@ describe("RFルール入力変換", () => {
       }),
     ).toEqual({
       name: "更新後",
+      no_visit_rank_id: 99,
       aggregation_months: 36,
       frequency_window_months: 6,
       lock_version: 3,

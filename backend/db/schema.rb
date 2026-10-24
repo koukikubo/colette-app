@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -161,6 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
     t.date "frequency_started_on", null: false
     t.integer "lock_version", default: 0, null: false
     t.bigint "previous_run_id"
+    t.jsonb "rf_rank_snapshots"
     t.bigint "rf_rule_set_id", null: false
     t.datetime "started_at"
     t.bigint "started_by_staff_id"
@@ -231,11 +232,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
     t.integer "frequency_window_months", default: 12, null: false
     t.integer "lock_version", default: 0, null: false
     t.string "name", null: false
+    t.bigint "no_visit_rank_id"
     t.datetime "published_at"
+    t.jsonb "rf_rank_snapshots"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "version", null: false
     t.index ["created_by_staff_id"], name: "index_rf_rule_sets_on_created_by_staff_id"
+    t.index ["no_visit_rank_id"], name: "index_rf_rule_sets_on_no_visit_rank_id"
     t.index ["version"], name: "index_rf_rule_sets_on_version", unique: true
     t.check_constraint "aggregation_months > 0", name: "check_rf_rule_sets_aggregation_months"
     t.check_constraint "frequency_window_months <= aggregation_months", name: "check_rf_rule_sets_frequency_within_aggregation"
@@ -288,6 +292,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "display_color", limit: 7
+    t.string "initial_display_color"
     t.string "label", null: false
     t.integer "position", default: 0, null: false
     t.bigint "standard_master_id", null: false
@@ -341,6 +346,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_043536) do
   add_foreign_key "rf_rank_mappings", "standard_list_masters", column: "rf_rank_id"
   add_foreign_key "rf_recency_rules", "rf_rule_sets"
   add_foreign_key "rf_rule_sets", "staffs", column: "created_by_staff_id"
+  add_foreign_key "rf_rule_sets", "standard_list_masters", column: "no_visit_rank_id"
   add_foreign_key "rf_settings", "rf_calculation_runs", column: "current_calculation_run_id"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
