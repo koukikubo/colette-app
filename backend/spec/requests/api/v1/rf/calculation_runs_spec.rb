@@ -353,6 +353,104 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         )
       ).to eq(1)
     end
+
+    it "マスタ変更後も変更前後それぞれの保存済みランク情報を返す" do
+      login!
+
+      master = create(:standard_master, system_key: "rf_rank")
+
+      rank = create(
+        :standard_list_master,
+        standard_master: master,
+        code: nil,
+        label: "登録時のランク",
+        display_color: "#059669",
+        position: 1
+      )
+
+      customer = create(:customer)
+
+      previous_run = create_completed_run(
+        base_date: Date.new(2026, 8, 31)
+      )
+
+      current_run = create_completed_run(
+        base_date: Date.new(2026, 9, 30),
+        previous_run: previous_run
+      )
+
+      # 旧形式のスナップショットも読み取れることを確認する。
+      previous_run.update!(
+        rf_rank_snapshots: [
+          {
+            "id" => rank.id,
+            "code" => "B",
+            "label" => "前回計算時のランク",
+            "display_color" => "#2563EB",
+            "position" => 1
+          }
+        ]
+      )
+
+      current_run.update!(
+        rf_rank_snapshots: [
+          {
+            "id" => rank.id,
+            "display_code" => rank.display_code,
+            "label" => "今回計算時のランク",
+            "display_color" => "#059669",
+            "position" => 1
+          }
+        ]
+      )
+
+      [ previous_run, current_run ].each do |run|
+        run.customer_rf_rank_results.create!(
+          customer: customer,
+          rf_rank: rank,
+          recency_days: 10,
+          frequency_count: 1,
+          last_visit_on: run.base_date - 10
+        )
+      end
+
+      # 保存後にマスタを改名・色変更・無効化する。
+      rank.update!(
+        label: "変更後のランク",
+        display_color: "#FF0000",
+        active: false
+      )
+
+      get(
+        "/api/v1/rf_calculation_runs/#{current_run.id}/results",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      result = response_body.dig("data", "results").first
+
+      expect(result["previous_rf_rank"]).to eq(
+        {
+          "id" => rank.id,
+          "display_code" => rank.display_code,
+          "label" => "前回計算時のランク",
+          "display_color" => "#2563EB"
+        }
+      )
+
+      expect(result["rf_rank"]).to eq(
+        {
+          "id" => rank.id,
+          "display_code" => rank.display_code,
+          "label" => "今回計算時のランク",
+          "display_color" => "#059669"
+        }
+      )
+
+      # 名前や色が違っていても、同じランクIDならランク変更ではない。
+      expect(result["changed"]).to be false
+    end
   end
 
   describe "PATCH /api/v1/rf_calculation_runs/:id/activate" do
