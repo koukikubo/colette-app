@@ -34,6 +34,7 @@ export type RfRankMapping = {
 
 export type RfRuleSet = {
   id: number;
+  no_visit_rank_id: number | null;
   name: string;
   version: number;
   aggregation_months: number;
@@ -77,6 +78,7 @@ export type RfRankMappingInput = {
 
 export type RfRuleSetInput = {
   name: string;
+  no_visit_rank_id?: number | null;
   aggregation_months: number;
   frequency_window_months: number;
   recency_rules: RfRecencyRuleInput[];

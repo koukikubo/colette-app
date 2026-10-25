@@ -12,6 +12,7 @@ RSpec.describe Rf::CustomerRankCalculator do
   let(:rule_set) do
     RfRuleSet.create!(
       name: "テストRFルール",
+      no_visit_rank: rank_n,
       version: 1,
       aggregation_months: 60,
       frequency_window_months: 12,
@@ -169,6 +170,24 @@ RSpec.describe Rf::CustomerRankCalculator do
     expect(result.recency_days).to be_nil
     expect(result.frequency_count).to eq(0)
     expect(result.last_visit_on).to be_nil
+  end
+
+  it "旧コードがない選択済みランクを使用し、別のNランクには依存しない" do
+    custom_rank = create_rank(nil, "未訪問の顧客", 6)
+    rule_set.update!(no_visit_rank: custom_rank)
+
+    result = described_class.call(customer: customer, rule_set: rule_set, base_date: base_date)
+
+    expect(result.rf_rank).to eq(custom_rank)
+    expect(result.rf_rank).not_to eq(rank_n)
+  end
+
+  it "未設定なら別のNランクが存在しても勝手に使用しない" do
+    rule_set.update!(no_visit_rank: nil)
+
+    expect {
+      described_class.call(customer: customer, rule_set: rule_set, base_date: base_date)
+    }.to raise_error(ActiveRecord::RecordNotFound)
   end
 
   private

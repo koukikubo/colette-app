@@ -120,7 +120,7 @@ RSpec.describe "Api::V1::RfAnalysis", type: :request do
           "count" => 1,
           "percentage" => 100.0,
           "rf_rank" => include(
-            "code" => "A",
+            "display_code" => rank.display_code,
             "label" => "Aランク",
             "display_color" => "#059669"
           )
@@ -134,7 +134,7 @@ RSpec.describe "Api::V1::RfAnalysis", type: :request do
           "count" => 1,
           "percentage" => 100.0,
           "rf_rank" => include(
-            "code" => "A",
+            "display_code" => rank.display_code,
             "label" => "Aランク",
             "display_color" => "#059669"
           )

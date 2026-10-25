@@ -11,6 +11,7 @@ export function buildCreateRfRuleSetInput(
 ): RfRuleSetInput {
   return {
     ...values,
+    no_visit_rank_id: null,
     recency_rules: [],
     frequency_rules: [],
     rank_mappings: [],
@@ -48,6 +49,7 @@ export function buildUpdateRfRuleSetInput(
 
   return {
     ...values,
+    no_visit_rank_id: ruleSet.no_visit_rank_id ?? null,
     lock_version: ruleSet.lock_version,
     recency_rules: ruleSet.recency_rules.map((rule) => ({
       code: rule.code,

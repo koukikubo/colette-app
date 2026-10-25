@@ -2,6 +2,15 @@ module Rf
   class CalculationAnalysisBuilder
     class IncompleteRunError < StandardError; end
 
+    RankSnapshot = Struct.new(
+      :id,
+      :display_code,
+      :label,
+      :display_color,
+      :position,
+      keyword_init: true
+    )
+
     Result = Struct.new(
       :calculation_run,
       :eligible_count,
@@ -81,6 +90,16 @@ module Rf
     private
 
     attr_reader :calculation_run
+
+    def snapshot_rank(snapshot)
+      RankSnapshot.new(
+        id: snapshot.fetch("id"),
+        display_code: snapshot.fetch("display_code") { snapshot.fetch("id").to_s.rjust(5, "0") },
+        label: snapshot.fetch("label"),
+        display_color: snapshot.fetch("display_color"),
+        position: snapshot.fetch("position")
+      )
+    end
 
     def validate_calculation_run!
       return if calculation_run.status == "completed"
@@ -172,11 +191,17 @@ module Rf
     end
 
     def rf_ranks
-      @rf_ranks ||=
+      if calculation_run.rf_rank_snapshots.nil?
         StandardListMaster
           .where(id: rf_rank_ids)
           .order(:position, :id)
           .to_a
+      else
+        calculation_run
+          .rf_rank_snapshots
+          .map { |snapshot| snapshot_rank(snapshot) }
+          .sort_by { |rank| [ rank.position, rank.id ] }
+      end
     end
 
     def rf_rank_ids
@@ -190,17 +215,8 @@ module Rf
 
     def active_rf_rank_ids
       StandardListMaster
-        .joins(:standard_master)
-        .where(
-          standard_list_masters: {
-            active: true,
-            code: "N"
-          },
-          standard_masters: {
-            system_key: "rf_rank",
-            active: true
-          }
-        )
+        .active_rf_ranks
+        .where(id: rule_set.no_visit_rank_id)
         .pluck(:id)
     end
 
@@ -214,6 +230,18 @@ module Rf
         .where.not(rf_rank_id: nil)
         .distinct
         .pluck(:rf_rank_id)
+    end
+
+    def rank_for_cell(mapping)
+      rank =
+        rf_ranks.find do |item|
+          item.id == mapping.rf_rank_id
+        end
+
+      return rank if rank.present?
+
+      raise KeyError,
+            "計算履歴にRFランクID #{mapping.rf_rank_id}の情報がありません"
     end
 
     def build_cells
@@ -233,7 +261,7 @@ module Rf
           Cell.new(
             recency_rule: recency_rule,
             frequency_rule: frequency_rule,
-            rf_rank: mapping.rf_rank,
+            rf_rank: rank_for_cell(mapping),
             count: count,
             percentage: percentage(count, total)
           )
@@ -337,18 +365,48 @@ module Rf
       current_total = eligible_count(calculation_run)
       previous_total = eligible_count(previous_run)
 
-      StandardListMaster
-        .where(id: rank_ids)
-        .order(:position, :id)
-        .map do |rank|
-          build_rank_comparison(
-            rank,
-            current_counts,
-            previous_counts,
-            current_total,
-            previous_total
-          )
+      comparisons =
+        StandardListMaster
+          .where(id: rank_ids)
+          .map do |rank|
+            source_run =
+              if current_counts.key?(rank.id)
+                calculation_run
+              else
+                previous_run
+              end
+
+            build_rank_comparison(
+              comparison_rank(source_run, rank),
+              current_counts,
+              previous_counts,
+              current_total,
+              previous_total
+            )
+          end
+
+      comparisons.sort_by do |comparison|
+        [
+          comparison.rf_rank.position,
+          comparison.rf_rank.id
+        ]
+      end
+    end
+
+    def comparison_rank(run, rank)
+      return rank if run.rf_rank_snapshots.nil?
+
+      snapshot =
+        run.rf_rank_snapshots.find do |item|
+          item.fetch("id") == rank.id
         end
+
+      if snapshot.nil?
+        raise KeyError,
+              "計算履歴にRFランクID #{rank.id}の情報がありません"
+      end
+
+      snapshot_rank(snapshot)
     end
 
     def build_rank_comparison(

@@ -3,6 +3,7 @@ class Api::V1::Rf::RuleSetSerializer < ApplicationSerializer
     {
       id: resource.id,
       name: resource.name,
+      no_visit_rank_id: resource.no_visit_rank_id,
       version: resource.version,
       aggregation_months: resource.aggregation_months,
       frequency_window_months:
@@ -70,13 +71,40 @@ class Api::V1::Rf::RuleSetSerializer < ApplicationSerializer
         recency_rule_id: mapping.rf_recency_rule_id,
         frequency_rule_id:
           mapping.rf_frequency_rule_id,
-        rf_rank: {
-          id: mapping.rf_rank.id,
-          code: mapping.rf_rank.code,
-          label: mapping.rf_rank.label,
-          display_color: mapping.rf_rank.display_color
-        }
+        rf_rank: serialize_mapping_rank(mapping)
       }
     end
   end
+
+  def serialize_mapping_rank(mapping)
+    snapshots = resource.rf_rank_snapshots
+
+    if resource.status == "archived" && !snapshots.nil?
+      snapshot =
+        snapshots.find do |item|
+          item.fetch("id") == mapping.rf_rank_id
+        end
+
+      if snapshot.nil?
+        raise KeyError,
+              "アーカイブ済みルールにRFランクID #{mapping.rf_rank_id}の保存情報がありません"
+      end
+
+      return {
+        id: snapshot.fetch("id"),
+        display_code: snapshot.fetch("display_code") { snapshot.fetch("id").to_s.rjust(5, "0") },
+        label: snapshot.fetch("label"),
+        display_color: snapshot.fetch("display_color")
+      }
+    end
+
+    rank = mapping.rf_rank
+
+    {
+      id: rank.id,
+      display_code: rank.display_code,
+      label: rank.label,
+      display_color: rank.display_color
+    }
+end
 end

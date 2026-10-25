@@ -31,6 +31,7 @@ export function RfRankColorSettingsSection({
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -83,7 +84,7 @@ export function RfRankColorSettingsSection({
     void loadRanks();
 
     return () => controller.abort();
-  }, []);
+  }, [reloadKey]);
 
   const changedRanks = useMemo(
     () =>
@@ -102,6 +103,22 @@ export function RfRankColorSettingsSection({
     );
     setErrorMessage(null);
     setSuccessMessage(null);
+  }
+
+  function resetColors() {
+    if (!isOwner || isSaving) return;
+
+    setRanks((current) =>
+      current.map((rank) => ({
+        ...rank,
+        display_color: rank.default_display_color ?? FALLBACK_COLOR,
+      })),
+    );
+
+    setErrorMessage(null);
+    setSuccessMessage(
+      "初期色を選択しました。「カラー設定を保存」で反映されます。",
+    );
   }
 
   async function saveColors() {
@@ -151,6 +168,25 @@ export function RfRankColorSettingsSection({
           ランク別人数とRFランク対応表で共通して使用する色を設定します。
         </p>
       </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-3"
+        disabled={isLoading || isSaving || changedRanks.length > 0}
+        onClick={() => {
+          setSuccessMessage(null);
+          setReloadKey((current) => current + 1);
+        }}
+      >
+        ランク一覧を再取得
+      </Button>
+
+      {changedRanks.length > 0 && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          一覧を再取得する前に、変更したカラー設定を保存してください。
+        </p>
+      )}
 
       <Card>
         <CardHeader>
@@ -223,13 +259,24 @@ export function RfRankColorSettingsSection({
                 </div>
 
                 {isOwner && (
-                  <Button
-                    type="button"
-                    disabled={changedRanks.length === 0 || isSaving}
-                    onClick={() => void saveColors()}
-                  >
-                    {isSaving ? "保存中..." : "カラー設定を保存"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSaving || ranks.length === 0}
+                      onClick={resetColors}
+                    >
+                      初期色へ戻す
+                    </Button>
+
+                    <Button
+                      type="button"
+                      disabled={changedRanks.length === 0 || isSaving}
+                      onClick={() => void saveColors()}
+                    >
+                      {isSaving ? "保存中..." : "カラー設定を保存"}
+                    </Button>
+                  </div>
                 )}
               </div>
             </>

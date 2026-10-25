@@ -310,6 +310,7 @@ export function RfRuleSetsSection({
 
       const created = await createRfRuleSet({
         name: `${source.name}（コピー）`,
+        no_visit_rank_id: source.no_visit_rank_id ?? null,
         aggregation_months: source.aggregation_months,
         frequency_window_months: source.frequency_window_months,
         recency_rules: source.recency_rules.map(

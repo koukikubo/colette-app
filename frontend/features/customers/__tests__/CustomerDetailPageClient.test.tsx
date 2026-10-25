@@ -165,8 +165,9 @@ describe("CustomerDetailPageClient", () => {
           },
           current_rf_rank: {
             id: 20,
-            code: "A",
+            display_code: "00020",
             label: "Aランク",
+            display_color: "#059669",
           },
           rf_rank_basis: {
             calculation_run_id: 5,
@@ -194,6 +195,68 @@ describe("CustomerDetailPageClient", () => {
     expect(screen.getByText("2026/09/06")).toBeInTheDocument();
     expect(screen.getByText("20日")).toBeInTheDocument();
     expect(screen.getByText("3回")).toBeInTheDocument();
+
+    const rankLabel = screen.getByText("Aランク");
+    const rankContainer = rankLabel.parentElement!;
+    const colorIndicator = rankContainer.querySelector('[aria-hidden="true"]');
+
+    expect(colorIndicator).toHaveStyle({
+      backgroundColor: "#059669",
+    });
+    expect(screen.getByText("（00020）")).toBeInTheDocument();
+  });
+
+  it("RFランクの色が未設定の場合は灰色で表示する", async () => {
+    mocks.fetchCustomer.mockResolvedValue({
+      data: {
+        customer: createCustomer({
+          customer_rank_id: 8,
+          customer_rank: {
+            id: 8,
+            code: "VIP",
+            label: "VIP顧客",
+          },
+          current_rf_rank: {
+            id: 20,
+            display_code: "00020",
+            label: "Aランク",
+            display_color: null,
+          },
+          rf_rank_basis: {
+            calculation_run_id: 5,
+            base_date: "2026-09-26",
+            recency_days: 20,
+            frequency_count: 3,
+            last_visit_on: "2026-09-06",
+            exclusion_reason: null,
+          },
+        }),
+      },
+    });
+
+    render(<CustomerDetailPageClient customerId={10} />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "顧客ランク",
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("VIP顧客")).toBeInTheDocument();
+    expect(screen.getByText("Aランク")).toBeInTheDocument();
+    expect(screen.getByText("2026/09/26")).toBeInTheDocument();
+    expect(screen.getByText("2026/09/06")).toBeInTheDocument();
+    expect(screen.getByText("20日")).toBeInTheDocument();
+    expect(screen.getByText("3回")).toBeInTheDocument();
+
+    const rankLabel = screen.getByText("Aランク");
+    const rankContainer = rankLabel.parentElement!;
+    const colorIndicator = rankContainer.querySelector('[aria-hidden="true"]');
+
+    expect(colorIndicator).toHaveStyle({
+      backgroundColor: "#64748B",
+    });
+    expect(screen.getByText("（00020）")).toBeInTheDocument();
   });
 
   it("現在適用中のRF計算結果がない場合は未計算と表示する", async () => {

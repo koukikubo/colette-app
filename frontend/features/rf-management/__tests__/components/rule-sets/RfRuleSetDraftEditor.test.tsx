@@ -34,6 +34,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const ruleSet: RfRuleSet = {
+  no_visit_rank_id: 31,
   id: 7,
   name: "下書きRFルール",
   version: 2,
@@ -71,7 +72,7 @@ const ruleSet: RfRuleSet = {
       frequency_rule_id: 21,
       rf_rank: {
         id: 31,
-        code: "A",
+        display_code: "00031",
         label: "Aランク",
         display_color: "#059669",
       },
@@ -127,6 +128,71 @@ describe("RfRuleSetDraftEditor", () => {
         },
       },
     });
+  });
+
+  it("保存済みの来店履歴なしランクを再表示し、変更したIDを保存する", async () => {
+    const user = userEvent.setup();
+    render(<RfRuleSetDraftEditor ruleSet={ruleSet} />);
+    await user.click(
+      screen.getByRole("button", { name: "最終来店日からの期間へ" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "最終来店日からの期間を保存" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "来店回数の条件を保存" }),
+    );
+
+    const select = await screen.findByRole("combobox", {
+      name: "来店履歴なしランク",
+    });
+    expect(select).toHaveTextContent("Aランク");
+    await user.click(select);
+    await user.click(await screen.findByRole("option", { name: "Bランク" }));
+    mocks.updateRfRuleSet.mockResolvedValueOnce({
+      data: { rule_set: { ...ruleSet, no_visit_rank_id: 32, lock_version: 5 } },
+    });
+    await user.click(
+      screen.getByRole("button", { name: "RFランク対応表を保存して検証" }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.updateRfRuleSet).toHaveBeenLastCalledWith(
+        7,
+        expect.objectContaining({ no_visit_rank_id: 32 }),
+      ),
+    );
+    await user.click(await screen.findByRole("button", { name: "公開確認へ" }));
+    expect(screen.getByText("来店履歴なしランク：Bランク")).toBeInTheDocument();
+  });
+
+  it("選択できなくなった保存済みIDを勝手に消さない", async () => {
+    const user = userEvent.setup();
+    const unavailableRuleSet = { ...ruleSet, no_visit_rank_id: 999 };
+    mocks.updateRfRuleSet.mockResolvedValue({
+      data: { rule_set: unavailableRuleSet },
+    });
+    render(<RfRuleSetDraftEditor ruleSet={unavailableRuleSet} />);
+    await user.click(
+      screen.getByRole("button", { name: "最終来店日からの期間へ" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "最終来店日からの期間を保存" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "来店回数の条件を保存" }),
+    );
+
+    expect(
+      await screen.findByRole("combobox", { name: "来店履歴なしランク" }),
+    ).toHaveTextContent("設定済みランク（選択不可）");
+    expect(
+      screen.getByText(/有効なRFランクを選び直してください/),
+    ).toBeInTheDocument();
+    expect(mocks.updateRfRuleSet).toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({ no_visit_rank_id: 999 }),
+    );
   });
 
   it("基本設定から最終来店の期間設定へ移動する", async () => {
