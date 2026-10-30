@@ -69,6 +69,9 @@ Rails.application.routes.draw do
       resources :rf_customer_transitions,
           controller: "rf/customer_transitions",
           only: :index do
+        collection do
+          get :compare
+        end
         member do
           get :movements
         end

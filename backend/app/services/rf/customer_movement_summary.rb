@@ -12,21 +12,23 @@ module Rf
       same_position
     ].freeze
 
-    def self.call(calculation_run:)
-      new(calculation_run: calculation_run).call
+    def self.call(calculation_run:, comparison_run: calculation_run.previous_run)
+      new(calculation_run: calculation_run, comparison_run: comparison_run).call
     end
 
-    def initialize(calculation_run:)
+    def initialize(calculation_run:, comparison_run:)
       @calculation_run = calculation_run
+      @comparison_run = comparison_run
     end
 
     def call
-      unless calculation_run.status == "completed"
+      unless calculation_run.status == "completed" &&
+          (@comparison_run.nil? || @comparison_run.status == "completed")
         raise RunPopulationSummary::IncompleteRunError,
               "完了していないRF計算結果は比較できません"
       end
 
-      previous_run = calculation_run.previous_run
+      previous_run = @comparison_run
 
       unless previous_run
         return {

@@ -1,8 +1,19 @@
 class Api::V1::Rf::CustomerTransitionsController <
   Api::V1::BaseController
-  rescue_from Rf::RunPopulationSummary::IncompleteRunError,
+  rescue_from Rf::MonthComparisonPeriod::InvalidPeriodError,
+              Rf::MonthComparison::UnavailableError,
+              Rf::RunPopulationSummary::IncompleteRunError,
               KeyError,
               with: :render_transition_error
+
+  def compare
+    comparison = Rf::MonthComparison.call(
+      current_run: current_run,
+      start_month: params[:start_month],
+      end_month: params[:end_month]
+    )
+    render_success(data: comparison)
+  end
 
   def index
     table =
