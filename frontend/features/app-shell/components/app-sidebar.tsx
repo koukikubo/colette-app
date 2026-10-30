@@ -61,6 +61,11 @@ const data = {
       url: "/rf-analysis",
       icon: <ChartNoAxesCombinedIcon />,
     },
+    {
+      title: "RFランク客層変動表",
+      url: "/rf-customer-transitions",
+      icon: <ChartNoAxesCombinedIcon />,
+    },
   ],
 
   /**
