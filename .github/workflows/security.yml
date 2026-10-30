@@ -1,0 +1,45 @@
+name: Runtime security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "30 21 * * *" # 毎日06:30 JST
+
+permissions:
+  contents: read
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.images.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: images
+        name: Read runtime images from project configuration
+        shell: bash
+        run: |
+          ruby_version=$(cat backend/.ruby-version)
+          docker_ruby_version=$(sed -n 's/^ARG RUBY_VERSION=//p' backend/Dockerfile)
+          test "$ruby_version" = "$docker_ruby_version"
+          images=$( { docker compose config --images; echo "ruby:${ruby_version}-slim"; } | sort -u | jq -R . | jq -sc '{image: .}')
+          echo "matrix=$images" >> "$GITHUB_OUTPUT"
+
+  scan:
+    needs: images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.images.outputs.matrix) }}
+    steps:
+      - name: Scan language runtime and operating system packages
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.image }}
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
