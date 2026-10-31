@@ -95,7 +95,7 @@ RSpec.describe Rf::CustomerMovementSummary do
     add_pair(previous_rank: rank_a, current_rank: rank_b)
     add_pair(previous_rank: rank_a, current_rank: rank_a)
 
-    result = described_class.call(calculation_run: current_run)
+    result = described_class.call(calculation_run: current_run, comparison_run: previous_run)
     counts = result.fetch(:counts)
 
     expect(result.fetch(:comparison_run_id)).to eq(previous_run.id)
@@ -129,7 +129,7 @@ RSpec.describe Rf::CustomerMovementSummary do
 
     counts =
       described_class
-        .call(calculation_run: current_run)
+        .call(calculation_run: current_run, comparison_run: previous_run)
         .fetch(:counts)
 
     expect(counts.fetch(:no_visit)).to eq(1)
@@ -146,7 +146,7 @@ RSpec.describe Rf::CustomerMovementSummary do
 
     counts =
       described_class
-        .call(calculation_run: current_run)
+        .call(calculation_run: current_run, comparison_run: previous_run)
         .fetch(:counts)
 
     expect(counts.fetch(:added)).to eq(1)
@@ -154,16 +154,11 @@ RSpec.describe Rf::CustomerMovementSummary do
     expect(counts.values.sum).to eq(2)
   end
 
-  it "初回の計算では比較対象なしを返す" do
-    expect(
-      described_class.call(calculation_run: previous_run)
-    ).to eq(
-      {
-        comparison_run_id: nil,
-        counts: nil,
-        transitions: []
-      }
-    )
+  it "未完了の比較元は拒否する" do
+    previous_run.update!(status: "failed")
+    expect do
+      described_class.call(calculation_run: current_run, comparison_run: previous_run)
+    end.to raise_error(Rf::RunPopulationSummary::IncompleteRunError)
   end
 
   it "同じ方向の移動をまとめ、逆方向の移動とは分ける" do
@@ -181,7 +176,7 @@ RSpec.describe Rf::CustomerMovementSummary do
 
   transitions =
     described_class
-      .call(calculation_run: current_run)
+      .call(calculation_run: current_run, comparison_run: previous_run)
       .fetch(:transitions)
 
   expect(
@@ -230,7 +225,7 @@ end
 
     transitions =
       described_class
-        .call(calculation_run: current_run)
+        .call(calculation_run: current_run, comparison_run: previous_run)
         .fetch(:transitions)
 
     added = transitions.find do |transition|

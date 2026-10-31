@@ -15,43 +15,6 @@ class Api::V1::Rf::CustomerTransitionsController <
     render_success(data: comparison)
   end
 
-  def index
-    table =
-      Rf::CustomerTransitionTableBuilder.call(
-        current_run: current_run
-      )
-
-    render_success(
-      data: {
-        table: table
-      }
-    )
-  end
-
-  def movements
-    calculation_run =
-      Rf::AppliedRunHistory
-        .call(current_run: current_run)
-        .find { |run| run.id.to_s == params[:id] }
-
-    unless calculation_run
-      raise ActiveRecord::RecordNotFound,
-            "適用済みのRF計算履歴が見つかりません"
-    end
-
-    movement =
-      Rf::CustomerMovementSummary.call(
-        calculation_run: calculation_run
-      )
-
-    render_success(
-      data: {
-        calculation_run_id: calculation_run.id,
-        movement: movement
-      }
-    )
-  end
-
   private
 
   def current_run

@@ -1,5 +1,0 @@
-import { proxyRequest } from "@/lib/api/proxy-request";
-
-export async function GET(request: Request) {
-  return proxyRequest(request, "/api/v1/rf_customer_transitions");
-}

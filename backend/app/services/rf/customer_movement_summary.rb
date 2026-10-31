@@ -12,7 +12,7 @@ module Rf
       same_position
     ].freeze
 
-    def self.call(calculation_run:, comparison_run: calculation_run.previous_run)
+    def self.call(calculation_run:, comparison_run:)
       new(calculation_run: calculation_run, comparison_run: comparison_run).call
     end
 
@@ -23,20 +23,12 @@ module Rf
 
     def call
       unless calculation_run.status == "completed" &&
-          (@comparison_run.nil? || @comparison_run.status == "completed")
+          @comparison_run.status == "completed"
         raise RunPopulationSummary::IncompleteRunError,
               "完了していないRF計算結果は比較できません"
       end
 
       previous_run = @comparison_run
-
-      unless previous_run
-        return {
-          comparison_run_id: nil,
-          counts: nil,
-          transitions: []
-        }
-      end
 
       previous_ranks = ranks_for(previous_run)
       current_ranks = ranks_for(calculation_run)
@@ -141,7 +133,7 @@ module Rf
       end
 
       :ranked
-end
+    end
 
     def classify(
       previous_result:,
