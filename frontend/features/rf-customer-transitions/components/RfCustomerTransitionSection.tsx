@@ -1,45 +1,27 @@
+/**
+ * RFランクの年月比較画面を構成する。
+ *
+ * 比較月の入力、API取得、読み込み・エラー・結果の表示を担当する。
+ * 移動マトリクスの描画とセル選択はRfMovementMatrixへ委譲する。
+ *
+ * 入力変更時は通信を中止し、古い条件の結果が画面に残ることを防ぐ。
+ */
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiClientError } from "@/lib/api/api-client";
 import { fetchRfMonthComparison } from "../api/customer-transition-api";
-import type {
-  RfMonthComparison,
-  RfMovementCategory,
-  RfMovementState,
-  RfTransitionRank,
-} from "../types/customer-transition";
+import type { RfMonthComparison } from "../types/customer-transition";
+import { RfMovementMatrix } from "./RfMovementMatrix";
+import { RfMovementOverview } from "./RfMovementOverview";
+import { RfHelpHint } from "./RfHelpHint";
 
-const categories: Record<RfMovementCategory, string> = {
-  up: "上昇",
-  down: "下降",
-  unchanged: "維持",
-  same_position: "同順位の別ランク",
-  added: "終了時点のみ",
-  removed: "開始時点のみ",
-  excluded: "対象外を含む",
-  unmatched: "未分類を含む",
-  no_visit: "来店履歴なしを含む",
-};
-const states: Record<RfMovementState, string> = {
-  missing: "記録なし",
-  excluded: "対象外",
-  unmatched: "未分類",
-  no_visit: "来店履歴なし",
-  ranked: "ランクあり",
-};
-function rankLabel(rank: RfTransitionRank | null, state: RfMovementState) {
-  return rank ? `${rank.label}（${rank.display_code}）` : states[state];
-}
-
+/**
+ * 比較条件と取得状態を管理し、期間入力・概要・マトリクスを表示する。
+ */
 export function RfCustomerTransitionSection() {
   const [startMonth, setStartMonth] = useState("");
   const [endMonth, setEndMonth] = useState("");
@@ -49,6 +31,12 @@ export function RfCustomerTransitionSection() {
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
 
+  /**
+   * 指定された側の比較月を変更する。
+   *
+   * 進行中の通信を中止し、前の結果とエラーを消すことで、
+   * 入力した年月と表示中の結果が食い違うことを防ぐ。
+   */
   function changeMonth(value: string, side: "start" | "end") {
     pending.current?.abort();
     setIsLoading(false);
@@ -58,6 +46,21 @@ export function RfCustomerTransitionSection() {
     else setEndMonth(value);
   }
 
+  /**
+   * APIのYYYY-MM形式を、利用者向けの「YYYY年M月」へ整形する。
+   * 日付オブジェクトを使わず、タイムゾーンによる年月のずれを避ける。
+   */
+  function formatComparisonMonth(value: string) {
+    const [year, month] = value.split("-");
+    return `${year}年${Number(month)}月`;
+  }
+
+  /**
+   * 入力した開始月・終了月で比較APIを呼び出す。
+   *
+   * 中止されたリクエストの結果は反映しない。
+   * APIから返る履歴不足・ルール違いなどの理由も画面へ表示する。
+   */
   async function compare(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     pending.current?.abort();
@@ -94,14 +97,26 @@ export function RfCustomerTransitionSection() {
     <section aria-label="RFランクの2時点比較">
       <Card>
         <CardHeader>
-          <CardTitle>
-            <h2>開始月・終了月のランク移動</h2>
-          </CardTitle>
-          <CardDescription>
-            各月の適用済み履歴のうち、最新の計算基準日の結果を比較します（月末時点の再計算ではありません）。
-            途中の変動は数えず、同じ顧客の開始・終了ランクが同じなら維持です。
-            履歴がない月やRFルールが異なる月同士は比較できません。現在適用中のランクは変更しません。
-          </CardDescription>
+          <div className="flex items-center gap-2">
+            <CardTitle>
+              <h2>開始月・終了月のランク移動</h2>
+            </CardTitle>
+
+            <RfHelpHint label="比較方法について">
+              <p>
+                各月の適用済み履歴から、計算基準日が最も新しい結果を比較します。
+                月末時点を再計算する機能ではありません。
+              </p>
+              <p>
+                途中の変動は合算しません。途中がA→B→Aでも、
+                開始・終了がAなら維持です。
+              </p>
+              <p>
+                履歴のない月や、RFルールが異なる月同士は比較できません。
+                比較によって現在のランクが変更されることはありません。
+              </p>
+            </RfHelpHint>
+          </div>
         </CardHeader>
         <CardContent className="space-y-5">
           <form onSubmit={compare} className="flex flex-wrap items-end gap-4">
@@ -139,80 +154,58 @@ export function RfCustomerTransitionSection() {
             </p>
           )}
           {comparison && (
-            <div className="space-y-4">
-              <p>
-                比較月: {comparison.start_month} → {comparison.end_month}
-                <br />
-                実際の計算基準日: {comparison.start_run.base_date} →{" "}
-                {comparison.end_run.base_date}
-              </p>
-              {comparison.provisional && (
-                <p>
-                  当月を含むため暫定結果です。今日までの適用済み計算を使用します。
-                </p>
-              )}
-              <dl className="flex flex-wrap gap-4" aria-label="移動区分別人数">
-                {Object.entries(comparison.movement.counts ?? {}).map(
-                  ([category, count]) => (
-                    <div key={category}>
-                      <dt>{categories[category as RfMovementCategory]}</dt>
-                      <dd>{count}人</dd>
-                    </div>
-                  ),
-                )}
-              </dl>
-              {comparison.movement.transitions.length === 0 ? (
-                <p>比較対象の顧客がいません。</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table
-                    className="w-full text-left text-sm"
-                    aria-label="開始月から終了月へのRFランク移動"
-                  >
-                    <thead>
-                      <tr>
-                        {["開始ランク", "終了ランク", "区分", "人数"].map(
-                          (title) => (
-                            <th
-                              scope="col"
-                              className="border-b p-3"
-                              key={title}
-                            >
-                              {title}
-                            </th>
-                          ),
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {comparison.movement.transitions.map(
-                        (transition, index) => (
-                          <tr key={index}>
-                            <td className="border-b p-3">
-                              {rankLabel(
-                                transition.from_rank,
-                                transition.from_state,
-                              )}
-                            </td>
-                            <td className="border-b p-3">
-                              {rankLabel(
-                                transition.to_rank,
-                                transition.to_state,
-                              )}
-                            </td>
-                            <td className="border-b p-3">
-                              {categories[transition.category]}
-                            </td>
-                            <td className="border-b p-3">
-                              {transition.count}人
-                            </td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
+            <div className="space-y-6">
+              <RfMovementOverview counts={comparison.movement.counts} />
+
+              <div className="space-y-3">
+                {/* 選択中の入力値ではなく、取得済み結果の年月を表示する。 */}
+                <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/40 px-4 py-3">
+                  <span className="text-xs text-muted-foreground">
+                    対象期間
+                  </span>
+
+                  <p className="text-sm font-semibold tabular-nums">
+                    {formatComparisonMonth(comparison.start_month)}
+                    <span
+                      aria-label="から"
+                      className="mx-3 text-muted-foreground"
+                    >
+                      →
+                    </span>
+                    {formatComparisonMonth(comparison.end_month)}
+                  </p>
+
+                  <RfHelpHint label="対象期間と計算基準日について">
+                    <p>比較に使用した実際の計算基準日です。</p>
+                    <p>
+                      開始：{comparison.start_run.base_date}
+                      <br />
+                      終了：{comparison.end_run.base_date}
+                    </p>
+                    <p>
+                      指定月内の最新の計算結果を使うため、
+                      月末日と一致しない場合があります。
+                    </p>
+                    {comparison.provisional && (
+                      <p>
+                        当月を含むため暫定結果です。
+                        今日までの適用済み計算を使用しています。
+                      </p>
+                    )}
+                  </RfHelpHint>
+
+                  {comparison.provisional && (
+                    <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                      暫定
+                    </span>
+                  )}
                 </div>
-              )}
+
+                <RfMovementMatrix
+                  key={`${comparison.start_run.id}:${comparison.end_run.id}`}
+                  transitions={comparison.movement.transitions}
+                />
+              </div>
             </div>
           )}
         </CardContent>

@@ -60,23 +60,42 @@ function months(start = "2026-07", end = "2026-09") {
 }
 beforeEach(() => mocks.fetchRfMonthComparison.mockReset());
 describe("RfCustomerTransitionPage", () => {
-  it("waits for month input and displays endpoint movements and actual dates", async () => {
+  it("年月指定で比較し、ヒントから計算基準日を確認できる", async () => {
+    const user = userEvent.setup();
+
     mocks.fetchRfMonthComparison.mockResolvedValue(response);
     render(<RfCustomerTransitionPage />);
+
     expect(screen.getByRole("button", { name: "比較する" })).toBeDisabled();
     expect(mocks.fetchRfMonthComparison).not.toHaveBeenCalled();
+
     months();
-    await userEvent.click(screen.getByRole("button", { name: "比較する" }));
+    await user.click(screen.getByRole("button", { name: "比較する" }));
+
     expect(await screen.findByRole("table")).toHaveTextContent("維持");
-    expect(screen.getByText(/実際の計算基準日/)).toHaveTextContent(
-      "2026-07-31 → 2026-09-20",
-    );
+
+    // 対象期間は画面上に表示し、詳細な基準日はヒントで確認する。
+    expect(screen.getByText("対象期間")).toBeInTheDocument();
+
+    const hint = screen.getByRole("button", {
+      name: "対象期間と計算基準日について",
+    });
+
+    await user.hover(hint);
+
+    // Tooltipは遅延して開くため、findByRoleで表示を待つ。
+    // 内容全体で検証し、Radixが読み上げ用に複製する文章との重複を避ける。
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("開始：2026-07-31");
+    expect(tooltip).toHaveTextContent("終了：2026-09-20");
+
     expect(mocks.fetchRfMonthComparison).toHaveBeenCalledWith(
       "2026-07",
       "2026-09",
       expect.any(AbortSignal),
     );
   });
+
   it("rejects reversed months without a request", async () => {
     render(<RfCustomerTransitionPage />);
     months("2026-09", "2026-07");
@@ -119,18 +138,52 @@ describe("RfCustomerTransitionPage", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
-  it("explains provisional results and zero customers", async () => {
+  it("暫定バッジと空状態を表示し、ヒントから暫定理由を確認できる", async () => {
+    const user = userEvent.setup();
+
     mocks.fetchRfMonthComparison.mockResolvedValue({
       data: {
         ...response.data,
         provisional: true,
-        movement: { ...response.data.movement, transitions: [] },
+        movement: {
+          ...response.data.movement,
+          // 空状態のテストなので、概要の人数も0に揃える。
+          counts: {
+            up: 0,
+            down: 0,
+            unchanged: 0,
+            same_position: 0,
+            added: 0,
+            removed: 0,
+            excluded: 0,
+            unmatched: 0,
+            no_visit: 0,
+          },
+          transitions: [],
+        },
       },
     });
+
     render(<RfCustomerTransitionPage />);
     months();
-    await userEvent.click(screen.getByRole("button", { name: "比較する" }));
-    expect(await screen.findByText(/当月を含むため暫定/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "比較する" }));
+
+    // 暫定であることは、ヒントを開かなくても分かるようにする。
+    expect(await screen.findByText("暫定")).toBeInTheDocument();
     expect(screen.getByText("比較対象の顧客がいません。")).toBeInTheDocument();
+
+    // 詳細な説明は、対象期間のヒントを開いて確認する。
+    await user.hover(
+      screen.getByRole("button", {
+        name: "対象期間と計算基準日について",
+      }),
+    );
+
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("当月を含むため暫定結果です。");
+    expect(tooltip).toHaveTextContent(
+      "今日までの適用済み計算を使用しています。",
+    );
   });
 });
