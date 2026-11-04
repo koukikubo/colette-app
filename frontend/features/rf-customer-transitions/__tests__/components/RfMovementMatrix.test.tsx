@@ -4,7 +4,7 @@
  * 割合の分母、クリック・キーボード操作、空状態、
  * 比較対象変更時の選択リセットを確認する。
  */
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -71,37 +71,46 @@ describe("RfMovementMatrix", () => {
     ).toHaveTextContent("＝ 維持");
   });
 
-  it("セルをクリックすると移動内容を文章で説明する", async () => {
+  it("セルへのホバーで移動内容を説明する", async () => {
     const user = userEvent.setup();
     render(<RfMovementMatrix transitions={transitions} />);
 
-    const cell = screen.getByRole("button", {
-      name: /BランクからAランクへ/,
-    });
-
-    await user.click(cell);
-
-    expect(cell).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "開始時点の「Bランク」12人のうち、3人",
+    // クリックせずに、操作中のセルの説明を確認できることを保証する。
+    await user.hover(
+      screen.getByRole("button", {
+        name: /BランクからAランクへ/,
+      }),
     );
-    expect(screen.getByRole("status")).toHaveTextContent("25.0%");
+
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("開始時点の「Bランク」12人のうち、3人");
+    expect(tooltip).toHaveTextContent("25.0%");
   });
 
-  it("キーボードでもセルを選択できる", async () => {
+  it("キーボードフォーカスでも説明を確認できる", async () => {
     const user = userEvent.setup();
     render(<RfMovementMatrix transitions={transitions} />);
 
+    const region = screen.getByRole("region", {
+      name: "RFランク移動表・横スクロール可能",
+    });
     const cell = screen.getByRole("button", {
       name: /BランクからAランクへ/,
     });
 
-    // Tab移動で到達した状態を再現し、Enterで選択する。
-    cell.focus();
-    await user.keyboard("{Enter}");
+    // 表の手前にあるヒントボタンの数に依存しないよう、
+    // スクロール領域を操作開始位置にする。
+    act(() => {
+      region.focus();
+    });
+    expect(region).toHaveFocus();
 
-    expect(cell).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("status")).toHaveTextContent("25.0%");
+    // 実際のTab操作で最初の人数セルへ移動し、
+    // クリックなしでも説明を確認できることを保証する。
+    await user.tab();
+
+    expect(cell).toHaveFocus();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("25.0%");
   });
 
   it("親から渡す比較キーが変わると選択をリセットする", async () => {
@@ -119,9 +128,6 @@ describe("RfMovementMatrix", () => {
     // 親画面が比較する計算IDに応じてkeyを変更する契約を確認する。
     rerender(<RfMovementMatrix key="1:3" transitions={transitions} />);
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "人数のあるセルを選択すると",
-    );
     expect(
       screen.getByRole("button", {
         name: /BランクからAランクへ/,
