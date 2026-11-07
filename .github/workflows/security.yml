@@ -50,7 +50,7 @@ jobs:
       # 修正版未提供の指摘も含め、全深刻度の検査結果を保存する。
       # 検出内容による合否は、後続ステップで判定する。
       - name: Generate full security report
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: ${{ matrix.image }}
