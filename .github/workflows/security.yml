@@ -106,7 +106,7 @@ jobs:
       # 合否にかかわらず保存する。マトリクスの番号で名前の重複を防ぐ。
       - name: Upload full security report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-security-${{ strategy.job-index }}
           path: trivy-report.json
