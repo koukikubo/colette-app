@@ -47,12 +47,68 @@ jobs:
       - name: Build PostgreSQL runtime image
         if: matrix.image == 'colette-postgres:17.11-gosu1.20'
         run: docker compose build --pull db
-
-      - name: Scan language runtime and operating system packages
+      # 修正版未提供の指摘も含め、全深刻度の検査結果を保存する。
+      # 検出内容による合否は、後続ステップで判定する。
+      - name: Generate full security report
         uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: image
           image-ref: ${{ matrix.image }}
-          format: table
-          exit-code: "1"
-          severity: HIGH,CRITICAL
+          scanners: vuln,secret
+          format: json
+          output: trivy-report.json
+          exit-code: "0"
+          ignore-unfixed: "false"
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          timeout: 15m
+
+      # 同じ検査結果から、総数・修正可能数・秘密情報の検出数を表示する。
+      - name: Show security summary
+        env:
+          SCANNED_IMAGE: ${{ matrix.image }}
+        run: |
+          printf 'Scanned image: %s\n' "$SCANNED_IMAGE"
+
+          jq '
+            [.Results[]? | .Vulnerabilities[]?
+              | select(.Severity == "HIGH" or .Severity == "CRITICAL")
+            ] as $high
+            | [$high[]
+              | select((.FixedVersion // "") != "")
+            ] as $fixable
+            | [.Results[]? | .Secrets[]?] as $secrets
+            | {
+                high_critical_total: ($high | length),
+                high_critical_with_fix: ($fixable | length),
+                high_critical_without_fix: (($high | length) - ($fixable | length)),
+                secrets: ($secrets | length)
+              }
+          ' trivy-report.json
+
+      # 修正版があるHIGH・CRITICAL、または秘密情報があれば失敗させる。
+      # 修正版未提供の指摘は全件レポートに残し、継続して追跡する。
+      - name: Check actionable security findings
+        run: |
+          jq -e '
+            all(.Results[]?;
+              (
+                all(.Vulnerabilities[]?;
+                  (
+                    (.Severity == "HIGH" or .Severity == "CRITICAL")
+                    and ((.FixedVersion // "") != "")
+                  ) | not
+                )
+              )
+              and (((.Secrets // []) | length) == 0)
+            )
+          ' trivy-report.json
+
+      # 合否にかかわらず保存する。マトリクスの番号で名前の重複を防ぐ。
+      - name: Upload full security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-security-${{ strategy.job-index }}
+          path: trivy-report.json
+          if-no-files-found: error
+          retention-days: 30
