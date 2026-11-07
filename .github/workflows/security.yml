@@ -35,6 +35,15 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.images.outputs.matrix) }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # フロントは公式Nodeイメージではなく、npm更新後のイメージを検査する。
+      # 各ジョブのDocker環境は独立しているため、ここでビルドする。
+      - name: Build frontend runtime image
+        if: matrix.image == 'colette-frontend-dev:node22.23.4-npm12.2.2'
+        run: docker compose build --pull frontend
+
       - name: Scan language runtime and operating system packages
         uses: aquasecurity/trivy-action@0.35.0
         with:

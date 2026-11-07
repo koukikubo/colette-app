@@ -1,6 +1,10 @@
 services:
   frontend:
-    image: node:22.23.4
+    # npm更新済みイメージを使う。Runtime securityもこの名前を取得して検査する。
+    image: colette-frontend-dev:node22.23.4-npm12.2.2
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     container_name: colette_frontend
     init: true
     tty: true
