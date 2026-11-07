@@ -41,7 +41,11 @@ services:
               bin/rails db:prepare &&
               exec bin/rails server -b 0.0.0.0"
   db:
-    image: postgres:17.11
+    # PostgreSQL本体は維持し、gosuの依存脆弱性に対応したイメージを使う。
+    image: colette-postgres:17.11-gosu1.20
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     container_name: colette_db
 
     environment:

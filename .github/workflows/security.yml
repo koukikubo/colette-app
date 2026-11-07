@@ -38,11 +38,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      # フロントは公式Nodeイメージではなく、npm更新後のイメージを検査する。
-      # 各ジョブのDocker環境は独立しているため、ここでビルドする。
+      # 各ジョブのDocker環境は独立しているため、検査対象をここでビルドする。
       - name: Build frontend runtime image
         if: matrix.image == 'colette-frontend-dev:node22.23.4-npm12.2.2'
         run: docker compose build --pull frontend
+
+      # gosu更新後のPostgreSQLイメージを検査する。
+      - name: Build PostgreSQL runtime image
+        if: matrix.image == 'colette-postgres:17.11-gosu1.20'
+        run: docker compose build --pull db
 
       - name: Scan language runtime and operating system packages
         uses: aquasecurity/trivy-action@0.35.0
