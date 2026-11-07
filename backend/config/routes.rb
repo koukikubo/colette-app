@@ -66,6 +66,14 @@ Rails.application.routes.draw do
           controller: "rf/analysis",
           only: :show
 
+      resources :rf_customer_transitions,
+          controller: "rf/customer_transitions",
+          only: [] do
+        collection do
+          get :compare
+        end
+      end
+
       resources :rf_calculation_runs,
           controller: "rf/calculation_runs",
           only: %i[index create show ] do
