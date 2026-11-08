@@ -66,6 +66,11 @@ Rails.application.routes.draw do
           controller: "rf/analysis",
           only: :show
 
+      resource :rf_rank_drop,
+          path: "rf_rank_drops",
+          controller: "rf/rank_drops",
+          only: :show
+
       resources :rf_customer_transitions,
           controller: "rf/customer_transitions",
           only: [] do
