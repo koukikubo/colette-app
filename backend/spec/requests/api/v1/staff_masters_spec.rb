@@ -269,6 +269,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         "/api/v1/staff_masters/#{target_staff_master.id}",
         params: {
           staff_master: {
+            lock_version: target_staff_master.lock_version,
             code: "STF200",
             name: "更新後担当者",
             role_code: "viewer",
@@ -295,6 +296,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         "/api/v1/staff_masters/#{target_staff_master.id}",
         params: {
           staff_master: {
+            lock_version: target_staff_master.lock_version,
             role_code: "invalid_role"
           }
         },
@@ -331,6 +333,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         "/api/v1/staff_masters/#{target_staff_master.id}/retire",
         params: {
           staff_master: {
+            lock_version: target_staff_master.lock_version,
           retired_on: retired_on.iso8601
         }
       },
@@ -351,6 +354,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
         "/api/v1/staff_masters/#{target_staff_master.id}/retire",
         params: {
           staff_master: {
+            lock_version: target_staff_master.lock_version,
             retired_on: retired_on.iso8601
           }
         },
@@ -381,6 +385,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     it "退職済み担当者を復帰できる" do
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/restore",
+        params: { staff_master: { lock_version: target_staff_master.lock_version } },
         headers: authenticated_headers,
         as: :json
       )
@@ -396,6 +401,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
 
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/restore",
+        params: { staff_master: { lock_version: target_staff_master.lock_version } },
         headers: authenticated_headers,
         as: :json
       )
@@ -432,6 +438,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/login_enabled",
         params: {
+          staff_master: { lock_version: target_staff_master.lock_version },
           staff: {
             login_enabled: false
           }
@@ -454,6 +461,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
       patch(
         "/api/v1/staff_masters/#{staff_master_without_staff.id}/login_enabled",
         params: {
+          staff_master: { lock_version: target_staff_master.lock_version },
           staff: {
             login_enabled: false
           }
@@ -494,6 +502,7 @@ RSpec.describe "Api::V1::StaffMasters", type: :request do
     it "失敗回数とロック状態をリセットできる" do
       patch(
         "/api/v1/staff_masters/#{target_staff_master.id}/reset_failed_attempts",
+        params: { staff_master: { lock_version: target_staff_master.lock_version } },
         headers: authenticated_headers,
         as: :json
       )

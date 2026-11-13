@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiClientError } from "@/lib/api/api-client";
 import { useState, type FormEvent } from "react";
 
 import { Loader2Icon } from "lucide-react";
@@ -103,6 +104,7 @@ export function RetireStaffDialog({
 
     const payload: RetireStaffMasterRequest = {
       staff_master: {
+        lock_version: staffMaster.lock_version,
         retired_on: retiredOn,
       },
     };
@@ -117,10 +119,12 @@ export function RetireStaffDialog({
       onOpenChange(false);
 
       await onRetired();
-    } catch {
+    } catch (error) {
       setConfirmOpen(false);
       setApiError(
-        "退職処理を実行できませんでした。入力内容を確認して再度お試しください。",
+        error instanceof ApiClientError
+          ? `${error.message} ${error.errorMessages.join(" ")}`
+          : "退職処理を実行できませんでした。入力内容を確認して再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);

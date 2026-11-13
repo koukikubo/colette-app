@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -286,9 +286,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_060000) do
     t.date "retired_on"
     t.string "role_code", null: false
     t.datetime "updated_at", null: false
+    t.integer "lock_version", default: 0, null: false
     t.index ["code"], name: "index_staff_masters_on_code", unique: true
     t.index ["retired_on"], name: "index_staff_masters_on_retired_on"
     t.index ["role_code"], name: "index_staff_masters_on_role_code"
+    t.check_constraint "lock_version >= 0", name: "staff_masters_lock_version_non_negative"
   end
 
   create_table "staff_sessions", force: :cascade do |t|

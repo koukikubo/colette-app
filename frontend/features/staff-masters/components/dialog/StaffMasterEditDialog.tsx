@@ -1,5 +1,7 @@
 "use client";
 
+import { ApiClientError } from "@/lib/api/api-client";
+
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 
 import { Loader2Icon } from "lucide-react";
@@ -181,9 +183,13 @@ export function StaffMasterEditDialog({
     setConfirmOpen(true);
   };
 
+  // 入力開始時点の版を保持し、裏で一覧が更新されても古い入力を再基準化しない。
+  const [editVersion] = useState(staffMaster.lock_version);
+
   const handleConfirmUpdate = async () => {
     const payload: UpdateStaffMasterRequest = {
       staff_master: {
+        lock_version: editVersion,
         name: values.name.trim(),
         role_code: values.role_code,
         employment_started_on: values.employment_started_on,
@@ -200,10 +206,12 @@ export function StaffMasterEditDialog({
 
       setConfirmOpen(false);
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       setConfirmOpen(false);
       setApiError(
-        "担当者情報を更新できませんでした。入力内容を確認して再度お試しください。",
+        error instanceof ApiClientError
+          ? `${error.message} ${error.errorMessages.join(" ")}`
+          : "担当者情報を更新できませんでした。入力内容を確認して再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);
