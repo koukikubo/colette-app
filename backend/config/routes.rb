@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get "up", to: "rails/health#show", as: :rails_health_check
   namespace :api do
     namespace :v1 do
+      resource :dashboard, only: :show, controller: "dashboard"
       get "csrf", to: "csrf#show"
 
       namespace :staff do
@@ -56,6 +57,7 @@ Rails.application.routes.draw do
           patch :reopen
           patch :restore
           patch :complete
+          patch :confirm_details
         end
       end
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadRefresh } from "@/hooks/useReadRefresh";
 import { useUrlQuery } from "@/hooks/useUrlQuery";
 import { safeReturnPath } from "@/lib/api/session-events";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
@@ -218,6 +219,8 @@ export function CustomerDetailPageClient({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [reloadKey, setReloadKey] = useState(0);
+
+  useReadRefresh(() => setReloadKey((value) => value + 1), !editDialogOpen);
 
   useEffect(() => {
     let isCancelled = false;
