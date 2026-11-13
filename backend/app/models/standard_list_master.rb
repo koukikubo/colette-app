@@ -1,4 +1,7 @@
 class StandardListMaster < ApplicationRecord
+  before_validation -> { Rf::ConfigurationLock.acquire! }, on: :update
+  validate :keep_used_rf_ranks_active
+
   RF_RANK_FALLBACK_COLOR = "#64748B".freeze
 
   belongs_to :standard_master
@@ -50,5 +53,11 @@ class StandardListMaster < ApplicationRecord
     return unless standard_master&.system_key == "rf_rank"
 
     self.initial_display_color ||= display_color || RF_RANK_FALLBACK_COLOR
+  end
+  def keep_used_rf_ranks_active
+    return unless persisted? && will_save_change_to_active? && !active?
+    return unless Rf::RankAvailability.used?([ id ])
+
+    errors.add(:active, "は使用中のRFルールから参照されています。先にルールを切り替えてください")
   end
 end

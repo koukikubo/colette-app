@@ -13,6 +13,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       ActiveRecord::Base.transaction do
         rule_set.lock!
 

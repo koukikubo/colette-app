@@ -18,6 +18,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       setting = RfSetting.first
 
       if setting.nil?
@@ -38,6 +42,7 @@ module Rf
         validate_current_run!(current_run)
         validate_target_run!
         validate_ancestor!(current_run)
+        RankAvailability.ensure_available!(target_run.rf_rule_set)
 
         setting.update!(
           current_calculation_run: target_run
