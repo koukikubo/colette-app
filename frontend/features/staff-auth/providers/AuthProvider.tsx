@@ -77,15 +77,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     mounted.current = true;
-    void refreshCurrentStaff().catch(() => undefined);
+    let active = true;
+    // 通知を購読してから初期取得を始め、StrictModeで破棄された取得は開始しない。
+    void Promise.resolve()
+      .then(() => (active ? refreshCurrentStaff() : undefined))
+      .catch(() => undefined);
     const check = () => {
       if (document.visibilityState === "visible" && current.current)
         void refreshCurrentStaff().catch(() => undefined);
     };
+    let lastActivity = Date.now();
+    const activity = () => {
+      // 自動取得とは分け、実際の入力・操作を最大1分に1回サーバーへ通知する。
+      if (
+        !expired.current &&
+        current.current &&
+        Date.now() - lastActivity > 60_000
+      ) {
+        lastActivity = Date.now();
+        void refreshCurrentStaff().catch(() => undefined);
+      }
+    };
+    window.addEventListener("pointerdown", activity);
+    window.addEventListener("keydown", activity);
     window.addEventListener(SESSION_EXPIRED_EVENT, expire);
     window.addEventListener("focus", check);
     document.addEventListener("visibilitychange", check);
     return () => {
+      window.removeEventListener("pointerdown", activity);
+      window.removeEventListener("keydown", activity);
+      active = false;
       mounted.current = false;
       window.removeEventListener(SESSION_EXPIRED_EVENT, expire);
       window.removeEventListener("focus", check);
@@ -125,7 +146,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       )}
-      {children}
+      <div
+        className="contents"
+        style={{ visibility: status === "expired" ? "hidden" : undefined }}
+        inert={status === "expired"}
+      >
+        {children}
+      </div>
       {status === "expired" && staff && (
         <SessionReauthentication
           staff={staff}

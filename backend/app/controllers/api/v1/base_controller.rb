@@ -26,7 +26,11 @@ class Api::V1::BaseController < ApplicationController
       reset_session
       return @current_staff = nil
     end
-    record.update!(last_seen_at: Time.current)
+    # 一覧の自動ポーリングだけでは無操作期限を延ばさない。
+    # UIの操作通知はcurrent API、保存操作は更新系リクエストで記録する。
+    if !request.get? || (controller_path == "api/v1/staff/sessions" && action_name == "current")
+      record.update!(last_seen_at: Time.current)
+    end
     staff = record.staff
 
     @current_staff = staff
@@ -58,7 +62,7 @@ class Api::V1::BaseController < ApplicationController
 
   def require_write_permission!
     return if request.get? || request.head? || request.options?
-    return if controller_path == "api/v1/staff/sessions"
+    return if %w[api/v1/staff/sessions api/v1/staff/passwords].include?(controller_path)
     staff = current_staff
     return unless staff
     return if staff.staff_master_role_code == "owner"

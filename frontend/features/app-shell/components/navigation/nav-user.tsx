@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   Avatar,
   AvatarFallback,
@@ -97,6 +99,9 @@ export function NavUser(
               </DropdownMenuItem> */}
             {/* </DropdownMenuGroup> */}
             {/* <DropdownMenuSeparator /> */}
+            <DropdownMenuItem asChild>
+              <Link href="/account/password">パスワード変更</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
               <LogOutIcon />
               <LogoutButton />

@@ -10,6 +10,7 @@ Rails.application.routes.draw do
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
         get "current", to: "sessions#current"
+        resource :password, only: :update, controller: "passwords"
       end
 
       resources :staff_masters, only: %i[index show create update] do
@@ -18,6 +19,7 @@ Rails.application.routes.draw do
           patch :restore
           patch :login_enabled, action: :update_login_enabled
           patch :reset_failed_attempts
+          patch :password, action: :reset_password
         end
       end
 

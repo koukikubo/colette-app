@@ -1,5 +1,6 @@
 "use client";
 
+import { PasswordForm } from "@/features/staff-auth/components/session/PasswordForm";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
@@ -95,6 +96,7 @@ export function StaffMasterEditDialog({
   const [resetFailedAttemptsDialogOpen, setResetFailedAttemptsDialogOpen] =
     useState(false);
 
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [retireDialogOpen, setRetireDialogOpen] = useState(false);
 
   const changes = useMemo<ChangeItem[]>(() => {
@@ -222,6 +224,17 @@ export function StaffMasterEditDialog({
 
   return (
     <>
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>担当者のパスワード再設定</DialogTitle>
+            <DialogDescription>
+              対象担当者の全セッションを失効します。
+            </DialogDescription>
+          </DialogHeader>
+          <PasswordForm target={staffMaster} onCompleted={onUpdated} />
+        </DialogContent>
+      </Dialog>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="flex max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b px-6 py-5 pr-12">
@@ -449,6 +462,16 @@ export function StaffMasterEditDialog({
                 </>
               )}
 
+              {staff && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                  onClick={() => setPasswordOpen(true)}
+                >
+                  パスワード再設定
+                </Button>
+              )}
               {apiError && (
                 <p className="text-sm text-destructive" role="alert">
                   {apiError}

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -277,6 +277,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
     t.check_constraint "singleton_key = true", name: "check_rf_settings_singleton"
   end
 
+  create_table "security_audit_events", force: :cascade do |t|
+    t.bigint "actor_id", null: false
+    t.bigint "subject_id", null: false
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.index ["actor_id"], name: "index_security_audit_events_on_actor_id"
+    t.index ["subject_id"], name: "index_security_audit_events_on_subject_id"
+  end
+
   create_table "staff_masters", force: :cascade do |t|
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -382,6 +391,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
   add_foreign_key "rf_rule_sets", "staffs", column: "created_by_staff_id"
   add_foreign_key "rf_rule_sets", "standard_list_masters", column: "no_visit_rank_id"
   add_foreign_key "rf_settings", "rf_calculation_runs", column: "current_calculation_run_id"
+  add_foreign_key "security_audit_events", "staffs", column: "actor_id"
+  add_foreign_key "security_audit_events", "staffs", column: "subject_id"
   add_foreign_key "staff_sessions", "staffs"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
