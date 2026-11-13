@@ -24,7 +24,7 @@ CACHE_DATABASE_URL/QUEUE_DATABASE_URL/CABLE_DATABASE_URLも設定し、四つの
 - HTTPSでSecure/HttpOnly/SameSite Cookieを確認する。
 - 正規CSRFでログイン/顧客登録/予約作成を成功させ、不正CSRFは拒否する。
 - owner/operator/viewerで操作権限を確認する。viewerは閲覧のみ、operatorは顧客・予約更新とマスタ閲覧、ownerは全操作。
-- ログアウト後の旧Cookie再送、無操作30分・絶対12時間の失効を確認する。
+- ログアウト後の旧Cookie再送、無操作4時間・絶対12時間の失効を確認する。
 - Next経由で顧客→予約→RF計算→適用→顧客表示まで確認する。
 - backend /upを内部監視する。DB疎通・worker処理の遅延・長時間processingを別監視し、外部通知先へテスト通知する。/upだけをDB/workerの正常判定に使わない。
 
