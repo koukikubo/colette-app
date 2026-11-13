@@ -42,6 +42,11 @@ const data = {
    */
   navMain: [
     {
+      title: "RFランク低下・予測",
+      url: "/rf-rank-drops",
+      icon: <ChartNoAxesCombinedIcon />,
+    },
+    {
       title: "ダッシュボード",
       url: "/dashboard",
       icon: <LayoutDashboardIcon />,
