@@ -16,11 +16,17 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
   let!(:staff) do
     Staff.create!(
       staff_master: staff_master,
-      password: "password",
-      password_confirmation: "password",
+      password: "Password123!",
+      password_confirmation: "Password123!",
       login_enabled: true,
       failed_attempts: 0
     )
+  end
+
+  # 無効化・退職テストでも最後のownerを失わないよう復旧用ownerを用意する。
+  before do
+    recovery = create(:staff_master, code: "RECOVERY-OWNER", role_code: "owner")
+    create(:staff, staff_master: recovery)
   end
 
   def response_body
@@ -33,7 +39,7 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
     response_body.dig("data", "csrf_token")
   end
 
-  def login_with(password: "password")
+  def login_with(password: "Password123!")
     csrf_token = fetch_csrf_token
 
     post "/api/v1/staff/login",
@@ -107,7 +113,7 @@ RSpec.describe "Api::V1::Staff::Sessions", type: :request do
       post "/api/v1/staff/login",
             params: {
               staff: {
-                password: "password"
+                password: "Password123!"
               }
             },
             headers: {
