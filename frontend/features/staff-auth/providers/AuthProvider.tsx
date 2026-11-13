@@ -99,13 +99,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const logout = useCallback(async () => {
-    try {
-      await logoutStaff();
-    } finally {
-      setStaff(null);
-      setStatus("unauthenticated");
-      router.replace("/login");
-    }
+    // サーバーで失効できたことを確認してから画面を切り替える。
+    // 通信失敗時は呼び出し元で再試行を案内する。
+    await logoutStaff();
+    setStaff(null);
+    setStatus("unauthenticated");
+    router.replace("/login");
   }, [router]);
 
   const value = useMemo<AuthContextValue>(
