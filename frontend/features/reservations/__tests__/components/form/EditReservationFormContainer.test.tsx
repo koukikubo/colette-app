@@ -11,6 +11,7 @@ import { ApiClientError } from "@/lib/api/api-client";
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   updateReservation: vi.fn(),
+  fetchReservation: vi.fn(),
   useReservation: vi.fn(),
   useReservationFormOptions: vi.fn(),
 
@@ -32,6 +33,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/features/reservations/api/reservation_api", () => ({
   updateReservation: mocks.updateReservation,
+  fetchReservation: mocks.fetchReservation,
 }));
 
 vi.mock("@/features/reservations/hooks/useReservation", () => ({
@@ -561,6 +563,7 @@ describe("EditReservationFormContainer", () => {
 
   it("更新競合が発生すると、再取得を促すエラーを表示する", async () => {
     const user = userEvent.setup();
+    mocks.fetchReservation.mockRejectedValue(new Error("offline"));
 
     const reservation = createReservation({
       id: 30,
@@ -619,12 +622,105 @@ describe("EditReservationFormContainer", () => {
 
     expect(
       await screen.findByText(
-        "予約情報が他の担当者によって更新されています。 最新の予約情報を再取得してから、もう一度操作してください。",
+        "最新の予約を取得できませんでした。入力は保持しています。再取得してください。",
       ),
     ).toBeInTheDocument();
 
     expect(mocks.push).not.toHaveBeenCalled();
   });
+
+  it("競合の双方変更を選び、他者のメモを維持して最新の版で保存できる", async () => {
+    const user = userEvent.setup();
+
+    const reservation = createReservation({
+      id: 30,
+      reservation_name: "山田 太郎",
+      reservation_phone_number: "09012345678",
+      starts_at: "2026-09-08T18:00:00+09:00",
+      ends_at: "2026-09-08T20:00:00+09:00",
+      guest_count: 3,
+      requested_restaurant_master_type_id: 1,
+      reservation_status_id: 1,
+      lock_version: 4,
+    });
+
+    mocks.useReservation.mockReturnValue({
+      reservation,
+      isLoading: false,
+      errorMessage: null,
+    });
+
+    mocks.updateReservation
+      .mockReset()
+      .mockRejectedValueOnce(new ApiClientError("競合", 409))
+      .mockResolvedValueOnce({ data: { reservation } });
+    mocks.fetchReservation.mockResolvedValue({
+      data: {
+        reservation: {
+          ...reservation,
+          lock_version: 5,
+          guest_count: 5,
+          internal_memo: "他者のメモ",
+        },
+      },
+    });
+
+    render(<EditReservationFormContainer reservationId={30} />);
+
+    const guestCountInput = screen.getByRole("spinbutton", {
+      name: /人数/,
+    });
+
+    await user.clear(guestCountInput);
+    await user.type(guestCountInput, "4");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "予約を更新",
+      }),
+    );
+
+    const confirmDialog = screen.getByRole("alertdialog", {
+      name: "予約内容を更新しますか？",
+    });
+
+    await user.click(
+      within(confirmDialog).getByRole("button", {
+        name: "更新する",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.updateReservation).toHaveBeenCalledOnce();
+    });
+
+    const comparison = await screen.findByRole("dialog", {
+      name: "予約の更新競合を確認",
+    });
+    await user.click(
+      within(comparison).getByLabelText("自分の入力", { selector: "input" }),
+    );
+    await user.click(
+      within(comparison).getByRole("button", { name: "選択を反映して再編集" }),
+    );
+    expect(mocks.updateReservation).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("spinbutton", { name: /人数/ })).toHaveValue(4);
+    expect(screen.getByLabelText(/店舗メモ/)).toHaveValue("他者のメモ");
+    await user.click(screen.getByRole("button", { name: "予約を更新" }));
+    await user.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "更新する",
+      }),
+    );
+    await waitFor(() =>
+      expect(mocks.updateReservation).toHaveBeenCalledTimes(2),
+    );
+    expect(mocks.updateReservation.mock.calls[1][1].reservation).toMatchObject({
+      lock_version: 5,
+      guest_count: 4,
+      internal_memo: "他者のメモ",
+    });
+  }, 15_000);
 
   it("同一顧客の予約重複エラーが発生すると、専用ダイアログを表示する", async () => {
     const user = userEvent.setup();
