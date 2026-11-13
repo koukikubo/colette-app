@@ -46,6 +46,15 @@ RSpec.describe "本番セキュリティ境界", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "ID表記を変えてもログインAPIのアカウント制限を回避できない" do
+    token = fetch_csrf_token
+    6.times do |index|
+      post "/api/v1/staff/login", params: { staff: { staff_id: "#{'0' * index}#{login_staff.id}", password: "incorrect-password" } }, headers: csrf_headers(token), as: :json
+    end
+    expect(response).to have_http_status(:too_many_requests)
+    expect(response.headers["Retry-After"]).to eq("60")
+  end
+
   it "アカウント単位の試行回数を制限する" do
     5.times { expect(LoginThrottle.allowed?("test:account", limit: 5)).to be(true) }
     expect(LoginThrottle.allowed?("test:account", limit: 5)).to be(false)

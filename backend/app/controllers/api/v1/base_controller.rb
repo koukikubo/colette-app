@@ -1,5 +1,6 @@
 class Api::V1::BaseController < ApplicationController
   # protect_from_forgery with: :null_session
+  before_action -> { response.set_header("Cache-Control", "no-store") }
   before_action :require_staff_login!
   before_action :require_write_permission!
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
