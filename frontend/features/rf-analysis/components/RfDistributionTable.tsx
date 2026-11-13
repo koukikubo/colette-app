@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -14,6 +15,7 @@ type RfDistributionTableProps = {
   recencyRules: RfRecencyRule[];
   frequencyRules: RfFrequencyRule[];
   cells: RfAnalysisCell[];
+  runId?: number;
 };
 
 function cellKey(recencyRuleId: number, frequencyRuleId: number) {
@@ -28,6 +30,7 @@ export function RfDistributionTable({
   recencyRules,
   frequencyRules,
   cells,
+  runId,
 }: RfDistributionTableProps) {
   const cellsByCondition = new Map(
     cells.map((cell) => [
@@ -103,7 +106,16 @@ export function RfDistributionTable({
                     </div>
 
                     <p className="mt-2 text-lg font-semibold">
-                      {cell.count.toLocaleString("ja-JP")}名
+                      {runId ? (
+                        <Link
+                          className="underline"
+                          href={`/rf-customers?run_id=${runId}&recency_rule_id=${recencyRule.id}&frequency_rule_id=${frequencyRule.id}&return_to=%2Frf-analysis`}
+                        >
+                          {cell.count.toLocaleString("ja-JP")}名
+                        </Link>
+                      ) : (
+                        <>{cell.count.toLocaleString("ja-JP")}名</>
+                      )}
                     </p>
 
                     <p className="text-xs text-muted-foreground">

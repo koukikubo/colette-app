@@ -1,7 +1,8 @@
 "use client";
 
+import { useUrlQuery } from "@/hooks/useUrlQuery";
+import { safeReturnPath } from "@/lib/api/session-events";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
-
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import {
@@ -204,6 +205,10 @@ function CustomerDetailSkeleton() {
 export function CustomerDetailPageClient({
   customerId,
 }: CustomerDetailPageClientProps) {
+  const { params: returnParams } = useUrlQuery();
+  const backTarget = returnParams.get("return_to")
+    ? safeReturnPath(returnParams.get("return_to"))
+    : "/customers";
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -281,7 +286,7 @@ export function CustomerDetailPageClient({
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
         <Button asChild variant="outline">
-          <Link href="/customers">
+          <Link href={backTarget}>
             <ArrowLeftIcon />
             顧客一覧へ戻る
           </Link>
@@ -303,7 +308,7 @@ export function CustomerDetailPageClient({
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
       <Button asChild variant="outline">
-        <Link href="/customers">
+        <Link href={backTarget}>
           <ArrowLeftIcon />
           顧客一覧へ戻る
         </Link>

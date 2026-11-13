@@ -64,6 +64,8 @@ Rails.application.routes.draw do
           controller: "rf/settings",
           only: :show
 
+      resources :rf_customers, controller: "rf/customers", only: :index
+
       resource :rf_analysis,
           path: "rf_analysis",
           controller: "rf/analysis",
@@ -85,6 +87,7 @@ Rails.application.routes.draw do
           only: [] do
         collection do
           get :compare
+          get :periods
         end
       end
 
