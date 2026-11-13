@@ -1,5 +1,7 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
+
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import {
@@ -346,14 +348,16 @@ export function CustomerDetailPageClient({
               </div>
             </div>
 
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <PencilIcon />
-              顧客情報を編集
-            </Button>
+            <PermissionGate resource="customers">
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <PencilIcon />
+                顧客情報を編集
+              </Button>
+            </PermissionGate>
           </div>
         </CardHeader>
 
@@ -591,15 +595,17 @@ export function CustomerDetailPageClient({
       <CustomerReservationHistory customerId={customer.id} />
 
       {editDialogOpen && (
-        <CustomerFormDialog
-          key={`detail-edit-${customer.id}-${customer.lock_version}`}
-          open={editDialogOpen}
-          mode="edit"
-          customer={customer}
-          allowVisibilityChange={true}
-          onOpenChange={setEditDialogOpen}
-          onCompleted={handleEditCompleted}
-        />
+        <PermissionGate resource="customers">
+          <CustomerFormDialog
+            key={`detail-edit-${customer.id}-${customer.lock_version}`}
+            open={editDialogOpen}
+            mode="edit"
+            customer={customer}
+            allowVisibilityChange={true}
+            onOpenChange={setEditDialogOpen}
+            onCompleted={handleEditCompleted}
+          />
+        </PermissionGate>
       )}
     </div>
   );

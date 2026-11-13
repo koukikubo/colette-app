@@ -1,4 +1,5 @@
 "use client";
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import * as React from "react";
 import { Armchair, CircleAlert } from "lucide-react";
 
@@ -107,15 +108,19 @@ export function RestaurantMasterMasterPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
-          テーブルを登録
-        </Button>
-        <RestaurantMasterCreateDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          tableTypeOptions={RestaurantMasterTypes}
-          onCreated={refreshRestaurantMasters}
-        />
+        <PermissionGate resource="masters">
+          <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
+            テーブルを登録
+          </Button>
+        </PermissionGate>
+        <PermissionGate resource="masters">
+          <RestaurantMasterCreateDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            tableTypeOptions={RestaurantMasterTypes}
+            onCreated={refreshRestaurantMasters}
+          />
+        </PermissionGate>
       </div>
 
       <div className="rounded-lg border bg-card" aria-live="polite">
@@ -173,17 +178,19 @@ export function RestaurantMasterMasterPage() {
         )}
       </div>
       {editingRestaurantMaster ? (
-        <RestaurantMasterEditDialog
-          key={editingRestaurantMaster.id}
-          open
-          restaurantMaster={editingRestaurantMaster}
-          onUpdated={handleUpdatedRestaurantMaster}
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
-              setEditingRestaurantMaster(null);
-            }
-          }}
-        />
+        <PermissionGate resource="masters">
+          <RestaurantMasterEditDialog
+            key={editingRestaurantMaster.id}
+            open
+            restaurantMaster={editingRestaurantMaster}
+            onUpdated={handleUpdatedRestaurantMaster}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                setEditingRestaurantMaster(null);
+              }
+            }}
+          />
+        </PermissionGate>
       ) : null}
     </div>
   );

@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { notFound } from "next/navigation";
 import { EditReservationFormContainer } from "@/features/reservations/components/form/EditReservationFormContainer";
 
@@ -18,5 +19,12 @@ export default async function EditReservationPage({
     notFound();
   }
 
-  return <EditReservationFormContainer reservationId={reservationId} />;
+  return (
+    <PermissionGate
+      resource="reservations"
+      fallback={<p className="p-6">閲覧専用のため予約を変更できません。</p>}
+    >
+      <EditReservationFormContainer reservationId={reservationId} />
+    </PermissionGate>
+  );
 }

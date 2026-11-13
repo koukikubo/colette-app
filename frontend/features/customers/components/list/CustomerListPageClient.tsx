@@ -1,5 +1,7 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
+
 import { useState } from "react";
 import { PlusIcon, RefreshCwIcon, SearchXIcon, UsersIcon } from "lucide-react";
 
@@ -148,14 +150,16 @@ export function CustomerListPageClient() {
       >
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start">
-            <Button
-              type="button"
-              className="w-full shrink-0 sm:w-auto"
-              onClick={handleOpenCreateDialog}
-            >
-              <PlusIcon />
-              顧客を登録
-            </Button>
+            <PermissionGate resource="customers">
+              <Button
+                type="button"
+                className="w-full shrink-0 sm:w-auto"
+                onClick={handleOpenCreateDialog}
+              >
+                <PlusIcon />
+                顧客を登録
+              </Button>
+            </PermissionGate>
 
             <CustomerSearchForm
               value={queryInput}
@@ -193,15 +197,17 @@ export function CustomerListPageClient() {
       </section>
 
       {formDialogOpen && (
-        <CustomerFormDialog
-          key={selectedCustomer ? `edit-${selectedCustomer.id}` : "create"}
-          open={formDialogOpen}
-          mode={formMode}
-          customer={selectedCustomer}
-          allowVisibilityChange={false}
-          onOpenChange={handleFormDialogOpenChange}
-          onCompleted={handleCustomerFormCompleted}
-        />
+        <PermissionGate resource="customers">
+          <CustomerFormDialog
+            key={selectedCustomer ? `edit-${selectedCustomer.id}` : "create"}
+            open={formDialogOpen}
+            mode={formMode}
+            customer={selectedCustomer}
+            allowVisibilityChange={false}
+            onOpenChange={handleFormDialogOpenChange}
+            onCompleted={handleCustomerFormCompleted}
+          />
+        </PermissionGate>
       )}
 
       {isLoading && <CustomerTableSkeleton />}

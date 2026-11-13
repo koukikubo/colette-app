@@ -1,5 +1,7 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -37,7 +39,7 @@ type ReservationStatusActionsProps = {
   onStatusChanged?: () => void;
 };
 
-export function ReservationStatusActions({
+function ReservationStatusActionsContent({
   reservation,
   onStatusChanged,
 }: ReservationStatusActionsProps) {
@@ -298,5 +300,13 @@ export function ReservationStatusActions({
         </p>
       )}
     </div>
+  );
+}
+
+export function ReservationStatusActions(props: ReservationStatusActionsProps) {
+  return (
+    <PermissionGate resource="reservations">
+      <ReservationStatusActionsContent {...props} />
+    </PermissionGate>
   );
 }
