@@ -20,3 +20,5 @@ API契約変更には .agents/skills/colette-api-contract/SKILL.md、不具合�
 - UI・UX: .agents/skills/colette-ui-ux/SKILL.md
 - セキュリティ監査: .agents/skills/colette-security-audit/SKILL.md（内部コード・設定・依存関係の脆弱性と改善箇所を監査）
 不具合調査スキルは補助として保持する。独立したコードレビュースキルは追加せず、レビューはGitHub側のCodexを使う。
+
+自動修正を依頼された場合は、専用ブランチで検証まで進め、機能・修正目的ごとに日本語でコミットする。UI・UX・CXとデータ整合性の品質基準は全体ハーネスに従う。
