@@ -14,6 +14,10 @@ class Api::V1::Rf::CalculationRunHistorySerializer <
   def as_json
     {
       id: resource.id,
+      execution_source: resource.execution_source,
+      scheduled_month: resource.scheduled_month,
+      monthly_apply_state: resource.monthly_apply_state,
+      monthly_apply_error: resource.monthly_apply_error,
       previous_run_id: resource.previous_run_id,
       rule_set: serialize_rule_set,
       base_date: resource.base_date,
