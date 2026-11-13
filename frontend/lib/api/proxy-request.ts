@@ -25,6 +25,8 @@ export async function proxyRequest(
   if (csrfToken) {
     headers["X-CSRF-Token"] = csrfToken;
   }
+  const idempotencyKey = request.headers.get("Idempotency-Key");
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
   // GETやHEADリクエストの場合はボディを送信しない
   const body =
     method === "GET" || method === "HEAD" ? undefined : await request.text();

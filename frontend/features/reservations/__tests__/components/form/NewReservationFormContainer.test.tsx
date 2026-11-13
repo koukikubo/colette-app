@@ -171,29 +171,108 @@ describe("NewReservationFormContainer", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.createReservation).toHaveBeenCalledWith({
-        reservation: {
-          customer_id: null,
-          reservation_name: "山田 太郎",
-          reservation_phone_number: "09012345678",
-          reservation_status_id: 2,
-          starts_at: "2026-09-08T17:00",
-          ends_at: "2026-09-08T19:00",
-          guest_count: 2,
-          requested_restaurant_master_type_id: 1,
-          restaurant_master_ids: [],
-          reservation_route_id: null,
-          menu_type_id: null,
-          occasion_id: null,
-          allergy_note: null,
-          disliked_food_note: null,
-          preferred_food_note: null,
-          favorite_drink_note: null,
-          request_note: null,
-          internal_memo: null,
+      expect(mocks.createReservation).toHaveBeenCalledWith(
+        {
+          reservation: {
+            customer_id: null,
+            reservation_name: "山田 太郎",
+            reservation_phone_number: "09012345678",
+            reservation_status_id: 2,
+            starts_at: "2026-09-08T17:00",
+            ends_at: "2026-09-08T19:00",
+            guest_count: 2,
+            requested_restaurant_master_type_id: 1,
+            restaurant_master_ids: [],
+            reservation_route_id: null,
+            menu_type_id: null,
+            occasion_id: null,
+            allergy_note: null,
+            disliked_food_note: null,
+            preferred_food_note: null,
+            favorite_drink_note: null,
+            request_note: null,
+            internal_memo: null,
+          },
+        },
+        expect.any(String),
+      );
+    });
+    expect(mocks.push).toHaveBeenCalledWith("/reservations?date=2026-09-08");
+  }, 10_000);
+
+  it("通信切断後に入力を変えても別予約を作らず元のキー・内容で再試行する", async () => {
+    const user = userEvent.setup();
+
+    mocks.createReservation
+      .mockReset()
+      .mockRejectedValueOnce(new TypeError("connection lost"))
+      .mockResolvedValueOnce({
+        status: "success",
+        data: {
+          reservation: {},
         },
       });
-    });
+
+    render(<NewReservationFormContainer targetDate="2026-09-08" />);
+
+    await user.type(
+      screen.getByRole("textbox", {
+        name: /予約者名/,
+      }),
+      "山田 太郎",
+    );
+
+    await user.type(
+      screen.getByRole("textbox", {
+        name: /電話番号/,
+      }),
+      "09012345678",
+    );
+
+    await user.click(
+      screen.getByRole("combobox", {
+        name: /希望席種/,
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("option", {
+        name: "テーブル席",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("combobox", {
+        name: /予約状況/,
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("option", {
+        name: "予約確定",
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "予約を登録",
+      }),
+    );
+
+    await screen.findByRole("button", { name: "前回の内容で再試行" });
+    const original = mocks.createReservation.mock.calls[0];
+    const name = screen.getByRole("textbox", { name: /予約者名/ });
+    await user.clear(name);
+    await user.type(name, "変更後の名前");
+    await user.click(screen.getByRole("button", { name: "予約を登録" }));
+    expect(mocks.createReservation).toHaveBeenCalledTimes(1);
+    await user.click(
+      screen.getByRole("button", { name: "前回の内容で再試行" }),
+    );
+    await waitFor(() =>
+      expect(mocks.createReservation).toHaveBeenCalledTimes(2),
+    );
+    expect(mocks.createReservation.mock.calls[1]).toEqual(original);
     expect(mocks.push).toHaveBeenCalledWith("/reservations?date=2026-09-08");
   }, 10_000);
 

@@ -1,8 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
 
-import type { ReservationFormValues } from "../../types";
+import { Button } from "@/components/ui/button";
+import type {
+  ReservationCreateRequest,
+  ReservationFormValues,
+} from "../../types";
 import {
   buildNewReservationFormValues,
   buildCreateReservationRequest,
@@ -37,6 +41,15 @@ export function NewReservationFormContainer(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
+
+  // 応答が失われても、同じ操作の本文とキーを再利用する。
+  const attempt = useRef<{
+    payload: ReservationCreateRequest;
+    key: string;
+  } | null>(null);
+  const [hasUncertainAttempt, setHasUncertainAttempt] = useState(false);
+  const [created, setCreated] = useState(false);
+  const submitting = useRef(false);
 
   const [overlapDialogOpen, setOverlapDialogOpen] = useState(false);
 
@@ -77,21 +90,47 @@ export function NewReservationFormContainer(
   });
 
   // 予約登録APIを呼び出す
-  async function handleSubmit() {
-    if (isSubmitting) return;
+  async function handleSubmit(retryPrevious = false) {
+    if (submitting.current || created) return;
+    const input = buildCreateReservationRequest(values);
+    if (
+      hasUncertainAttempt &&
+      !retryPrevious &&
+      JSON.stringify(input) !== JSON.stringify(attempt.current?.payload)
+    ) {
+      setErrorMessage(
+        "前回の登録結果が未確認です。「前回の内容で再試行」で確認してから、予約詳細で変更してください。",
+      );
+      return;
+    }
+    if (!hasUncertainAttempt || !attempt.current) {
+      if (
+        !attempt.current ||
+        JSON.stringify(input) !== JSON.stringify(attempt.current.payload)
+      ) {
+        attempt.current = { payload: input, key: crypto.randomUUID() };
+      }
+    }
+    submitting.current = true;
 
     setErrorMessage(null);
     clearAllFieldErrors();
     setIsSubmitting(true);
 
     try {
-      const request = buildCreateReservationRequest(values);
-
-      await createReservation(request);
+      const current = attempt.current!;
+      await createReservation(current.payload, current.key);
+      setHasUncertainAttempt(false);
+      setCreated(true);
       // 成功したら対象日の予約一覧へ戻る
       router.push(`/reservations?date=${targetDate}`);
     } catch (error) {
+      // 5xx・通信切断は保存済みか判断できないため、別の作成へ切り替えない。
+      if (!(error instanceof ApiClientError) || error.status >= 500)
+        setHasUncertainAttempt(true);
       if (error instanceof ApiClientError) {
+        if (error.status === 400 || error.status === 422)
+          setHasUncertainAttempt(false);
         setErrorMessage(error.message);
 
         if (error.status === 422 && !Array.isArray(error.errors)) {
@@ -110,6 +149,7 @@ export function NewReservationFormContainer(
       // 失敗したらエラーメッセージを表示する
       setErrorMessage("予約の登録中に予期しないエラーが発生しました。");
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   }
@@ -125,6 +165,20 @@ export function NewReservationFormContainer(
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
     <>
+      {hasUncertainAttempt && (
+        <div role="alert" className="space-y-2 rounded border p-4">
+          <p>
+            前回の登録結果が未確認です。同じ内容で再試行すると、登録済みの場合も同じ予約を確認できます。
+          </p>
+          <Button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => void handleSubmit(true)}
+          >
+            前回の内容で再試行
+          </Button>
+        </div>
+      )}
       <ReservationForm
         values={values}
         onChange={setValues}
@@ -133,9 +187,9 @@ export function NewReservationFormContainer(
         menuTypes={menuTypes}
         reservationOccasion={reservationOccasions}
         reservationStatuses={reservationStatuses}
-        onSubmit={handleSubmit}
+        onSubmit={() => void handleSubmit()}
         errorMessage={errorMessage}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || created}
         customerQuery={customerQuery}
         customers={customers}
         customerSearchPagination={customerSearchPagination}
