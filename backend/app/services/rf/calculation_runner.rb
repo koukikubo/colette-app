@@ -1,18 +1,31 @@
 module Rf
   class CalculationRunner
-    def self.call(calculation_run:)
+    def self.call(calculation_run:, recover: false)
       new(
-        calculation_run: calculation_run
+        calculation_run: calculation_run, recover: recover
       ).call
     end
 
-    def initialize(calculation_run:)
+    def initialize(calculation_run:, recover: false)
       @calculation_run = calculation_run
+      @recover = recover
     end
 
     def call
+      ActiveRecord::Base.connection_pool.with_connection do |connection|
+        locked = connection.select_value("SELECT pg_try_advisory_lock(431903, #{calculation_run.id.to_i})")
+        return calculation_run unless locked
+        begin
+          call_under_lock
+        ensure
+          connection.execute("SELECT pg_advisory_unlock(431903, #{calculation_run.id.to_i})")
+        end
+      end
+    end
+
+    def call_under_lock
       claimed = calculation_run.with_lock do
-        next false unless calculation_run.status == "pending"
+        next false unless calculation_run.status == "pending" || (@recover && calculation_run.status == "processing")
 
         calculation_run.update!(
           status: "processing",
@@ -48,6 +61,8 @@ module Rf
       excluded_count = 0
 
       ActiveRecord::Base.transaction do
+        # 強制終了後に再配信された場合も、途中結果を二重作成しない。
+        calculation_run.customer_rf_rank_results.delete_all if @recover
         target_customers.find_each do |customer|
           if customer.excluded_from_rf_calculation?
             create_excluded_result!(
