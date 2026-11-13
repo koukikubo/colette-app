@@ -18,6 +18,7 @@ module Reservations
     # 予約本体と実テーブル割当を一連の更新処理として扱い、失敗時は全てロールバックする
     def call
       ActiveRecord::Base.transaction do
+        Reservations::WriteLock.acquire!
         existing_restaurant_master_ids = reservation.restaurant_master_ids
         submitted_restaurant_master_ids = extract_restaurant_master_ids
 
