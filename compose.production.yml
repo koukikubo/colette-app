@@ -16,11 +16,30 @@ services:
       RAILS_ENV: production
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?required}
       DATABASE_URL: ${DATABASE_URL:?required}
+      CACHE_DATABASE_URL: ${CACHE_DATABASE_URL:?required}
+      QUEUE_DATABASE_URL: ${QUEUE_DATABASE_URL:?required}
+      CABLE_DATABASE_URL: ${CABLE_DATABASE_URL:?required}
       RAILS_ASSUME_SSL: "true"
       RAILS_ALLOWED_HOSTS: ${RAILS_ALLOWED_HOSTS:-localhost,backend}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "ruby",
+          "-rnet/http",
+          "-e",
+          "exit(Net::HTTP.get_response(URI('http://127.0.0.1:3000/up')).code == '200' ? 0 : 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
   worker:
     image: colette-backend-production
     command: ["./bin/jobs"]
+    depends_on:
+      backend:
+        condition: service_healthy
     environment: *rails_environment
     restart: unless-stopped
