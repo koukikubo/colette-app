@@ -8,6 +8,7 @@ import type { RfMonthComparisonResponse } from "../../types/customer-transition"
 const mocks = vi.hoisted(() => ({ fetchRfMonthComparison: vi.fn() }));
 vi.mock("../../api/customer-transition-api", () => mocks);
 const response: RfMonthComparisonResponse = {
+  status: "success",
   data: {
     start_month: "2026-07",
     end_month: "2026-09",
