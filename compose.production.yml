@@ -1,0 +1,26 @@
+# TLS終端/VPNは配置先で構成する。開発用Composeと重ねず単独で使用する。
+services:
+  frontend:
+    image: colette-frontend-production
+    build: ./frontend
+    environment:
+      RAILS_API_URL: http://backend:3000
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+  backend:
+    image: colette-backend-production
+    build: ./backend
+    command: ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+    environment: &rails_environment
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?required}
+      DATABASE_URL: ${DATABASE_URL:?required}
+      RAILS_ASSUME_SSL: "true"
+      RAILS_ALLOWED_HOSTS: ${RAILS_ALLOWED_HOSTS:-localhost,backend}
+    restart: unless-stopped
+  worker:
+    image: colette-backend-production
+    command: ["./bin/jobs"]
+    environment: *rails_environment
+    restart: unless-stopped
