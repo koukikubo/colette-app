@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 import { Reservation } from "../reservations/types";
 
 // タイムライン用に表示するための型
@@ -41,13 +46,6 @@ export type RestaurantMaster = {
 
   created_at: string;
   updated_at: string;
-};
-
-/*APIの成功レスポンス共通形式*/
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
-  message?: string;
 };
 
 /*席マスタ一覧取得レスポンス*/

@@ -160,6 +160,7 @@ export type ReservationCreateRequest = {
 
 // 予約更新APIへ送る属性
 export type ReservationUpdateAttributes = Partial<ReservationAttributes> & {
+  details_confirmed_at?: string | null;
   lock_version: number;
 };
 

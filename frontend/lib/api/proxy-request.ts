@@ -30,12 +30,28 @@ export async function proxyRequest(
     method === "GET" || method === "HEAD" ? undefined : await request.text();
 
   // Rails APIにリクエストを転送
-  const upstream = await fetch(`${RAILS_API_URL}${path}`, {
-    method,
-    headers,
-    body,
-    cache: "no-store",
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${RAILS_API_URL}${path}`, {
+      method,
+      headers,
+      body,
+      cache: "no-store",
+      // 上流の応答待ちで画面が止まり続けないようにする。
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch {
+    // 内部URLや例外本文を公開せず、共通API形式で再試行を案内する。
+    return Response.json(
+      {
+        status: "error",
+        message:
+          "サーバーに接続できませんでした。しばらくしてから再試行してください。",
+        errors: [],
+      },
+      { status: 502 },
+    );
+  }
   // レスポンスのボディとヘッダーを準備
   const responseBody = await upstream.text();
   const responseHeaders = new Headers();
@@ -44,9 +60,8 @@ export async function proxyRequest(
     upstream.headers.get("content-type") ?? "application/json",
   );
   // Rails APIからのSet-Cookieヘッダーを転送
-  const setCookie = upstream.headers.get("set-cookie");
-  if (setCookie) {
-    responseHeaders.set("Set-Cookie", setCookie);
+  for (const setCookie of upstream.headers.getSetCookie()) {
+    responseHeaders.append("Set-Cookie", setCookie);
   }
   // 204・205・304は本文を持たないレスポンスとして返す。
   const hasNoBody = [204, 205, 304].includes(upstream.status);

@@ -66,6 +66,17 @@ Rails.application.routes.draw do
           controller: "rf/analysis",
           only: :show
 
+      resource :rf_rank_drop,
+          path: "rf_rank_drops",
+          controller: "rf/rank_drops",
+          only: :show
+
+      # 過去のランク低下一覧とは別に、将来の低下予定一覧を提供する。
+      resource :rf_rank_drop_prediction,
+          path: "rf_rank_drop_predictions",
+          controller: "rf/rank_drop_predictions",
+          only: :show
+
       resources :rf_customer_transitions,
           controller: "rf/customer_transitions",
           only: [] do
