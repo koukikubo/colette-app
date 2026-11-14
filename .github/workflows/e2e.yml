@@ -61,14 +61,20 @@ jobs:
         working-directory: frontend
         run: |
           npm run build
-          mkdir -p .next/standalone/.next
-          cp -R .next/static .next/standalone/.next/static
-          if [ -d public ]; then cp -R public .next/standalone/public; fi
+          # workspace rootの違いでserver.jsがfrontend/配下になる場合も、生成物から特定する。
+          mapfile -t entries < <(find .next/standalone -type f -name server.js -not -path '*/node_modules/*')
+          test "${#entries[@]}" -eq 1
+          entry="${entries[0]}"
+          runtime_dir="$(dirname "$entry")"
+          mkdir -p "$runtime_dir/.next"
+          cp -R .next/static "$runtime_dir/.next/static"
+          if [ -d public ]; then cp -R public "$runtime_dir/public"; fi
+          printf '%s' "$entry" > /tmp/colette-e2e-next-entry.txt
       - name: Start Rails and Next
         run: |
           (cd backend && exec bundle exec rails runner test/e2e/server.rb) > backend/tmp/e2e-rails.log 2>&1 &
           echo $! > /tmp/colette-e2e-rails.pid
-          (cd frontend && PORT=4100 HOSTNAME=127.0.0.1 exec node .next/standalone/server.js) > /tmp/colette-e2e-next.log 2>&1 &
+          (cd frontend && PORT=4100 HOSTNAME=127.0.0.1 exec node "$(cat /tmp/colette-e2e-next-entry.txt)") > /tmp/colette-e2e-next.log 2>&1 &
           echo $! > /tmp/colette-e2e-next.pid
           for attempt in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:4101/up && curl -fsS http://127.0.0.1:4100/login > /dev/null; then exit 0; fi
