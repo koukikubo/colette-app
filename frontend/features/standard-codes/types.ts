@@ -11,7 +11,8 @@ export type StandardListCode = {
 
 export type StandardCode = {
   id: number;
-  system_key: string;
+  // 利用者が追加した分類には、固定の業務キーを割り当てない。
+  system_key: string | null;
   display_code: string;
   name: string;
   description: string | null;

@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
-type Dashboard = {
+export type Dashboard = {
   date: string;
   summary: {
     reservation_count: number;

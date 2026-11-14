@@ -10,7 +10,7 @@ import type { Pagination } from "@/lib/api/pagination";
 import type { RfTransitionRank } from "@/features/rf-customer-transitions/types/customer-transition";
 import { safeReturnPath } from "@/lib/api/session-events";
 
-type Data = {
+export type RfCustomerBreakdownData = {
   run: { id: number; base_date: string };
   comparison_run: { id: number; base_date: string } | null;
   filters: Record<string, string>;
@@ -47,7 +47,7 @@ export function RfCustomerBreakdownPage() {
   const { params, update } = useUrlQuery();
   const query = params.toString();
   const [reload, setReload] = useState(0);
-  const { data, error, loading } = useApiRead<Data>(
+  const { data, error, loading } = useApiRead<RfCustomerBreakdownData>(
     `/api/v1/rf_customers?${query}`,
     reload,
   );

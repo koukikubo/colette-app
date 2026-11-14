@@ -1,4 +1,5 @@
 import { apiFetch, type ApiSuccessResponse } from "@/lib/api/api-client";
+import type { StaffMasterResponse } from "@/features/staff-masters/types";
 export type PasswordInput = {
   current_password: string;
   password: string;
@@ -15,8 +16,11 @@ export function resetPassword(
   lockVersion: number,
   input: PasswordInput,
 ) {
-  return apiFetch("/api/v1/staff_masters/" + id + "/password", {
-    method: "PATCH",
-    body: { staff_master: { lock_version: lockVersion }, staff: input },
-  });
+  return apiFetch<StaffMasterResponse>(
+    "/api/v1/staff_masters/" + id + "/password",
+    {
+      method: "PATCH",
+      body: { staff_master: { lock_version: lockVersion }, staff: input },
+    },
+  );
 }
