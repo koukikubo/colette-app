@@ -8,14 +8,17 @@ import { fetchRestaurantMasters } from "@/features/restaurant-masters/api/restau
 
 import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StandardListCode } from "@/features/standard-codes/types";
+import {
+  isAutomaticSeatType,
+  type AutomaticSeatTypeOption,
+} from "../../utils/automatic-seat-types";
 import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
 import { RestaurantMasterTable } from "./RestaurantMasterTable";
 import { useState } from "react";
 import { RestaurantMasterEditDialog } from "../dialog/RestaurantMasterEditDialog";
 import { RestaurantMasterCreateDialog } from "../dialog/RestaurantMasterCreateDialog";
 
-const RESTAURANT_MASTER_TYPE_NAME = "予約席種";
+const RESTAURANT_MASTER_TYPE_KEY = "restaurant_master_type";
 
 export function RestaurantMasterMasterPage() {
   const [RestaurantMasters, setRestaurantMasters] = React.useState<
@@ -25,7 +28,7 @@ export function RestaurantMasterMasterPage() {
   const [error, setError] = React.useState<string | null>(null);
   const hasRestaurantMasters = RestaurantMasters.length > 0;
   const [RestaurantMasterTypes, setRestaurantMasterTypes] = React.useState<
-    StandardListCode[]
+    AutomaticSeatTypeOption[]
   >([]);
   const [editingRestaurantMaster, setEditingRestaurantMaster] =
     React.useState<RestaurantMaster | null>(null);
@@ -45,7 +48,7 @@ export function RestaurantMasterMasterPage() {
         const RestaurantMasterTypeMaster =
           standardCodesResponse.data.standard_masters.find(
             (standardMaster) =>
-              standardMaster.name === RESTAURANT_MASTER_TYPE_NAME &&
+              standardMaster.system_key === RESTAURANT_MASTER_TYPE_KEY &&
               standardMaster.active,
           );
 
@@ -55,7 +58,9 @@ export function RestaurantMasterMasterPage() {
 
         const activeRestaurantMasterTypes = (
           RestaurantMasterTypeMaster.items ?? []
-        ).filter((item) => item.active);
+        )
+          .filter(isAutomaticSeatType)
+          .filter((item) => item.active);
 
         if (activeRestaurantMasterTypes.length === 0) {
           throw new Error("有効な予約席種が登録されていません。");
@@ -109,8 +114,12 @@ export function RestaurantMasterMasterPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <PermissionGate resource="masters">
-          <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
-            テーブルを登録
+          <Button
+            type="button"
+            disabled={isLoading || Boolean(error)}
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            席を登録
           </Button>
         </PermissionGate>
         <PermissionGate resource="masters">

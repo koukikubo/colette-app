@@ -24,6 +24,38 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   expect(withoutCsrf.status()).toBe(422);
   expect((await withoutCsrf.json()).message).toBe("CSRFトークンが不正です");
 
+  // 空の専用DBで実席を登録し、T/C別の自動採番を実APIと画面で確認する。
+  await page.goto("/restaurant-masters");
+  let tableId: number | undefined;
+  for (const [label, code, seatName] of [
+    ["テーブル席", "T01", "E2Eテーブル"],
+    ["カウンター席", "C01", "E2Eカウンター"],
+  ]) {
+    await page.getByRole("button", { name: "席を登録", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("combobox", { name: "席種", exact: true }).click();
+    await page.getByRole("option", { name: label, exact: true }).click();
+    await dialog
+      .getByRole("textbox", { name: "席名", exact: true })
+      .fill(seatName);
+    await dialog.getByLabel("定員", { exact: true }).fill("2");
+    const created = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/restaurant_masters") &&
+        response.request().method() === "POST",
+    );
+    await dialog.getByRole("button", { name: "登録する", exact: true }).click();
+    const response = await created;
+    expect(response.status()).toBe(201);
+    const seat = (await response.json()).data.restaurant_master;
+    expect(seat.code).toBe(code);
+    if (code === "T01") tableId = seat.id;
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole("cell", { name: code, exact: true }),
+    ).toBeVisible();
+  }
+
   await page.goto("/customers");
   await page.getByRole("button", { name: "顧客を登録", exact: true }).click();
   await page.getByRole("textbox", { name: /^顧客名/ }).fill(name);
@@ -60,6 +92,7 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   await page.getByRole("option", { name: "テーブル席", exact: true }).click();
   await page.getByRole("combobox", { name: /^予約状況/ }).click();
   await page.getByRole("option", { name: "予約確定", exact: true }).click();
+  await page.getByRole("checkbox", { name: /E2Eテーブル/ }).check();
   const reservationResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith("/api/v1/reservations") &&
@@ -70,6 +103,7 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   expect(savedReservation.status()).toBe(201);
   const reservation = (await savedReservation.json()).data.reservation;
   expect(reservation.customer_id).toBe(customer.id);
+  expect(reservation.restaurant_master_ids).toEqual([tableId]);
   await expect(page).toHaveURL(/\/reservations\?date=/);
   await page.goto(`/reservations/${reservation.id}`);
   await page.getByRole("button", { name: "対応完了", exact: true }).click();
