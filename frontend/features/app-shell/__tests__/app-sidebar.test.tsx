@@ -30,6 +30,7 @@ describe("AppSidebar", () => {
       ["予約管理", "/reservations"],
       ["統一RFランク表", "/rf-analysis"],
       ["RFランク客層変動表", "/rf-customer-transitions"],
+      ["RFランク低下・予測", "/rf-rank-drops"],
       ["統一RFマスタ", "/rf-management"],
     ];
 
@@ -41,6 +42,10 @@ describe("AppSidebar", () => {
       ).toHaveAttribute("href", href);
     });
 
+    expect(screen.getAllByRole("link")[1]).toHaveAttribute(
+      "href",
+      "/dashboard",
+    );
     expect(screen.getByText("メインメニュー")).toBeInTheDocument();
     expect(screen.queryByText("お知らせ")).not.toBeInTheDocument();
     expect(screen.queryByText("顧客ノート")).not.toBeInTheDocument();
