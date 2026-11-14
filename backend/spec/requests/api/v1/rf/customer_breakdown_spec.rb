@@ -9,6 +9,14 @@ RSpec.describe "RFの顧客内訳", type: :request do
     get "/api/v1/rf_customers", params: { run_id: current_run.id, **filters }
   end
 
+  it "比較候補とともに店舗タイムゾーンの当月を返す" do
+    RfSetting.create!(current_calculation_run: current_run)
+    get "/api/v1/rf_customer_transitions/periods"
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "current_month")).to eq("2026-11")
+    expect(response.parsed_body.dig("data", "periods").first["run_id"]).to eq(current_run.id)
+  end
+
   it "上昇・下降などの件数と実顧客の内訳が一致する" do
     customer_with_change(from: rank_a, to: rank_b)
     customer_with_change(from: rank_c, to: rank_a)
