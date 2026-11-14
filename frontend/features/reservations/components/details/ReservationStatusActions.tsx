@@ -1,5 +1,6 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -26,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { ApiClientError } from "@/lib/api/api-client";
 import {
   completeReservation,
+  confirmReservationDetails,
   reopenReservation,
   restoreReservation,
   cancelReservation,
@@ -37,7 +39,7 @@ type ReservationStatusActionsProps = {
   onStatusChanged?: () => void;
 };
 
-export function ReservationStatusActions({
+function ReservationStatusActionsContent({
   reservation,
   onStatusChanged,
 }: ReservationStatusActionsProps) {
@@ -48,6 +50,27 @@ export function ReservationStatusActions({
   const isCompleted = reservation.completed_at !== null;
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const isCanceled = reservation.canceled_at !== null;
+
+  const handleConfirmDetails = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      await confirmReservationDetails(reservation.id, {
+        reservation: { lock_version: reservation.lock_version },
+      });
+      onStatusChanged?.();
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ApiClientError
+          ? error.message
+          : "確認済みにできませんでした。",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleComplete = async () => {
     if (isSubmitting || isCompleted || isCanceled) {
@@ -218,6 +241,17 @@ export function ReservationStatusActions({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
+        {!reservation.details_confirmed_at && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => void handleConfirmDetails()}
+          >
+            詳細を確認済みにする
+          </Button>
+        )}
         <Button
           type="button"
           size="sm"
@@ -298,5 +332,13 @@ export function ReservationStatusActions({
         </p>
       )}
     </div>
+  );
+}
+
+export function ReservationStatusActions(props: ReservationStatusActionsProps) {
+  return (
+    <PermissionGate resource="reservations">
+      <ReservationStatusActionsContent {...props} />
+    </PermissionGate>
   );
 }

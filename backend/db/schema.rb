@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_071000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -187,13 +187,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "rf_rank_snapshots"
+    t.string "execution_source", default: "manual", null: false
+    t.date "scheduled_month"
+    t.integer "expected_setting_version"
+    t.string "monthly_apply_state"
+    t.string "monthly_apply_error"
     t.index ["base_date"], name: "index_rf_calculation_runs_on_base_date"
     t.index ["previous_run_id"], name: "index_rf_calculation_runs_on_previous_run_id"
     t.index ["rf_rule_set_id"], name: "index_rf_calculation_runs_on_rf_rule_set_id"
+    t.index ["scheduled_month"], name: "index_rf_calculation_runs_on_scheduled_month", unique: true, where: "(scheduled_month IS NOT NULL)"
     t.index ["started_by_staff_id"], name: "index_rf_calculation_runs_on_started_by_staff_id"
     t.index ["status"], name: "index_rf_calculation_runs_on_status"
     t.check_constraint "customer_count >= 0", name: "check_rf_calculation_runs_customer_count"
     t.check_constraint "excluded_count >= 0", name: "check_rf_calculation_runs_excluded_count"
+    t.check_constraint "execution_source::text = ANY (ARRAY['manual'::character varying, 'monthly'::character varying]::text[])", name: "rf_execution_source_valid"
+    t.check_constraint "monthly_apply_state IS NULL OR (monthly_apply_state::text = ANY (ARRAY['pending'::character varying, 'applied'::character varying, 'conflict'::character varying, 'failed'::character varying]::text[]))", name: "rf_monthly_apply_state_valid"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying]::text[])", name: "check_rf_calculation_runs_status"
     t.check_constraint "unmatched_count >= 0", name: "check_rf_calculation_runs_unmatched_count"
   end
@@ -275,6 +283,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
     t.index ["current_calculation_run_id"], name: "index_rf_settings_on_current_calculation_run_id"
     t.index ["singleton_key"], name: "index_rf_settings_on_singleton_key", unique: true
     t.check_constraint "singleton_key = true", name: "check_rf_settings_singleton"
+  end
+
+  create_table "security_audit_events", force: :cascade do |t|
+    t.bigint "actor_id", null: false
+    t.bigint "subject_id", null: false
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.index ["actor_id"], name: "index_security_audit_events_on_actor_id"
+    t.index ["subject_id"], name: "index_security_audit_events_on_subject_id"
   end
 
   create_table "staff_masters", force: :cascade do |t|
@@ -382,6 +399,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
   add_foreign_key "rf_rule_sets", "staffs", column: "created_by_staff_id"
   add_foreign_key "rf_rule_sets", "standard_list_masters", column: "no_visit_rank_id"
   add_foreign_key "rf_settings", "rf_calculation_runs", column: "current_calculation_run_id"
+  add_foreign_key "security_audit_events", "staffs", column: "actor_id"
+  add_foreign_key "security_audit_events", "staffs", column: "subject_id"
   add_foreign_key "staff_sessions", "staffs"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"

@@ -1,5 +1,6 @@
 "use client";
 
+import { safeReturnPath } from "@/lib/api/session-events";
 import { cn } from "@/lib/utils";
 
 import { FormEvent, useState } from "react";
@@ -68,7 +69,11 @@ export function LoginForm({
 
       await refreshCurrentStaff();
 
-      router.replace("/dashboard");
+      router.replace(
+        safeReturnPath(
+          new URLSearchParams(window.location.search).get("return_to"),
+        ),
+      );
     } catch (error) {
       if (error instanceof ApiClientError) {
         setErrorMessage(error.message);
@@ -145,7 +150,7 @@ export function LoginForm({
               className="underline underline-offset-4"
               onClick={() =>
                 setErrorMessage(
-                  "パスワードリセット機能は後続実装予定です。管理者へお問い合わせください。",
+                  "管理者に担当者マスタからパスワードを再設定してもらってください。",
                 )
               }
             >

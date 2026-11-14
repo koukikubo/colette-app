@@ -186,6 +186,9 @@ export function RfCalculationHistorySection({
                     <p className="text-xs text-muted-foreground">計算基準日</p>
                     <p className="mt-1 font-medium">
                       {formatDate(calculationRun.base_date)}
+                      {calculationRun.execution_source === "monthly" && (
+                        <span className="ml-2 text-xs">月次自動更新</span>
+                      )}
                     </p>
                   </div>
 
@@ -217,6 +220,25 @@ export function RfCalculationHistorySection({
 
                   <div className="flex flex-wrap items-center gap-2 md:justify-end">
                     <RfCalculationStatusBadge status={calculationRun.status} />
+                    {calculationRun.monthly_apply_state && (
+                      <span className="text-sm">
+                        {
+                          (
+                            {
+                              applied: "自動更新適用済み",
+                              pending: "自動適用待ち",
+                              conflict: "手動確認が必要",
+                              failed: "自動更新失敗",
+                            } as const
+                          )[calculationRun.monthly_apply_state]
+                        }
+                      </span>
+                    )}
+                    {calculationRun.monthly_apply_error && (
+                      <p role="alert" className="text-sm text-destructive">
+                        {calculationRun.monthly_apply_error}
+                      </p>
+                    )}
 
                     {calculationRun.current && <RfCurrentStatusBadge />}
 

@@ -1,5 +1,9 @@
 "use client";
 
+import { useReadRefresh } from "@/hooks/useReadRefresh";
+import { useUrlQuery } from "@/hooks/useUrlQuery";
+import { safeReturnPath } from "@/lib/api/session-events";
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import {
@@ -202,6 +206,10 @@ function CustomerDetailSkeleton() {
 export function CustomerDetailPageClient({
   customerId,
 }: CustomerDetailPageClientProps) {
+  const { params: returnParams } = useUrlQuery();
+  const backTarget = returnParams.get("return_to")
+    ? safeReturnPath(returnParams.get("return_to"))
+    : "/customers";
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -211,6 +219,8 @@ export function CustomerDetailPageClient({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [reloadKey, setReloadKey] = useState(0);
+
+  useReadRefresh(() => setReloadKey((value) => value + 1), !editDialogOpen);
 
   useEffect(() => {
     let isCancelled = false;
@@ -279,7 +289,7 @@ export function CustomerDetailPageClient({
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
         <Button asChild variant="outline">
-          <Link href="/customers">
+          <Link href={backTarget}>
             <ArrowLeftIcon />
             顧客一覧へ戻る
           </Link>
@@ -301,7 +311,7 @@ export function CustomerDetailPageClient({
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
       <Button asChild variant="outline">
-        <Link href="/customers">
+        <Link href={backTarget}>
           <ArrowLeftIcon />
           顧客一覧へ戻る
         </Link>
@@ -346,14 +356,16 @@ export function CustomerDetailPageClient({
               </div>
             </div>
 
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <PencilIcon />
-              顧客情報を編集
-            </Button>
+            <PermissionGate resource="customers">
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <PencilIcon />
+                顧客情報を編集
+              </Button>
+            </PermissionGate>
           </div>
         </CardHeader>
 
@@ -591,15 +603,17 @@ export function CustomerDetailPageClient({
       <CustomerReservationHistory customerId={customer.id} />
 
       {editDialogOpen && (
-        <CustomerFormDialog
-          key={`detail-edit-${customer.id}-${customer.lock_version}`}
-          open={editDialogOpen}
-          mode="edit"
-          customer={customer}
-          allowVisibilityChange={true}
-          onOpenChange={setEditDialogOpen}
-          onCompleted={handleEditCompleted}
-        />
+        <PermissionGate resource="customers">
+          <CustomerFormDialog
+            key={`detail-edit-${customer.id}-${customer.lock_version}`}
+            open={editDialogOpen}
+            mode="edit"
+            customer={customer}
+            allowVisibilityChange={true}
+            onOpenChange={setEditDialogOpen}
+            onCompleted={handleEditCompleted}
+          />
+        </PermissionGate>
       )}
     </div>
   );

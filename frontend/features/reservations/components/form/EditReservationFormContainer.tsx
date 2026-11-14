@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateReservation } from "../../api/reservation_api";
+import { Button } from "@/components/ui/button";
+import { ReservationConflictDialog } from "../dialogs/ReservationConflictDialog";
+import { fetchReservation, updateReservation } from "../../api/reservation_api";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { useReservation } from "../../hooks/useReservation";
@@ -37,7 +39,11 @@ function EditReservationFormContent({
     buildEditReservationFormValues(reservation),
   );
 
-  const [lockVersion] = useState(reservation.lock_version);
+  const [lockVersion, setLockVersion] = useState(reservation.lock_version);
+  const [baseReservation, setBaseReservation] = useState(reservation);
+  const [conflict, setConflict] = useState<Reservation | null>(null);
+  const [needsComparison, setNeedsComparison] = useState(false);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(
     null,
@@ -79,7 +85,7 @@ function EditReservationFormContent({
     errorMessage: optionsErrorMessage,
   } = useReservationFormOptions();
 
-  const initialValues = buildEditReservationFormValues(reservation);
+  const initialValues = buildEditReservationFormValues(baseReservation);
   const isDirty = JSON.stringify(values) !== JSON.stringify(initialValues);
   const {
     discardDialogOpen,
@@ -100,6 +106,10 @@ function EditReservationFormContent({
 
   // 確認ダイアログを開く前に、フロントで判断できる入力内容を検証する。
   function handleOpenConfirmDialog() {
+    if (needsComparison) {
+      void loadComparison();
+      return;
+    }
     setSubmitErrorMessage(null);
     clearAllFieldErrors();
 
@@ -116,7 +126,7 @@ function EditReservationFormContent({
   // 編集した予約内容をRailsの更新APIへ送信する。
   async function handleSubmit() {
     // 二重クリックによる重複送信を防ぐ。
-    if (isSubmitting) return;
+    if (isSubmitting || needsComparison) return;
 
     setSubmitErrorMessage(null);
     clearAllFieldErrors();
@@ -133,6 +143,9 @@ function EditReservationFormContent({
       if (error instanceof ApiClientError) {
         // 競合時は、再取得を促す案内もエラーメッセージへ含める。
         if (error.status === 409) {
+          setConfirmOpen(false);
+          setNeedsComparison(true);
+          void loadComparison();
           const conflictGuidance = error.errorMessages[0];
 
           setSubmitErrorMessage(
@@ -169,6 +182,19 @@ function EditReservationFormContent({
       setIsSubmitting(false);
     }
   }
+  async function loadComparison() {
+    setComparisonLoading(true);
+    try {
+      const response = await fetchReservation(reservation.id);
+      setConflict(response.data.reservation);
+    } catch {
+      setSubmitErrorMessage(
+        "最新の予約を取得できませんでした。入力は保持しています。再取得してください。",
+      );
+    } finally {
+      setComparisonLoading(false);
+    }
+  }
   if (isOptionsLoading) {
     return <p className="p-6">フォームの選択肢を読み込んでいます。</p>;
   }
@@ -191,6 +217,72 @@ function EditReservationFormContent({
 
   return (
     <>
+      {needsComparison && (
+        <Button
+          type="button"
+          disabled={comparisonLoading}
+          onClick={() => void loadComparison()}
+        >
+          最新の予約を取得して比較
+        </Button>
+      )}
+      {conflict && (
+        <ReservationConflictDialog
+          key={conflict.lock_version}
+          base={baseReservation}
+          mine={values}
+          latest={conflict}
+          onClose={() => setConflict(null)}
+          format={(key, value) => {
+            if (key === "restaurant_master_ids" && Array.isArray(value))
+              return (
+                value
+                  .map(
+                    (id) =>
+                      restaurantMasters.find((item) => item.id === id)?.name ??
+                      `席ID ${id}`,
+                  )
+                  .join("、") || "未割当"
+              );
+            const options = {
+              reservation_status_id: reservationStatuses,
+              requested_restaurant_master_type_id:
+                requestedRestaurantMasterTypes,
+              reservation_route_id: reservationRoutes,
+              menu_type_id: menuTypes,
+              occasion_id: reservationOccasions,
+            };
+            if (key in options)
+              return (
+                options[key as keyof typeof options].find(
+                  (item) => item.id === value,
+                )?.label ??
+                (value == null
+                  ? "未指定"
+                  : `現在選択できない項目（ID: ${value}）`)
+              );
+            if (key === "customer_id")
+              return value == null
+                ? "顧客未選択"
+                : value === conflict.customer_id
+                  ? (conflict.customer?.name ?? `顧客ID ${value}`)
+                  : value === baseReservation.customer_id
+                    ? (baseReservation.customer?.name ?? `顧客ID ${value}`)
+                    : values.reservation_name;
+            return Array.isArray(value)
+              ? value.join("、")
+              : String(value ?? "未指定");
+          }}
+          onApply={(merged) => {
+            setValues(merged);
+            setBaseReservation(conflict);
+            setLockVersion(conflict.lock_version);
+            setConflict(null);
+            setNeedsComparison(false);
+            setSubmitErrorMessage(null);
+          }}
+        />
+      )}
       <ReservationForm
         values={values}
         onChange={setValues}
@@ -237,7 +329,7 @@ function EditReservationFormContent({
 
       <ReservationUpdateConfirmDialog
         open={confirmOpen}
-        reservation={reservation}
+        reservation={baseReservation}
         values={values}
         requestedRestaurantMasterTypes={requestedRestaurantMasterTypes}
         reservationRoutes={reservationRoutes}

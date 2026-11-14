@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -65,15 +66,17 @@ export function RestaurantMasterTable({
 
               <TableCell>
                 <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => onEdit(RestaurantMaster)}
-                    aria-label={`${RestaurantMaster.name}を編集`}
-                  >
-                    <Pencil className="size-4" aria-hidden="true" />
-                  </Button>
+                  <PermissionGate resource="masters">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onEdit(RestaurantMaster)}
+                      aria-label={`${RestaurantMaster.name}を編集`}
+                    >
+                      <Pencil className="size-4" aria-hidden="true" />
+                    </Button>
+                  </PermissionGate>
                 </div>
               </TableCell>
             </TableRow>

@@ -1,5 +1,6 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 
@@ -488,10 +489,12 @@ export function StandardCodeMasterPage() {
                 </div>
 
                 {/* 変更点: 追加ボタンにonClickを接続 */}
-                <Button size="sm" onClick={openCreateStandardCodeDialog}>
-                  <Plus className="mr-1 h-4 w-4" />
-                  追加
-                </Button>
+                <PermissionGate resource="masters">
+                  <Button size="sm" onClick={openCreateStandardCodeDialog}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    追加
+                  </Button>
+                </PermissionGate>
               </div>
 
               <div className="space-y-2">
@@ -596,14 +599,16 @@ export function StandardCodeMasterPage() {
                 </div>
 
                 {/* 変更点: 選択肢コード追加ボタンにonClickを接続 */}
-                <Button
-                  size="sm"
-                  disabled={!selectedStandardCode}
-                  onClick={openCreateStandardListCodeDialog}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  追加
-                </Button>
+                <PermissionGate resource="masters">
+                  <Button
+                    size="sm"
+                    disabled={!selectedStandardCode}
+                    onClick={openCreateStandardListCodeDialog}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    追加
+                  </Button>
+                </PermissionGate>
               </div>
 
               <div className="space-y-2">
@@ -704,39 +709,43 @@ export function StandardCodeMasterPage() {
       </div>
 
       {/* 変更点: 基本コードの登録・編集Dialogを接続 */}
-      <StandardCodeFormDialog
-        open={standardCodeDialogOpen}
-        mode={standardCodeDialogMode}
-        standardCode={editingStandardCode}
-        isSubmitting={isSubmitting}
-        errorMessage={standardCodeSubmitError}
-        onOpenChange={(open) => {
-          setStandardCodeDialogOpen(open);
+      <PermissionGate resource="masters">
+        <StandardCodeFormDialog
+          open={standardCodeDialogOpen}
+          mode={standardCodeDialogMode}
+          standardCode={editingStandardCode}
+          isSubmitting={isSubmitting}
+          errorMessage={standardCodeSubmitError}
+          onOpenChange={(open) => {
+            setStandardCodeDialogOpen(open);
 
-          if (!open) {
-            setEditingStandardCode(null);
-          }
-        }}
-        onSubmit={handleSubmitStandardCode}
-      />
+            if (!open) {
+              setEditingStandardCode(null);
+            }
+          }}
+          onSubmit={handleSubmitStandardCode}
+        />
+      </PermissionGate>
 
       {/* 変更点: 選択肢コードの登録・編集Dialogを接続 */}
-      <StandardListCodeFormDialog
-        open={standardListCodeDialogOpen}
-        mode={standardListCodeDialogMode}
-        selectedStandardCode={selectedStandardCode}
-        standardListCode={editingStandardListCode}
-        isSubmitting={isSubmitting}
-        errorMessage={standardListCodeSubmitError}
-        onOpenChange={(open) => {
-          setStandardListCodeDialogOpen(open);
+      <PermissionGate resource="masters">
+        <StandardListCodeFormDialog
+          open={standardListCodeDialogOpen}
+          mode={standardListCodeDialogMode}
+          selectedStandardCode={selectedStandardCode}
+          standardListCode={editingStandardListCode}
+          isSubmitting={isSubmitting}
+          errorMessage={standardListCodeSubmitError}
+          onOpenChange={(open) => {
+            setStandardListCodeDialogOpen(open);
 
-          if (!open) {
-            setEditingStandardListCode(null);
-          }
-        }}
-        onSubmit={handleSubmitStandardListCode}
-      />
+            if (!open) {
+              setEditingStandardListCode(null);
+            }
+          }}
+          onSubmit={handleSubmitStandardListCode}
+        />
+      </PermissionGate>
     </>
   );
 }

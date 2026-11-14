@@ -1,5 +1,6 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { useEffect, useMemo, useState } from "react";
 
 import { AlertCircleIcon, PlusIcon, UsersRoundIcon } from "lucide-react";
@@ -172,10 +173,12 @@ export function StaffMasterManagementPage() {
         </Button>
 
         {listMode === "active" && (
-          <Button type="button" onClick={() => setCreateDialogOpen(true)}>
-            <PlusIcon aria-hidden="true" />
-            新規登録
-          </Button>
+          <PermissionGate resource="masters">
+            <Button type="button" onClick={() => setCreateDialogOpen(true)}>
+              <PlusIcon aria-hidden="true" />
+              新規登録
+            </Button>
+          </PermissionGate>
         )}
       </div>
 
@@ -194,39 +197,45 @@ export function StaffMasterManagementPage() {
         </CardContent>
       </Card>
 
-      <StaffMasterCreateDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onCreated={handleCreated}
-      />
+      <PermissionGate resource="masters">
+        <StaffMasterCreateDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onCreated={handleCreated}
+        />
+      </PermissionGate>
 
       {editingStaffMaster && (
-        <StaffMasterEditDialog
-          key={editingStaffMaster.id}
-          open
-          staffMaster={editingStaffMaster}
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
-              setEditingStaffMaster(null);
-            }
-          }}
-          onUpdated={handleUpdated}
-          onRetired={handleRetired}
-        />
+        <PermissionGate resource="masters">
+          <StaffMasterEditDialog
+            key={editingStaffMaster.id}
+            open
+            staffMaster={editingStaffMaster}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                setEditingStaffMaster(null);
+              }
+            }}
+            onUpdated={handleUpdated}
+            onRetired={handleRetired}
+          />
+        </PermissionGate>
       )}
 
       {restoringStaffMaster && (
-        <RestoreStaffDialog
-          key={restoringStaffMaster.id}
-          open
-          staffMaster={restoringStaffMaster}
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
-              setRestoringStaffMaster(null);
-            }
-          }}
-          onRestored={handleRestored}
-        />
+        <PermissionGate resource="masters">
+          <RestoreStaffDialog
+            key={restoringStaffMaster.id}
+            open
+            staffMaster={restoringStaffMaster}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                setRestoringStaffMaster(null);
+              }
+            }}
+            onRestored={handleRestored}
+          />
+        </PermissionGate>
       )}
     </div>
   );

@@ -54,7 +54,8 @@ module ApiPagination
 
   # 絞り込み・並び替え済みのRelationへページ分割を適用する。
   def paginate(relation, page:, per_page:)
-    total_count = relation.count
+    # 内訳取得用の追加SELECT列に依存せず、絞り込んだ行数を数える。
+    total_count = relation.except(:select, :order).count
     total_pages = (total_count.to_f / per_page).ceil
 
     records =

@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,15 +72,17 @@ export function StandardListCodeTable({
 
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onEdit(standardListCode)}
-                  >
-                    <Pencil className="mr-1 h-4 w-4" />
-                    編集
-                  </Button>
+                  <PermissionGate resource="masters">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEdit(standardListCode)}
+                    >
+                      <Pencil className="mr-1 h-4 w-4" />
+                      編集
+                    </Button>
+                  </PermissionGate>
                 </div>
               </TableCell>
             </TableRow>

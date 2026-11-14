@@ -57,6 +57,11 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     "/staff-masters": "担当者マスタ",
     "/standard-codes": "基本コードマスタ",
     "/rf-analysis": "統一RFランク表",
+    "/rf-customer-transitions": "RFランク客層変動表",
+    "/rf-customers": "RF分析の対象顧客",
+    "/rf-rank-drops": "RFランク低下顧客",
+    "/rf-rank-drops/predictions": "RFランク低下予定",
+    "/account/password": "パスワード変更",
   };
 
   return { section: pageTitles[pathname] ?? "Colette" };

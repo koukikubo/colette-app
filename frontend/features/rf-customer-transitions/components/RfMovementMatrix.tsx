@@ -10,6 +10,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import type {
@@ -63,6 +64,10 @@ function cellTone(category?: RfMovementCategory) {
 
 type Props = {
   transitions: RfCustomerTransition[];
+  customerHref?: (
+    from: { state: string; rank: { id: number } | null },
+    to: { state: string; rank: { id: number } | null },
+  ) => string;
 };
 
 /**
@@ -73,7 +78,7 @@ type Props = {
  * 選択状態はこのコンポーネント内で保持する。
  * 比較対象が変わる際は、親が計算IDを使ったkeyを変更して選択をリセットする。
  */
-export function RfMovementMatrix({ transitions }: Props) {
+export function RfMovementMatrix({ transitions, customerHref }: Props) {
   const matrix = buildMovementMatrix(transitions);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
@@ -190,47 +195,57 @@ export function RfMovementMatrix({ transitions }: Props) {
                               0
                             </span>
                           ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  type="button"
-                                  aria-pressed={selectedKey === key}
-                                  aria-label={`${row.label}から${column.label}へ、${count}人、${label}、開始区分の${percentage.toFixed(1)}%`}
-                                  onClick={() => setSelectedKey(key)}
-                                  className={[
-                                    "w-full rounded-lg p-3 text-center transition",
-                                    "hover:ring-2 hover:ring-ring/40",
-                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    selectedKey === key
-                                      ? "ring-2 ring-ring"
-                                      : "",
-                                    cellTone(category),
-                                  ].join(" ")}
-                                >
-                                  <span className="block text-lg font-semibold tabular-nums">
-                                    {count.toLocaleString("ja-JP")}
-                                    <span className="ml-1 text-xs font-normal">
-                                      人
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-pressed={selectedKey === key}
+                                    aria-label={`${row.label}から${column.label}へ、${count}人、${label}、開始区分の${percentage.toFixed(1)}%`}
+                                    onClick={() => setSelectedKey(key)}
+                                    className={[
+                                      "w-full rounded-lg p-3 text-center transition",
+                                      "hover:ring-2 hover:ring-ring/40",
+                                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                      selectedKey === key
+                                        ? "ring-2 ring-ring"
+                                        : "",
+                                      cellTone(category),
+                                    ].join(" ")}
+                                  >
+                                    <span className="block text-lg font-semibold tabular-nums">
+                                      {count.toLocaleString("ja-JP")}
+                                      <span className="ml-1 text-xs font-normal">
+                                        人
+                                      </span>
                                     </span>
-                                  </span>
-                                  <span className="block text-xs">
-                                    {percentage.toFixed(1)}%
-                                  </span>
-                                  <span className="mt-1 block text-xs">
-                                    {label}
-                                  </span>
-                                </button>
-                              </TooltipTrigger>
+                                    <span className="block text-xs">
+                                      {percentage.toFixed(1)}%
+                                    </span>
+                                    <span className="mt-1 block text-xs">
+                                      {label}
+                                    </span>
+                                  </button>
+                                </TooltipTrigger>
 
-                              {/* ボタンへのホバー・フォーカスで、同じ説明を表示する。 */}
-                              <TooltipContent
-                                side="top"
-                                sideOffset={6}
-                                className="max-w-80 p-3 text-xs leading-relaxed"
-                              >
-                                {description}
-                              </TooltipContent>
-                            </Tooltip>
+                                {/* ボタンへのホバー・フォーカスで、同じ説明を表示する。 */}
+                                <TooltipContent
+                                  side="top"
+                                  sideOffset={6}
+                                  className="max-w-80 p-3 text-xs leading-relaxed"
+                                >
+                                  {description}
+                                </TooltipContent>
+                              </Tooltip>
+                              {customerHref && (
+                                <Link
+                                  className="block p-2 text-center underline"
+                                  href={customerHref(row, column)}
+                                >
+                                  {count}人の内訳
+                                </Link>
+                              )}
+                            </>
                           )}
                         </td>
                       );
