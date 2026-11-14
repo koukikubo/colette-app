@@ -14,6 +14,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
     return unless valid_visibility?(visibility)
     return unless valid_customer_kind?(customer_kind)
+    return unless valid_customer_rank_filter?
 
     # 共通Concernでpage・per_pageを変換し、入力値を検証する。
     pagination = pagination_params
@@ -29,6 +30,12 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
     if customer_kind
       customers = customers.where(customer_kind: customer_kind)
+    end
+
+    # 手動ランクとRFランクは別の分類。ページ分割前に絞って件数も一致させる。
+    if params[:customer_rank_id].present?
+      rank_id = params[:customer_rank_id] == "unassigned" ? nil : params[:customer_rank_id].to_i
+      customers = customers.where(customer_rank_id: rank_id)
     end
 
     customers = ::Customers::SearchQuery.new(
@@ -211,6 +218,26 @@ class Api::V1::CustomersController < Api::V1::BaseController
     end
 
     lock_version
+  end
+
+  def valid_customer_rank_filter?
+    value = params[:customer_rank_id]
+    return true if value.blank? || value == "unassigned"
+
+    # 無効ランクの既存割当も検索できるが、他カテゴリのIDは受け付けない。
+    if value.is_a?(String) && value.match?(/\A[1-9]\d{0,18}\z/) &&
+        StandardListMaster.joins(:standard_master).exists?(
+          id: value.to_i, standard_masters: { system_key: "customer_rank" }
+        )
+      return true
+    end
+
+    render_error(
+      message: "顧客ランクの検索条件が不正です",
+      errors: [ "customer_rank_idには顧客ランクIDまたはunassignedを指定してください" ],
+      status: :bad_request
+    )
+    false
   end
 
   def valid_visibility?(visibility)

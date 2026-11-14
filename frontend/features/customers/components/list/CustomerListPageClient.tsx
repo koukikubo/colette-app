@@ -11,6 +11,7 @@ import { queryPage, useUrlQuery } from "@/hooks/useUrlQuery";
 import { useReadRefresh } from "@/hooks/useReadRefresh";
 
 import type { Customer, CustomerListParams } from "../../types";
+import { useCustomerRankOptions } from "../../hooks/useCustomerRankOptions";
 import { useCustomers } from "../../hooks/useCustomers";
 import {
   CustomerFormDialog,
@@ -24,7 +25,18 @@ import { CustomerFilterValues } from "./CustomerFilterPopover";
 
 export function CustomerListPageClient() {
   const { params, update } = useUrlQuery();
+  const rankParam = params.get("customer_rank_id");
+  const customerRankId =
+    rankParam === "unassigned"
+      ? "unassigned"
+      : rankParam &&
+          /^[1-9]\d*$/.test(rankParam) &&
+          Number.isSafeInteger(Number(rankParam))
+        ? Number(rankParam)
+        : undefined;
+  const rankOptions = useCustomerRankOptions(customerRankId !== undefined);
   const filters: CustomerListParams = {
+    customer_rank_id: customerRankId,
     visibility: ["visible", "hidden", "all"].includes(
       params.get("visibility") ?? "",
     )
@@ -47,6 +59,7 @@ export function CustomerListPageClient() {
     const value = typeof next === "function" ? next(filters) : next;
     update({
       visibility: value.visibility,
+      customer_rank_id: value.customer_rank_id,
       customer_kind: value.customer_kind,
       query: value.query,
     });
@@ -74,6 +87,7 @@ export function CustomerListPageClient() {
     useCustomers({
       visibility,
       customer_kind: customerKind,
+      customer_rank_id: customerRankId,
       query: appliedQuery,
       page: currentPage,
       per_page: perPage,
@@ -108,6 +122,7 @@ export function CustomerListPageClient() {
     setFilters((current) => ({
       ...current,
       visibility: nextFilters.visibility,
+      customer_rank_id: nextFilters.customerRankId,
       customer_kind: nextFilters.customerKind,
     }));
   }
@@ -171,7 +186,10 @@ export function CustomerListPageClient() {
   }
 
   const hasSearchConditions =
-    Boolean(filters.query) || visibility !== "visible" || Boolean(customerKind);
+    customerRankId !== undefined ||
+    Boolean(filters.query) ||
+    visibility !== "visible" ||
+    Boolean(customerKind);
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -197,6 +215,8 @@ export function CustomerListPageClient() {
               hasAppliedQuery={Boolean(filters.query)}
               visibility={visibility}
               customerKind={customerKind}
+              customerRankId={customerRankId}
+              rankOptions={rankOptions}
               isLoading={isLoading}
               onValueChange={setQueryInput}
               onSearch={handleSearch}
@@ -220,6 +240,17 @@ export function CustomerListPageClient() {
 
         <CustomerActiveFilters
           filters={filters}
+          customerRankLabel={
+            rankOptions.options.find((option) => option.id === customerRankId)
+              ?.label
+          }
+          onClearCustomerRank={() => {
+            resetPage();
+            setFilters((current) => ({
+              ...current,
+              customer_rank_id: undefined,
+            }));
+          }}
           onClearQuery={handleClearQuery}
           onResetVisibility={handleResetVisibility}
           onClearCustomerKind={handleClearCustomerKind}

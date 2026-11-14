@@ -10,6 +10,7 @@ type UseCustomersOptions = CustomerListParams & { reloadKey?: number };
 export function useCustomers({
   visibility = "visible",
   customer_kind,
+  customer_rank_id,
   query,
   page = 1,
   per_page = 20,
@@ -31,6 +32,7 @@ export function useCustomers({
       const response = await fetchCustomers({
         visibility,
         customer_kind,
+        ...(customer_rank_id !== undefined ? { customer_rank_id } : {}),
         query,
         page,
         per_page,
@@ -49,7 +51,7 @@ export function useCustomers({
     } finally {
       if (version === request.current) setIsLoading(false);
     }
-  }, [visibility, customer_kind, query, page, per_page]);
+  }, [visibility, customer_kind, customer_rank_id, query, page, per_page]);
   useEffect(() => {
     let active = true;
     void Promise.resolve()
