@@ -164,28 +164,31 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   end
 
   def restore
-    @reservation.lock_version = required_lock_version
+    ActiveRecord::Base.transaction do
+      Reservations::WriteLock.acquire!
+      @reservation.lock_version = required_lock_version
 
-    if @reservation.canceled_at.nil?
-      return render_error(
-        message: "キャンセルされた予約はキャンセルされてません。",
-        status: :unprocessable_content
+      if @reservation.canceled_at.nil?
+        return render_error(
+          message: "キャンセルされた予約はキャンセルされてません。",
+          status: :unprocessable_content
+        )
+      end
+
+      @reservation.canceled_at = nil
+      @reservation.updated_by_staff = current_staff
+
+      # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
+      Reservations::TableAssignmentValidator.call(
+        reservation: @reservation,
+        restaurant_master_ids: @reservation.restaurant_master_ids
       )
-    end
 
-    @reservation.canceled_at = nil
-    @reservation.updated_by_staff = current_staff
-
-    # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
-    Reservations::TableAssignmentValidator.call(
-      reservation: @reservation,
-      restaurant_master_ids: @reservation.restaurant_master_ids
-    )
-
-    if @reservation.save
-      render_reservation(@reservation)
-    else
-      render_validation_error(@reservation)
+      if @reservation.save
+        render_reservation(@reservation)
+      else
+        render_validation_error(@reservation)
+      end
     end
   end
 

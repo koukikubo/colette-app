@@ -3,9 +3,19 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
 
   # POST /api/v1/staff/sessions
   def create
+    permitted = login_params
+    ip_allowed = LoginThrottle.allowed?("ip:#{request.remote_ip}", limit: 20)
+    staff_id = Integer(permitted[:staff_id].to_s, 10, exception: false)
+    return render_login_error unless staff_id&.positive? && permitted[:password].is_a?(String) && permitted[:password].bytesize <= 72
+    account_allowed = LoginThrottle.allowed?("account:#{staff_id}", limit: 5)
+    unless ip_allowed && account_allowed
+      response.set_header("Retry-After", "60")
+      return render_error(message: "ログイン試行が多すぎます。1分後に再試行してください。", status: :too_many_requests)
+    end
+
     staff = ::Staff
               .includes(:staff_master)
-              .find_by(id: login_params[:staff_id])
+              .find_by(id: staff_id)
 
 
     return render_login_error if staff.blank?
@@ -16,14 +26,16 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
       return render_login_error
     end
 
-    reset_session
-
-    now = Time.current
-
-    session[:staff_id] = staff.id
-    session[:last_access_at] = now
-
-    staff.record_login_success!
+    # 利用停止・パスワード変更と発行処理を同じ順序で直列化する。
+    ::Staff.transaction do
+      Security::OwnerGuard.lock!
+      staff.reload
+      staff.staff_master.reload
+      return render_login_error unless staff.login_allowed? && staff.authenticate(permitted[:password])
+      reset_session
+      staff.record_login_success!
+      session[:staff_token] = StaffSession.issue!(staff)
+    end
 
     render_success(
       data: {
@@ -44,6 +56,7 @@ class Api::V1::Staff::SessionsController < Api::V1::BaseController
 
   # DELETE /api/v1/staff/sessions
   def destroy
+    StaffSession.for_token(session[:staff_token]).delete_all
     # ログアウト時はセッションを完全にリセットして、スタッフIDやその他のセッション情報をすべてクリアする
     reset_session
 

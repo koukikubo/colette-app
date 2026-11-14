@@ -1,0 +1,30 @@
+name: Production images
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/production-images.yml"
+permissions:
+  contents: read
+jobs:
+  production:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        app: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build final production image
+        run: docker build -t colette-production:${{ matrix.app }} ./${{ matrix.app }}
+      - name: Scan final production image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: image
+          image-ref: colette-production:${{ matrix.app }}
+          scanners: vuln,secret
+          format: table
+          exit-code: "1"
+          ignore-unfixed: "false"
+          severity: HIGH,CRITICAL

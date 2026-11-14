@@ -235,4 +235,12 @@ RSpec.describe Rf::CalculationRunner do
     expect(Rf::CustomerRankCalculator)
       .not_to have_received(:call)
   end
+  it "強制終了でprocessingになった履歴を明示的に復旧できる" do
+    calculation_run.update!(status: "processing", started_at: 2.hours.ago)
+    allow_any_instance_of(described_class).to receive(:calculate_all_customers!) do |runner, run|
+      run.update!(status: "completed", completed_at: Time.current)
+    end
+    described_class.call(calculation_run: calculation_run, recover: true)
+    expect(calculation_run.reload.status).to eq("completed")
+  end
 end

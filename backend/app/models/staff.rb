@@ -27,6 +27,13 @@ class Staff < ApplicationRecord
           foreign_key: :started_by_staff_id,
           dependent: :restrict_with_error
 
+  has_many :staff_sessions, dependent: :delete_all
+  after_update :revoke_sessions_after_security_change
+  validates :password, length: { minimum: 12 }, if: -> { password.present? }
+
+  before_validation -> { Security::OwnerGuard.lock! }, on: :update
+  validate :keep_last_owner
+
   has_secure_password
 
   MAX_FAILED_ATTEMPTS = 30
@@ -64,14 +71,13 @@ class Staff < ApplicationRecord
 
   # ログイン失敗を記録するメソッド
   def record_login_failure!
-    with_lock do
-      self.failed_attempts += 1
-
-      if failed_attempts >= MAX_FAILED_ATTEMPTS
-        self.locked_at ||= Time.current
+    self.class.transaction do
+      Security::OwnerGuard.lock!
+      with_lock do
+        self.failed_attempts += 1
+        self.locked_at ||= Time.current if failed_attempts >= MAX_FAILED_ATTEMPTS
+        save!
       end
-
-      save!
     end
   end
 
@@ -89,5 +95,20 @@ class Staff < ApplicationRecord
       failed_attempts: 0,
       locked_at: nil
     )
+  end
+  private
+
+  def keep_last_owner
+    return unless persisted? && will_save_change_to_login_enabled? && !login_enabled?
+    master = StaffMaster.find(staff_master_id)
+    return unless master.role_code == "owner" && master.active?
+    return if Security::OwnerGuard.other_owner_exists?(staff_master_id)
+    errors.add(:login_enabled, "最後のオーナーのログインを停止できません")
+  end
+
+  def revoke_sessions_after_security_change
+    if saved_change_to_login_enabled? || saved_change_to_password_digest? || saved_change_to_locked_at?
+      staff_sessions.delete_all
+    end
   end
 end
