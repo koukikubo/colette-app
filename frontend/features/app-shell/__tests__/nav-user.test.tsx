@@ -32,13 +32,7 @@ describe("NavUser", () => {
   it("ログイン中の担当者名を表示する", () => {
     render(
       <SidebarProvider>
-        <NavUser
-          user={{
-            name: "User Name",
-            email: "user@example.com",
-            avatar: "",
-          }}
-        />
+        <NavUser />
       </SidebarProvider>,
     );
 
@@ -50,13 +44,7 @@ describe("NavUser", () => {
 
     render(
       <SidebarProvider>
-        <NavUser
-          user={{
-            name: "User Name",
-            email: "user@example.com",
-            avatar: "",
-          }}
-        />
+        <NavUser />
       </SidebarProvider>,
     );
 

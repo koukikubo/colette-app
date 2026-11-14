@@ -2,9 +2,10 @@ module Rf
   # 集計で使った履歴を固定し、内訳の絞り込みとページ分割をDBで行う。
   # 条件式はArelで構成し、入力値やスナップショットをSQL文字列へ連結しない。
   class CustomerListQuery
-    attr_reader :run, :previous, :ranks, :previous_ranks
+    attr_reader :run, :previous, :ranks, :previous_ranks, :cell_labels
 
     def initialize(run:, previous: nil)
+      @cell_labels = {}
       @run = run
       @previous = previous
       @ranks = RunPopulationRowBuilder.call(calculation_run: run).fetch(:ranks).index_by { |rank| rank.fetch(:id) }
@@ -32,6 +33,7 @@ module Rf
         if filters[:recency_rule_id].present? || filters[:frequency_rule_id].present?
           recency = run.rf_rule_set.recency_rules.find(positive_id(filters[:recency_rule_id]))
           frequency = run.rf_rule_set.frequency_rules.find(positive_id(filters[:frequency_rule_id]))
+          @cell_labels = { recency: recency.label, frequency: frequency.label }
           relation = relation.where(@current[:recency_days].gteq(recency.min_days).and(@current[:frequency_count].gteq(frequency.min_visits)))
           relation = relation.where(@current[:recency_days].lteq(recency.max_days)) if recency.max_days
           relation = relation.where(@current[:frequency_count].lteq(frequency.max_visits)) if frequency.max_visits

@@ -101,7 +101,7 @@ export function RfRankDropPredictionPage() {
                       <td className="p-3">
                         <Link
                           className="underline"
-                          href={`/customers/${row.customer_id}`}
+                          href={`/customers/${row.customer_id}?return_to=${encodeURIComponent(`/rf-rank-drops/predictions?${query}`)}`}
                         >
                           {row.customer_name}
                         </Link>

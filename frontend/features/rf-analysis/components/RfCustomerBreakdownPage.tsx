@@ -14,6 +14,7 @@ type Data = {
   run: { id: number; base_date: string };
   comparison_run: { id: number; base_date: string } | null;
   filters: Record<string, string>;
+  cell_labels?: { recency?: string; frequency?: string };
   ranks: RfTransitionRank[];
   comparison_ranks: RfTransitionRank[];
   customers: {
@@ -78,23 +79,23 @@ export function RfCustomerBreakdownPage() {
               {data.run.base_date}
             </p>
             <p>
-              条件：{labels[data.filters.category] ?? "ランク・セルの指定"}{" "}
-              {
+              条件：
+              {[
+                labels[data.filters.category],
                 data.ranks.find(
                   (rank) => rank.id === Number(data.filters.rf_rank_id),
-                )?.label
-              }{" "}
-              {
-                data.comparison_ranks.find(
-                  (rank) => rank.id === Number(data.filters.from_rank_id),
-                )?.label
-              }{" "}
-              {data.filters.from_state ? "→" : ""}{" "}
-              {
-                data.ranks.find(
-                  (rank) => rank.id === Number(data.filters.to_rank_id),
-                )?.label
-              }{" "}
+                )?.label,
+                data.cell_labels?.recency,
+                data.cell_labels?.frequency,
+                data.filters.from_state
+                  ? `開始：${data.comparison_ranks.find((rank) => rank.id === Number(data.filters.from_rank_id))?.label ?? labels[data.filters.from_state]}`
+                  : undefined,
+                data.filters.to_state
+                  ? `終了：${data.ranks.find((rank) => rank.id === Number(data.filters.to_rank_id))?.label ?? labels[data.filters.to_state]}`
+                  : undefined,
+              ]
+                .filter(Boolean)
+                .join(" ／ ") || "全顧客"}{" "}
               ／ {data.pagination.total_count}人
             </p>
             <p className="text-sm text-muted-foreground">

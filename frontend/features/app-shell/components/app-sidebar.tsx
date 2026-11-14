@@ -29,12 +29,6 @@ import { NavMain } from "./navigation/nav-main";
 import { NavUser } from "./navigation/nav-user";
 
 const data = {
-  user: {
-    name: "User Name",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-
   /**
    * メインメニュー。
    *
@@ -127,7 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

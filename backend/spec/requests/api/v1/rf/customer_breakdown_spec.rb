@@ -50,6 +50,18 @@ RSpec.describe "RFの顧客内訳", type: :request do
     expect(response.parsed_body.dig("data", "customers").map { |row| row["customer_id"] }).to eq([ chosen.id ])
   end
 
+  it "集計セルの実条件を表示名とともに返す" do
+    recency = rule_set.recency_rules.create!(code: "R1", label: "90日以内", position: 1, min_days: 0, max_days: 90)
+    frequency = rule_set.frequency_rules.create!(code: "F1", label: "1回", position: 1, min_visits: 1, max_visits: 1)
+    customer = customer_with_change(from: rank_a, to: rank_b)
+    current_run.customer_rf_rank_results.find_by!(customer: customer).update!(recency_days: 31)
+    RfSetting.create!(current_calculation_run: current_run)
+    list(recency_rule_id: recency.id, frequency_rule_id: frequency.id)
+    expect(response).to have_http_status(:ok), response.body
+    expect(response.parsed_body.dig("data", "cell_labels")).to eq({ "recency" => "90日以内", "frequency" => "1回" })
+    expect(response.parsed_body.dig("data", "pagination", "total_count")).to eq(1)
+  end
+
   it "条件IDや分類へのSQL断片を拒否し顧客データを保持する" do
     customer_with_change(from: rank_a, to: rank_b)
     RfSetting.create!(current_calculation_run: current_run)

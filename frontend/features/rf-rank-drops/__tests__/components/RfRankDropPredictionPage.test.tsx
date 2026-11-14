@@ -41,7 +41,7 @@ it("指定期限をAPIへ渡し、初めて低下する日・残日数と顧客�
   expect(screen.getByText("8日")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "予測対象" })).toHaveAttribute(
     "href",
-    "/customers/3",
+    `/customers/3?return_to=${encodeURIComponent("/rf-rank-drops/predictions?page=1&per_page=20&until_date=2026-12-31")}`,
   );
   expect(mocks.api).toHaveBeenCalledWith(
     expect.stringContaining("until_date=2026-12-31"),

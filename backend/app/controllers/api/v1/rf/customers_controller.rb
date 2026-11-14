@@ -31,7 +31,7 @@ class Api::V1::Rf::CustomersController < Api::V1::BaseController
     query = Rf::CustomerListQuery.new(run: run, previous: previous)
     page = paginate(query.call(filters), **paging)
     render_success(data: { run: { id: run.id, base_date: run.base_date }, comparison_run: previous ? { id: previous.id, base_date: previous.base_date } : nil,
-                           ranks: query.ranks.values, comparison_ranks: query.previous_ranks.values, filters: filters.to_h, customers: page[:records].map { |customer| query.serialize(customer) }, pagination: page[:metadata] })
+                           cell_labels: query.cell_labels, ranks: query.ranks.values, comparison_ranks: query.previous_ranks.values, filters: filters.to_h, customers: page[:records].map { |customer| query.serialize(customer) }, pagination: page[:metadata] })
   end
 
   private
