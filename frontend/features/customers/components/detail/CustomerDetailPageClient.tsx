@@ -277,8 +277,11 @@ export function CustomerDetailPageClient({
     };
   }, [customerId, reloadKey]);
 
-  function handleEditCompleted() {
-    setReloadKey((current) => current + 1);
+  async function handleEditCompleted() {
+    // ダイアログをアンマウントせず、GETの成功まで保存済み状態を保持する。
+    const response = await fetchCustomer(customerId);
+    setCustomer(response.data.customer);
+    setErrorMessage(null);
   }
 
   if (isLoading) {
@@ -605,7 +608,7 @@ export function CustomerDetailPageClient({
       {editDialogOpen && (
         <PermissionGate resource="customers">
           <CustomerFormDialog
-            key={`detail-edit-${customer.id}-${customer.lock_version}`}
+            key={`detail-edit-${customer.id}`}
             open={editDialogOpen}
             mode="edit"
             customer={customer}

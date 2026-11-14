@@ -1,18 +1,12 @@
 "use client";
-
-import { useEffect, useState } from "react";
-
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiClientError } from "@/lib/api/api-client";
 import type { Pagination } from "@/lib/api/pagination";
-
 import { fetchCustomers } from "../api/customer-api";
 import type { Customer, CustomerListParams } from "../types";
+type UseCustomersOptions = CustomerListParams & { reloadKey?: number };
 
-type UseCustomersOptions = CustomerListParams & {
-  reloadKey?: number;
-};
-
-// 指定された検索条件とページ情報を使って顧客一覧を取得する。
+// 通常の読取は画面のエラーへ、保存後の再取得は呼出元にも失敗を返す。
 export function useCustomers({
   visibility = "visible",
   customer_kind,
@@ -25,64 +19,46 @@ export function useCustomers({
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadCustomers() {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const response = await fetchCustomers({
-          visibility,
-          customer_kind,
-          query,
-          page,
-          per_page,
-        });
-
-        if (isCancelled) return;
-
-        setCustomers(response.data.customers);
-        setPagination(response.data.pagination);
-      } catch (error) {
-        if (isCancelled) return;
-
-        if (error instanceof ApiClientError) {
-          const details =
-            error.errorMessages.length > 0
-              ? ` ${error.errorMessages.join(" / ")}`
-              : "";
-
-          setErrorMessage(
-            `顧客一覧を取得できませんでした。` +
-              `（HTTP ${error.status}）` +
-              `${error.message}${details}`,
-          );
-
-          return;
-        }
-
-        setErrorMessage("顧客一覧の取得中に予期しないエラーが発生しました。");
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
+  const request = useRef(0);
+  const invalidateRequest = useCallback(() => {
+    request.current++;
+  }, []);
+  const refresh = useCallback(async () => {
+    const version = ++request.current;
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetchCustomers({
+        visibility,
+        customer_kind,
+        query,
+        page,
+        per_page,
+      });
+      if (version !== request.current) return;
+      setCustomers(response.data.customers);
+      setPagination(response.data.pagination);
+    } catch (error) {
+      if (version !== request.current) return;
+      setErrorMessage(
+        error instanceof ApiClientError
+          ? `顧客一覧を取得できませんでした。（HTTP ${error.status}）${error.message}${error.errorMessages.length ? ` ${error.errorMessages.join(" / ")}` : ""}`
+          : "顧客一覧の取得中に予期しないエラーが発生しました。",
+      );
+      throw error;
+    } finally {
+      if (version === request.current) setIsLoading(false);
     }
-
-    void loadCustomers();
-
+  }, [visibility, customer_kind, query, page, per_page]);
+  useEffect(() => {
+    let active = true;
+    void Promise.resolve()
+      .then(() => (active ? refresh() : undefined))
+      .catch(() => undefined);
     return () => {
-      isCancelled = true;
+      active = false;
+      invalidateRequest();
     };
-  }, [visibility, customer_kind, query, page, per_page, reloadKey]);
-
-  return {
-    customers,
-    pagination,
-    isLoading,
-    errorMessage,
-  };
+  }, [refresh, reloadKey, invalidateRequest]);
+  return { customers, pagination, isLoading, errorMessage, refresh };
 }

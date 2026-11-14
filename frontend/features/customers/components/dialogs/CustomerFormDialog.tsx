@@ -4,6 +4,16 @@ import { type FormEvent, useState, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -68,6 +78,10 @@ export function CustomerFormDialog({
   const [values, setValues] = useState<CustomerFormValues>(() =>
     createInitialFormValues(mode, customer),
   );
+  const initialValues = useRef(values);
+  const hasUnsavedChanges =
+    JSON.stringify(values) !== JSON.stringify(initialValues.current);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [customerRankOptions, setCustomerRankOptions] = useState<
     StandardListCode[]
   >([]);
@@ -83,6 +97,16 @@ export function CustomerFormDialog({
   const isEdit = mode === "edit";
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
+
+  useEffect(() => {
+    if (!open || !hasUnsavedChanges || saved) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [open, hasUnsavedChanges, saved]);
 
   // 非表示確認画面の状態管理
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
@@ -223,6 +247,10 @@ export function CustomerFormDialog({
       return;
     }
 
+    if (!nextOpen && hasUnsavedChanges) {
+      setDiscardOpen(true);
+      return;
+    }
     onOpenChange(nextOpen);
   }
 
@@ -339,6 +367,28 @@ export function CustomerFormDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>入力内容を破棄しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              変更内容はまだ保存されていません。破棄すると元に戻せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>編集を続ける</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDiscardOpen(false);
+                onOpenChange(false);
+              }}
+            >
+              入力内容を破棄する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CustomerFormConfirmDialog
         open={confirmOpen}

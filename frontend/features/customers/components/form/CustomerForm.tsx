@@ -123,6 +123,10 @@ export function CustomerForm({
 
   return (
     <form id={formId} className="space-y-6" noValidate onSubmit={onSubmit}>
+      <p className="text-sm text-muted-foreground">
+        必須項目：顧客名・フリガナ{isCorporate ? "・法人名" : ""}
+        。その他の項目は任意です。
+      </p>
       {errors.length > 0 && (
         <Alert variant="destructive">
           <CircleAlertIcon />

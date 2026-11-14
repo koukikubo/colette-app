@@ -70,14 +70,15 @@ export function CustomerListPageClient() {
   const setPerPage = (per_page: number) => update({ per_page });
   const resetPage = () => update({ page: 1 });
   useReadRefresh(() => setReloadKey((value) => value + 1), !formDialogOpen);
-  const { customers, pagination, isLoading, errorMessage } = useCustomers({
-    visibility,
-    customer_kind: customerKind,
-    query: appliedQuery,
-    page: currentPage,
-    per_page: perPage,
-    reloadKey,
-  });
+  const { customers, pagination, isLoading, errorMessage, refresh } =
+    useCustomers({
+      visibility,
+      customer_kind: customerKind,
+      query: appliedQuery,
+      page: currentPage,
+      per_page: perPage,
+      reloadKey,
+    });
 
   function handleSearch() {
     const normalizedQuery = queryInput.trim();
@@ -162,7 +163,7 @@ export function CustomerListPageClient() {
   }
 
   function handleCustomerFormCompleted() {
-    setReloadKey((current) => current + 1);
+    return refresh();
   }
 
   function handleRetry() {
