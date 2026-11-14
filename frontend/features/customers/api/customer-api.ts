@@ -20,6 +20,10 @@ const CUSTOMERS_PATH = "/api/v1/customers";
 function buildCustomersPath(params: CustomerListParams = {}) {
   const searchParams = new URLSearchParams();
 
+  if (params.customer_rank_id !== undefined) {
+    searchParams.set("customer_rank_id", String(params.customer_rank_id));
+  }
+
   if (params.visibility) {
     searchParams.set("visibility", params.visibility);
   }

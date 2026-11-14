@@ -87,6 +87,7 @@ export type CustomerDetail = Customer & {
 };
 
 export type CustomerListParams = {
+  customer_rank_id?: number | "unassigned";
   visibility?: CustomerVisibility;
   customer_kind?: CustomerKind;
   query?: string;
