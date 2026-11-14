@@ -186,6 +186,11 @@ export function RfCalculationHistorySection({
                     <p className="text-xs text-muted-foreground">計算基準日</p>
                     <p className="mt-1 font-medium">
                       {formatDate(calculationRun.base_date)}
+                      {calculationRun.execution_source === "daily" && (
+                        <span className="text-sm">
+                          日次自動（{calculationRun.scheduled_on}）
+                        </span>
+                      )}
                       {calculationRun.execution_source === "monthly" && (
                         <span className="ml-2 text-xs">月次自動更新</span>
                       )}

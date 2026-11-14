@@ -32,7 +32,7 @@ module Rf
           current_calculation_run: calculation_run
         )
         # 自動適用の競合を確認したうえで手動適用した場合も、対応済みとして残す。
-        if calculation_run.execution_source == "monthly"
+        if %w[monthly daily].include?(calculation_run.execution_source)
           calculation_run.update!(monthly_apply_state: "applied", monthly_apply_error: nil)
         end
       end
