@@ -32,6 +32,9 @@ it("予約件数を表示し、ダッシュボードにランク低下を表示�
   expect(await screen.findByText("2件")).toBeInTheDocument();
   expect(screen.getByText("3名")).toBeInTheDocument();
   expect(
+    screen.queryByText(/最終取得|RFの適用基準日|自動更新|本日の未完了予約/),
+  ).not.toBeInTheDocument();
+  expect(
     screen.queryByRole("heading", { name: /RFランク低下/ }),
   ).not.toBeInTheDocument();
   expect(

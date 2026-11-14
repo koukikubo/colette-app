@@ -42,6 +42,8 @@ describe("RfCalculationHistorySection", () => {
       calculationRuns: [
         {
           id: 20,
+          execution_source: "daily",
+          scheduled_on: "2026-09-29",
           rule_set: {
             id: 3,
             name: "標準RFルール",
@@ -74,6 +76,7 @@ describe("RfCalculationHistorySection", () => {
     render(<RfCalculationHistorySection />);
 
     expect(screen.getByText("2026/09/29")).toBeInTheDocument();
+    expect(screen.getByText(/日次自動/)).toHaveTextContent("2026-09-29");
     expect(screen.getByText("標準RFルール")).toBeInTheDocument();
     expect(screen.getByText("バージョン 3")).toBeInTheDocument();
     expect(screen.getByText("対象 120名")).toBeInTheDocument();

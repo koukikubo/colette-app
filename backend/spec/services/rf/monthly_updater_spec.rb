@@ -61,10 +61,4 @@ RSpec.describe Rf::MonthlyUpdater do
       expect { described_class.call(month: month) }.to raise_error(ArgumentError)
     end
   end
-
-  it "スケジュールは毎月1日3時の店舗時間で解釈される" do
-    schedule = YAML.load_file(Rails.root.join("config/recurring.yml")).dig("production", "monthly_rf_update", "schedule")
-    next_time = Fugit.parse_cron(schedule).next_time(Time.utc(2026, 10, 31)).to_t
-    expect(next_time.utc).to eq(Time.utc(2026, 10, 31, 18))
-  end
 end

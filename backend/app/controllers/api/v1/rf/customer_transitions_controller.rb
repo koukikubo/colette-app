@@ -18,7 +18,7 @@ class Api::V1::Rf::CustomerTransitionsController <
   # 適用済み履歴だけを候補として返す。計算しただけの結果を混ぜない。
   def periods
     runs = Rf::AppliedRunHistory.call(current_run: current_run).select { |run| run.status == "completed" }
-    render_success(data: { periods: runs.sort_by { |run| [ run.base_date, run.id ] }.reverse.map { |run| { month: run.base_date.strftime("%Y-%m"), base_date: run.base_date, run_id: run.id, rule_set_id: run.rf_rule_set_id } } })
+    render_success(data: { current_month: Time.zone.today.strftime("%Y-%m"), periods: runs.sort_by { |run| [ run.base_date, run.id ] }.reverse.map { |run| { month: run.base_date.strftime("%Y-%m"), base_date: run.base_date, run_id: run.id, rule_set_id: run.rf_rule_set_id } } })
   end
 
   private

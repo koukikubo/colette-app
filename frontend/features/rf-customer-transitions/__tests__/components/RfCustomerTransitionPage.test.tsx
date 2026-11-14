@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  waitFor,
+  act,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "@/lib/api/api-client";
@@ -67,9 +73,10 @@ beforeEach(() => {
   mocks.fetchRfComparisonPeriods.mockResolvedValue({ data: { periods: [] } });
 });
 describe("RfCustomerTransitionPage", () => {
-  it("初期表示で適用済み年月を列挙し前年同月と最新月を比較する", async () => {
+  it("初期表示で当月と前年同月を比較し、適用済み履歴一覧は表示しない", async () => {
     mocks.fetchRfComparisonPeriods.mockResolvedValue({
       data: {
+        current_month: "2026-11",
         periods: [
           {
             month: "2026-11",
@@ -98,10 +105,39 @@ describe("RfCustomerTransitionPage", () => {
       expect.any(AbortSignal),
     );
     expect(screen.getByLabelText("開始月")).toHaveValue("2025-11");
+    expect(
+      screen.queryByText(/比較できる適用済み履歴/),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /維持した顧客/ })).toHaveAttribute(
       "href",
       expect.stringContaining("comparison_run_id=1"),
     );
+  });
+
+  it("当月の履歴がなくても初期条件を過去月に置き換えない", async () => {
+    mocks.fetchRfComparisonPeriods.mockResolvedValue({
+      data: {
+        current_month: "2026-11",
+        periods: [
+          {
+            month: "2026-10",
+            base_date: "2026-10-31",
+            run_id: 2,
+            rule_set_id: 1,
+          },
+        ],
+      },
+    });
+    mocks.fetchRfMonthComparison.mockResolvedValue(response);
+    render(<RfCustomerTransitionPage />);
+    await waitFor(() =>
+      expect(mocks.fetchRfMonthComparison).toHaveBeenCalledWith(
+        "2025-11",
+        "2026-11",
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(screen.getByLabelText("終了月")).toHaveValue("2026-11");
   });
 
   it("年月指定で比較し、ヒントから計算基準日を確認できる", async () => {

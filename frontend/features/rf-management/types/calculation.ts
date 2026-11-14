@@ -43,8 +43,9 @@ export type RfCalculationRunInput = {
 };
 
 export type RfCalculationRun = {
-  execution_source?: "manual" | "monthly";
+  execution_source?: "manual" | "monthly" | "daily";
   scheduled_month?: string | null;
+  scheduled_on?: string | null;
   monthly_apply_state?: "pending" | "applied" | "conflict" | "failed" | null;
   monthly_apply_error?: string | null;
 
@@ -68,8 +69,9 @@ export type RfCalculationRun = {
 };
 
 export type RfCalculationRunSummary = {
-  execution_source?: "manual" | "monthly";
+  execution_source?: "manual" | "monthly" | "daily";
   scheduled_month?: string | null;
+  scheduled_on?: string | null;
   monthly_apply_state?: "pending" | "applied" | "conflict" | "failed" | null;
   monthly_apply_error?: string | null;
 
