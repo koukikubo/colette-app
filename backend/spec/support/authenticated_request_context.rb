@@ -27,7 +27,8 @@ RSpec.shared_context "authenticated request" do
 
   def csrf_headers(token = fetch_csrf_token)
     {
-      "X-CSRF-Token" => token
+      "X-CSRF-Token" => token,
+      "Idempotency-Key" => SecureRandom.uuid
     }
   end
 

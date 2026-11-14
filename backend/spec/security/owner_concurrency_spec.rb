@@ -28,6 +28,6 @@ RSpec.describe "最後のownerの同時保護", type: :model do
     threads&.each { |thread| thread.kill if thread.alive? }
     threads&.each(&:join)
     staffs&.each(&:delete)
-    masters&.each(&:delete)
+    masters&.each { |master| master.reload.delete }
   end
 end

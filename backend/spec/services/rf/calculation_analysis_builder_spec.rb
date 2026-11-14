@@ -269,7 +269,8 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
       frequency_count: 2
     )
 
-    rank_a.update!(active: false)
+    # 既存データの停止済みランクを再現する。通常更新では使用中ランクの停止を拒否する。
+    rank_a.update_columns(active: false)
 
     result =
       described_class.call(
@@ -342,7 +343,7 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
       position: 10
     )
 
-    rank_n.update!(active: false)
+    rank_n.update_columns(active: false)
 
     create(
       :standard_list_master,
@@ -436,7 +437,7 @@ RSpec.describe Rf::CalculationAnalysisBuilder do
     position: 10
   )
 
-  rank_n.update!(
+  rank_n.update_columns(
     label: "変更後のN",
     display_color: "#FFFF00",
     active: false

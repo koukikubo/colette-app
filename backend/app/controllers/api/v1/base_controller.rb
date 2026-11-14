@@ -4,6 +4,7 @@ class Api::V1::BaseController < ApplicationController
   before_action :require_staff_login!
   before_action :require_write_permission!
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+  rescue_from ActionController::BadRequest, with: :render_bad_request
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
   rescue_from ActionController::InvalidAuthenticityToken,
             with: :render_invalid_authenticity_token

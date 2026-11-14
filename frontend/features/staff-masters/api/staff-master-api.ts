@@ -46,14 +46,20 @@ export function retireStaffMaster(
   });
 }
 
-export function restoreStaffMaster(id: number) {
+export function restoreStaffMaster(id: number, lockVersion: number) {
   return apiFetch<StaffMasterResponse>(`${STAFF_MASTERS_PATH}/${id}/restore`, {
     method: "PATCH",
+    body: { staff_master: { lock_version: lockVersion } },
   });
 }
 
-export function updateStaffLoginEnabled(id: number, loginEnabled: boolean) {
+export function updateStaffLoginEnabled(
+  id: number,
+  loginEnabled: boolean,
+  lockVersion: number,
+) {
   const payload: UpdateLoginEnabledRequest = {
+    staff_master: { lock_version: lockVersion },
     staff: {
       login_enabled: loginEnabled,
     },
@@ -68,11 +74,12 @@ export function updateStaffLoginEnabled(id: number, loginEnabled: boolean) {
   );
 }
 
-export function resetStaffFailedAttempts(id: number) {
+export function resetStaffFailedAttempts(id: number, lockVersion: number) {
   return apiFetch<StaffMasterResponse>(
     `${STAFF_MASTERS_PATH}/${id}/reset_failed_attempts`,
     {
       method: "PATCH",
+      body: { staff_master: { lock_version: lockVersion } },
     },
   );
 }

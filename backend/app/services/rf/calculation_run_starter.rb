@@ -17,12 +17,12 @@ module Rf
     end
 
     def call
-      validate_rule_set!
-
-      calculation_run = create_calculation_run!
-
+      calculation_run = ConfigurationLock.synchronize do
+        validate_rule_set!
+        create_calculation_run!
+      end
+      # 別DBのworkerが、未コミットの履歴を先に読み込まないようにする。
       RfCalculationRunJob.perform_later(calculation_run.id)
-
       calculation_run
     end
 

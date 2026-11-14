@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_061000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -74,6 +74,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_050000) do
     t.datetime "window_started_at", null: false
     t.integer "attempts", default: 0, null: false
     t.index ["key_digest"], name: "index_login_throttles_on_key_digest", unique: true
+  end
+
+  create_table "reservation_creation_requests", force: :cascade do |t|
+    t.bigint "staff_id", null: false
+    t.bigint "reservation_id", null: false
+    t.string "key_digest", null: false
+    t.string "request_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reservation_id"], name: "index_reservation_creation_requests_on_reservation_id"
+    t.index ["staff_id", "key_digest"], name: "index_reservation_creation_requests_on_staff_id_and_key_digest", unique: true
+    t.index ["staff_id"], name: "index_reservation_creation_requests_on_staff_id"
   end
 
   create_table "reservation_tables", force: :cascade do |t|
@@ -274,9 +286,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_050000) do
     t.date "retired_on"
     t.string "role_code", null: false
     t.datetime "updated_at", null: false
+    t.integer "lock_version", default: 0, null: false
     t.index ["code"], name: "index_staff_masters_on_code", unique: true
     t.index ["retired_on"], name: "index_staff_masters_on_retired_on"
     t.index ["role_code"], name: "index_staff_masters_on_role_code"
+    t.check_constraint "lock_version >= 0", name: "staff_masters_lock_version_non_negative"
   end
 
   create_table "staff_sessions", force: :cascade do |t|
@@ -341,6 +355,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_050000) do
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
   add_foreign_key "customers", "standard_list_masters", column: "customer_rank_id"
+  add_foreign_key "reservation_creation_requests", "reservations"
+  add_foreign_key "reservation_creation_requests", "staffs"
   add_foreign_key "reservation_tables", "reservations"
   add_foreign_key "reservation_tables", "restaurant_masters"
   add_foreign_key "reservations", "customers"

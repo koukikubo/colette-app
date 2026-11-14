@@ -12,6 +12,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       validate_completed!
 
       setting = RfSetting.first_or_create!
@@ -22,6 +26,7 @@ module Rf
         return setting if already_active?(setting)
 
         validate_previous_run!(setting)
+        RankAvailability.ensure_available!(calculation_run.rf_rule_set)
 
         setting.update!(
           current_calculation_run: calculation_run

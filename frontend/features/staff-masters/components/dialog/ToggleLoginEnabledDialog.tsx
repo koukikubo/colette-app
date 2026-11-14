@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiClientError } from "@/lib/api/api-client";
 import { useState } from "react";
 
 import { Loader2Icon } from "lucide-react";
@@ -59,13 +60,19 @@ export function ToggleLoginEnabledDialog({
     setErrorMessage(null);
 
     try {
-      await updateStaffLoginEnabled(staffMaster.id, nextLoginEnabled);
+      await updateStaffLoginEnabled(
+        staffMaster.id,
+        nextLoginEnabled,
+        staffMaster.lock_version,
+      );
 
       await onUpdated();
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       setErrorMessage(
-        "ログイン可否を変更できませんでした。時間をおいて再度お試しください。",
+        error instanceof ApiClientError
+          ? `${error.message} ${error.errorMessages.join(" ")}`
+          : "ログイン可否を変更できませんでした。時間をおいて再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);
