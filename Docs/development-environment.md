@@ -37,3 +37,9 @@ bash scripts/check-running-app.sh
 `check-running-app.sh`はDBを変更せず、Railsの`/up`に加えてNext経由のログイン候補と未認証401を確認する。
 フロントを3010、Railsを3011以外で起動した場合は`COLETTE_FRONTEND_URL`と`COLETTE_BACKEND_URL`を指定する。
 その後ブラウザでログイン・対象機能を操作する。テストDBだけでの成功や`/up`の200だけを、開発画面への反映確認としない。
+
+## 実サービスE2E
+
+`bash scripts/check.sh e2e` は、起動済みの専用E2Eサービスに対してChromiumでログイン→顧客→予約→RF計算・適用を検証する。DB準備やseedは自動実行しない。`COLETTE_E2E=1`、`E2E_PASSWORD`、localhostの`E2E_BASE_URL`が必要。
+
+DB名・環境・実接続先のガード、最小fixture、standalone起動とCIの手順は [core-flow-e2e-2026-11-14.md](core-flow-e2e-2026-11-14.md) と `.github/workflows/e2e.yml` を参照する。本番や通常の開発DBを指定しない。
