@@ -1,6 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
-import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
+import {
+  useReservationFormOptions,
+  type UseReservationFormOptionsResult,
+} from "../../hooks/useReservationFormOptions";
 
 import { Button } from "@/components/ui/button";
 import type {
@@ -25,17 +28,35 @@ import { ReservationOverlapDialog } from "../dialogs/ReservationOverlapDialog";
 type NewReservationFormContainerProps = {
   // 初期日時を作るための対象日
   targetDate: string;
+  startTime?: string;
+  restaurantMasterId?: number;
+  modal?: boolean;
 };
 
 // 新規予約フォームの入力値と登録処理を管理する
-export function NewReservationFormContainer(
-  props: NewReservationFormContainerProps,
+function NewReservationFormContent(
+  props: NewReservationFormContainerProps & {
+    options: UseReservationFormOptionsResult;
+  },
 ) {
   const router = useRouter();
   const targetDate = props.targetDate;
   // 対象日から初期値を作り、入力中の値として管理する
   const [values, setValues] = useState<ReservationFormValues>(() => {
-    return buildNewReservationFormValues({ targetDate });
+    const initial = buildNewReservationFormValues({
+      targetDate,
+      startTime: props.startTime,
+      restaurantMasterId: props.restaurantMasterId,
+    });
+    const seat = props.options.restaurantMasters.find(
+      (seat) => seat.id === props.restaurantMasterId && seat.active,
+    );
+    if (seat) {
+      initial.requested_restaurant_master_type_id =
+        seat.restaurant_master_type_id;
+      initial.guest_count = Math.min(initial.guest_count, seat.capacity);
+    } else initial.restaurant_master_ids = [];
+    return initial;
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +99,7 @@ export function NewReservationFormContainer(
     reservationOccasions,
     reservationStatuses,
     restaurantMasters,
-  } = useReservationFormOptions();
+  } = props.options;
 
   const {
     unavailableRestaurantMasterIds,
@@ -123,7 +144,10 @@ export function NewReservationFormContainer(
       setHasUncertainAttempt(false);
       setCreated(true);
       // 成功したら対象日の予約一覧へ戻る
-      router.push(`/reservations?date=${targetDate}`);
+      if (props.modal) {
+        router.back();
+        window.dispatchEvent(new Event("colette:reservations-changed"));
+      } else router.push(`/reservations?date=${targetDate}`);
     } catch (error) {
       // 5xx・通信切断は保存済みか判断できないため、別の作成へ切り替えない。
       if (!(error instanceof ApiClientError) || error.status >= 500)
@@ -215,4 +239,15 @@ export function NewReservationFormContainer(
       />
     </>
   );
+}
+
+// 選択肢の取得完了後に一度だけ入力状態を作り、effectで利用者の入力を上書きしない。
+export function NewReservationFormContainer(
+  props: NewReservationFormContainerProps,
+) {
+  const options = useReservationFormOptions();
+  if (options.isLoading)
+    return <p role="status">予約の選択肢を読み込んでいます。</p>;
+  if (options.errorMessage) return <p role="alert">{options.errorMessage}</p>;
+  return <NewReservationFormContent {...props} options={options} />;
 }

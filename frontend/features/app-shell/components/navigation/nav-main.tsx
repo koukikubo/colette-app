@@ -25,6 +25,11 @@ type NavMainProps = {
 
 export function NavMain({ items, title }: NavMainProps) {
   const pathname = usePathname();
+  const active = (url: string) =>
+    url === "/reservations"
+      ? pathname.startsWith("/reservations") &&
+        pathname !== "/reservations/calendar"
+      : pathname === url || pathname.startsWith(`${url}/`);
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -36,11 +41,11 @@ export function NavMain({ items, title }: NavMainProps) {
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                isActive={pathname === item.url}
+                isActive={active(item.url)}
               >
                 <Link
                   href={item.url}
-                  aria-current={pathname === item.url ? "page" : undefined}
+                  aria-current={active(item.url) ? "page" : undefined}
                 >
                   {item.icon}
                   <span>{item.title}</span>

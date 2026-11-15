@@ -35,6 +35,16 @@ route(
   "customer",
   client(customers, "createCustomer"),
 );
+route(
+  "GET",
+  "reservation_calendar",
+  "reservation",
+  data(
+    "reservations/components/layouts/displays/ReservationCalendar",
+    "ReservationCalendarData",
+  ),
+);
+
 const reservations = "reservations/api/reservation_api";
 route(
   "GET",

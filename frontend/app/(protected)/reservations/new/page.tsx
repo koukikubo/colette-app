@@ -6,6 +6,8 @@ import { resolveReservationDate } from "@/features/reservations/utils/reservatio
 type NewReservationPageProps = {
   searchParams: Promise<{
     date?: string | string[];
+    time?: string;
+    table_id?: string;
   }>;
 };
 
@@ -19,7 +21,11 @@ export default async function NewReservationPage({
       resource="reservations"
       fallback={<p className="p-6">閲覧専用のため予約を変更できません。</p>}
     >
-      <NewReservationFormContainer targetDate={targetDate} />
+      <NewReservationFormContainer
+        targetDate={targetDate}
+        startTime={parameters.time}
+        restaurantMasterId={Number(parameters.table_id)}
+      />
     </PermissionGate>
   );
 }

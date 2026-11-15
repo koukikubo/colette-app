@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import type { Reservation } from "@/features/reservations/types";
 
 import { ReservationBlock } from "./ReservationBlock";
@@ -11,6 +13,7 @@ import type { ReservationTimelineState } from "@/features/reservations/utils/res
 type ReservationTimelineRowProps = {
   // 行の左側に表示する名称。
   label: string;
+  restaurantMasterId?: number;
   //席コードや定員などの補足情報。
   description?: string;
   // この行へ表示する予約一覧。
@@ -30,6 +33,7 @@ type ReservationTimelineRowProps = {
 // 担当する処理：席名と補足情報の表示・予約開始時刻から左位置を計算・予約時間から横幅を計算・計算結果をReservationBlockへ渡す
 export function ReservationTimelineRow({
   label,
+  restaurantMasterId,
   description,
   reservations,
   targetDate,
@@ -82,6 +86,55 @@ export function ReservationTimelineRow({
           );
         })}
 
+        {restaurantMasterId && (
+          <PermissionGate resource="reservations">
+            <div className="absolute inset-0" aria-label={`${label}の空き枠`}>
+              {hourLabels
+                .filter((minutes) => minutes <= 21 * 60)
+                .map((minutes) => {
+                  const hour = String(Math.floor(minutes / 60)).padStart(
+                    2,
+                    "0",
+                  );
+                  const minute = String(minutes % 60).padStart(2, "0");
+                  const time = `${hour}:${minute}`;
+                  const start = new Date(
+                    `${targetDate}T${time}:00+09:00`,
+                  ).getTime();
+                  const occupied = reservations.some(
+                    (reservation) =>
+                      !reservation.canceled_at &&
+                      new Date(reservation.starts_at).getTime() <
+                        start + 15 * 60_000 &&
+                      new Date(reservation.ends_at).getTime() > start,
+                  );
+                  if (occupied) return null;
+                  return (
+                    <Link
+                      key={minutes}
+                      scroll={false}
+                      href={`/reservations/new?date=${targetDate}&time=${time}&table_id=${restaurantMasterId}`}
+                      aria-label={`${label} ${targetDate} ${time}から予約を登録`}
+                      title={`${time}から予約を登録`}
+                      className="absolute inset-y-0 flex items-center justify-center bg-card/70 text-xs text-primary transition-colors hover:bg-primary/15 focus-visible:bg-primary/15"
+                      style={{
+                        left: `${((minutes - timelineStartMinutes) / timelineDurationMinutes) * 100}%`,
+                        width: `${(15 / timelineDurationMinutes) * 100}%`,
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="opacity-0 hover:opacity-100"
+                      >
+                        +
+                      </span>
+                    </Link>
+                  );
+                })}
+            </div>
+          </PermissionGate>
+        )}
+
         {reservations.map((reservation) => {
           const timelineState = getReservationTimelineState(
             reservation,
@@ -128,7 +181,7 @@ export function ReservationTimelineRow({
         })}
 
         {reservations.length === 0 ? (
-          <p className="text-muted-foreground absolute inset-0 flex items-center px-4 text-sm">
+          <p className="pointer-events-none text-muted-foreground absolute inset-0 flex items-center px-4 text-sm">
             予約なし
           </p>
         ) : null}

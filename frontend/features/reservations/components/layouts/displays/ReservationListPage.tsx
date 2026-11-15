@@ -33,10 +33,17 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
   >([]);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [loadedDate, setLoadedDate] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useReadRefresh(() => setReloadKey((value) => value + 1));
+  useEffect(() => {
+    const refresh = () => setReloadKey((value) => value + 1);
+    window.addEventListener("colette:reservations-changed", refresh);
+    return () =>
+      window.removeEventListener("colette:reservations-changed", refresh);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -68,6 +75,8 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
           fetchRestaurantMasters(controller.signal),
         ]);
 
+        if (controller.signal.aborted) return;
+        setLoadedDate(targetDate);
         setReservations(reservationsResponse.data.reservations);
         setCanceledReservations(canceledReservationsResponse.data.reservations);
         setRestaurantMasters(restaurantMastersResponse.data.restaurant_masters);
@@ -118,7 +127,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
   // 実テーブルがまだ割り当てられていない予約件数を集計する。
   const unassignedReservationCount = unassignedReservations.length;
 
-  if (isLoading) {
+  if (loadedDate !== targetDate && (isLoading || !errorMessage)) {
     return (
       <p className="text-muted-foreground text-sm">
         予約状況を読み込んでいます...
@@ -126,7 +135,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
     );
   }
 
-  if (errorMessage) {
+  if (errorMessage && loadedDate !== targetDate) {
     return (
       <div
         role="alert"
@@ -139,13 +148,27 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        空き枠を選ぶと、日付・開始時間・席を入力した予約フォームを開きます。最新の空き状況は保存時に確認します。
+      </p>
       <Button
         type="button"
         variant="outline"
+        disabled={isLoading}
         onClick={() => setReloadKey((value) => value + 1)}
       >
         予約一覧を更新
       </Button>
+      {isLoading && (
+        <p role="status" className="text-sm">
+          予約状況を更新しています。
+        </p>
+      )}
+      {errorMessage && (
+        <p role="alert" className="text-sm text-destructive">
+          更新できませんでした。表示は前回取得した内容です。{errorMessage}
+        </p>
+      )}
       <p className="text-xs text-muted-foreground">
         表示中は30秒ごとに再取得します。
       </p>

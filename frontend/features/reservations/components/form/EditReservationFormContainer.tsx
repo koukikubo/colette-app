@@ -138,6 +138,7 @@ function EditReservationFormContent({
       await updateReservation(reservation.id, request);
 
       // 更新した予約の詳細ページへ戻る。
+      window.dispatchEvent(new Event("colette:reservations-changed"));
       router.push(`/reservations/${reservation.id}`);
     } catch (error) {
       if (error instanceof ApiClientError) {
