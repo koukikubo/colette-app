@@ -86,6 +86,14 @@ jobs:
       - name: Verify real daily scheduler and worker
         working-directory: backend
         run: bundle exec rails runner test/e2e/daily_queue_flow.rb
+      - name: Upload UI acceptance screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-acceptance-screenshots
+          path: frontend/test-results/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload failure evidence
         if: failure()
         uses: actions/upload-artifact@v4

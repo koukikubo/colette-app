@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Drawer,
   DrawerContent,
@@ -21,8 +23,9 @@ export function CanceledReservationDrawer({
   reservations,
   onReservationStatusChanged,
 }: CanceledReservationDrawerProps) {
+  const [open, setOpen] = useState(false);
   return (
-    <Drawer direction="right">
+    <Drawer direction="right" open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         <button
           type="button"
@@ -48,7 +51,10 @@ export function CanceledReservationDrawer({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <CanceledReservationList
             reservations={reservations}
-            onReservationStatusChanged={onReservationStatusChanged}
+            onReservationStatusChanged={() => {
+              setOpen(false);
+              onReservationStatusChanged?.();
+            }}
           />
         </div>
       </DrawerContent>
