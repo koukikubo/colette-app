@@ -97,7 +97,7 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
       name: `E2Eテーブル ${yesterday} 18:00から予約を登録`,
       exact: true,
     })
-    .click();
+    .press("Enter");
   await expect(
     page.getByRole("dialog", { name: "新規予約", exact: true }),
   ).toBeVisible();
@@ -107,6 +107,13 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   await expect(
     page.getByRole("checkbox", { name: /E2Eテーブル/ }),
   ).toBeChecked();
+  await page.getByLabel(/^予約者名/).fill("入力保全の確認");
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("alertdialog", { name: "入力内容を破棄しますか？" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "編集を続ける", exact: true }).click();
+  await expect(page.getByLabel(/^予約者名/)).toHaveValue("入力保全の確認");
   await page.getByRole("searchbox", { name: "顧客検索キーワード" }).fill(name);
   await page.getByRole("button", { name: "検索", exact: true }).click();
   await page.getByRole("button", { name: new RegExp(name) }).click();
