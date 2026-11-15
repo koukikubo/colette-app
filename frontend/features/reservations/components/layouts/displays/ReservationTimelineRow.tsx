@@ -116,7 +116,7 @@ export function ReservationTimelineRow({
                       href={`/reservations/new?date=${targetDate}&time=${time}&table_id=${restaurantMasterId}`}
                       aria-label={`${label} ${targetDate} ${time}から予約を登録`}
                       title={`${time}から予約を登録`}
-                      className="absolute inset-y-0 flex items-center justify-center bg-card/70 text-xs text-primary transition-colors hover:bg-primary/15 focus-visible:bg-primary/15"
+                      className="group/slot absolute inset-y-0 flex items-center justify-center bg-card/70 text-xs text-primary transition-colors hover:bg-primary/15 focus-visible:bg-primary/15"
                       style={{
                         left: `${((minutes - timelineStartMinutes) / timelineDurationMinutes) * 100}%`,
                         width: `${(15 / timelineDurationMinutes) * 100}%`,
@@ -124,7 +124,7 @@ export function ReservationTimelineRow({
                     >
                       <span
                         aria-hidden="true"
-                        className="opacity-0 hover:opacity-100"
+                        className="opacity-0 group-hover/slot:opacity-100 group-focus-visible/slot:opacity-100"
                       >
                         +
                       </span>

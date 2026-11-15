@@ -79,7 +79,10 @@ export function DashboardAnalyticsPanel({ reload }: { reload: number }) {
       </header>
       <dl className="grid gap-px overflow-hidden rounded-lg bg-muted sm:grid-cols-2 xl:grid-cols-5">
         {values.map(([label, value, note]) => (
-          <div className="bg-card p-5" key={label}>
+          <div
+            className="bg-card p-5 sm:last:col-span-2 xl:last:col-span-1"
+            key={label}
+          >
             <dt className="text-sm font-medium">{label}</dt>
             <dd className="mt-3 text-2xl font-semibold tabular-nums">
               {value}
@@ -130,43 +133,39 @@ export function DashboardAnalyticsPanel({ reload }: { reload: number }) {
               来店（件）
             </span>
           </p>
-          <svg
+          {/* 表示月数で文字サイズや高さが変わらない、固定高の棒グラフ。 */}
+          <div
             role="img"
-            aria-labelledby="trend-graph-title"
-            viewBox={`0 0 ${series.length * 72} 230`}
-            className="w-full"
+            aria-label="月別の予約件数と来店件数。正確な値は下の表でも確認できます。"
+            className="overflow-x-auto"
           >
-            <title id="trend-graph-title">
-              月別の予約件数と来店件数。正確な値は下の表でも確認できます。
-            </title>
-            {series.map((point, index) => (
-              <g key={point.month} transform={`translate(${index * 72},0)`}>
-                <rect
-                  x={10}
-                  y={190 - (point.reservations / maximum) * 150}
-                  width={22}
-                  height={(point.reservations / maximum) * 150}
-                  className="fill-chart-2"
-                />
-                <rect
-                  x={36}
-                  y={190 - (point.visits / maximum) * 150}
-                  width={22}
-                  height={(point.visits / maximum) * 150}
-                  className="fill-primary"
-                />
-                <text
-                  x={34}
-                  y={213}
-                  textAnchor="middle"
-                  fontSize="11"
-                  className="fill-foreground"
-                >
-                  {point.month.slice(2)}
-                </text>
-              </g>
-            ))}
-          </svg>
+            <div
+              className="flex items-end gap-3 pt-4"
+              style={{ minWidth: `${series.length * 56}px` }}
+            >
+              {series.map((point) => (
+                <div key={point.month} className="min-w-0 flex-1 text-center">
+                  <div className="flex h-44 items-end justify-center gap-1">
+                    <div
+                      title={`${point.month} 予約${point.reservations}件`}
+                      className="w-7 max-w-[40%] bg-chart-2"
+                      style={{
+                        height: `${(point.reservations / maximum) * 100}%`,
+                      }}
+                    />
+                    <div
+                      title={`${point.month} 来店${point.visits}件`}
+                      className="w-7 max-w-[40%] bg-primary"
+                      style={{ height: `${(point.visits / maximum) * 100}%` }}
+                    />
+                  </div>
+                  <p className="mt-3 whitespace-nowrap text-xs">
+                    {point.month.slice(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
           <details>
             <summary className="cursor-pointer text-sm text-primary underline">
               数値を表で確認

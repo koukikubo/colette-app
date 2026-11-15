@@ -40,24 +40,27 @@ export function CanceledReservationDrawer({
         </button>
       </DrawerTrigger>
 
-      <DrawerContent className="h-full w-full sm:max-w-md">
-        <DrawerHeader className="sr-only">
-          <DrawerTitle>キャンセル済み予約</DrawerTitle>
-          <DrawerDescription>
-            キャンセルした予約の確認と復元ができます。
-          </DrawerDescription>
-        </DrawerHeader>
+      {/* 閉じたPortalも破棄し、復元後に背景の操作とフォーカスを確実に戻す。 */}
+      {open && (
+        <DrawerContent className="h-full w-full sm:max-w-md">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>キャンセル済み予約</DrawerTitle>
+            <DrawerDescription>
+              キャンセルした予約の確認と復元ができます。
+            </DrawerDescription>
+          </DrawerHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <CanceledReservationList
-            reservations={reservations}
-            onReservationStatusChanged={() => {
-              setOpen(false);
-              onReservationStatusChanged?.();
-            }}
-          />
-        </div>
-      </DrawerContent>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <CanceledReservationList
+              reservations={reservations}
+              onReservationStatusChanged={() => {
+                setOpen(false);
+                onReservationStatusChanged?.();
+              }}
+            />
+          </div>
+        </DrawerContent>
+      )}
     </Drawer>
   );
 }

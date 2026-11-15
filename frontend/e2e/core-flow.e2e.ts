@@ -5,6 +5,9 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   const name = `E2E顧客${Date.now()}`;
   expect((await page.request.get("/api/v1/customers")).status()).toBe(401);
   await page.goto("/login");
+  await expect(
+    page.getByRole("combobox", { name: "担当者", exact: true }),
+  ).toBeEnabled();
   await page.screenshot({
     path: "test-results/login-redesign.png",
     fullPage: true,
