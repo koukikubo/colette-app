@@ -139,7 +139,7 @@ function EditReservationFormContent({
 
       // 更新した予約の詳細ページへ戻る。
       window.dispatchEvent(new Event("colette:reservations-changed"));
-      router.push(`/reservations/${reservation.id}`);
+      router.push(`/reservations/detail/${reservation.id}`);
     } catch (error) {
       if (error instanceof ApiClientError) {
         // 競合時は、再取得を促す案内もエラーメッセージへ含める。
@@ -317,7 +317,7 @@ function EditReservationFormContent({
         cancelLabel="閉じる"
         onCancel={() => {
           requestNavigation(() => {
-            router.push(`/reservations/${reservation.id}`);
+            router.push(`/reservations/detail/${reservation.id}`);
           });
         }}
       />

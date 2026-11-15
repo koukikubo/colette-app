@@ -67,7 +67,7 @@ export function ReservationBlock({
       }}
     >
       <Link
-        href={`/reservations/${encodeURIComponent(String(reservation.id))}`}
+        href={`/reservations/detail/${encodeURIComponent(String(reservation.id))}`}
         scroll={false}
         aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
         className={[

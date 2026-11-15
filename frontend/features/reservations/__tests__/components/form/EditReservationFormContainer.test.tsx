@@ -360,7 +360,7 @@ describe("EditReservationFormContainer", () => {
       });
     });
 
-    expect(mocks.push).toHaveBeenCalledWith("/reservations/30");
+    expect(mocks.push).toHaveBeenCalledWith("/reservations/detail/30");
   });
 
   it("予約情報の更新に失敗すると、APIのエラーメッセージを表示する", async () => {
@@ -982,7 +982,7 @@ describe("EditReservationFormContainer", () => {
 
     expect(mocks.requestNavigation).toHaveBeenCalledOnce();
 
-    expect(mocks.push).toHaveBeenCalledWith("/reservations/30");
+    expect(mocks.push).toHaveBeenCalledWith("/reservations/detail/30");
   });
 
   it("更新確認ダイアログで戻ると、変更内容を保持したまま入力画面へ戻る", async () => {
