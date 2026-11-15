@@ -218,6 +218,9 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
     fullPage: true,
   });
   await page.setViewportSize({ width: 820, height: 1180 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(820);
   await page.screenshot({
     path: "test-results/dashboard-redesign-tablet.png",
     fullPage: true,
@@ -226,6 +229,9 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
   await expect(
     page.getByRole("heading", { name: "予約カレンダー" }),
   ).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(820);
   await page.screenshot({
     path: "test-results/calendar-redesign-tablet.png",
     fullPage: true,

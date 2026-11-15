@@ -65,7 +65,7 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
         }
       >
         <AppSidebar variant="sidebar" className="border-none!" />
-        <SidebarInset>
+        <SidebarInset className="min-w-0">
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:p-3"
@@ -73,7 +73,7 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
             本文へ移動
           </a>
           <SiteHeader />
-          <div id="main-content" tabIndex={-1}>
+          <div id="main-content" tabIndex={-1} className="min-w-0">
             {children}
           </div>
         </SidebarInset>
