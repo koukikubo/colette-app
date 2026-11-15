@@ -2,6 +2,9 @@ import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderWithRole } from "@/test-utils/auth";
 import { DashboardPage } from "../components/DashboardPage";
+vi.mock("../components/DashboardAnalyticsPanel", () => ({
+  DashboardAnalyticsPanel: () => null,
+}));
 const mocks = vi.hoisted(() => ({ api: vi.fn() }));
 vi.mock("@/lib/api/api-client", async (original) => ({
   ...(await original<object>()),
