@@ -60,14 +60,22 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
+            "--header-height": "calc(var(--spacing) * 16)",
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
+        <AppSidebar variant="sidebar" className="border-none!" />
         <SidebarInset>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:p-3"
+          >
+            本文へ移動
+          </a>
           <SiteHeader />
-          {children}
+          <div id="main-content" tabIndex={-1}>
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

@@ -46,7 +46,7 @@ const data = {
       icon: <UsersIcon />,
     },
     {
-      title: "予約管理",
+      title: "タイムライン",
       url: "/reservations",
       icon: <CalendarDaysIcon />,
     },
@@ -116,8 +116,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain title="メインメニュー" items={data.navMain} />
-        <NavDocuments title="管理メニュー" items={data.masterMenu} />
+        <NavMain title="メインメニュー" items={[data.navMain[0]]} />
+        <NavMain
+          title="予約管理"
+          items={[
+            {
+              title: "カレンダー",
+              url: "/reservations/calendar",
+              icon: <CalendarDaysIcon />,
+            },
+            data.navMain[2],
+          ]}
+        />
+        <NavMain title="顧客管理" items={[data.navMain[1]]} />
+        <NavMain title="顧客分析" items={data.navMain.slice(3)} />
+        <NavDocuments title="各種設定" items={data.masterMenu} />
       </SidebarContent>
 
       <SidebarFooter>

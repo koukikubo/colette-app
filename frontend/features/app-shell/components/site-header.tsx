@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-import { Separator } from "@/components/ui/separator";
+import { Brand } from "./brand";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 type HeaderLocation = {
@@ -15,12 +15,16 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     return { section: "予約管理", page: "新規予約登録" };
   }
 
+  if (pathname === "/reservations/calendar") {
+    return { section: "予約管理", page: "カレンダー" };
+  }
+
   if (/^\/reservations\/[^/]+$/.test(pathname)) {
     return { section: "予約管理", page: "予約詳細" };
   }
 
   if (pathname === "/reservations") {
-    return { section: "予約管理", page: "予約一覧" };
+    return { section: "予約管理", page: "タイムライン" };
   }
 
   if (/^\/customers\/[^/]+$/.test(pathname)) {
@@ -72,13 +76,12 @@ export function SiteHeader() {
   const location = resolveHeaderLocation(pathname);
 
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="flex h-(--header-height) shrink-0 items-center gap-2 bg-card transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex min-w-0 w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />
+        <div className="mr-4 hidden sm:block">
+          <Brand authenticated />
+        </div>
         <nav
           aria-label="現在地"
           className="flex min-w-0 items-center gap-2 text-sm"
