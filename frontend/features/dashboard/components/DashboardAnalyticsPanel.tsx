@@ -93,7 +93,7 @@ export function DashboardAnalyticsPanel({ reload }: { reload: number }) {
           </div>
         ))}
       </dl>
-      <div className="grid gap-6 xl:grid-cols-[3fr_2fr]">
+      <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section
           className="colette-surface space-y-4"
           aria-labelledby="visit-trend-title"
@@ -137,7 +137,7 @@ export function DashboardAnalyticsPanel({ reload }: { reload: number }) {
           <div
             role="img"
             aria-label="月別の予約件数と来店件数。正確な値は下の表でも確認できます。"
-            className="overflow-x-auto"
+            className="max-w-full overflow-x-auto"
           >
             <div
               className="flex items-end gap-3 pt-4"
