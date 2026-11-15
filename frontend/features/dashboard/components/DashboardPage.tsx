@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 export type Dashboard = {
   date: string;
   summary: {
@@ -27,8 +26,7 @@ export function DashboardPage() {
   // 定期・フォーカス復帰時の再取得はしない。画面表示時と明示的な更新で取得する。
   return (
     <div className="colette-page">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">ダッシュボード</h1>
+      <header className="flex justify-end">
         <Button
           variant="outline"
           disabled={loading}
@@ -80,14 +78,6 @@ export function DashboardPage() {
                 >
                   本日の予約一覧
                 </Link>
-                <PermissionGate resource="reservations">
-                  <Link
-                    className="underline"
-                    href={`/reservations/new?date=${data.date}`}
-                  >
-                    新規予約
-                  </Link>
-                </PermissionGate>
               </nav>
             </>
           )

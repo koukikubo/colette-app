@@ -94,7 +94,7 @@ jobs:
             if curl -fsS http://127.0.0.1:4102/login > /dev/null; then break; fi
             sleep 1
           done
-          E2E_BASE_URL=http://127.0.0.1:4102 npm run test:e2e -- --grep '予約ルーティング'
+          E2E_BASE_URL=http://127.0.0.1:4102 npm run test:e2e -- --grep '予約ルーティング' --output=test-results-dev
       - name: Verify real daily scheduler and worker
         working-directory: backend
         run: bundle exec rails runner test/e2e/daily_queue_flow.rb
@@ -113,9 +113,11 @@ jobs:
           name: core-flow-e2e-failure
           path: |
             frontend/test-results/
+            frontend/test-results-dev/
             backend/tmp/e2e-daily-queue.log
             backend/tmp/e2e-rails.log
             /tmp/colette-e2e-next.log
+            /tmp/colette-e2e-next-dev.log
           retention-days: 7
       - name: Stop E2E servers
         if: always()
