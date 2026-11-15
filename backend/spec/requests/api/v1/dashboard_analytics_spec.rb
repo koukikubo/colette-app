@@ -81,4 +81,12 @@ RSpec.describe "店舗と顧客の分析", type: :request do
     booking("2026-11-02", customer: second)
     expect(query_count.call).to eq(initial_count)
   end
+  it "未来の完了日時を持つ記録を現在の来店実績に含めない" do
+    login!
+    future_completion = booking("2026-11-14", customer: create(:customer))
+    future_completion.update!(completed_at: Time.current + 1.day)
+    get "/api/v1/dashboard_analytics"
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "kpis")).to include("annual_visits" => 0, "monthly_customer_count" => 0, "monthly_reservations" => 1)
+  end
 end

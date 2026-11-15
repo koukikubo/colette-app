@@ -5,7 +5,7 @@ module Dashboard
       WITH visits AS (
         SELECT customer_id, DATE(starts_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Tokyo') AS day
         FROM reservations
-        WHERE canceled_at IS NULL AND completed_at IS NOT NULL AND starts_at <= $1
+        WHERE canceled_at IS NULL AND completed_at <= $1 AND starts_at <= $1
           AND customer_id IS NOT NULL
       ), daily AS (
         SELECT DISTINCT customer_id, day FROM visits
@@ -35,7 +35,7 @@ module Dashboard
       @today = now.in_time_zone.to_date
       @month = @today.beginning_of_month
       @year = @today.beginning_of_year
-      @visits = Reservation.active.where.not(completed_at: nil).where(starts_at: ..now)
+      @visits = Reservation.active.where(completed_at: ..now).where(starts_at: ..now)
     end
 
     def call

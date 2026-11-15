@@ -218,9 +218,11 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
     fullPage: true,
   });
   await page.setViewportSize({ width: 820, height: 1180 });
+  await page.getByRole("combobox", { name: "表示期間" }).selectOption("12");
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(820);
+  await page.getByRole("combobox", { name: "表示期間" }).selectOption("3");
   await page.screenshot({
     path: "test-results/dashboard-redesign-tablet.png",
     fullPage: true,
