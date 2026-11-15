@@ -7,10 +7,12 @@ module Reservations
       # 開始日を店舗時刻で集計する。席の複数割当をJOINして予約を重複計上しない。
       relation = Reservation.active.where(starts_at: start.in_time_zone...start.next_month.in_time_zone)
       expression = Arel.sql("DATE(starts_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Tokyo')")
-      counts = relation.group(expression).count
-      guests = relation.group(expression).sum(:guest_count)
+      # 同時登録があっても件数と人数が異なる時点の値にならないよう、同一SQLで取得する。
+      daily = relation.group(expression).pluck(expression, Arel.sql("COUNT(*)"), Arel.sql("SUM(guest_count)"))
+        .to_h { |day, count, guests| [ day, [ count, guests ] ] }
       { month: month, days: (start...start.next_month).map { |day|
-        { date: day.iso8601, reservation_count: counts.fetch(day, 0), guest_count: guests.fetch(day, 0) }
+        count, guests = daily.fetch(day, [ 0, 0 ])
+        { date: day.iso8601, reservation_count: count, guest_count: guests }
       } }
     end
   end
