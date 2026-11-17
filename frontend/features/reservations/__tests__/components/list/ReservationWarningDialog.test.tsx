@@ -36,7 +36,7 @@ describe("ReservationWarningDialog", () => {
       screen.getByRole("link", {
         name: "次の予約を確認",
       }),
-    ).toHaveAttribute("href", "/reservations/32");
+    ).toHaveAttribute("href", "/reservations/detail/32");
   });
 
   it("次の予約開始時刻を過ぎた場合は超過時間を表示する", async () => {

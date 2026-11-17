@@ -4,6 +4,7 @@ RSpec.describe Rf::RuleSetValidator do
   let(:rule_set) do
     RfRuleSet.create!(
       name: "標準RFルール",
+      no_visit_rank: no_visit_rank,
       version: 1,
       aggregation_months: 60,
       frequency_window_months: 12
@@ -85,6 +86,12 @@ RSpec.describe Rf::RuleSetValidator do
   end
 
   describe ".call" do
+    it "コードのないRFランクをIDで選択して公開できる" do
+      no_visit_rank.update!(code: nil, label: "未訪問")
+
+      expect(described_class.call(rule_set)).to be_valid
+    end
+
     it "範囲が連続し、すべての組み合わせが設定されていれば有効になる" do
       result = described_class.call(rule_set)
 
@@ -155,8 +162,8 @@ RSpec.describe Rf::RuleSetValidator do
       expect(result.error_codes).to include(:inactive_rf_rank)
     end
 
-    it "Nランクが存在しない場合は無効になる" do
-      no_visit_rank.destroy!
+    it "旧Nランクが存在しても未選択なら無効になる" do
+      rule_set.update!(no_visit_rank: nil)
 
       result = described_class.call(rule_set)
 
@@ -167,7 +174,7 @@ RSpec.describe Rf::RuleSetValidator do
         {
           code: :no_visit_rank_missing,
           message:
-            "来店実績がない顧客に使用する有効なNランクが登録されていません"
+            "来店実績がない顧客に使用する有効なRFランクを選択してください"
         }
       )
     end

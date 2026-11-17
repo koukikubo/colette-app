@@ -6,6 +6,7 @@ import { RfCurrentSettingsSection } from "./settings/RfCurrentSettingsSection";
 import { RfRuleSetsSection } from "./rule-sets/RfRuleSetsSection";
 import { RfCalculationHistorySection } from "./calculation/RfCalculationHistorySection";
 import { RfCalculationExecutionSection } from "./calculation/RfCalculationExecutionSection";
+import { RfRankColorSettingsSection } from "./settings/RfRankColorSettingsSection";
 
 export function RfManagementPage() {
   const [settingsReloadKey, setSettingsReloadKey] = useState(0);
@@ -39,6 +40,9 @@ export function RfManagementPage() {
       <RfCalculationHistorySection
         reloadKey={calculationReloadKey}
         onApplied={reloadCalculationData}
+      />
+      <RfRankColorSettingsSection
+        onColorsChanged={() => setSettingsReloadKey((current) => current + 1)}
       />
     </main>
   );

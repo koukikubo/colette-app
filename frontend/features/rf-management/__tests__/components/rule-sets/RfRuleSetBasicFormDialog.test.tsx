@@ -11,6 +11,7 @@ const mocks = {
 };
 
 const draftRuleSet: RfRuleSet = {
+  no_visit_rank_id: null,
   id: 7,
   name: "既存RFルール",
   version: 2,

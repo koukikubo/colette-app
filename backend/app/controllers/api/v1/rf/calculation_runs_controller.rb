@@ -111,7 +111,7 @@ class Api::V1::Rf::CalculationRunsController <
       paginate(
         calculation_run
           .customer_rf_rank_results
-          .includes(:customer, :rf_rank)
+          .includes(:customer, :rf_rank, :rf_calculation_run)
           .order(:customer_id),
         **pagination
       )
@@ -349,7 +349,7 @@ class Api::V1::Rf::CalculationRunsController <
     calculation_run
       .previous_run
       .customer_rf_rank_results
-      .includes(:rf_rank)
+      .includes(:rf_rank, :rf_calculation_run)
       .where(customer_id: customer_ids)
       .index_by(&:customer_id)
   end

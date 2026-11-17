@@ -3,15 +3,36 @@ updates:
   - package-ecosystem: bundler
     directory: "/backend"
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
   - package-ecosystem: npm
     directory: "/frontend"
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: docker
+    directory: "/backend"
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "ruby"
+        update-types:
+          ["version-update:semver-major", "version-update:semver-minor"]

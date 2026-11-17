@@ -2,6 +2,11 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
   def as_json
     {
       id: resource.id,
+      execution_source: resource.execution_source,
+      scheduled_month: resource.scheduled_month,
+      scheduled_on: resource.scheduled_on,
+      monthly_apply_state: resource.monthly_apply_state,
+      monthly_apply_error: resource.monthly_apply_error,
       rf_rule_set_id: resource.rf_rule_set_id,
       previous_run_id: resource.previous_run_id,
       base_date: resource.base_date,
@@ -55,7 +60,8 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
         preview.rank_comparisons.map do |comparison|
           {
             id: comparison.rf_rank.id,
-            code: comparison.rf_rank.code,
+            display_code: comparison.rf_rank.display_code,
+            display_color: comparison.rf_rank.display_color,
             label: comparison.rf_rank.label,
             before_count: comparison.before_count,
             after_count: comparison.after_count,
@@ -82,8 +88,9 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
 
     {
       id: rf_rank.id,
-      code: rf_rank.code,
-      label: rf_rank.label
+      display_code: rf_rank.display_code,
+      label: rf_rank.label,
+      display_color: rf_rank.display_color
     }
   end
 
@@ -95,15 +102,38 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
         .group(:rf_rank_id)
         .count
 
-    StandardListMaster
-      .where(id: counts.keys)
-      .order(:position, :id)
-      .map do |rank|
+    snapshots = resource.rf_rank_snapshots
+
+    ranks =
+      if snapshots.nil?
+        StandardListMaster
+          .where(id: counts.keys)
+          .ordered
+          .map do |rank|
+            {
+              "id" => rank.id,
+              "display_code" => rank.display_code,
+              "label" => rank.label,
+              "display_color" => rank.display_color,
+              "position" => rank.position
+            }
+          end
+      else
+        snapshots.sort_by do |rank|
+          [
+            rank.fetch("position"),
+            rank.fetch("id")
+          ]
+        end
+      end
+
+    ranks.map do |rank|
       {
-        id: rank.id,
-        code: rank.code,
-        label: rank.label,
-        count: counts.fetch(rank.id)
+        id: rank.fetch("id"),
+        display_code: rank.fetch("display_code") { rank.fetch("id").to_s.rjust(5, "0") },
+        label: rank.fetch("label"),
+        display_color: rank.fetch("display_color"),
+        count: counts.fetch(rank.fetch("id"), 0)
       }
     end
   end

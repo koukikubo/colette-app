@@ -6,6 +6,8 @@ module RestaurantMasters
     RESTAURANT_MASTER_TYPE_MASTER_KEY =
       "restaurant_master_type".freeze
 
+    AUTOMATIC_TYPE_CODES = %w[T C].freeze
+
     # Controllerから呼び出すためのクラスメソッド
     def self.call(attributes:, current_staff:)
       new(
@@ -27,6 +29,12 @@ module RestaurantMasters
       RestaurantMaster.transaction do
         # 対象の席種を取得し、同時登録を防ぐためにロックする
         table_type = lock_restaurant_master_type!
+        # 実席の接頭辞はT/Cに固定する。任意の希望席種を実席の採番へ流用しない。
+        unless AUTOMATIC_TYPE_CODES.include?(table_type.code)
+          invalid = RestaurantMaster.new
+          invalid.errors.add(:restaurant_master_type_id, "はテーブル席またはカウンター席を選択してください")
+          raise ActiveRecord::RecordInvalid, invalid
+        end
 
         # 席種ごとの次の連番を取得する
         sequence_number =

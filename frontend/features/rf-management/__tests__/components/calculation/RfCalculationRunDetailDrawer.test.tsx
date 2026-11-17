@@ -58,13 +58,13 @@ describe("RfCalculationRunDetailDrawer", () => {
         rank_counts: [
           {
             id: 1,
-            code: "A",
+            display_code: "00001",
             label: "Aランク",
             count: 25,
           },
           {
             id: 2,
-            code: "B",
+            display_code: "00002",
             label: "Bランク",
             count: 40,
           },
@@ -77,7 +77,7 @@ describe("RfCalculationRunDetailDrawer", () => {
           rank_comparisons: [
             {
               id: 1,
-              code: "A",
+              display_code: "00001",
               label: "Aランク",
               before_count: 20,
               after_count: 25,
@@ -85,7 +85,7 @@ describe("RfCalculationRunDetailDrawer", () => {
             },
             {
               id: 2,
-              code: "B",
+              display_code: "00002",
               label: "Bランク",
               before_count: 50,
               after_count: 40,

@@ -185,6 +185,7 @@ class Api::V1::Rf::RuleSetsController <
     params.expect(
       rf_rule_set: [
         :name,
+        :no_visit_rank_id,
         :aggregation_months,
         :frequency_window_months,
         :lock_version,

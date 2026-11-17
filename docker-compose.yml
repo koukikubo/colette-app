@@ -1,6 +1,10 @@
 services:
   frontend:
-    image: node:22.15.0
+    # npm更新済みイメージを使う。Runtime securityもこの名前を取得して検査する。
+    image: colette-frontend-dev:node22.23.4-npm12.2.2
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     container_name: colette_frontend
     init: true
     tty: true
@@ -15,7 +19,7 @@ services:
       exec npm run dev -- --hostname 0.0.0.0"
 
   backend:
-    image: ruby:3.4.4
+    image: ruby:3.4.12
     container_name: colette_backend
     init: true
     tty: true
@@ -37,7 +41,11 @@ services:
               bin/rails db:prepare &&
               exec bin/rails server -b 0.0.0.0"
   db:
-    image: postgres:17.4
+    # PostgreSQL本体は維持し、gosuの依存脆弱性に対応したイメージを使う。
+    image: colette-postgres:17.11-gosu1.20
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     container_name: colette_db
 
     environment:

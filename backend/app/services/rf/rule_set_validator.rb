@@ -184,21 +184,14 @@ module Rf
     def validate_no_visit_rank
       no_visit_rank_exists =
         StandardListMaster
-          .joins(:standard_master)
-          .exists?(
-            code: "N",
-            active: true,
-            standard_masters: {
-              system_key: "rf_rank",
-              active: true
-            }
-          )
+          .active_rf_ranks
+          .exists?(id: rule_set.no_visit_rank_id)
 
       return if no_visit_rank_exists
 
       add_error(
         :no_visit_rank_missing,
-        "来店実績がない顧客に使用する有効なNランクが登録されていません"
+        "来店実績がない顧客に使用する有効なRFランクを選択してください"
       )
     end
 

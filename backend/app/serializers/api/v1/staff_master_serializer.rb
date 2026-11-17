@@ -5,6 +5,7 @@ module Api
       def as_json(*)
         {
           id: resource.id,
+          lock_version: resource.lock_version,
           code: resource.code,
           name: resource.name,
           role_code: resource.role_code,

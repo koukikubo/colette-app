@@ -27,12 +27,12 @@ describe("RfCalculationResultsSection", () => {
           },
           previous_rf_rank: {
             id: 2,
-            code: "B",
+            display_code: "00002",
             label: "Bランク",
           },
           rf_rank: {
             id: 1,
-            code: "A",
+            display_code: "00001",
             label: "Aランク",
           },
           changed: true,

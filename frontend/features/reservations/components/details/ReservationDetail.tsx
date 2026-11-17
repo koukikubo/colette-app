@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -160,12 +161,18 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
               <ReservationStatusActions reservation={reservation} />
 
-              <Button asChild size="sm">
-                <Link href={"/reservations/" + reservation.id + "/edit"}>
-                  <PencilIcon />
-                  編集する
-                </Link>
-              </Button>
+              <PermissionGate resource="reservations">
+                <Button asChild size="sm">
+                  {/* 詳細と編集を同じ履歴枠で切り替え、閉じる操作の戻り先を維持する。 */}
+                  <Link
+                    replace
+                    href={"/reservations/" + reservation.id + "/edit"}
+                  >
+                    <PencilIcon />
+                    編集する
+                  </Link>
+                </Button>
+              </PermissionGate>
             </div>
           </div>
         </CardHeader>

@@ -10,20 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
 
   create_table "customer_rf_rank_results", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "rf_calculation_run_id", null: false
     t.bigint "customer_id", null: false
-    t.string "exclusion_reason"
+    t.bigint "rf_rank_id"
+    t.integer "recency_days"
     t.integer "frequency_count", default: 0, null: false
     t.date "last_visit_on"
-    t.integer "recency_days"
-    t.bigint "rf_calculation_run_id", null: false
-    t.bigint "rf_rank_id"
+    t.string "exclusion_reason"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_customer_rf_rank_results_on_customer_id"
     t.index ["rf_calculation_run_id", "customer_id"], name: "idx_customer_rf_results_on_run_and_customer", unique: true
@@ -45,7 +45,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
     t.datetime "created_at", null: false
     t.bigint "created_by_staff_id", null: false
     t.string "customer_kind", limit: 30, default: "individual", null: false
-    t.bigint "customer_rank_id"
     t.string "email", limit: 255
     t.datetime "hidden_at"
     t.string "kana", limit: 30, null: false
@@ -56,6 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
     t.string "postal_code", limit: 7
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
+    t.bigint "customer_rank_id"
     t.index ["company_name"], name: "index_customers_on_company_name"
     t.index ["company_name_kana"], name: "index_customers_on_company_name_kana"
     t.index ["company_phone_number"], name: "index_customers_on_company_phone_number"
@@ -67,6 +67,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
     t.index ["name"], name: "index_customers_on_name"
     t.index ["phone_number"], name: "index_customers_on_phone_number"
     t.index ["updated_by_staff_id"], name: "index_customers_on_updated_by_staff_id"
+  end
+
+  create_table "login_throttles", force: :cascade do |t|
+    t.string "key_digest", null: false
+    t.datetime "window_started_at", null: false
+    t.integer "attempts", default: 0, null: false
+    t.index ["key_digest"], name: "index_login_throttles_on_key_digest", unique: true
+  end
+
+  create_table "reservation_creation_requests", force: :cascade do |t|
+    t.bigint "staff_id", null: false
+    t.bigint "reservation_id", null: false
+    t.string "key_digest", null: false
+    t.string "request_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reservation_id"], name: "index_reservation_creation_requests_on_reservation_id"
+    t.index ["staff_id", "key_digest"], name: "index_reservation_creation_requests_on_staff_id_and_key_digest", unique: true
+    t.index ["staff_id"], name: "index_reservation_creation_requests_on_staff_id"
   end
 
   create_table "reservation_tables", force: :cascade do |t|
@@ -82,7 +101,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   create_table "reservations", force: :cascade do |t|
     t.text "allergy_note"
     t.datetime "canceled_at"
-    t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.bigint "created_by_staff_id", null: false
     t.bigint "customer_id"
@@ -105,6 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
     t.datetime "starts_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
+    t.datetime "completed_at"
     t.index ["canceled_at"], name: "index_reservations_on_canceled_at"
     t.index ["completed_at"], name: "index_reservations_on_completed_at"
     t.index ["created_by_staff_id"], name: "index_reservations_on_created_by_staff_id"
@@ -151,41 +170,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   end
 
   create_table "rf_calculation_runs", force: :cascade do |t|
-    t.date "aggregation_started_on", null: false
+    t.bigint "rf_rule_set_id", null: false
+    t.bigint "previous_run_id"
+    t.bigint "started_by_staff_id"
     t.date "base_date", null: false
-    t.datetime "completed_at"
-    t.datetime "created_at", null: false
+    t.date "aggregation_started_on", null: false
+    t.date "frequency_started_on", null: false
+    t.string "status", default: "pending", null: false
     t.integer "customer_count", default: 0, null: false
     t.integer "excluded_count", default: 0, null: false
-    t.text "failure_message"
-    t.date "frequency_started_on", null: false
-    t.integer "lock_version", default: 0, null: false
-    t.bigint "previous_run_id"
-    t.bigint "rf_rule_set_id", null: false
-    t.datetime "started_at"
-    t.bigint "started_by_staff_id"
-    t.string "status", default: "pending", null: false
     t.integer "unmatched_count", default: 0, null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "failure_message"
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "rf_rank_snapshots"
+    t.string "execution_source", default: "manual", null: false
+    t.date "scheduled_month"
+    t.integer "expected_setting_version"
+    t.string "monthly_apply_state"
+    t.string "monthly_apply_error"
+    t.date "scheduled_on"
     t.index ["base_date"], name: "index_rf_calculation_runs_on_base_date"
     t.index ["previous_run_id"], name: "index_rf_calculation_runs_on_previous_run_id"
     t.index ["rf_rule_set_id"], name: "index_rf_calculation_runs_on_rf_rule_set_id"
+    t.index ["scheduled_month"], name: "index_rf_calculation_runs_on_scheduled_month", unique: true, where: "(scheduled_month IS NOT NULL)"
+    t.index ["scheduled_on"], name: "index_rf_calculation_runs_on_scheduled_on", unique: true, where: "(scheduled_on IS NOT NULL)"
     t.index ["started_by_staff_id"], name: "index_rf_calculation_runs_on_started_by_staff_id"
     t.index ["status"], name: "index_rf_calculation_runs_on_status"
     t.check_constraint "customer_count >= 0", name: "check_rf_calculation_runs_customer_count"
     t.check_constraint "excluded_count >= 0", name: "check_rf_calculation_runs_excluded_count"
+    t.check_constraint "execution_source::text = ANY (ARRAY['manual'::character varying, 'monthly'::character varying, 'daily'::character varying]::text[])", name: "rf_execution_source_valid"
+    t.check_constraint "monthly_apply_state IS NULL OR (monthly_apply_state::text = ANY (ARRAY['pending'::character varying, 'applied'::character varying, 'conflict'::character varying, 'failed'::character varying]::text[]))", name: "rf_monthly_apply_state_valid"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying]::text[])", name: "check_rf_calculation_runs_status"
     t.check_constraint "unmatched_count >= 0", name: "check_rf_calculation_runs_unmatched_count"
   end
 
   create_table "rf_frequency_rules", force: :cascade do |t|
-    t.string "code", null: false
-    t.datetime "created_at", null: false
-    t.string "label", null: false
-    t.integer "max_visits"
-    t.integer "min_visits", null: false
-    t.integer "position", null: false
     t.bigint "rf_rule_set_id", null: false
+    t.string "code", null: false
+    t.string "label", null: false
+    t.integer "min_visits", null: false
+    t.integer "max_visits"
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["rf_rule_set_id", "code"], name: "index_rf_frequency_rules_on_rf_rule_set_id_and_code", unique: true
     t.index ["rf_rule_set_id", "position"], name: "index_rf_frequency_rules_on_rf_rule_set_id_and_position", unique: true
@@ -195,11 +225,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   end
 
   create_table "rf_rank_mappings", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "rf_rule_set_id", null: false
+    t.bigint "rf_recency_rule_id", null: false
     t.bigint "rf_frequency_rule_id", null: false
     t.bigint "rf_rank_id", null: false
-    t.bigint "rf_recency_rule_id", null: false
-    t.bigint "rf_rule_set_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["rf_frequency_rule_id"], name: "index_rf_rank_mappings_on_rf_frequency_rule_id"
     t.index ["rf_rank_id"], name: "index_rf_rank_mappings_on_rf_rank_id"
@@ -209,13 +239,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   end
 
   create_table "rf_recency_rules", force: :cascade do |t|
-    t.string "code", null: false
-    t.datetime "created_at", null: false
-    t.string "label", null: false
-    t.integer "max_days"
-    t.integer "min_days", null: false
-    t.integer "position", null: false
     t.bigint "rf_rule_set_id", null: false
+    t.string "code", null: false
+    t.string "label", null: false
+    t.integer "min_days", null: false
+    t.integer "max_days"
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["rf_rule_set_id", "code"], name: "index_rf_recency_rules_on_rf_rule_set_id_and_code", unique: true
     t.index ["rf_rule_set_id", "position"], name: "index_rf_recency_rules_on_rf_rule_set_id_and_position", unique: true
@@ -225,17 +255,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   end
 
   create_table "rf_rule_sets", force: :cascade do |t|
-    t.integer "aggregation_months", default: 60, null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_staff_id"
-    t.integer "frequency_window_months", default: 12, null: false
-    t.integer "lock_version", default: 0, null: false
     t.string "name", null: false
-    t.datetime "published_at"
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
     t.integer "version", null: false
+    t.integer "aggregation_months", default: 60, null: false
+    t.integer "frequency_window_months", default: 12, null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "published_at"
+    t.bigint "created_by_staff_id"
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "rf_rank_snapshots"
+    t.bigint "no_visit_rank_id"
     t.index ["created_by_staff_id"], name: "index_rf_rule_sets_on_created_by_staff_id"
+    t.index ["no_visit_rank_id"], name: "index_rf_rule_sets_on_no_visit_rank_id"
     t.index ["version"], name: "index_rf_rule_sets_on_version", unique: true
     t.check_constraint "aggregation_months > 0", name: "check_rf_rule_sets_aggregation_months"
     t.check_constraint "frequency_window_months <= aggregation_months", name: "check_rf_rule_sets_frequency_within_aggregation"
@@ -244,14 +277,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   end
 
   create_table "rf_settings", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.boolean "singleton_key", default: true, null: false
     t.bigint "current_calculation_run_id"
     t.integer "lock_version", default: 0, null: false
-    t.boolean "singleton_key", default: true, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["current_calculation_run_id"], name: "index_rf_settings_on_current_calculation_run_id"
     t.index ["singleton_key"], name: "index_rf_settings_on_singleton_key", unique: true
     t.check_constraint "singleton_key = true", name: "check_rf_settings_singleton"
+  end
+
+  create_table "security_audit_events", force: :cascade do |t|
+    t.bigint "actor_id", null: false
+    t.bigint "subject_id", null: false
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.index ["actor_id"], name: "index_security_audit_events_on_actor_id"
+    t.index ["subject_id"], name: "index_security_audit_events_on_subject_id"
   end
 
   create_table "staff_masters", force: :cascade do |t|
@@ -263,9 +305,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
     t.date "retired_on"
     t.string "role_code", null: false
     t.datetime "updated_at", null: false
+    t.integer "lock_version", default: 0, null: false
     t.index ["code"], name: "index_staff_masters_on_code", unique: true
     t.index ["retired_on"], name: "index_staff_masters_on_retired_on"
     t.index ["role_code"], name: "index_staff_masters_on_role_code"
+    t.check_constraint "lock_version >= 0", name: "staff_masters_lock_version_non_negative"
+  end
+
+  create_table "staff_sessions", force: :cascade do |t|
+    t.bigint "staff_id", null: false
+    t.string "token_digest", null: false
+    t.datetime "last_seen_at", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["staff_id"], name: "index_staff_sessions_on_staff_id"
+    t.index ["token_digest"], name: "index_staff_sessions_on_token_digest", unique: true
   end
 
   create_table "staffs", force: :cascade do |t|
@@ -291,6 +346,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
     t.integer "position", default: 0, null: false
     t.bigint "standard_master_id", null: false
     t.datetime "updated_at", null: false
+    t.string "display_color", limit: 7
+    t.string "initial_display_color"
     t.index ["active"], name: "index_standard_list_masters_on_active"
     t.index ["standard_master_id", "code"], name: "idx_standard_list_masters_master_and_code", unique: true
     t.index ["standard_master_id", "position"], name: "index_standard_list_masters_on_master_id_and_position", unique: true
@@ -317,6 +374,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   add_foreign_key "customers", "staffs", column: "created_by_staff_id"
   add_foreign_key "customers", "staffs", column: "updated_by_staff_id"
   add_foreign_key "customers", "standard_list_masters", column: "customer_rank_id"
+  add_foreign_key "reservation_creation_requests", "reservations"
+  add_foreign_key "reservation_creation_requests", "staffs"
   add_foreign_key "reservation_tables", "reservations"
   add_foreign_key "reservation_tables", "restaurant_masters"
   add_foreign_key "reservations", "customers"
@@ -340,7 +399,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_054500) do
   add_foreign_key "rf_rank_mappings", "standard_list_masters", column: "rf_rank_id"
   add_foreign_key "rf_recency_rules", "rf_rule_sets"
   add_foreign_key "rf_rule_sets", "staffs", column: "created_by_staff_id"
+  add_foreign_key "rf_rule_sets", "standard_list_masters", column: "no_visit_rank_id"
   add_foreign_key "rf_settings", "rf_calculation_runs", column: "current_calculation_run_id"
+  add_foreign_key "security_audit_events", "staffs", column: "actor_id"
+  add_foreign_key "security_audit_events", "staffs", column: "subject_id"
+  add_foreign_key "staff_sessions", "staffs"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
 end

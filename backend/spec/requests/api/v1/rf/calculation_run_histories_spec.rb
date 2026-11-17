@@ -182,6 +182,81 @@ RSpec.describe "Api::V1::RfCalculationRunHistories",
       expect(response_body["message"])
         .to eq("データが見つかりませんでした")
     end
+
+    it "マスタ変更後も保存したランク名と色で人数を返す" do
+      login!
+
+      master = create(
+        :standard_master,
+        system_key: "rf_rank",
+        name: "RFランク"
+      )
+
+      rank = create(
+        :standard_list_master,
+        standard_master: master,
+        code: "A",
+        label: "Aランク",
+        display_color: "#059669",
+        position: 1
+      )
+
+      run = create_completed_run(
+        base_date: Date.new(2026, 9, 23)
+      )
+
+      run.customer_rf_rank_results.create!(
+        customer: create(:customer),
+        rf_rank: rank,
+        frequency_count: 2,
+        recency_days: 10
+      )
+
+      run.update!(
+        customer_count: 1,
+        excluded_count: 0,
+        rf_rank_snapshots: [
+          {
+            "id" => rank.id,
+            "display_code" => rank.display_code,
+            "label" => "Aランク",
+            "display_color" => "#059669",
+            "position" => 1
+          }
+        ]
+      )
+
+      rank.update!(
+        label: "変更後の名称",
+        display_color: "#FF0000",
+        active: false
+      )
+
+      get(
+        "/api/v1/rf_calculation_runs/#{run.id}",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      rank_counts = response_body.dig(
+        "data",
+        "calculation_run",
+        "rank_counts"
+      )
+
+      expect(rank_counts).to eq(
+        [
+          {
+            "id" => rank.id,
+            "display_code" => rank.display_code,
+            "label" => "Aランク",
+            "display_color" => "#059669",
+            "count" => 1
+          }
+        ]
+      )
+    end
   end
 
   describe "PATCH /api/v1/rf_calculation_runs/:id/restore" do

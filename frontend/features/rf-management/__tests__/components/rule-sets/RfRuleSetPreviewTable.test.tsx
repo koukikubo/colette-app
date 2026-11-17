@@ -32,7 +32,7 @@ describe("RfRuleSetPreviewTable", () => {
             rf_rank_id: 31,
           },
         ]}
-        rankOptions={[{ id: 31, label: "Aランク" }]}
+        rankOptions={[{ id: 31, label: "Aランク", display_color: "#059669" }]}
       />,
     );
 
@@ -45,7 +45,9 @@ describe("RfRuleSetPreviewTable", () => {
     expect(
       screen.getByRole("rowheader", { name: "90日以内" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Aランク")).toBeInTheDocument();
+    expect(screen.getByText("Aランク")).toHaveStyle({
+      color: "#059669",
+    });
     expect(screen.queryByText("R1")).not.toBeInTheDocument();
     expect(screen.queryByText("F1")).not.toBeInTheDocument();
   });

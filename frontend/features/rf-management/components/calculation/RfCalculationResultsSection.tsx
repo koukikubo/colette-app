@@ -28,7 +28,7 @@ function currentRankLabel(rank: RfRank | null, exclusionReason: string | null) {
     return "対象外";
   }
 
-  return rank?.label ?? "Nランク";
+  return rank?.label ?? "未設定";
 }
 
 export function RfCalculationResultsSection({

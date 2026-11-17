@@ -13,6 +13,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       ActiveRecord::Base.transaction do
         # 同時に複数のルールが公開されることを防ぐ。
         RfRuleSet.lock.order(:id).load
@@ -86,7 +90,10 @@ module Rf
         .where.not(id: rule_set.id)
         .find_each do |published_rule_set|
         published_rule_set.update!(
-          status: "archived"
+          status: "archived",
+          rf_rank_snapshots:
+            published_rule_set.rf_rank_snapshots ||
+              published_rule_set.build_rf_rank_snapshots
         )
       end
     end
