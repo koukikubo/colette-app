@@ -9,19 +9,17 @@ vi.mock("@/features/standard-codes/api/standard-code-api", () => ({
   fetchStandardCodes: mocks.codes,
 }));
 beforeEach(() => {
-  mocks.list
-    .mockReset()
-    .mockResolvedValue({
-      data: {
-        customers: [],
-        pagination: {
-          current_page: 1,
-          per_page: 20,
-          total_count: 0,
-          total_pages: 0,
-        },
+  mocks.list.mockReset().mockResolvedValue({
+    data: {
+      customers: [],
+      pagination: {
+        current_page: 1,
+        per_page: 20,
+        total_count: 0,
+        total_pages: 0,
       },
-    });
+    },
+  });
   mocks.codes.mockReset().mockResolvedValue({
     data: {
       standard_masters: [
