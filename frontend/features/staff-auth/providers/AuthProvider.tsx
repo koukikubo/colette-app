@@ -64,7 +64,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       expired.current = false;
     } catch (error) {
       if (!mounted.current) return;
-      if (error instanceof ApiClientError && error.status === 401) expire();
+      if (
+        error instanceof ApiClientError &&
+        error.status === 401 &&
+        error.code !== "access_auth_required" &&
+        error.code !== "unexpected_response"
+      )
+        expire();
       else {
         setAuthError(
           "認証状態を確認できませんでした。接続を確認して再取得してください。",

@@ -26,3 +26,18 @@ describe("getApiErrorPresentation", () => {
     );
   });
 });
+
+it("Basic認証の拒否では担当者ログインへ誘導しない", () => {
+  const presentation = getApiErrorPresentation(
+    new ApiClientError("Basic", 401, [], "access_auth_required"),
+  );
+  expect(presentation.kind).toBe("access_authentication");
+  expect(presentation.primaryHref).toBeUndefined();
+});
+it("認証元が不明な401をセッション失効と断定しない", () => {
+  expect(
+    getApiErrorPresentation(
+      new ApiClientError("HTML", 401, [], "unexpected_response"),
+    ).kind,
+  ).toBe("unexpected");
+});

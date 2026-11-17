@@ -88,17 +88,27 @@ describe("RFランク低下APIの取得", () => {
     },
   );
 
-  it("通信中止用のsignalをfetchまで引き継ぐ", async () => {
+  it("呼出元の中止が期限付き要求にも伝わる", async () => {
     const controller = new AbortController();
-
-    await fetchRfRankDrops({ page: 2 }, controller.signal);
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/rf_rank_drops?page=2",
-      expect.objectContaining({
-        signal: controller.signal,
-      }),
+    fetchMock.mockImplementation(
+      (_path, options) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = options?.signal;
+          if (!signal) {
+            reject(new Error("missing signal"));
+            return;
+          }
+          signal.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        }),
     );
+    const request = fetchRfRankDrops({ page: 2 }, controller.signal);
+    const aborted = expect(request).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    controller.abort();
+    await aborted;
   });
 
   it("未ログインのエラーを正常データとして返さない", async () => {
