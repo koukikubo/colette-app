@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useReservationModalDirty } from "../layouts/reservation-modal-dirty-context";
 import {
   useReservationFormOptions,
   type UseReservationFormOptionsResult,
@@ -58,6 +59,10 @@ function NewReservationFormContent(
     } else initial.restaurant_master_ids = [];
     return initial;
   });
+  const [initialValues] = useState(values);
+  useReservationModalDirty(
+    JSON.stringify(values) !== JSON.stringify(initialValues),
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
@@ -153,8 +158,8 @@ function NewReservationFormContent(
       if (!(error instanceof ApiClientError) || error.status >= 500)
         setHasUncertainAttempt(true);
       if (error instanceof ApiClientError) {
-        if (error.status === 400 || error.status === 422)
-          setHasUncertainAttempt(false);
+        // 再試行前のCSRF等の拒否では、最初の保存結果は確定しない。
+        // 既に結果不明なら、元のキー・本文を保持して新規作成へ切り替えない。
         setErrorMessage(error.message);
 
         if (error.status === 422 && !Array.isArray(error.errors)) {

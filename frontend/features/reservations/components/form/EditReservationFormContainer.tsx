@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useReservationModalDirty } from "../layouts/reservation-modal-dirty-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ReservationConflictDialog } from "../dialogs/ReservationConflictDialog";
@@ -87,6 +88,7 @@ function EditReservationFormContent({
 
   const initialValues = buildEditReservationFormValues(baseReservation);
   const isDirty = JSON.stringify(values) !== JSON.stringify(initialValues);
+  useReservationModalDirty(isDirty);
   const {
     discardDialogOpen,
     requestNavigation,
