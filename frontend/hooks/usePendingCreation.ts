@@ -115,6 +115,14 @@ export function usePendingCreation<T>(
         [],
         "recovery_unavailable",
       );
+    // 別のフォームや古い描画のイベントから、保持済みの送信キーを上書きしない。
+    if (snapshot() !== key)
+      throw new ApiClientError(
+        "先に前回の登録結果を確認してください",
+        409,
+        [],
+        "pending_creation",
+      );
     if (
       uncertain &&
       (checking || found || (!canRetry && !currentResult?.missing))
@@ -159,7 +167,12 @@ export function usePendingCreation<T>(
   function complete() {
     if (storageKey) {
       try {
-        sessionStorage.removeItem(storageKey);
+        const owned = payload.current?.identity;
+        const expected = owned?.startsWith(`${storageKey}:`)
+          ? owned.slice(storageKey.length + 1)
+          : key;
+        if (sessionStorage.getItem(storageKey) === expected)
+          sessionStorage.removeItem(storageKey);
       } catch {
         /* 削除できなくても次回のGETで同じ登録済み結果を確認できる。 */
       }
@@ -175,7 +188,9 @@ export function usePendingCreation<T>(
     if (
       !uncertain &&
       failure instanceof ApiClientError &&
-      [400, 401, 403, 422].includes(failure.status)
+      [400, 401, 403, 422].includes(failure.status) &&
+      failure.code !== "unexpected_response" &&
+      failure.code !== "access_auth_required"
     )
       complete();
     else {

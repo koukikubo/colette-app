@@ -125,3 +125,16 @@ it("結果不明の再送で項目エラーを確認したら同じキーのま�
   await waitFor(() => expect(create).toHaveBeenCalledTimes(3));
   expect(create.mock.calls[2]).toEqual([{ name: "修正済み" }, key]);
 });
+it("認証元や形式が不明な4xxでも送信キーを捨てない", async () => {
+  create.mockRejectedValue(
+    new ApiClientError("HTML", 422, [], "unexpected_response"),
+  );
+  lookup.mockRejectedValue(
+    new ApiClientError("not found", 404, [], "creation_not_found"),
+  );
+  render(<Form />);
+  await userEvent.click(screen.getByRole("button", { name: "登録" }));
+  await screen.findByText("未確認");
+  expect(sessionStorage.getItem(scope)).toMatch(/^[a-f0-9-]{36}$/);
+  expect(create).toHaveBeenCalledTimes(1);
+});
