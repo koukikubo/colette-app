@@ -27,6 +27,6 @@ export type RfComparisonPeriod = {
 export function fetchRfComparisonPeriods(signal?: AbortSignal) {
   return apiFetch<{
     status: "success";
-    data: { periods: RfComparisonPeriod[] };
+    data: { current_month: string; periods: RfComparisonPeriod[] };
   }>(`${BASE_PATH}/periods`, { cache: "no-store", signal });
 }

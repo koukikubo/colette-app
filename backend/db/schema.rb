@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_071000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -192,15 +192,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_071000) do
     t.integer "expected_setting_version"
     t.string "monthly_apply_state"
     t.string "monthly_apply_error"
+    t.date "scheduled_on"
     t.index ["base_date"], name: "index_rf_calculation_runs_on_base_date"
     t.index ["previous_run_id"], name: "index_rf_calculation_runs_on_previous_run_id"
     t.index ["rf_rule_set_id"], name: "index_rf_calculation_runs_on_rf_rule_set_id"
     t.index ["scheduled_month"], name: "index_rf_calculation_runs_on_scheduled_month", unique: true, where: "(scheduled_month IS NOT NULL)"
+    t.index ["scheduled_on"], name: "index_rf_calculation_runs_on_scheduled_on", unique: true, where: "(scheduled_on IS NOT NULL)"
     t.index ["started_by_staff_id"], name: "index_rf_calculation_runs_on_started_by_staff_id"
     t.index ["status"], name: "index_rf_calculation_runs_on_status"
     t.check_constraint "customer_count >= 0", name: "check_rf_calculation_runs_customer_count"
     t.check_constraint "excluded_count >= 0", name: "check_rf_calculation_runs_excluded_count"
-    t.check_constraint "execution_source::text = ANY (ARRAY['manual'::character varying, 'monthly'::character varying]::text[])", name: "rf_execution_source_valid"
+    t.check_constraint "execution_source::text = ANY (ARRAY['manual'::character varying, 'monthly'::character varying, 'daily'::character varying]::text[])", name: "rf_execution_source_valid"
     t.check_constraint "monthly_apply_state IS NULL OR (monthly_apply_state::text = ANY (ARRAY['pending'::character varying, 'applied'::character varying, 'conflict'::character varying, 'failed'::character varying]::text[]))", name: "rf_monthly_apply_state_valid"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying]::text[])", name: "check_rf_calculation_runs_status"
     t.check_constraint "unmatched_count >= 0", name: "check_rf_calculation_runs_unmatched_count"

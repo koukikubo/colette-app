@@ -4,6 +4,7 @@ class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
       id: resource.id,
       execution_source: resource.execution_source,
       scheduled_month: resource.scheduled_month,
+      scheduled_on: resource.scheduled_on,
       monthly_apply_state: resource.monthly_apply_state,
       monthly_apply_error: resource.monthly_apply_error,
       rf_rule_set_id: resource.rf_rule_set_id,

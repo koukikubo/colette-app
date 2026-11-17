@@ -47,7 +47,7 @@ security:cleanupで期限切れセッション・古い試行履歴を毎日削�
 RUN_ID=対象ID RAILS_ENV=production bundle exec rake rf:recover
 ```
 
-手動計算はprocessing状態のみ、月次計算はpending/processing/failed状態を再配信する。月次計算は保存した対象月・同じ履歴IDで再試行する。実行中workerがDBロックを保持している間は重複計算しない。強制終了した接続のロックはDBが解放する。手動計算のfailedは原因を解消後、新規計算として再作成する。現在適用中の結果は維持する。
+手動計算はprocessing状態のみ、日次/月次計算はpending/processing/failed状態を再配信する。日次は保存した実行日、旧月次は保存した対象月・同じ履歴IDで再試行する。実行中workerがDBロックを保持している間は重複計算しない。強制終了した接続のロックはDBが解放する。手動計算のfailedは原因を解消後、新規計算として再作成する。現在適用中の結果は維持する。
 新方式の初回導入時は旧workerを全て停止してから新workerを起動する。
 
 ## バックアップ・復旧・切戻し
@@ -65,19 +65,24 @@ RUN_ID=対象ID RAILS_ENV=production bundle exec rake rf:recover
 個人情報・検索語はパラメータフィルターで除外する。アプリ独自ログとproxy/アクセスログは別途ダミー入力で確認する。URLクエリに検索語を記録するアクセスログは無効化またはマスクする。
 閲覧は運用責任者に限定し、保持30日を初期案として配置先で設定・承認する。秘密値や実顧客情報を検証成果物へ保存しない。
 
-## RF月次自動更新
+## RF日次自動更新
 
-本番のSolid Queue scheduler/workerを起動し、`config/recurring.yml`の`monthly_rf_update`を登録する。
-実行時刻は日本時間の毎月1日03:00、対象は前月末基準。公開中の有効なRFルールが必要。
-開発用composeのRails起動だけでは、この本番定期ジョブは起動しない。
+本番のSolid Queue scheduler/workerを起動し、`config/recurring.yml`の`daily_rf_update`を登録する。
+実行時刻は日本時間の毎日03:00、当日基準。公開中の有効なRFルールが必要。
+開発用composeのRails起動だけでは、本番の定期scheduler/workerは起動しない。
 
-同じ対象月は一意に記録し、計算失敗は30秒間隔で最大3回試行する。計算中の手動適用・復元は設定の版番号で検出し、上書きせず`conflict`にする。
-ダッシュボードとRF計算履歴で`failed`/`conflict`を確認し、ジョブ遅延・失敗を監視する。
-停止中に実行時刻を逃した場合、対象月を明示して補完する（自動catch-upは行わない）。
+同じ実行日は`scheduled_on`の一意制約で履歴を一つにし、翌日は別の履歴を作る。
+計算失敗は30秒間隔で最大3回試行する。再試行で日付が変わっても最初の実行日を使う。
+計算中の手動適用・復元は設定の版番号で検出し、上書きせず`conflict`にする。
+RF計算履歴で`failed`/`conflict`を確認し、ジョブ遅延・失敗を監視する。ダッシュボードにはRF実行状態を表示しない。
+停止中に実行時刻を逃した場合、日付を明示して補完する（自動catch-upは行わない）。
 
 ```sh
-RAILS_ENV=production bundle exec rails runner 'MonthlyRfUpdateJob.perform_later("2026-10-01")'
+RAILS_ENV=production bundle exec rails runner 'DailyRfUpdateJob.perform_later("2026-11-14")'
 ```
 
-対象月は前月以前の月初日。上記は例なので補完する月へ置き換える。適用済み月の再配信は再適用しない。
-`conflict`はRF計算履歴の結果を確認して手動適用する。コード更新時は70000/71000のmigrationを適用後、Railsとworkerを同じ版で再起動する。
+対象日は今日以前。上記は例なので補完する日へ置き換える。適用済み日の再配信は再適用しない。
+`conflict`はRF計算履歴の結果を確認して手動適用する。日次化migration適用後、Railsとworkerを同じ版で再起動する。
+既存の月次履歴とMonthlyRfUpdateJob/MonthlyUpdaterは旧ジョブの再配信のため保持するが、月次スケジュールは廃止した。
+`execution_source`へ`daily`と`scheduled_on`を追加し、既存の`monthly_apply_state`/`monthly_apply_error`は互換性のため日次でも共用する。
+日次履歴があるDBでの旧版への切戻しは、`daily`を扱える版の使用など、互換性の確認が必要。

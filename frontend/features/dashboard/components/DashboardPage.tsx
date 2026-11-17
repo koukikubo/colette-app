@@ -5,10 +5,8 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
-import type { Reservation } from "@/features/reservations/types";
 type Dashboard = {
   date: string;
-  as_of: string;
   summary: {
     reservation_count: number;
     expected_guest_count: number;
@@ -16,12 +14,6 @@ type Dashboard = {
     canceled_count: number;
     unassigned_count: number;
     unconfirmed_count: number;
-  };
-  reservations: Reservation[];
-  rf: {
-    base_date: string | null;
-    monthly_state: string | null;
-    monthly_error: string | null;
   };
 };
 
@@ -51,12 +43,6 @@ export function DashboardPage() {
       ) : (
         data && (
           <>
-            <p>
-              {data.date} ／ 最終取得{" "}
-              {new Date(data.as_of).toLocaleTimeString("ja-JP", {
-                timeZone: "Asia/Tokyo",
-              })}
-            </p>
             <div className="grid gap-3 sm:grid-cols-3">
               {(
                 [
@@ -97,57 +83,6 @@ export function DashboardPage() {
                 </Link>
               </PermissionGate>
             </nav>
-            <section className="rounded border p-4">
-              <h2 className="mb-3 font-semibold">
-                本日の未完了予約（開始時刻順・最大10件）
-              </h2>
-              {data.reservations.length === 0 ? (
-                <p>本日の未完了予約はありません。</p>
-              ) : (
-                <ul className="space-y-3">
-                  {data.reservations.map((row) => (
-                    <li key={row.id}>
-                      <Link
-                        className="underline"
-                        href={`/reservations/${row.id}`}
-                      >
-                        {new Date(row.starts_at).toLocaleTimeString("ja-JP", {
-                          timeZone: "Asia/Tokyo",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}{" "}
-                        {row.reservation_name} ／ {row.guest_count}名
-                      </Link>
-                      {row.restaurant_master_ids.length === 0 && (
-                        <span className="ml-2">席未割当</span>
-                      )}
-                      {!row.details_confirmed_at && (
-                        <span className="ml-2">詳細未確認</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-            <p>
-              RFの適用基準日：{data.rf.base_date ?? "未適用"} ／ 月次自動更新：
-              {(
-                {
-                  applied: "適用済み",
-                  pending: "処理待ち",
-                  failed: "失敗",
-                  conflict: "手動確認が必要",
-                } as Record<string, string>
-              )[data.rf.monthly_state ?? ""] ?? "実行履歴なし"}
-            </p>
-            {data.rf.monthly_error && (
-              <p role="alert">
-                {data.rf.monthly_error}{" "}
-                <Link className="underline" href="/rf-management">
-                  RF管理で確認
-                </Link>
-              </p>
-            )}
           </>
         )
       )}

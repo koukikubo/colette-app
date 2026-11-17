@@ -47,24 +47,32 @@ export function RfCustomerTransitionSection() {
         const available = response.data.periods;
         setPeriods(available);
         const current = new URLSearchParams(window.location.search);
+        const currentMonth = response.data.current_month ?? available[0]?.month;
         if (
           !current.get("start_month") &&
           !current.get("end_month") &&
-          available.length > 1
+          currentMonth
         ) {
-          const end = available[0];
-          const yearAgo = `${Number(end.month.slice(0, 4)) - 1}${end.month.slice(4)}`;
-          const start =
-            available.find(
-              (item) =>
-                item.month === yearAgo && item.rule_set_id === end.rule_set_id,
-            ) ??
-            available.find(
-              (item) =>
-                item.month !== end.month &&
-                item.rule_set_id === end.rule_set_id,
-            );
-          if (start) update({ start_month: start.month, end_month: end.month });
+          // 履歴が古い場合も初期表示を過去月へすり替えず、当月の有無を示す。
+          const end = available.find((item) => item.month === currentMonth);
+          const [year, month] = currentMonth.split("-");
+          const yearAgo = `${Number(year) - 1}-${month}`;
+          const start = end
+            ? (available.find(
+                (item) =>
+                  item.month === yearAgo &&
+                  item.rule_set_id === end.rule_set_id,
+              ) ??
+              available.find(
+                (item) =>
+                  item.month < currentMonth &&
+                  item.rule_set_id === end.rule_set_id,
+              ))
+            : undefined;
+          update({
+            start_month: start?.month ?? (end ? currentMonth : yearAgo),
+            end_month: currentMonth,
+          });
         }
       } catch {
         if (!controller.signal.aborted) setPeriodError(true);
@@ -191,42 +199,7 @@ export function RfCustomerTransitionSection() {
               </Button>
             </p>
           )}
-          <details>
-            <summary>比較できる適用済み履歴（{periods.length}件）</summary>
-            <ul>
-              {periods.map((item) => (
-                <li
-                  key={item.run_id}
-                  className="flex flex-wrap items-center gap-2 p-2"
-                >
-                  <span>
-                    {item.month} ／ 基準日 {item.base_date}
-                  </span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => changeMonth(item.month, "start")}
-                  >
-                    {item.month}を開始月に設定
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => changeMonth(item.month, "end")}
-                  >
-                    {item.month}を終了月に設定
-                  </Button>
-                </li>
-              ))}
-            </ul>
-            {initialized && !periodError && periods.length === 0 && (
-              <p>
-                比較できる適用済み履歴がありません。計算・適用後に再取得してください。
-              </p>
-            )}
-          </details>
+
           <form onSubmit={compare} className="flex flex-wrap items-end gap-4">
             <label className="grid gap-1">
               開始月
