@@ -79,6 +79,10 @@ export function CustomerFormDialog({
     createInitialFormValues(mode, customer),
   );
   const initialValues = useRef(values);
+  // 入力値と同じ時点の識別子・版を保持する。背景GETでpropsだけ進んでも再基準化しない。
+  const editSnapshot = useRef(
+    customer ? { id: customer.id, lock_version: customer.lock_version } : null,
+  );
   const hasUnsavedChanges =
     JSON.stringify(values) !== JSON.stringify(initialValues.current);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -177,7 +181,7 @@ export function CustomerFormDialog({
 
   async function handleConfirm() {
     if (saving.current || saved) return;
-    if (isEdit && !customer) {
+    if (isEdit && !editSnapshot.current) {
       setErrors(["編集対象の顧客情報を取得できませんでした。"]);
       setConfirmOpen(false);
       return;
@@ -188,10 +192,10 @@ export function CustomerFormDialog({
     setErrors([]);
 
     try {
-      if (isEdit && customer) {
+      if (isEdit && editSnapshot.current) {
         await updateCustomer(
-          customer.id,
-          buildUpdateCustomerRequest(values, customer.lock_version),
+          editSnapshot.current.id,
+          buildUpdateCustomerRequest(values, editSnapshot.current.lock_version),
         );
       } else {
         await createCustomer(buildCreateCustomerRequest(values));
