@@ -15,18 +15,7 @@ if ENV["API_CONTRACT_EXPORT"].present?
   end
   contract_samples = {}
   contract_mutex = Mutex.new
-  discriminators = %w[status role_code customer_kind exclusion_reason monthly_apply_state execution_source category from_state to_state].freeze
-  signature = nil
-  signature = lambda do |value, key = nil|
-    case value
-    when Hash then value.sort.to_h.transform_keys(&:to_s).map { |name, item| [ name, signature.call(item, name) ] }.to_h
-    when Array then value.map { |item| signature.call(item) }.uniq.sort_by(&:to_s)
-    when String then discriminators.include?(key) ? value : "string"
-    when Numeric then "number"
-    when TrueClass, FalseClass then "boolean"
-    when NilClass then "null"
-    end
-  end
+  require_relative "api_contract_signature"
 
   RSpec.configure do |config|
     config.after(:each, type: :request) do |example|
@@ -36,7 +25,7 @@ if ENV["API_CONTRACT_EXPORT"].present?
 
       body = JSON.parse(response.body)
       path = request.path.gsub(%r{/\d+(?=/|$)}, "/:id")
-      shape = [ request.method, path, response.status, signature.call(body) ]
+      shape = [ request.method, path, response.status, ApiContractSignature.call(body) ]
       key = Digest::SHA256.hexdigest(JSON.generate(shape))
       contract_mutex.synchronize do
         contract_samples[key] ||= { method: request.method, path: path, status: response.status,
