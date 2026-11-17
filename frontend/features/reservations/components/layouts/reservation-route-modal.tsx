@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { ReservationModalDirtyContext } from "./reservation-modal-dirty-context";
+import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import { useRouter } from "next/navigation";
 
 import {
@@ -22,10 +25,18 @@ export function ReservationRouteModal({
   children,
 }: ReservationRouteModalProps) {
   const router = useRouter();
+  const [dirty, setDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  const close = () => {
+    router.back();
+    window.dispatchEvent(new Event("colette:reservations-changed"));
+  };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      router.back();
+      if (dirty) setConfirmDiscard(true);
+      else close();
     }
   };
 
@@ -38,17 +49,25 @@ export function ReservationRouteModal({
         }}
         onEscapeKeyDown={(event) => {
           event.preventDefault();
+          handleOpenChange(false);
         }}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
 
-          {description ? (
-            <DialogDescription>{description}</DialogDescription>
-          ) : null}
+          <DialogDescription>
+            {description ?? "予約内容を確認し、必要な項目を入力してください。"}
+          </DialogDescription>
         </DialogHeader>
 
-        {children}
+        <ReservationModalDirtyContext.Provider value={setDirty}>
+          {children}
+        </ReservationModalDirtyContext.Provider>
+        <ConfirmDiscardChangesDialog
+          open={confirmDiscard}
+          onOpenChange={setConfirmDiscard}
+          onConfirm={close}
+        />
       </DialogContent>
     </Dialog>
   );

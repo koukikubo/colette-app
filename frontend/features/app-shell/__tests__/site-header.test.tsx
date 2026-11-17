@@ -17,7 +17,7 @@ describe("SiteHeader", () => {
     vi.clearAllMocks();
   });
 
-  it("予約一覧では、予約管理と予約一覧を現在地として表示する", () => {
+  it("タイムラインでは、予約管理とタイムラインを現在地として表示する", () => {
     mocks.usePathname.mockReturnValue("/reservations");
 
     render(
@@ -31,7 +31,7 @@ describe("SiteHeader", () => {
     });
 
     expect(navigation).toHaveTextContent("予約管理");
-    expect(navigation).toHaveTextContent("予約一覧");
+    expect(navigation).toHaveTextContent("タイムライン");
   });
 
   it.each([

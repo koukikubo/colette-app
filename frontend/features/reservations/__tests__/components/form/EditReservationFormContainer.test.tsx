@@ -10,6 +10,7 @@ import { ApiClientError } from "@/lib/api/api-client";
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
   updateReservation: vi.fn(),
   fetchReservation: vi.fn(),
   useReservation: vi.fn(),
@@ -28,6 +29,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mocks.push,
+    replace: mocks.replace,
   }),
 }));
 
@@ -360,7 +362,7 @@ describe("EditReservationFormContainer", () => {
       });
     });
 
-    expect(mocks.push).toHaveBeenCalledWith("/reservations/30");
+    expect(mocks.replace).toHaveBeenCalledWith("/reservations/detail/30");
   });
 
   it("予約情報の更新に失敗すると、APIのエラーメッセージを表示する", async () => {
@@ -982,7 +984,7 @@ describe("EditReservationFormContainer", () => {
 
     expect(mocks.requestNavigation).toHaveBeenCalledOnce();
 
-    expect(mocks.push).toHaveBeenCalledWith("/reservations/30");
+    expect(mocks.replace).toHaveBeenCalledWith("/reservations/detail/30");
   });
 
   it("更新確認ダイアログで戻ると、変更内容を保持したまま入力画面へ戻る", async () => {

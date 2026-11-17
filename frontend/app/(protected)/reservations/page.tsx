@@ -18,7 +18,16 @@ export default async function ReservationsPage({
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">予約タイムライン</h1>
+          <Link
+            className="text-primary underline underline-offset-4"
+            href={`/reservations/calendar?date=${targetDate}`}
+          >
+            月別カレンダーへ
+          </Link>
+        </div>
         <PermissionGate resource="reservations">
           <Link
             href={`/reservations/new?date=${targetDate}`}

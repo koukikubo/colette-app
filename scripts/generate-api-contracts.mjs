@@ -20,6 +20,12 @@ function route(methods, pattern, domain, type) {
     type,
   });
 }
+route(
+  "GET",
+  "dashboard_analytics",
+  "dashboard",
+  data("dashboard/types", "DashboardAnalytics"),
+);
 const customers = "customers/api/customer-api";
 route("GET", "customers", "customer", client(customers, "fetchCustomers"));
 route(
@@ -34,6 +40,15 @@ route(
   "customers(?:/:id(?:/hidden|/restore)?)?",
   "customer",
   client(customers, "createCustomer"),
+);
+route(
+  "GET",
+  "reservation_calendar",
+  "reservation",
+  data(
+    "reservations/components/layouts/displays/ReservationCalendar",
+    "ReservationCalendarData",
+  ),
 );
 const reservations = "reservations/api/reservation_api";
 route(

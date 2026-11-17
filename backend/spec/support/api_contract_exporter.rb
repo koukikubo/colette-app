@@ -24,7 +24,7 @@ if ENV["API_CONTRACT_EXPORT"].present?
     request = session.request
     response = session.response
     next if response.nil? || request.nil?
-    next unless request.path.match?(%r{\A/api/v1/(?:customers|reservations|restaurant_master|staff|standard_masters|rf_|dashboard)})
+    next unless request.path.match?(%r{\A/api/v1/(?:customers|reservation(?:s|_calendar)|restaurant_master|staff|standard_masters|rf_|dashboard)})
     next unless response.media_type == "application/json" && response.body.present?
 
     body = JSON.parse(response.body)
