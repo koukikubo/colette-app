@@ -12,6 +12,8 @@ globalThis.ResizeObserver = ResizeObserverMock;
 
 afterEach(() => {
   cleanup();
+  // キーはテスト間で分離し、同じテスト内の再マウントでは保持する。
+  sessionStorage.clear();
   // 画面/検索条件をURLに保存するテスト同士を分離する。
   window.history.replaceState(null, "", "/");
 });

@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import type { Customer } from "../types";
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
 }));
 vi.mock("../api/customer-api", () => ({
+  fetchCustomerCreationResult: vi.fn(),
   createCustomer: mocks.create,
   hideCustomer: mocks.hide,
   restoreCustomer: mocks.restore,

@@ -6,7 +6,6 @@ import {
   type UseReservationFormOptionsResult,
 } from "../../hooks/useReservationFormOptions";
 
-import { Button } from "@/components/ui/button";
 import type {
   ReservationCreateRequest,
   ReservationFormValues,
@@ -16,7 +15,10 @@ import {
   buildCreateReservationRequest,
 } from "../../utils/reservation-form";
 import { ReservationForm } from "./ReservationForm";
-import { createReservation } from "../../api/reservation_api";
+import {
+  createReservation,
+  fetchReservationCreationResult,
+} from "../../api/reservation_api";
 import { ApiClientError } from "@/lib/api/api-client";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +26,9 @@ import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { useReservationCustomer } from "../../hooks/useReservationCustomer";
 import { useRestaurantMasterAvailability } from "../../hooks/useRestaurantMasterAvailability";
 import { ReservationOverlapDialog } from "../dialogs/ReservationOverlapDialog";
+
+import { usePendingCreation } from "@/hooks/usePendingCreation";
+import { CreationRecoveryNotice } from "@/components/common/CreationRecoveryNotice";
 
 // 新規登録Containerが親から受け取るデータ
 type NewReservationFormContainerProps = {
@@ -68,12 +73,10 @@ function NewReservationFormContent(
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
 
-  // 応答が失われても、同じ操作の本文とキーを再利用する。
-  const attempt = useRef<{
-    payload: ReservationCreateRequest;
-    key: string;
-  } | null>(null);
-  const [hasUncertainAttempt, setHasUncertainAttempt] = useState(false);
+  const recovery = usePendingCreation(
+    "reservations",
+    fetchReservationCreationResult,
+  );
   const [created, setCreated] = useState(false);
   const submitting = useRef(false);
 
@@ -118,25 +121,10 @@ function NewReservationFormContent(
   // 予約登録APIを呼び出す
   async function handleSubmit(retryPrevious = false) {
     if (submitting.current || created) return;
-    const input = buildCreateReservationRequest(values);
-    if (
-      hasUncertainAttempt &&
-      !retryPrevious &&
-      JSON.stringify(input) !== JSON.stringify(attempt.current?.payload)
-    ) {
-      setErrorMessage(
-        "前回の登録結果が未確認です。「前回の内容で再試行」で確認してから、予約詳細で変更してください。",
-      );
-      return;
-    }
-    if (!hasUncertainAttempt || !attempt.current) {
-      if (
-        !attempt.current ||
-        JSON.stringify(input) !== JSON.stringify(attempt.current.payload)
-      ) {
-        attempt.current = { payload: input, key: crypto.randomUUID() };
-      }
-    }
+    const input = retryPrevious
+      ? recovery.previousPayload<ReservationCreateRequest>()
+      : buildCreateReservationRequest(values);
+    if (!input) return;
     submitting.current = true;
 
     setErrorMessage(null);
@@ -144,9 +132,10 @@ function NewReservationFormContent(
     setIsSubmitting(true);
 
     try {
-      const current = attempt.current!;
-      await createReservation(current.payload, current.key);
-      setHasUncertainAttempt(false);
+      const key = recovery.begin(input);
+      await createReservation(input, key);
+      if (!recovery.isActive()) return;
+      recovery.complete();
       setCreated(true);
       // 成功したら対象日の予約一覧へ戻る
       if (props.modal) {
@@ -155,8 +144,7 @@ function NewReservationFormContent(
       } else router.push(`/reservations?date=${targetDate}`);
     } catch (error) {
       // 5xx・通信切断は保存済みか判断できないため、別の作成へ切り替えない。
-      if (!(error instanceof ApiClientError) || error.status >= 500)
-        setHasUncertainAttempt(true);
+      recovery.failed(error);
       if (error instanceof ApiClientError) {
         // 再試行前のCSRF等の拒否では、最初の保存結果は確定しない。
         // 既に結果不明なら、元のキー・本文を保持して新規作成へ切り替えない。
@@ -194,19 +182,25 @@ function NewReservationFormContent(
   // 入力値と変更用の関数をReservationFormへ渡す
   return (
     <>
-      {hasUncertainAttempt && (
-        <div role="alert" className="space-y-2 rounded border p-4">
-          <p>
-            前回の登録結果が未確認です。同じ内容で再試行すると、登録済みの場合も同じ予約を確認できます。
-          </p>
-          <Button
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => void handleSubmit(true)}
-          >
-            前回の内容で再試行
-          </Button>
-        </div>
+      {recovery.error && !recovery.uncertain && (
+        <p role="alert">{recovery.error}</p>
+      )}
+      {recovery.uncertain && (
+        <CreationRecoveryNotice
+          noun="予約"
+          {...recovery}
+          found={Boolean(recovery.found)}
+          busy={isSubmitting}
+          onCheck={() => void recovery.check()}
+          onRetry={() => void handleSubmit(true)}
+          onFound={() => {
+            if (recovery.found) {
+              const id = recovery.found.data.reservation.id;
+              recovery.complete();
+              router.replace(`/reservations/detail/${id}`);
+            }
+          }}
+        />
       )}
       <ReservationForm
         values={values}
@@ -218,7 +212,7 @@ function NewReservationFormContent(
         reservationStatuses={reservationStatuses}
         onSubmit={() => void handleSubmit()}
         errorMessage={errorMessage}
-        isSubmitting={isSubmitting || created}
+        isSubmitting={isSubmitting || created || !recovery.ready}
         customerQuery={customerQuery}
         customers={customers}
         customerSearchPagination={customerSearchPagination}

@@ -73,17 +73,21 @@ class Api::V1::CustomersController < Api::V1::BaseController
   end
 
   def create
-    customer = Customer.new(customer_create_params)
+    customer = Customers::IdempotentCreator.call(
+      attributes: customer_create_params.to_h, current_staff: current_staff,
+      key: request.headers["Idempotency-Key"]
+    )
+    render_customer(customer, status: :created)
+  rescue Customers::IdempotentCreator::ConflictingRequestError => error
+    render_error(message: error.message, status: :conflict, code: "idempotency_conflict")
+  end
 
-    # クライアントから担当者IDを受け取らず、
-    # 認証済みセッションの担当者を設定する。
-    customer.created_by_staff = current_staff
-    customer.updated_by_staff = current_staff
-
-    if customer.save
-      render_customer(customer, status: :created)
+  def creation_result
+    customer = Customers::IdempotentCreator.find_result(current_staff: current_staff, key: request.headers["Idempotency-Key"])
+    if customer
+      render_customer(customer)
     else
-      render_validation_error(customer)
+      render_error(message: "登録結果はまだ確認できません。送信キーを保持して再確認してください", status: :not_found, code: "creation_not_found")
     end
   end
 

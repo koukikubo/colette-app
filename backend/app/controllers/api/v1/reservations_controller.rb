@@ -65,6 +65,15 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     render_reservation(@reservation)
   end
 
+  def creation_result
+    reservation = Reservations::IdempotentCreator.find_result(current_staff: current_staff, key: request.headers["Idempotency-Key"])
+    if reservation
+      render_reservation(reservation)
+    else
+      render_error(message: "登録結果はまだ確認できません。送信キーを保持して再確認してください", status: :not_found, code: "creation_not_found")
+    end
+  end
+
   def create
     reservation =
       Reservations::IdempotentCreator.call(

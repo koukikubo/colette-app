@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/api-client";
+import { apiFetch, ApiClientError } from "@/lib/api/api-client";
 
 import type {
   ChangeCustomerVisibilityRequest,
@@ -117,11 +117,12 @@ export function fetchCustomer(id: number) {
 /**
  * 顧客を登録する。
  */
-export function createCustomer(payload: CreateCustomerRequest) {
+export function createCustomer(payload: CreateCustomerRequest, key: string) {
   return apiFetch<CustomerResponse>(CUSTOMERS_PATH, {
     method: "POST",
+    headers: { "Idempotency-Key": key },
     body: payload,
-  });
+  }).then(validateCustomerCreation);
 }
 
 /**
@@ -158,4 +159,24 @@ export function restoreCustomer(
     method: "PATCH",
     body: payload,
   });
+}
+
+export function fetchCustomerCreationResult(key: string) {
+  return apiFetch<CustomerResponse>(`${CUSTOMERS_PATH}/creation_result`, {
+    headers: { "Idempotency-Key": key },
+    cache: "no-store",
+  }).then(validateCustomerCreation);
+}
+
+// HTTP成功だけで登録を確定せず、結果を識別できるIDまで確認する。
+function validateCustomerCreation(response: CustomerResponse) {
+  const id = response.data?.customer?.id;
+  if (!Number.isSafeInteger(id) || id <= 0)
+    throw new ApiClientError(
+      "登録結果の応答が不正です。結果を再確認してください",
+      502,
+      [],
+      "invalid_response",
+    );
+  return response;
 }

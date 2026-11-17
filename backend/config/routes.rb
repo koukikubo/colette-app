@@ -38,6 +38,7 @@ Rails.application.routes.draw do
       end
 
       resources :customers, only: %i[index show create update] do
+        get :creation_result, on: :collection
         member do
           patch :hidden
           patch :restore
@@ -54,6 +55,7 @@ Rails.application.routes.draw do
                 only: :index
 
       resources :reservations, only: %i[index show create update] do
+        get :creation_result, on: :collection
         member do
           patch :cancel
           patch :reopen

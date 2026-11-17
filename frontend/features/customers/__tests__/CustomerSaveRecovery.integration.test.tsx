@@ -6,6 +6,7 @@ import { CustomerListPageClient } from "../components/list/CustomerListPageClien
 const mocks = vi.hoisted(() => ({ list: vi.fn(), create: vi.fn() }));
 vi.mock("../api/customer-api", () => ({
   fetchCustomers: mocks.list,
+  fetchCustomerCreationResult: vi.fn(),
   createCustomer: mocks.create,
 }));
 vi.mock("@/features/standard-codes/api/standard-code-api", () => ({
