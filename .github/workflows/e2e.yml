@@ -1,0 +1,101 @@
+name: Core flow E2E
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core-flow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_DB: colette_core_e2e
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: e2e-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d colette_core_e2e"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:e2e-only@127.0.0.1:5432/colette_core_e2e
+      COLETTE_E2E: "1"
+      E2E_PASSWORD: E2eOnlyPassword123!
+      E2E_RAILS_PORT: "4101"
+      E2E_BASE_URL: http://127.0.0.1:4100
+      RAILS_API_URL: http://127.0.0.1:4101
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Rails runtime libraries
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+          working-directory: backend
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.23.4
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Use project npm
+        run: npm install --global npm@12.2.2
+      - name: Install frontend and Chromium
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      # GitHub Actionsの専用service DBのみを明示して準備する。
+      - name: Prepare isolated E2E database
+        working-directory: backend
+        run: |
+          bundle exec rails runner test/e2e/guard.rb
+          bundle exec rails db:schema:load
+          bundle exec rails runner test/e2e/prepare.rb
+      - name: Build Next frontend
+        working-directory: frontend
+        run: |
+          npm run build
+          # workspace rootの違いでserver.jsがfrontend/配下になる場合も、生成物から特定する。
+          mapfile -t entries < <(find .next/standalone -type f -name server.js -not -path '*/node_modules/*')
+          test "${#entries[@]}" -eq 1
+          entry="${entries[0]}"
+          runtime_dir="$(dirname "$entry")"
+          mkdir -p "$runtime_dir/.next"
+          cp -R .next/static "$runtime_dir/.next/static"
+          if [ -d public ]; then cp -R public "$runtime_dir/public"; fi
+          printf '%s' "$entry" > /tmp/colette-e2e-next-entry.txt
+      - name: Start Rails and Next
+        run: |
+          (cd backend && exec bundle exec rails runner test/e2e/server.rb) > backend/tmp/e2e-rails.log 2>&1 &
+          echo $! > /tmp/colette-e2e-rails.pid
+          (cd frontend && PORT=4100 HOSTNAME=127.0.0.1 exec node "$(cat /tmp/colette-e2e-next-entry.txt)") > /tmp/colette-e2e-next.log 2>&1 &
+          echo $! > /tmp/colette-e2e-next.pid
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4101/up && curl -fsS http://127.0.0.1:4100/login > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Run browser to database flow
+        run: bash scripts/check.sh e2e
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-flow-e2e-failure
+          path: |
+            frontend/test-results/
+            backend/tmp/e2e-rails.log
+            /tmp/colette-e2e-next.log
+          retention-days: 7
+      - name: Stop E2E servers
+        if: always()
+        run: |
+          for file in /tmp/colette-e2e-rails.pid /tmp/colette-e2e-next.pid; do
+            if [ -f "$file" ]; then kill "$(cat "$file")" 2>/dev/null || true; fi
+          done

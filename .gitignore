@@ -31,3 +31,7 @@ docker/postgres_data
 # editor
 .vscode
 .idea
+
+# E2Eの合成データ・ブラウザ検証成果物
+frontend/test-results/
+frontend/playwright-report/
