@@ -43,3 +43,9 @@ bash scripts/check-running-app.sh
 `bash scripts/check.sh e2e` は、起動済みの専用E2Eサービスに対してChromiumでログイン→顧客→予約→RF計算・適用を検証する。DB準備やseedは自動実行しない。`COLETTE_E2E=1`、`E2E_PASSWORD`、localhostの`E2E_BASE_URL`が必要。
 
 DB名・環境・実接続先のガード、最小fixture、standalone起動とCIの手順は [core-flow-e2e-2026-11-14.md](core-flow-e2e-2026-11-14.md) と `.github/workflows/e2e.yml` を参照する。本番や通常の開発DBを指定しない。
+
+## Rails由来のAPI契約
+
+`bash scripts/check.sh contracts` は、専用test DBでのRSpec実レスポンスを生成し、フロントの既存型へ照合する。`full`も同じ契約検査を含めるため、Railsを先に実行する。`frontend`だけの成功をRails契約一致とは扱わない。
+
+対応表、nullableの修正、実キー改名での失敗確認とartifactの流れは [api-contract-gate-2026-11-15.md](api-contract-gate-2026-11-15.md) を参照する。DB準備・seed・DB削除は自動実行しない。
