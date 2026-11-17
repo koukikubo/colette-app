@@ -281,11 +281,11 @@ export function CustomerDetailPageClient({
     setReloadKey((current) => current + 1);
   }
 
-  if (isLoading) {
+  if (isLoading && !customer) {
     return <CustomerDetailSkeleton />;
   }
 
-  if (errorMessage) {
+  if (errorMessage && !customer) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
         <Button asChild variant="outline">
@@ -309,7 +309,16 @@ export function CustomerDetailPageClient({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+    <div
+      className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6"
+      aria-busy={isLoading}
+    >
+      {/* 背景取得の失敗でも既存の履歴・ページ位置を残す。 */}
+      {errorMessage && (
+        <p role="alert" className="text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
       <Button asChild variant="outline">
         <Link href={backTarget}>
           <ArrowLeftIcon />
