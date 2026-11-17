@@ -1,14 +1,15 @@
 module Rf
   class CalculationRunner
-    def self.call(calculation_run:, recover: false)
+    def self.call(calculation_run:, recover: false, retry_failed: false)
       new(
-        calculation_run: calculation_run, recover: recover
+        calculation_run: calculation_run, recover: recover, retry_failed: retry_failed
       ).call
     end
 
-    def initialize(calculation_run:, recover: false)
+    def initialize(calculation_run:, recover: false, retry_failed: false)
       @calculation_run = calculation_run
       @recover = recover
+      @retry_failed = retry_failed
     end
 
     def call
@@ -25,7 +26,7 @@ module Rf
 
     def call_under_lock
       claimed = calculation_run.with_lock do
-        next false unless calculation_run.status == "pending" || (@recover && calculation_run.status == "processing")
+        next false unless calculation_run.status == "pending" || (@recover && calculation_run.status == "processing") || (@retry_failed && calculation_run.status == "failed")
 
         calculation_run.update!(
           status: "processing",

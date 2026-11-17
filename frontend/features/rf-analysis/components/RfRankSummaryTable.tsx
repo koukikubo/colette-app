@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -11,9 +12,10 @@ import type { RfAnalysisRankDistribution } from "../types/analysis";
 
 type RfRankSummaryTableProps = {
   ranks: RfAnalysisRankDistribution[];
+  runId?: number;
 };
 
-export function RfRankSummaryTable({ ranks }: RfRankSummaryTableProps) {
+export function RfRankSummaryTable({ ranks, runId }: RfRankSummaryTableProps) {
   return (
     <Table>
       <caption className="sr-only">現在のRFランク別顧客数と顧客割合</caption>
@@ -44,7 +46,16 @@ export function RfRankSummaryTable({ ranks }: RfRankSummaryTableProps) {
               </TableCell>
 
               <TableCell className="text-right font-semibold">
-                {count.toLocaleString("ja-JP")}名
+                {runId ? (
+                  <Link
+                    className="underline"
+                    href={`/rf-customers?run_id=${runId}&rf_rank_id=${rf_rank.id}&return_to=%2Frf-analysis`}
+                  >
+                    {count.toLocaleString("ja-JP")}名
+                  </Link>
+                ) : (
+                  <>{count.toLocaleString("ja-JP")}名</>
+                )}
               </TableCell>
 
               <TableCell className="text-right">

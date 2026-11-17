@@ -1,4 +1,7 @@
 class StandardMaster < ApplicationRecord
+  before_validation -> { Rf::ConfigurationLock.acquire! }, on: :update
+  validate :keep_used_rf_ranks_active
+
   has_many :standard_list_masters, dependent: :destroy
 
   # バリデーション（入力チェック）
@@ -35,5 +38,11 @@ class StandardMaster < ApplicationRecord
     end
 
     result
+  end
+  def keep_used_rf_ranks_active
+    return unless persisted? && will_save_change_to_active? && !active?
+    return unless Rf::RankAvailability.used?(standard_list_masters.pluck(:id))
+
+    errors.add(:active, "は使用中のRFルールから参照されています。先にルールを切り替えてください")
   end
 end
