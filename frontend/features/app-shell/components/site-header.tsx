@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-import { Separator } from "@/components/ui/separator";
+import { Brand } from "./brand";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 type HeaderLocation = {
@@ -15,12 +15,16 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     return { section: "予約管理", page: "新規予約登録" };
   }
 
-  if (/^\/reservations\/[^/]+$/.test(pathname)) {
+  if (pathname === "/reservations/calendar") {
+    return { section: "予約管理", page: "カレンダー" };
+  }
+
+  if (/^\/reservations\/(?:detail\/)?[^/]+$/.test(pathname)) {
     return { section: "予約管理", page: "予約詳細" };
   }
 
   if (pathname === "/reservations") {
-    return { section: "予約管理", page: "予約一覧" };
+    return { section: "予約管理", page: "タイムライン" };
   }
 
   if (/^\/customers\/[^/]+$/.test(pathname)) {
@@ -57,6 +61,11 @@ function resolveHeaderLocation(pathname: string): HeaderLocation {
     "/staff-masters": "担当者マスタ",
     "/standard-codes": "基本コードマスタ",
     "/rf-analysis": "統一RFランク表",
+    "/rf-customer-transitions": "RFランク客層変動表",
+    "/rf-customers": "RF分析の対象顧客",
+    "/rf-rank-drops": "RFランク低下顧客",
+    "/rf-rank-drops/predictions": "RFランク低下予定",
+    "/account/password": "パスワード変更",
   };
 
   return { section: pageTitles[pathname] ?? "Colette" };
@@ -67,16 +76,19 @@ export function SiteHeader() {
   const location = resolveHeaderLocation(pathname);
 
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="sticky top-0 z-30 flex h-(--header-height) shrink-0 items-center bg-card">
       <div className="flex min-w-0 w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
+        <SidebarTrigger
+          className="-ml-1"
+          aria-label="メニューを開閉"
+          title="メニューを開閉"
         />
+        <div className="mr-2 shrink-0 sm:mr-6">
+          <Brand authenticated />
+        </div>
         <nav
           aria-label="現在地"
-          className="flex min-w-0 items-center gap-2 text-sm"
+          className="flex min-w-0 items-center gap-2 text-sm sm:text-base"
         >
           <span className="shrink-0 text-muted-foreground">
             {location.section}

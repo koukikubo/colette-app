@@ -41,7 +41,7 @@ export function CanceledReservationList({
             >
               <div className="space-y-1">
                 <Link
-                  href={`/reservations/${reservation.id}`}
+                  href={`/reservations/detail/${reservation.id}`}
                   aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
                   className="font-medium hover:underline"
                 >

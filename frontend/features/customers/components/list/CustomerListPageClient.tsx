@@ -1,14 +1,17 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { useState } from "react";
 import { PlusIcon, RefreshCwIcon, SearchXIcon, UsersIcon } from "lucide-react";
 
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { usePagination } from "@/hooks/usePagination";
+import { queryPage, useUrlQuery } from "@/hooks/useUrlQuery";
+import { useReadRefresh } from "@/hooks/useReadRefresh";
 
 import type { Customer, CustomerListParams } from "../../types";
+import { useCustomerRankOptions } from "../../hooks/useCustomerRankOptions";
 import { useCustomers } from "../../hooks/useCustomers";
 import {
   CustomerFormDialog,
@@ -21,11 +24,46 @@ import { CustomerActiveFilters } from "./CustomerActiveFilters";
 import { CustomerFilterValues } from "./CustomerFilterPopover";
 
 export function CustomerListPageClient() {
-  const [queryInput, setQueryInput] = useState("");
-
-  const [filters, setFilters] = useState<CustomerListParams>({
-    visibility: "visible",
-  });
+  const { params, update } = useUrlQuery();
+  const rankParam = params.get("customer_rank_id");
+  const customerRankId =
+    rankParam === "unassigned"
+      ? "unassigned"
+      : rankParam &&
+          /^[1-9]\d*$/.test(rankParam) &&
+          Number.isSafeInteger(Number(rankParam))
+        ? Number(rankParam)
+        : undefined;
+  const rankOptions = useCustomerRankOptions(customerRankId !== undefined);
+  const filters: CustomerListParams = {
+    customer_rank_id: customerRankId,
+    visibility: ["visible", "hidden", "all"].includes(
+      params.get("visibility") ?? "",
+    )
+      ? (params.get("visibility") as "visible" | "hidden" | "all")
+      : "visible",
+    customer_kind:
+      params.get("customer_kind") === "individual" ||
+      params.get("customer_kind") === "corporate"
+        ? (params.get("customer_kind") as "individual" | "corporate")
+        : undefined,
+    query: params.get("query") || undefined,
+  };
+  const [queryDraft, setQueryInput] = useState<string | null>(null);
+  const queryInput = queryDraft ?? filters.query ?? "";
+  function setFilters(
+    next:
+      | CustomerListParams
+      | ((current: CustomerListParams) => CustomerListParams),
+  ) {
+    const value = typeof next === "function" ? next(filters) : next;
+    update({
+      visibility: value.visibility,
+      customer_rank_id: value.customer_rank_id,
+      customer_kind: value.customer_kind,
+      query: value.query,
+    });
+  }
 
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -37,19 +75,28 @@ export function CustomerListPageClient() {
   const visibility = filters.visibility ?? "visible";
   const customerKind = filters.customer_kind;
   const appliedQuery = filters.query;
-  const { currentPage, perPage, setCurrentPage, setPerPage, resetPage } =
-    usePagination();
-  const { customers, pagination, isLoading, errorMessage } = useCustomers({
-    visibility,
-    customer_kind: customerKind,
-    query: appliedQuery,
-    page: currentPage,
-    per_page: perPage,
-    reloadKey,
-  });
+  const currentPage = queryPage(params.get("page"));
+  const perPage = [20, 50, 100].includes(Number(params.get("per_page")))
+    ? Number(params.get("per_page"))
+    : 20;
+  const setCurrentPage = (page: number) => update({ page });
+  const setPerPage = (per_page: number) => update({ per_page });
+  const resetPage = () => update({ page: 1 });
+  useReadRefresh(() => setReloadKey((value) => value + 1), !formDialogOpen);
+  const { customers, pagination, isLoading, errorMessage, refresh } =
+    useCustomers({
+      visibility,
+      customer_kind: customerKind,
+      customer_rank_id: customerRankId,
+      query: appliedQuery,
+      page: currentPage,
+      per_page: perPage,
+      reloadKey,
+    });
 
   function handleSearch() {
     const normalizedQuery = queryInput.trim();
+    setQueryInput(null);
 
     resetPage();
 
@@ -60,7 +107,7 @@ export function CustomerListPageClient() {
   }
 
   function handleClearQuery() {
-    setQueryInput("");
+    setQueryInput(null);
     resetPage();
 
     setFilters((current) => ({
@@ -75,6 +122,7 @@ export function CustomerListPageClient() {
     setFilters((current) => ({
       ...current,
       visibility: nextFilters.visibility,
+      customer_rank_id: nextFilters.customerRankId,
       customer_kind: nextFilters.customerKind,
     }));
   }
@@ -98,7 +146,7 @@ export function CustomerListPageClient() {
   }
 
   function handleClearAll() {
-    setQueryInput("");
+    setQueryInput(null);
     resetPage();
 
     setFilters({
@@ -130,7 +178,7 @@ export function CustomerListPageClient() {
   }
 
   function handleCustomerFormCompleted() {
-    setReloadKey((current) => current + 1);
+    return refresh();
   }
 
   function handleRetry() {
@@ -138,7 +186,10 @@ export function CustomerListPageClient() {
   }
 
   const hasSearchConditions =
-    Boolean(filters.query) || visibility !== "visible" || Boolean(customerKind);
+    customerRankId !== undefined ||
+    Boolean(filters.query) ||
+    visibility !== "visible" ||
+    Boolean(customerKind);
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -148,20 +199,24 @@ export function CustomerListPageClient() {
       >
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start">
-            <Button
-              type="button"
-              className="w-full shrink-0 sm:w-auto"
-              onClick={handleOpenCreateDialog}
-            >
-              <PlusIcon />
-              顧客を登録
-            </Button>
+            <PermissionGate resource="customers">
+              <Button
+                type="button"
+                className="w-full shrink-0 sm:w-auto"
+                onClick={handleOpenCreateDialog}
+              >
+                <PlusIcon />
+                顧客を登録
+              </Button>
+            </PermissionGate>
 
             <CustomerSearchForm
               value={queryInput}
               hasAppliedQuery={Boolean(filters.query)}
               visibility={visibility}
               customerKind={customerKind}
+              customerRankId={customerRankId}
+              rankOptions={rankOptions}
               isLoading={isLoading}
               onValueChange={setQueryInput}
               onSearch={handleSearch}
@@ -185,6 +240,17 @@ export function CustomerListPageClient() {
 
         <CustomerActiveFilters
           filters={filters}
+          customerRankLabel={
+            rankOptions.options.find((option) => option.id === customerRankId)
+              ?.label
+          }
+          onClearCustomerRank={() => {
+            resetPage();
+            setFilters((current) => ({
+              ...current,
+              customer_rank_id: undefined,
+            }));
+          }}
           onClearQuery={handleClearQuery}
           onResetVisibility={handleResetVisibility}
           onClearCustomerKind={handleClearCustomerKind}
@@ -193,15 +259,17 @@ export function CustomerListPageClient() {
       </section>
 
       {formDialogOpen && (
-        <CustomerFormDialog
-          key={selectedCustomer ? `edit-${selectedCustomer.id}` : "create"}
-          open={formDialogOpen}
-          mode={formMode}
-          customer={selectedCustomer}
-          allowVisibilityChange={false}
-          onOpenChange={handleFormDialogOpenChange}
-          onCompleted={handleCustomerFormCompleted}
-        />
+        <PermissionGate resource="customers">
+          <CustomerFormDialog
+            key={selectedCustomer ? `edit-${selectedCustomer.id}` : "create"}
+            open={formDialogOpen}
+            mode={formMode}
+            customer={selectedCustomer}
+            allowVisibilityChange={false}
+            onOpenChange={handleFormDialogOpenChange}
+            onCompleted={handleCustomerFormCompleted}
+          />
+        </PermissionGate>
       )}
 
       {isLoading && <CustomerTableSkeleton />}
