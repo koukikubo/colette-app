@@ -57,6 +57,7 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
   return (
     <TooltipProvider>
       <SidebarProvider
+        className="flex-col"
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -64,19 +65,25 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="sidebar" className="border-none!" />
-        <SidebarInset className="min-w-0">
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:p-3"
-          >
-            本文へ移動
-          </a>
-          <SiteHeader />
-          <div id="main-content" tabIndex={-1} className="min-w-0">
-            {children}
-          </div>
-        </SidebarInset>
+        {/* ブランドと現在地は、サイドバーの開閉によらず画面左上に固定する。 */}
+        <SiteHeader />
+        <div className="flex min-w-0 flex-1">
+          <AppSidebar
+            variant="sidebar"
+            className="top-(--header-height) h-[calc(100svh-var(--header-height))] border-none!"
+          />
+          <SidebarInset className="min-w-0">
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:p-3"
+            >
+              本文へ移動
+            </a>
+            <div id="main-content" tabIndex={-1} className="min-w-0">
+              {children}
+            </div>
+          </SidebarInset>
+        </div>
       </SidebarProvider>
     </TooltipProvider>
   );

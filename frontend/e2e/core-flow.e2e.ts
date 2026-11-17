@@ -261,7 +261,9 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
   });
   await page.getByRole("link", { name: "カレンダー", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "予約カレンダー" }),
+    page
+      .getByRole("navigation", { name: "現在地" })
+      .getByText("カレンダー", { exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),

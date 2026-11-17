@@ -26,7 +26,6 @@ describe("AppSidebar", () => {
     renderAppSidebar();
 
     const expectedLinks = [
-      ["Colette", "/dashboard"],
       ["ダッシュボード", "/dashboard"],
       ["顧客管理", "/customers"],
       ["タイムライン", "/reservations"],
@@ -45,7 +44,7 @@ describe("AppSidebar", () => {
       ).toHaveAttribute("href", href);
     });
 
-    expect(screen.getAllByRole("link")[1]).toHaveAttribute(
+    expect(screen.getAllByRole("link")[0]).toHaveAttribute(
       "href",
       "/dashboard",
     );

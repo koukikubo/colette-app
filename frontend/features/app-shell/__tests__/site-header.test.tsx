@@ -37,6 +37,7 @@ describe("SiteHeader", () => {
   it.each([
     ["/reservations/new", "予約管理", "新規予約登録"],
     ["/reservations/30", "予約管理", "予約詳細"],
+    ["/reservations/detail/30", "予約管理", "予約詳細"],
     ["/reservations/30/edit", "予約管理", "予約編集"],
     ["/customers", "顧客管理", "顧客一覧"],
     ["/customers/10", "顧客管理", "顧客詳細"],

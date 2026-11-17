@@ -25,8 +25,7 @@ export function ReservationCalendar({ targetDate }: { targetDate: string }) {
     <section className="colette-page">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">予約カレンダー</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             日付を選ぶと、その日のタイムラインを開きます。
           </p>
         </div>
