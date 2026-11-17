@@ -24,3 +24,27 @@ it("上流接続失敗を内部情報のない統一JSONエラーに変換する
   expect(JSON.stringify(body)).not.toContain("secret");
   expect(JSON.stringify(body)).not.toContain("private-backend");
 });
+
+it("上流ヘッダー受信後の本文タイムアウトも統一エラーに変換する", async () => {
+  vi.stubEnv("RAILS_API_URL", "http://private-backend.test");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      text: vi
+        .fn()
+        .mockRejectedValue(
+          new DOMException("private body timeout", "TimeoutError"),
+        ),
+    }),
+  );
+  const { proxyRequest } = await import("../proxy-request");
+  const response = await proxyRequest(
+    new Request("http://localhost/api/test"),
+    "/api/test",
+  );
+  expect(response.status).toBe(502);
+  const body = await response.json();
+  expect(body.status).toBe("error");
+  expect(body.message).toContain("再試行");
+  expect(JSON.stringify(body)).not.toContain("private");
+});
