@@ -256,10 +256,9 @@ export function CustomerFormDialog({
 
   async function handleVisibilityCompleted() {
     setVisibilityDialogOpen(false);
-
-    await onCompleted();
-
-    onOpenChange(false);
+    // 非表示・復帰の保存は成功済み。GET失敗で同じ更新を再送させない。
+    setSaved(true);
+    await refreshAfterSave();
   }
 
   const selectedCustomerRank = customerRankOptions.find(
