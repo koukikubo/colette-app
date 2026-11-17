@@ -276,6 +276,49 @@ describe("NewReservationFormContainer", () => {
     expect(mocks.push).toHaveBeenCalledWith("/reservations?date=2026-09-08");
   }, 10_000);
 
+  it.each([400, 422])(
+    "保存結果不明の再試行が%sでも新しい予約へ切り替えない",
+    async (status) => {
+      const user = userEvent.setup();
+      mocks.createReservation
+        .mockReset()
+        .mockRejectedValueOnce(new TypeError("lost response"))
+        .mockRejectedValueOnce(
+          new ApiClientError("CSRFなどの事前検証で拒否", status, []),
+        );
+      render(<NewReservationFormContainer targetDate="2026-09-08" />);
+      await user.type(
+        screen.getByRole("textbox", { name: /予約者名/ }),
+        "山田 太郎",
+      );
+      await user.type(
+        screen.getByRole("textbox", { name: /電話番号/ }),
+        "09012345678",
+      );
+      await user.click(screen.getByRole("combobox", { name: /希望席種/ }));
+      await user.click(screen.getByRole("option", { name: "テーブル席" }));
+      await user.click(screen.getByRole("combobox", { name: /予約状況/ }));
+      await user.click(screen.getByRole("option", { name: "予約確定" }));
+      await user.click(screen.getByRole("button", { name: "予約を登録" }));
+      await user.click(
+        await screen.findByRole("button", { name: "前回の内容で再試行" }),
+      );
+      await screen.findByText("CSRFなどの事前検証で拒否");
+      expect(
+        screen.getByRole("button", { name: "前回の内容で再試行" }),
+      ).toBeInTheDocument();
+      await user.type(
+        screen.getByRole("textbox", { name: /予約者名/ }),
+        "変更",
+      );
+      await user.click(screen.getByRole("button", { name: "予約を登録" }));
+      expect(mocks.createReservation).toHaveBeenCalledTimes(2);
+      expect(mocks.createReservation.mock.calls[1]).toEqual(
+        mocks.createReservation.mock.calls[0],
+      );
+    },
+  );
+
   it("APIが422の項目エラーを返すと、該当する入力欄へエラーを表示する", async () => {
     const user = userEvent.setup();
 
