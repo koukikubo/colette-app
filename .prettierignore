@@ -6,3 +6,5 @@ backend/tmp/
 backend/vendor/
 frontend/.next/
 frontend/node_modules/
+
+frontend/generated/api-contracts.ts

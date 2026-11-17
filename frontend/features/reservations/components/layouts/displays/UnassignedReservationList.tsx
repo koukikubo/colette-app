@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
 import { ArrowRightIcon, PencilIcon, TriangleAlertIcon } from "lucide-react";
 
@@ -80,18 +81,20 @@ export function UnassignedReservationList({
 
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" size="sm">
-                <Link href={`/reservations/${reservation.id}`}>
+                <Link href={`/reservations/detail/${reservation.id}`}>
                   詳細
                   <ArrowRightIcon />
                 </Link>
               </Button>
 
-              <Button asChild size="sm">
-                <Link href={`/reservations/${reservation.id}/edit`}>
-                  <PencilIcon />
-                  席を割り当てる
-                </Link>
-              </Button>
+              <PermissionGate resource="reservations">
+                <Button asChild size="sm">
+                  <Link href={`/reservations/${reservation.id}/edit`}>
+                    <PencilIcon />
+                    席を割り当てる
+                  </Link>
+                </Button>
+              </PermissionGate>
             </div>
           </li>
         ))}

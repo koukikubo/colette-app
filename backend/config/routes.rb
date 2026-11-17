@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
+  get "up", to: "rails/health#show", as: :rails_health_check
   namespace :api do
     namespace :v1 do
+      resource :reservation_calendar, only: :show, controller: "reservation_calendars"
+      resource :dashboard_analytics, only: :show, controller: "dashboard_analytics"
+      resource :dashboard, only: :show, controller: "dashboard"
       get "csrf", to: "csrf#show"
 
       namespace :staff do
@@ -9,6 +13,7 @@ Rails.application.routes.draw do
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
         get "current", to: "sessions#current"
+        resource :password, only: :update, controller: "passwords"
       end
 
       resources :staff_masters, only: %i[index show create update] do
@@ -17,6 +22,7 @@ Rails.application.routes.draw do
           patch :restore
           patch :login_enabled, action: :update_login_enabled
           patch :reset_failed_attempts
+          patch :password, action: :reset_password
         end
       end
 
@@ -53,6 +59,7 @@ Rails.application.routes.draw do
           patch :reopen
           patch :restore
           patch :complete
+          patch :confirm_details
         end
       end
 
@@ -61,9 +68,22 @@ Rails.application.routes.draw do
           controller: "rf/settings",
           only: :show
 
+      resources :rf_customers, controller: "rf/customers", only: :index
+
       resource :rf_analysis,
           path: "rf_analysis",
           controller: "rf/analysis",
+          only: :show
+
+      resource :rf_rank_drop,
+          path: "rf_rank_drops",
+          controller: "rf/rank_drops",
+          only: :show
+
+      # 過去のランク低下一覧とは別に、将来の低下予定一覧を提供する。
+      resource :rf_rank_drop_prediction,
+          path: "rf_rank_drop_predictions",
+          controller: "rf/rank_drop_predictions",
           only: :show
 
       resources :rf_customer_transitions,
@@ -71,6 +91,7 @@ Rails.application.routes.draw do
           only: [] do
         collection do
           get :compare
+          get :periods
         end
       end
 

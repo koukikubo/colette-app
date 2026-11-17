@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "@/lib/api/api-client";
@@ -79,4 +79,21 @@ describe("useReservation", () => {
       "予約情報の取得中に予期しないエラーが発生しました。",
     );
   });
+});
+
+it("再認証後は401で失敗した読取だけを再実行する", async () => {
+  mocks.fetchReservation
+    .mockReset()
+    .mockRejectedValueOnce(new ApiClientError("認証切れ", 401))
+    .mockResolvedValue({ data: { reservation: { id: 30 } } });
+  const { result } = renderHook(() => useReservation(30));
+  await waitFor(() => expect(result.current.errorMessage).toBe("認証切れ"));
+  act(() => {
+    window.dispatchEvent(new Event("colette:session-resumed"));
+  });
+  await waitFor(() => expect(result.current.reservation).toEqual({ id: 30 }));
+  act(() => {
+    window.dispatchEvent(new Event("colette:session-resumed"));
+  });
+  expect(mocks.fetchReservation).toHaveBeenCalledTimes(2);
 });

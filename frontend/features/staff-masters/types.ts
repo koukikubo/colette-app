@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 export const STAFF_ROLE_CODES = ["owner", "operator", "viewer"] as const;
 
 export type StaffRoleCode = (typeof STAFF_ROLE_CODES)[number];
@@ -13,6 +18,7 @@ export type StaffLoginInfo = {
 
 export type StaffMaster = {
   id: number;
+  lock_version: number;
   code: string;
   name: string;
   role_code: StaffRoleCode;
@@ -29,11 +35,6 @@ export type StaffMasterListData = {
 
 export type StaffMasterData = {
   staff_master: StaffMaster;
-};
-
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
 };
 
 export type CreateStaffMasterRequest = {
@@ -53,6 +54,7 @@ export type CreateStaffMasterRequest = {
 
 export type UpdateStaffMasterRequest = {
   staff_master: {
+    lock_version: number;
     name?: string;
     role_code?: StaffRoleCode;
     employment_started_on?: string;
@@ -60,7 +62,11 @@ export type UpdateStaffMasterRequest = {
   };
 };
 
-export type UpdateLoginEnabledRequest = {
+export type StaffMasterVersionRequest = {
+  staff_master: { lock_version: number };
+};
+
+export type UpdateLoginEnabledRequest = StaffMasterVersionRequest & {
   staff: {
     login_enabled: boolean;
   };
@@ -68,6 +74,7 @@ export type UpdateLoginEnabledRequest = {
 
 export type RetireStaffMasterRequest = {
   staff_master: {
+    lock_version: number;
     retired_on: string;
   };
 };

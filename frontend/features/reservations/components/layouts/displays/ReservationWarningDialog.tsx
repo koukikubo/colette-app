@@ -65,7 +65,7 @@ export function ReservationWarningDialog({
 
           <AlertDialogAction asChild>
             <Link
-              href={`/reservations/${encodeURIComponent(
+              href={`/reservations/detail/${encodeURIComponent(
                 String(nextReservationId),
               )}`}
             >

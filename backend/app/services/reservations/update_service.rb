@@ -18,6 +18,7 @@ module Reservations
     # 予約本体と実テーブル割当を一連の更新処理として扱い、失敗時は全てロールバックする
     def call
       ActiveRecord::Base.transaction do
+        Reservations::WriteLock.acquire!
         existing_restaurant_master_ids = reservation.restaurant_master_ids
         submitted_restaurant_master_ids = extract_restaurant_master_ids
 
@@ -37,6 +38,10 @@ module Reservations
           existing_restaurant_master_ids: existing_restaurant_master_ids
         )
 
+        # 日時・人数・接客情報・席が変わった予約は、古い内容の確認済み印を引き継がない。
+        changed_fields = reservation.changes.keys - %w[lock_version updated_by_staff_id updated_at details_confirmed_at]
+        changed_tables = submitted_restaurant_master_ids && submitted_restaurant_master_ids.sort != existing_restaurant_master_ids.sort
+        reservation.details_confirmed_at = nil if changed_fields.any? || changed_tables
         reservation.save!
 
         assign_restaurant_masters!(

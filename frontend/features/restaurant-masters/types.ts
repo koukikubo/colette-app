@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 import { Reservation } from "../reservations/types";
 
 // タイムライン用に表示するための型
@@ -9,7 +14,8 @@ export type ReservationTableRow = {
 /*席種として返される基本コード情報*/
 export type RestaurantMasterType = {
   id: number;
-  code: string;
+  // 追加された基本コードでは業務用codeが未設定の場合がある。
+  code: string | null;
   label: string;
 };
 
@@ -41,13 +47,6 @@ export type RestaurantMaster = {
 
   created_at: string;
   updated_at: string;
-};
-
-/*APIの成功レスポンス共通形式*/
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
-  message?: string;
 };
 
 /*席マスタ一覧取得レスポンス*/
