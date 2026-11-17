@@ -9,7 +9,7 @@ import type { RfSettingsResponse } from "../types";
 
 type RfSettings = RfSettingsResponse["data"];
 
-export function useRfSettings() {
+export function useRfSettings(reloadKey = 0) {
   const [settings, setSettings] = useState<RfSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function useRfSettings() {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [reloadKey]);
 
   return {
     settings,

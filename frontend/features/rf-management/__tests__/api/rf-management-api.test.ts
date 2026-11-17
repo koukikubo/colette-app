@@ -9,6 +9,9 @@ import {
   fetchRfRuleSet,
   fetchRfRuleSets,
   fetchRfSettings,
+  activateRfCalculationRun,
+  createRfCalculationRun,
+  restoreRfCalculationRun,
 } from "../../api/rf-management-api";
 
 vi.mock("@/lib/api/api-client", () => ({
@@ -46,6 +49,22 @@ describe("RF管理API", () => {
     );
   });
 
+  it("RFルールセット一覧を状態指定付きで取得する", () => {
+    fetchRfRuleSets({
+      page: 1,
+      per_page: 10,
+      status: "archived",
+    });
+
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      "/api/v1/rf_rule_sets?page=1&per_page=10&status=archived",
+      {
+        cache: "no-store",
+        signal: undefined,
+      },
+    );
+  });
+
   it("RFルールセット詳細を取得する", () => {
     fetchRfRuleSet(10);
 
@@ -53,6 +72,50 @@ describe("RF管理API", () => {
       cache: "no-store",
       signal: undefined,
     });
+  });
+
+  it("RF計算を実行する", () => {
+    createRfCalculationRun({
+      rf_rule_set_id: 3,
+      base_date: "2026-10-02",
+    });
+
+    expect(mockedApiFetch).toHaveBeenCalledWith("/api/v1/rf_calculation_runs", {
+      method: "POST",
+      body: {
+        rf_calculation: {
+          rf_rule_set_id: 3,
+          base_date: "2026-10-02",
+        },
+      },
+    });
+  });
+
+  it("RF計算結果を適用する", () => {
+    activateRfCalculationRun(20);
+
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      "/api/v1/rf_calculation_runs/20/activate",
+      {
+        method: "PATCH",
+      },
+    );
+  });
+
+  it("過去のRF計算結果を復元する", () => {
+    restoreRfCalculationRun(19, 20);
+
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      "/api/v1/rf_calculation_runs/19/restore",
+      {
+        method: "PATCH",
+        body: {
+          rf_calculation: {
+            expected_current_run_id: 20,
+          },
+        },
+      },
+    );
   });
 
   it("RF計算履歴一覧をページ指定付きで取得する", () => {

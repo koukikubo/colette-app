@@ -13,6 +13,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       ActiveRecord::Base.transaction do
         rule_set.lock!
 
@@ -70,6 +74,10 @@ module Rf
     end
 
     def update_rule_set!
+      if attributes.key?(:no_visit_rank_id)
+        rule_set.no_visit_rank_id = attributes[:no_visit_rank_id]
+      end
+
       rule_set.update!(
         name: attributes[:name],
         aggregation_months:
@@ -134,14 +142,14 @@ module Rf
           find_rule!(
             recency_rules,
             mapping_attributes[:recency_code],
-            "R条件"
+            "最終来店日からの期間"
           )
 
         frequency_rule =
           find_rule!(
             frequency_rules,
             mapping_attributes[:frequency_code],
-            "F条件"
+            "来店回数の条件"
           )
 
         rule_set.rank_mappings.create!(

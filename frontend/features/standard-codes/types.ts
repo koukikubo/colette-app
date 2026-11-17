@@ -1,15 +1,20 @@
 export type StandardListCode = {
+  // T/C等の読み取り専用の業務コード。追加の希望条件などでは未設定。
+  code?: string | null;
   id: number;
   display_code: string;
   label: string;
   description: string | null;
   position: number;
   active: boolean;
+  display_color: string | null;
+  default_display_color?: string;
 };
 
 export type StandardCode = {
   id: number;
-  system_key: string;
+  // 利用者が追加した分類には、固定の業務キーを割り当てない。
+  system_key: string | null;
   display_code: string;
   name: string;
   description: string | null;
@@ -29,3 +34,8 @@ export type StandardListCodeFormValues = {
   description: string | null;
   active: boolean;
 };
+
+export type StandardListCodeUpdateValues =
+  Partial<StandardListCodeFormValues> & {
+    display_color?: string | null;
+  };

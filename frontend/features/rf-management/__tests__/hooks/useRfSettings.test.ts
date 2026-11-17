@@ -50,4 +50,30 @@ describe("useRfSettings", () => {
     expect(result.current.settings).toBeNull();
     expect(result.current.errorMessage).toBe("RF設定を取得できませんでした。");
   });
+
+  it("再取得キーが変わると現在のRF設定を再取得する", async () => {
+    mocks.fetchRfSettings.mockResolvedValue({
+      data: {
+        published_rule_set: null,
+        current_calculation_run: null,
+      },
+    });
+
+    const { rerender } = renderHook(
+      ({ reloadKey }) => useRfSettings(reloadKey),
+      {
+        initialProps: { reloadKey: 0 },
+      },
+    );
+
+    await waitFor(() => {
+      expect(mocks.fetchRfSettings).toHaveBeenCalledTimes(1);
+    });
+
+    rerender({ reloadKey: 1 });
+
+    await waitFor(() => {
+      expect(mocks.fetchRfSettings).toHaveBeenCalledTimes(2);
+    });
+  });
 });

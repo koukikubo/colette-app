@@ -96,6 +96,84 @@ RSpec.describe Rf::CalculationPreviewBuilder do
     expect(transition.count).to eq(1)
   end
 
+  it "ランク遷移と人数比較に各履歴の保存情報を使用する" do
+    customer = create(:customer)
+
+    rank_a.update!(display_color: "#059669")
+    rank_b.update!(display_color: "#2563EB")
+
+    previous_run = create_run
+    current_run = create_run(previous_run: previous_run)
+
+    create_result(
+      previous_run,
+      customer: customer,
+      rf_rank: rank_b
+    )
+
+    create_result(
+      current_run,
+      customer: customer,
+      rf_rank: rank_a
+    )
+
+    previous_run.update!(
+      rf_rank_snapshots: [
+        rank_b.attributes.slice(
+          "id", "code", "label", "display_color", "position"
+        )
+      ]
+    )
+
+    current_run.update!(
+      rf_rank_snapshots: [
+        rank_a.attributes.slice(
+          "id", "code", "label", "display_color", "position"
+        )
+      ]
+    )
+
+    rank_a.update!(
+      label: "変更後のA",
+      display_color: "#FF0000",
+      position: 10
+    )
+
+    rank_b.update!(
+      label: "変更後のB",
+      display_color: "#FFFF00",
+      active: false
+    )
+
+    preview = described_class.call(
+      calculation_run: current_run
+    )
+
+    transition = preview.rank_transitions.first
+
+    expect(transition.from_rf_rank.label).to eq("Bランク")
+    expect(transition.from_rf_rank.display_color).to eq("#2563EB")
+    expect(transition.to_rf_rank.label).to eq("Aランク")
+    expect(transition.to_rf_rank.display_color).to eq("#059669")
+
+    expect(
+      preview.rank_comparisons.map do |comparison|
+        [
+          comparison.rf_rank.display_code,
+          comparison.rf_rank.label,
+          comparison.rf_rank.display_color,
+          comparison.before_count,
+          comparison.after_count
+        ]
+      end
+    ).to eq(
+      [
+        [ rank_a.display_code, "Aランク", "#059669", 0, 1 ],
+        [ rank_b.display_code, "Bランク", "#2563EB", 1, 0 ]
+      ]
+    )
+  end
+
   private
 
   def create_run(previous_run: nil)

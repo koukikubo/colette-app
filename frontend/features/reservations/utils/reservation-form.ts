@@ -10,23 +10,44 @@ import { formatReservationDateTimeLocal } from "./reservation-date";
 
 type BuildNewReservationFormValuesParams = {
   targetDate: string;
+  startTime?: string;
+  restaurantMasterId?: number;
 };
 
 // 新規予約フォームを開いた直後の入力値を、対象日から作成する。
 export function buildNewReservationFormValues({
   targetDate,
+  startTime,
+  restaurantMasterId,
 }: BuildNewReservationFormValuesParams): ReservationFormValues {
+  const validTime =
+    startTime && /^(17|18|19|20):[0-5]\d$|^21:00$/.test(startTime)
+      ? startTime
+      : "17:00";
+  const [hour, minute] = validTime.split(":").map(Number);
+  const endMinutes = Math.min(24 * 60, hour * 60 + minute + 120);
+  const endDate =
+    endMinutes === 24 * 60 ? new Date(`${targetDate}T00:00:00Z`) : null;
+  if (endDate) endDate.setUTCDate(endDate.getUTCDate() + 1);
+  const endsAt = endDate
+    ? `${endDate.toISOString().slice(0, 10)}T00:00`
+    : `${targetDate}T${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
   return {
     customer_id: null,
     reservation_name: "",
     reservation_phone_number: "",
     reservation_status_id: null,
-    starts_at: `${targetDate}T17:00`,
-    ends_at: `${targetDate}T19:00`,
+    starts_at: `${targetDate}T${validTime}`,
+    ends_at: endsAt,
     guest_count: 2,
 
     requested_restaurant_master_type_id: null,
-    restaurant_master_ids: [],
+    restaurant_master_ids:
+      restaurantMasterId &&
+      Number.isSafeInteger(restaurantMasterId) &&
+      restaurantMasterId > 0
+        ? [restaurantMasterId]
+        : [],
 
     reservation_route_id: null,
     menu_type_id: null,

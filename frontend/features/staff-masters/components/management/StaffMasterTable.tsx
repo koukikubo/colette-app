@@ -1,5 +1,6 @@
 "use client";
 
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { PencilIcon, RotateCcwIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -122,30 +123,34 @@ export function StaffMasterTable({
                 <TableCell className="text-right">
                   {isRetiredList ? (
                     onRestore ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onRestore(staffMaster)}
-                        aria-label={`${staffMaster.name}を復帰させる`}
-                      >
-                        <RotateCcwIcon aria-hidden="true" />
-                        復帰
-                      </Button>
+                      <PermissionGate resource="masters">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onRestore(staffMaster)}
+                          aria-label={`${staffMaster.name}を復帰させる`}
+                        >
+                          <RotateCcwIcon aria-hidden="true" />
+                          復帰
+                        </Button>
+                      </PermissionGate>
                     ) : (
                       "—"
                     )
                   ) : onEdit ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onEdit?.(staffMaster)}
-                      aria-label={`${staffMaster.name}を編集する`}
-                    >
-                      <PencilIcon aria-hidden="true" />
-                      編集
-                    </Button>
+                    <PermissionGate resource="masters">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onEdit?.(staffMaster)}
+                        aria-label={`${staffMaster.name}を編集する`}
+                      >
+                        <PencilIcon aria-hidden="true" />
+                        編集
+                      </Button>
+                    </PermissionGate>
                   ) : (
                     "—"
                   )}

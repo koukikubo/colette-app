@@ -88,7 +88,7 @@ RSpec.describe "Api::V1::RfCalculationRuns",
       end
     end
 
-    it "RFランクの計算結果を作成する" do
+    it "RFランク計算を受け付ける" do
       login!
 
       calculation_run =
@@ -100,11 +100,10 @@ RSpec.describe "Api::V1::RfCalculationRuns",
             Date.new(2021, 9, 22),
           frequency_started_on:
             Date.new(2025, 9, 22),
-          status: "completed",
-          completed_at: Time.current
+          status: "pending"
         )
 
-      allow(Rf::CalculationRunner)
+      allow(Rf::CalculationRunStarter)
         .to receive(:call)
         .and_return(calculation_run)
 
@@ -120,15 +119,16 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         as: :json
       )
 
-      expect(response).to have_http_status(:created)
+      expect(response).to have_http_status(:accepted)
 
-      expect(Rf::CalculationRunner)
+      expect(Rf::CalculationRunStarter)
         .to have_received(:call)
         .with(
           rule_set: rule_set,
           base_date: Date.new(2026, 9, 22),
           started_by_staff: login_staff
         )
+        .once
 
       expect(
         response_body.dig(
@@ -138,20 +138,13 @@ RSpec.describe "Api::V1::RfCalculationRuns",
         )
       ).to eq(calculation_run.id)
 
-      preview =
+      expect(
         response_body.dig(
           "data",
           "calculation_run",
-          "preview"
+          "status"
         )
-
-      expect(preview).to include(
-        "changed_count" => 0,
-        "unchanged_count" => 0,
-        "excluded_count" => 0
-      )
-
-      expect(preview["rank_transitions"]).to eq([])
+      ).to eq("pending")
 
       expect(RfSetting.count).to eq(0)
     end
@@ -179,10 +172,10 @@ RSpec.describe "Api::V1::RfCalculationRuns",
     it "無効なRFルールの場合は422を返す" do
       login!
 
-      allow(Rf::CalculationRunner)
+      allow(Rf::CalculationRunStarter)
         .to receive(:call)
         .and_raise(
-          Rf::CalculationRunner::InvalidRuleSetError,
+          Rf::CalculationRunStarter::InvalidRuleSetError,
           "公開済みのRFルールを指定してください"
         )
 
@@ -342,13 +335,13 @@ RSpec.describe "Api::V1::RfCalculationRuns",
 
       expect(result["previous_rf_rank"]).to include(
         "id" => rank_b.id,
-        "code" => "B",
+        "display_code" => rank_b.display_code,
         "label" => "Bランク"
       )
 
       expect(result["rf_rank"]).to include(
         "id" => rank_a.id,
-        "code" => "A",
+        "display_code" => rank_a.display_code,
         "label" => "Aランク"
       )
 
@@ -359,6 +352,104 @@ RSpec.describe "Api::V1::RfCalculationRuns",
           "total_count"
         )
       ).to eq(1)
+    end
+
+    it "マスタ変更後も変更前後それぞれの保存済みランク情報を返す" do
+      login!
+
+      master = create(:standard_master, system_key: "rf_rank")
+
+      rank = create(
+        :standard_list_master,
+        standard_master: master,
+        code: nil,
+        label: "登録時のランク",
+        display_color: "#059669",
+        position: 1
+      )
+
+      customer = create(:customer)
+
+      previous_run = create_completed_run(
+        base_date: Date.new(2026, 8, 31)
+      )
+
+      current_run = create_completed_run(
+        base_date: Date.new(2026, 9, 30),
+        previous_run: previous_run
+      )
+
+      # 旧形式のスナップショットも読み取れることを確認する。
+      previous_run.update!(
+        rf_rank_snapshots: [
+          {
+            "id" => rank.id,
+            "code" => "B",
+            "label" => "前回計算時のランク",
+            "display_color" => "#2563EB",
+            "position" => 1
+          }
+        ]
+      )
+
+      current_run.update!(
+        rf_rank_snapshots: [
+          {
+            "id" => rank.id,
+            "display_code" => rank.display_code,
+            "label" => "今回計算時のランク",
+            "display_color" => "#059669",
+            "position" => 1
+          }
+        ]
+      )
+
+      [ previous_run, current_run ].each do |run|
+        run.customer_rf_rank_results.create!(
+          customer: customer,
+          rf_rank: rank,
+          recency_days: 10,
+          frequency_count: 1,
+          last_visit_on: run.base_date - 10
+        )
+      end
+
+      # 保存後にマスタを改名・色変更・無効化する。
+      rank.update!(
+        label: "変更後のランク",
+        display_color: "#FF0000",
+        active: false
+      )
+
+      get(
+        "/api/v1/rf_calculation_runs/#{current_run.id}/results",
+        headers: authenticated_headers
+      )
+
+      expect(response).to have_http_status(:ok)
+
+      result = response_body.dig("data", "results").first
+
+      expect(result["previous_rf_rank"]).to eq(
+        {
+          "id" => rank.id,
+          "display_code" => rank.display_code,
+          "label" => "前回計算時のランク",
+          "display_color" => "#2563EB"
+        }
+      )
+
+      expect(result["rf_rank"]).to eq(
+        {
+          "id" => rank.id,
+          "display_code" => rank.display_code,
+          "label" => "今回計算時のランク",
+          "display_color" => "#059669"
+        }
+      )
+
+      # 名前や色が違っていても、同じランクIDならランク変更ではない。
+      expect(result["changed"]).to be false
     end
   end
 

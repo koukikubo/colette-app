@@ -42,6 +42,32 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
           completed_at: Time.current
         )
 
+      rf_rank_master =
+        create(
+          :standard_master,
+          system_key: "rf_rank",
+          name: "RFランク"
+        )
+
+      rf_rank =
+        create(
+          :standard_list_master,
+          standard_master: rf_rank_master,
+          code: "A",
+          label: "Aランク",
+          display_color: "#059669",
+          position: 1
+        )
+
+      CustomerRfRankResult.create!(
+        rf_calculation_run: calculation_run,
+        customer: create(:customer),
+        rf_rank: rf_rank,
+        recency_days: 30,
+        frequency_count: 5,
+        last_visit_on: Date.new(2026, 8, 22)
+      )
+
       RfSetting.create!(
         current_calculation_run: calculation_run
       )
@@ -61,11 +87,31 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
       ).to eq(calculation_run.id)
 
       expect(
+        data.dig("applied_rule_set", "id")
+      ).to eq(rule_set.id)
+
+      expect(
         data.dig(
           "current_calculation_run",
           "excluded_count"
         )
       ).to eq(1)
+
+      rank_counts =
+        data.dig(
+          "current_calculation_run",
+          "rank_counts"
+        )
+
+      expect(rank_counts).to contain_exactly(
+        include(
+          "id" => rf_rank.id,
+          "display_code" => rf_rank.display_code,
+          "label" => "Aランク",
+          "display_color" => "#059669",
+          "count" => 1
+        )
+      )
     end
 
     it "計算結果が未適用の場合はnilを返す" do
@@ -78,6 +124,13 @@ RSpec.describe "Api::V1::RfSettings", type: :request do
         response_body.dig(
           "data",
           "current_calculation_run"
+        )
+      ).to be_nil
+
+      expect(
+        response_body.dig(
+          "data",
+          "applied_rule_set"
         )
       ).to be_nil
     end

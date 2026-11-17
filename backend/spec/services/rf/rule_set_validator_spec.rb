@@ -4,6 +4,7 @@ RSpec.describe Rf::RuleSetValidator do
   let(:rule_set) do
     RfRuleSet.create!(
       name: "標準RFルール",
+      no_visit_rank: no_visit_rank,
       version: 1,
       aggregation_months: 60,
       frequency_window_months: 12
@@ -85,6 +86,12 @@ RSpec.describe Rf::RuleSetValidator do
   end
 
   describe ".call" do
+    it "コードのないRFランクをIDで選択して公開できる" do
+      no_visit_rank.update!(code: nil, label: "未訪問")
+
+      expect(described_class.call(rule_set)).to be_valid
+    end
+
     it "範囲が連続し、すべての組み合わせが設定されていれば有効になる" do
       result = described_class.call(rule_set)
 
@@ -98,6 +105,13 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:recency_gap)
+      expect(result.errors).to include(
+        {
+          code: :recency_gap,
+          message:
+            "「90日以内」と「91日以上」の間で、91日から99日までが未設定です"
+        }
+      )
     end
 
     it "F条件が重複している場合は無効になる" do
@@ -106,6 +120,13 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:frequency_overlap)
+      expect(result.errors).to include(
+        {
+          code: :frequency_overlap,
+          message:
+            "「2回以下」と「3回以上」で、2回から2回までが重複しています"
+        }
+      )
     end
 
     it "最後のR条件に上限が設定されている場合は無効になる" do
@@ -114,6 +135,12 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:recency_upper_limit)
+      expect(result.errors).to include(
+        {
+          code: :recency_upper_limit,
+          message: "最後の最終来店日からの期間は上限なしにしてください"
+        }
+      )
     end
 
     it "RとFの組み合わせが不足している場合は無効になる" do
@@ -122,6 +149,9 @@ RSpec.describe Rf::RuleSetValidator do
       result = described_class.call(rule_set)
 
       expect(result.error_codes).to include(:mapping_missing)
+      expect(result.errors.last[:message]).to include(
+        "「91日以上 × 3回以上」のRFランクを選択してください"
+      )
     end
 
     it "無効なRFランクを使用している場合は無効になる" do
@@ -132,8 +162,8 @@ RSpec.describe Rf::RuleSetValidator do
       expect(result.error_codes).to include(:inactive_rf_rank)
     end
 
-    it "Nランクが存在しない場合は無効になる" do
-      no_visit_rank.destroy!
+    it "旧Nランクが存在しても未選択なら無効になる" do
+      rule_set.update!(no_visit_rank: nil)
 
       result = described_class.call(rule_set)
 
@@ -144,7 +174,7 @@ RSpec.describe Rf::RuleSetValidator do
         {
           code: :no_visit_rank_missing,
           message:
-            "来店実績がない顧客に使用する有効なNランクが登録されていません"
+            "来店実績がない顧客に使用する有効なRFランクを選択してください"
         }
       )
     end

@@ -14,9 +14,18 @@ export function CurrentStaffDisplay() {
     return null;
   }
 
+  const roleLabel: Record<string, string> = {
+    owner: "管理者（全操作）",
+    operator: "顧客・予約の更新可",
+    viewer: "閲覧専用",
+  };
+
   return (
-    <div className="text-sm">
+    <span className="grid text-sm">
       <span className="font-medium">{staff.staff_master.name}</span>
-    </div>
+      <span className="text-xs text-muted-foreground">
+        {roleLabel[staff.staff_master.role_code] ?? ""}
+      </span>
+    </span>
   );
 }

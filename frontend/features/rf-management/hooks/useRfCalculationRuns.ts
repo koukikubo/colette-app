@@ -11,11 +11,13 @@ import type { RfCalculationRunSummary } from "../types";
 type UseRfCalculationRunsOptions = {
   page?: number;
   perPage?: number;
+  reloadKey?: number;
 };
 
 export function useRfCalculationRuns({
   page = 1,
   perPage = 10,
+  reloadKey,
 }: UseRfCalculationRunsOptions = {}) {
   const [calculationRuns, setCalculationRuns] = useState<
     RfCalculationRunSummary[]
@@ -26,10 +28,13 @@ export function useRfCalculationRuns({
 
   useEffect(() => {
     const controller = new AbortController();
+    let pollingTimer: ReturnType<typeof setTimeout> | undefined;
 
-    async function loadCalculationRuns() {
-      setIsLoading(true);
-      setErrorMessage(null);
+    async function loadCalculationRuns(isBackgroundRefresh = false) {
+      if (!isBackgroundRefresh) {
+        setIsLoading(true);
+        setErrorMessage(null);
+      }
 
       try {
         const response = await fetchRfCalculationRuns(
@@ -42,8 +47,28 @@ export function useRfCalculationRuns({
 
         setCalculationRuns(response.data.calculation_runs);
         setPagination(response.data.pagination);
+
+        const hasRunningCalculation = response.data.calculation_runs.some(
+          (calculationRun) =>
+            calculationRun.status === "pending" ||
+            calculationRun.status === "processing",
+        );
+
+        if (hasRunningCalculation && !controller.signal.aborted) {
+          pollingTimer = setTimeout(() => {
+            void loadCalculationRuns(true);
+          }, 2_000);
+        }
       } catch (error) {
         if (controller.signal.aborted) {
+          return;
+        }
+
+        if (isBackgroundRefresh) {
+          pollingTimer = setTimeout(() => {
+            void loadCalculationRuns(true);
+          }, 2_000);
+
           return;
         }
 
@@ -55,7 +80,7 @@ export function useRfCalculationRuns({
             : "RF計算履歴を取得できませんでした。",
         );
       } finally {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && !isBackgroundRefresh) {
           setIsLoading(false);
         }
       }
@@ -65,8 +90,12 @@ export function useRfCalculationRuns({
 
     return () => {
       controller.abort();
+
+      if (pollingTimer) {
+        clearTimeout(pollingTimer);
+      }
     };
-  }, [page, perPage]);
+  }, [page, perPage, reloadKey]);
 
   return {
     calculationRuns,

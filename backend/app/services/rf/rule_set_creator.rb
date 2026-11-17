@@ -39,6 +39,7 @@ module Rf
     def create_rule_set!
       RfRuleSet.create!(
         name: attributes[:name],
+        no_visit_rank_id: attributes[:no_visit_rank_id],
         version: next_version,
         aggregation_months:
           attributes[:aggregation_months],
@@ -100,7 +101,7 @@ module Rf
             rule_set,
             recency_rules,
             mapping_attributes[:recency_code],
-            "R条件"
+            "最終来店日からの期間"
           )
 
         frequency_rule =
@@ -108,7 +109,7 @@ module Rf
             rule_set,
             frequency_rules,
             mapping_attributes[:frequency_code],
-            "F条件"
+            "来店回数の条件"
           )
 
         rule_set.rank_mappings.create!(

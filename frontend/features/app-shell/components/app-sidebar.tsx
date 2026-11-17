@@ -1,29 +1,22 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 
 import {
   Armchair,
   CalendarDaysIcon,
   LayoutDashboardIcon,
-  MegaphoneIcon,
-  NotebookPenIcon,
-  SearchIcon,
   SettingsIcon,
   UserRoundIcon,
   UsersIcon,
   ChartNoAxesCombinedIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
 import { NavDocuments } from "./navigation/nav-documents";
@@ -31,12 +24,6 @@ import { NavMain } from "./navigation/nav-main";
 import { NavUser } from "./navigation/nav-user";
 
 const data = {
-  user: {
-    name: "User Name",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-
   /**
    * メインメニュー。
    *
@@ -54,19 +41,24 @@ const data = {
       icon: <UsersIcon />,
     },
     {
-      title: "予約管理",
+      title: "タイムライン",
       url: "/reservations",
       icon: <CalendarDaysIcon />,
     },
     {
-      title: "お知らせ",
-      url: "/announcements",
-      icon: <MegaphoneIcon />,
+      title: "統一RFランク表",
+      url: "/rf-analysis",
+      icon: <ChartNoAxesCombinedIcon />,
     },
     {
-      title: "顧客ノート",
-      url: "/customer-notes",
-      icon: <NotebookPenIcon />,
+      title: "RFランク客層変動表",
+      url: "/rf-customer-transitions",
+      icon: <ChartNoAxesCombinedIcon />,
+    },
+    {
+      title: "RFランク低下・予測",
+      url: "/rf-rank-drops",
+      icon: <ChartNoAxesCombinedIcon />,
     },
   ],
 
@@ -95,26 +87,7 @@ const data = {
     {
       name: "統一RFマスタ",
       url: "/rf-management",
-      icon: <ChartNoAxesCombinedIcon />,
-    },
-  ],
-
-  /**
-   * 検索メニュー。
-   *
-   * 顧客検索・予約検索など、
-   * 将来的に検索専用画面を作る場合はここに置きます。
-   */
-  searchMenu: [
-    {
-      name: "顧客検索",
-      url: "/customers/search",
-      icon: <SearchIcon />,
-    },
-    {
-      name: "予約検索",
-      url: "/reservations/search",
-      icon: <SearchIcon />,
+      icon: <SlidersHorizontalIcon />,
     },
   ],
 };
@@ -122,31 +95,26 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <Link href="/dashboard">
-                <span className="text-base font-semibold">Colette</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
       <SidebarContent>
-        <NavMain items={data.navMain} />
-
-        <NavDocuments title="管理メニュー" items={data.masterMenu} />
-
-        <NavDocuments title="検索メニュー" items={data.searchMenu} />
+        <NavMain title="メインメニュー" items={[data.navMain[0]]} />
+        <NavMain
+          title="予約管理"
+          items={[
+            {
+              title: "カレンダー",
+              url: "/reservations/calendar",
+              icon: <CalendarDaysIcon />,
+            },
+            data.navMain[2],
+          ]}
+        />
+        <NavMain title="顧客管理" items={[data.navMain[1]]} />
+        <NavMain title="顧客分析" items={data.navMain.slice(3)} />
+        <NavDocuments title="各種設定" items={data.masterMenu} />
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

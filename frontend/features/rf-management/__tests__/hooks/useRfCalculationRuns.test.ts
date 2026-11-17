@@ -1,5 +1,5 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useRfCalculationRuns } from "../../hooks/useRfCalculationRuns";
 
@@ -14,6 +14,10 @@ vi.mock("../../api/rf-management-api", () => ({
 describe("useRfCalculationRuns", () => {
   beforeEach(() => {
     mocks.fetchRfCalculationRuns.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("指定ページのRF計算履歴を取得する", async () => {
@@ -81,5 +85,46 @@ describe("useRfCalculationRuns", () => {
     expect(result.current.errorMessage).toBe(
       "RF計算履歴を取得できませんでした。",
     );
+  });
+
+  it("計算中のポーリングでは初期読み込み状態に戻さない", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    const runningCalculation = {
+      id: 20,
+      base_date: "2026-09-29",
+      status: "processing",
+    };
+
+    mocks.fetchRfCalculationRuns
+      .mockResolvedValueOnce({
+        data: {
+          calculation_runs: [runningCalculation],
+          pagination: {
+            current_page: 1,
+            per_page: 10,
+            total_pages: 1,
+            total_count: 1,
+          },
+        },
+      })
+      .mockReturnValueOnce(new Promise(() => undefined));
+
+    const { result } = renderHook(() => useRfCalculationRuns());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(2_000);
+    });
+
+    await waitFor(() => {
+      expect(mocks.fetchRfCalculationRuns).toHaveBeenCalledTimes(2);
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.calculationRuns).toEqual([runningCalculation]);
   });
 });
