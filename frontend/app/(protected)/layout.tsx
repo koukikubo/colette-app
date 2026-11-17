@@ -14,13 +14,27 @@ type ReservationsLayoutProps = {
 
 export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
   const router = useRouter();
-  const { status } = useAuth();
+  const { status, refreshCurrentStaff } = useAuth();
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace("/login");
+      router.replace(
+        `/login?return_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
     }
   }, [status, router]);
+
+  if (status === "error")
+    return (
+      <div role="alert" className="p-6">
+        認証状態を確認できませんでした。
+        <button
+          onClick={() => void refreshCurrentStaff().catch(() => undefined)}
+        >
+          再取得
+        </button>
+      </div>
+    );
 
   if (status === "loading") {
     return (

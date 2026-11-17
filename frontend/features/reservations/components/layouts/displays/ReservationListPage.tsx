@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { useReadRefresh } from "@/hooks/useReadRefresh";
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiClientError } from "@/lib/api/api-client";
@@ -33,6 +35,8 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useReadRefresh(() => setReloadKey((value) => value + 1));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -135,6 +139,16 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   return (
     <div className="space-y-4">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setReloadKey((value) => value + 1)}
+      >
+        予約一覧を更新
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        表示中は30秒ごとに再取得します。
+      </p>
       <section aria-labelledby="reservation-summary-heading">
         <h2 id="reservation-summary-heading" className="sr-only">
           表示日の予約サマリー

@@ -10,7 +10,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   rescue_from ActiveRecord::ExclusionViolation,
               with: :render_customer_overlap_exclusion_error
 
-  before_action :set_reservation, only: %i[show update cancel restore complete reopen]
+  before_action :set_reservation, only: %i[show update cancel restore complete reopen confirm_details]
 
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
@@ -90,6 +90,16 @@ class Api::V1::ReservationsController < Api::V1::BaseController
       )
 
     render_reservation(reservation)
+  end
+
+  # 確認済み時刻はクライアント時計に依存させず、確認した版と担当者を記録する。
+  def confirm_details
+    @reservation.lock_version = required_lock_version
+    if @reservation.canceled_at || @reservation.completed_at
+      return render_error(message: "未完了の有効予約だけを確認済みにできます", status: :unprocessable_content)
+    end
+    @reservation.update!(details_confirmed_at: Time.current, updated_by_staff: current_staff)
+    render_reservation(@reservation)
   end
 
   def complete

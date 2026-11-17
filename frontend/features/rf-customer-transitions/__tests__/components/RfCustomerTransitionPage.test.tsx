@@ -5,7 +5,10 @@ import { ApiClientError } from "@/lib/api/api-client";
 import { RfCustomerTransitionPage } from "../../components/RfCustomerTransitionPage";
 import type { RfMonthComparisonResponse } from "../../types/customer-transition";
 
-const mocks = vi.hoisted(() => ({ fetchRfMonthComparison: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  fetchRfMonthComparison: vi.fn(),
+  fetchRfComparisonPeriods: vi.fn(),
+}));
 vi.mock("../../api/customer-transition-api", () => mocks);
 const response: RfMonthComparisonResponse = {
   status: "success",
@@ -59,8 +62,48 @@ function months(start = "2026-07", end = "2026-09") {
   });
   fireEvent.change(screen.getByLabelText("終了月"), { target: { value: end } });
 }
-beforeEach(() => mocks.fetchRfMonthComparison.mockReset());
+beforeEach(() => {
+  mocks.fetchRfMonthComparison.mockReset();
+  mocks.fetchRfComparisonPeriods.mockResolvedValue({ data: { periods: [] } });
+});
 describe("RfCustomerTransitionPage", () => {
+  it("初期表示で適用済み年月を列挙し前年同月と最新月を比較する", async () => {
+    mocks.fetchRfComparisonPeriods.mockResolvedValue({
+      data: {
+        periods: [
+          {
+            month: "2026-11",
+            base_date: "2026-11-01",
+            run_id: 3,
+            rule_set_id: 1,
+          },
+          {
+            month: "2025-11",
+            base_date: "2025-11-30",
+            run_id: 1,
+            rule_set_id: 1,
+          },
+        ],
+      },
+    });
+    mocks.fetchRfMonthComparison.mockResolvedValue({
+      ...response,
+      data: { ...response.data, start_month: "2025-11", end_month: "2026-11" },
+    });
+    render(<RfCustomerTransitionPage />);
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(mocks.fetchRfMonthComparison).toHaveBeenCalledWith(
+      "2025-11",
+      "2026-11",
+      expect.any(AbortSignal),
+    );
+    expect(screen.getByLabelText("開始月")).toHaveValue("2025-11");
+    expect(screen.getByRole("link", { name: /維持した顧客/ })).toHaveAttribute(
+      "href",
+      expect.stringContaining("comparison_run_id=1"),
+    );
+  });
+
   it("年月指定で比較し、ヒントから計算基準日を確認できる", async () => {
     const user = userEvent.setup();
 

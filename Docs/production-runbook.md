@@ -24,7 +24,7 @@ CACHE_DATABASE_URL/QUEUE_DATABASE_URL/CABLE_DATABASE_URLも設定し、四つの
 - HTTPSでSecure/HttpOnly/SameSite Cookieを確認する。
 - 正規CSRFでログイン/顧客登録/予約作成を成功させ、不正CSRFは拒否する。
 - owner/operator/viewerで操作権限を確認する。viewerは閲覧のみ、operatorは顧客・予約更新とマスタ閲覧、ownerは全操作。
-- ログアウト後の旧Cookie再送、無操作30分・絶対12時間の失効を確認する。
+- ログアウト後の旧Cookie再送、無操作4時間・絶対12時間の失効を確認する。
 - Next経由で顧客→予約→RF計算→適用→顧客表示まで確認する。
 - backend /upを内部監視する。DB疎通・worker処理の遅延・長時間processingを別監視し、外部通知先へテスト通知する。/upだけをDB/workerの正常判定に使わない。
 
@@ -47,7 +47,7 @@ security:cleanupで期限切れセッション・古い試行履歴を毎日削�
 RUN_ID=対象ID RAILS_ENV=production bundle exec rake rf:recover
 ```
 
-processing状態のジョブを再配信する。実行中workerがDBロックを保持している間は重複計算しない。強制終了した接続のロックはDBが解放する。通常例外でfailedになった履歴は原因を解消後、既存の新規計算操作で再作成する。現在適用中の結果は維持する。
+手動計算はprocessing状態のみ、月次計算はpending/processing/failed状態を再配信する。月次計算は保存した対象月・同じ履歴IDで再試行する。実行中workerがDBロックを保持している間は重複計算しない。強制終了した接続のロックはDBが解放する。手動計算のfailedは原因を解消後、新規計算として再作成する。現在適用中の結果は維持する。
 新方式の初回導入時は旧workerを全て停止してから新workerを起動する。
 
 ## バックアップ・復旧・切戻し
@@ -64,3 +64,20 @@ processing状態のジョブを再配信する。実行中workerがDBロック�
 
 個人情報・検索語はパラメータフィルターで除外する。アプリ独自ログとproxy/アクセスログは別途ダミー入力で確認する。URLクエリに検索語を記録するアクセスログは無効化またはマスクする。
 閲覧は運用責任者に限定し、保持30日を初期案として配置先で設定・承認する。秘密値や実顧客情報を検証成果物へ保存しない。
+
+## RF月次自動更新
+
+本番のSolid Queue scheduler/workerを起動し、`config/recurring.yml`の`monthly_rf_update`を登録する。
+実行時刻は日本時間の毎月1日03:00、対象は前月末基準。公開中の有効なRFルールが必要。
+開発用composeのRails起動だけでは、この本番定期ジョブは起動しない。
+
+同じ対象月は一意に記録し、計算失敗は30秒間隔で最大3回試行する。計算中の手動適用・復元は設定の版番号で検出し、上書きせず`conflict`にする。
+ダッシュボードとRF計算履歴で`failed`/`conflict`を確認し、ジョブ遅延・失敗を監視する。
+停止中に実行時刻を逃した場合、対象月を明示して補完する（自動catch-upは行わない）。
+
+```sh
+RAILS_ENV=production bundle exec rails runner 'MonthlyRfUpdateJob.perform_later("2026-10-01")'
+```
+
+対象月は前月以前の月初日。上記は例なので補完する月へ置き換える。適用済み月の再配信は再適用しない。
+`conflict`はRF計算履歴の結果を確認して手動適用する。コード更新時は70000/71000のmigrationを適用後、Railsとworkerを同じ版で再起動する。

@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it, vi } from "vitest";
 
 import { ReservationListPage } from "../../../components/layouts/displays/ReservationListPage";

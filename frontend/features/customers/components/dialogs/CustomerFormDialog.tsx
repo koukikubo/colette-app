@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState, useEffect } from "react";
+import { type FormEvent, useState, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -74,6 +74,9 @@ export function CustomerFormDialog({
 
   const [isCustomerRankLoading, setIsCustomerRankLoading] = useState(false);
 
+  const [saved, setSaved] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const saving = useRef(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,12 +152,14 @@ export function CustomerFormDialog({
   }
 
   async function handleConfirm() {
+    if (saving.current || saved) return;
     if (isEdit && !customer) {
       setErrors(["編集対象の顧客情報を取得できませんでした。"]);
       setConfirmOpen(false);
       return;
     }
 
+    saving.current = true;
     setIsSubmitting(true);
     setErrors([]);
 
@@ -168,11 +173,10 @@ export function CustomerFormDialog({
         await createCustomer(buildCreateCustomerRequest(values));
       }
 
-      await onCompleted();
-
+      // 保存の確定と、表示更新の失敗を別の状態として扱う。
+      setSaved(true);
       setConfirmOpen(false);
-      setIsSubmitting(false);
-      onOpenChange(false);
+      await refreshAfterSave();
     } catch (error) {
       setConfirmOpen(false);
 
@@ -194,6 +198,22 @@ export function CustomerFormDialog({
             : "顧客の登録中に予期しないエラーが発生しました。",
         ]);
       }
+    } finally {
+      saving.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  async function refreshAfterSave() {
+    setIsSubmitting(true);
+    setRefreshFailed(false);
+    try {
+      await onCompleted();
+      setSaved(false);
+      onOpenChange(false);
+    } catch {
+      setRefreshFailed(true);
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -223,6 +243,47 @@ export function CustomerFormDialog({
         selectedCustomerRank.active ? "" : "（無効・現在設定中）"
       }`
     : null;
+
+  if (saved)
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && !isSubmitting) {
+            setSaved(false);
+            onOpenChange(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>顧客情報は保存済みです</DialogTitle>
+            <DialogDescription>登録し直す必要はありません。</DialogDescription>
+          </DialogHeader>
+          {refreshFailed && (
+            <p role="alert">
+              保存は完了しましたが、表示を更新できませんでした。
+            </p>
+          )}
+          <Button
+            disabled={isSubmitting}
+            onClick={() => void refreshAfterSave()}
+          >
+            表示を再取得
+          </Button>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => {
+              setSaved(false);
+              onOpenChange(false);
+            }}
+          >
+            閉じる
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
 
   return (
     <>

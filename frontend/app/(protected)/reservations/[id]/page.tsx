@@ -2,7 +2,7 @@ import {
   fetchReservationOnServer,
   ReservationServerApiError,
 } from "@/features/reservations/api/reservation-server-api";
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { ReservationDetail } from "@/features/reservations/components/details/ReservationDetail";
 
 type ReservationDetailPageProps = {
@@ -26,6 +26,10 @@ export default async function ReservationDetailPage({
   try {
     reservationResponse = await fetchReservationOnServer(reservationId);
   } catch (error) {
+    if (error instanceof ReservationServerApiError && error.status === 401)
+      redirect(
+        `/login?return_to=${encodeURIComponent(`/reservations/${reservationId}`)}`,
+      );
     if (error instanceof ReservationServerApiError && error.status === 404) {
       notFound();
     }

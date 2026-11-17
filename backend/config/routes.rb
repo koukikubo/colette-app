@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get "up", to: "rails/health#show", as: :rails_health_check
   namespace :api do
     namespace :v1 do
+      resource :dashboard, only: :show, controller: "dashboard"
       get "csrf", to: "csrf#show"
 
       namespace :staff do
@@ -10,6 +11,7 @@ Rails.application.routes.draw do
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
         get "current", to: "sessions#current"
+        resource :password, only: :update, controller: "passwords"
       end
 
       resources :staff_masters, only: %i[index show create update] do
@@ -18,6 +20,7 @@ Rails.application.routes.draw do
           patch :restore
           patch :login_enabled, action: :update_login_enabled
           patch :reset_failed_attempts
+          patch :password, action: :reset_password
         end
       end
 
@@ -54,6 +57,7 @@ Rails.application.routes.draw do
           patch :reopen
           patch :restore
           patch :complete
+          patch :confirm_details
         end
       end
 
@@ -61,6 +65,8 @@ Rails.application.routes.draw do
           path: "rf_settings",
           controller: "rf/settings",
           only: :show
+
+      resources :rf_customers, controller: "rf/customers", only: :index
 
       resource :rf_analysis,
           path: "rf_analysis",
@@ -83,6 +89,7 @@ Rails.application.routes.draw do
           only: [] do
         collection do
           get :compare
+          get :periods
         end
       end
 

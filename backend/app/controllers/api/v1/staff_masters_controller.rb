@@ -1,4 +1,6 @@
 class Api::V1::StaffMastersController < Api::V1::BaseController
+  include PasswordChangeErrors
+
   before_action :require_owner!, except: %i[index show]
 
   before_action :set_staff_master,
@@ -9,6 +11,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
                   restore
                   update_login_enabled
                   reset_failed_attempts
+                  reset_password
                 ]
 
   def index
@@ -116,6 +119,16 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
       staff.unlock!
     end
 
+    render_staff_master(@staff_master.reload)
+  end
+
+  def reset_password
+    staff = associated_staff
+    return if performed?
+    Security::PasswordChanger.call(actor: current_staff, subject: staff,
+      attributes: params.require(:staff).permit(:current_password, :password, :password_confirmation),
+      expected_version: required_lock_version)
+    reset_session if staff.id == current_staff.id
     render_staff_master(@staff_master.reload)
   end
 

@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -329,4 +330,35 @@ describe("CustomerDetailPageClient", () => {
 
     expect(screen.getByText("VIP顧客")).toBeInTheDocument();
   });
+});
+
+it("背景取得中と失敗時にも予約履歴の同じ要素を保持する", async () => {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  const customer = createCustomer();
+  let finish!: (value: unknown) => void;
+  mocks.fetchCustomer
+    .mockReset()
+    .mockResolvedValueOnce({ data: { customer } })
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockRejectedValueOnce(new Error("offline"));
+  render(<CustomerDetailPageClient customerId={10} />);
+  const history = await screen.findByRole("region", { name: "予約履歴" });
+  act(() => {
+    window.dispatchEvent(new Event("focus"));
+  });
+  await waitFor(() => expect(mocks.fetchCustomer).toHaveBeenCalledTimes(2));
+  expect(screen.getByRole("region", { name: "予約履歴" })).toBe(history);
+  await act(async () => {
+    finish({ data: { customer } });
+  });
+  act(() => {
+    window.dispatchEvent(new Event("focus"));
+  });
+  await screen.findByRole("alert");
+  expect(screen.getByRole("region", { name: "予約履歴" })).toBe(history);
 });

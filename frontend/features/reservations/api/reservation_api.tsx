@@ -114,3 +114,13 @@ export function restoreReservation(
     body: payload,
   });
 }
+
+export function confirmReservationDetails(
+  id: number,
+  payload: ReservationStatusActionRequest,
+) {
+  return apiFetch<ReservationResponse>(
+    `${RESERVATIONS_PATH}/${id}/confirm_details`,
+    { method: "PATCH", body: payload },
+  );
+}

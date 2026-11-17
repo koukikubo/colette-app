@@ -17,3 +17,16 @@ export function fetchRfMonthComparison(
     signal,
   });
 }
+
+export type RfComparisonPeriod = {
+  month: string;
+  base_date: string;
+  run_id: number;
+  rule_set_id: number;
+};
+export function fetchRfComparisonPeriods(signal?: AbortSignal) {
+  return apiFetch<{
+    status: "success";
+    data: { periods: RfComparisonPeriod[] };
+  }>(`${BASE_PATH}/periods`, { cache: "no-store", signal });
+}
