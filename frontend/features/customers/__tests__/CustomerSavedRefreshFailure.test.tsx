@@ -8,11 +8,13 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   hide: vi.fn(),
   restore: vi.fn(),
+  update: vi.fn(),
 }));
 vi.mock("../api/customer-api", () => ({
   createCustomer: mocks.create,
   hideCustomer: mocks.hide,
   restoreCustomer: mocks.restore,
+  updateCustomer: mocks.update,
 }));
 vi.mock("@/features/standard-codes/api/standard-code-api", () => ({
   fetchStandardCodes: vi
@@ -125,3 +127,57 @@ it.each([false, true])(
     expect(hidden ? mocks.restore : mocks.hide).toHaveBeenCalledTimes(1);
   },
 );
+
+it("背景取得でpropsの版が進んでも、編集開始時の版と入力で保存する", async () => {
+  const customer: Customer = {
+    id: 10,
+    customer_kind: "individual",
+    name: "顧客",
+    kana: "コキャク",
+    postal_code: null,
+    address: null,
+    phone_number: null,
+    email: null,
+    birthday: null,
+    customer_rank_id: null,
+    customer_rank: null,
+    company_name: null,
+    company_name_kana: null,
+    company_postal_code: null,
+    company_address: null,
+    company_phone_number: null,
+    company_email: null,
+    memo: null,
+    hidden: false,
+    hidden_at: null,
+    lock_version: 2,
+    created_by_staff: null,
+    updated_by_staff: null,
+    created_at: "2026-01-01",
+    updated_at: "2026-01-01",
+  };
+  mocks.update.mockResolvedValue({ data: { customer } });
+  const completed = vi.fn().mockResolvedValue(undefined);
+  const props = {
+    open: true,
+    mode: "edit" as const,
+    allowVisibilityChange: true,
+    onOpenChange: vi.fn(),
+    onCompleted: completed,
+  };
+  const view = render(<CustomerFormDialog {...props} customer={customer} />);
+  view.rerender(
+    <CustomerFormDialog
+      {...props}
+      customer={{ ...customer, lock_version: 3, memo: "別の担当者の更新" }}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "更新内容を確認" }));
+  await user.click(screen.getByRole("button", { name: "更新する" }));
+  await waitFor(() =>
+    expect(mocks.update).toHaveBeenCalledWith(10, {
+      customer: expect.objectContaining({ lock_version: 2, memo: null }),
+    }),
+  );
+});
