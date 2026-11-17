@@ -88,9 +88,17 @@ export function ReservationTimeline({
             <ReservationTimelineRow
               key={row.restaurantMaster.id}
               label={row.restaurantMaster.name}
+              restaurantMasterId={
+                row.restaurantMaster.active
+                  ? row.restaurantMaster.id
+                  : undefined
+              }
               description={[
                 row.restaurantMaster.code,
                 `定員${row.restaurantMaster.capacity}名`,
+                ...(!row.restaurantMaster.active
+                  ? ["利用停止・新規割当不可"]
+                  : []),
               ].join(" / ")}
               reservations={row.reservations}
               targetDate={targetDate}

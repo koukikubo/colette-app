@@ -25,31 +25,53 @@ export async function proxyRequest(
   if (csrfToken) {
     headers["X-CSRF-Token"] = csrfToken;
   }
+  const idempotencyKey = request.headers.get("Idempotency-Key");
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
   // GETやHEADリクエストの場合はボディを送信しない
   const body =
     method === "GET" || method === "HEAD" ? undefined : await request.text();
 
   // Rails APIにリクエストを転送
-  const upstream = await fetch(`${RAILS_API_URL}${path}`, {
-    method,
-    headers,
-    body,
-    cache: "no-store",
-  });
+  let upstream: Response;
+  let responseBody: string;
+  try {
+    upstream = await fetch(`${RAILS_API_URL}${path}`, {
+      method,
+      headers,
+      body,
+      cache: "no-store",
+      // 上流の応答待ちで画面が止まり続けないようにする。
+      signal: AbortSignal.timeout(30_000),
+    });
+    // ヘッダー受信後も本文の読み込み完了までは同じ失敗境界で扱う。
+    responseBody = await upstream.text();
+  } catch {
+    // 内部URLや例外本文を公開せず、共通API形式で再試行を案内する。
+    return Response.json(
+      {
+        status: "error",
+        message:
+          "サーバーに接続できませんでした。しばらくしてから再試行してください。",
+        errors: [],
+      },
+      { status: 502, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   // レスポンスのボディとヘッダーを準備
-  const responseBody = await upstream.text();
   const responseHeaders = new Headers();
+  responseHeaders.set("Cache-Control", "no-store");
   responseHeaders.set(
     "Content-Type",
     upstream.headers.get("content-type") ?? "application/json",
   );
   // Rails APIからのSet-Cookieヘッダーを転送
-  const setCookie = upstream.headers.get("set-cookie");
-  if (setCookie) {
-    responseHeaders.set("Set-Cookie", setCookie);
+  for (const setCookie of upstream.headers.getSetCookie()) {
+    responseHeaders.append("Set-Cookie", setCookie);
   }
-  // クライアントにレスポンスを返す
-  return new Response(responseBody, {
+  // 204・205・304は本文を持たないレスポンスとして返す。
+  const hasNoBody = [204, 205, 304].includes(upstream.status);
+
+  return new Response(hasNoBody ? null : responseBody, {
     status: upstream.status,
     headers: responseHeaders,
   });

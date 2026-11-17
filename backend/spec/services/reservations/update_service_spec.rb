@@ -212,10 +212,10 @@ RSpec.describe Reservations::UpdateService do
           current_staff: other_staff
         )
       end.to raise_error(ActiveRecord::RecordInvalid) { |error|
-        expect(
-          error.record.errors.details[:restaurant_master_ids]
-        ).to include(error: :insufficient_capacity)
-      }
+               expect(
+                 error.record.errors.details[:restaurant_master_ids]
+               ).to include(error: :insufficient_capacity)
+             }
 
       reservation.reload
 
@@ -253,10 +253,10 @@ RSpec.describe Reservations::UpdateService do
           current_staff: other_staff
         )
       end.to raise_error(ActiveRecord::RecordInvalid) { |error|
-        expect(
-          error.record.errors.details[:restaurant_master_ids]
-        ).to include(error: :insufficient_capacity)
-      }
+               expect(
+                 error.record.errors.details[:restaurant_master_ids]
+               ).to include(error: :insufficient_capacity)
+             }
 
       reservation.reload
 
@@ -356,9 +356,9 @@ RSpec.describe Reservations::UpdateService do
           current_staff: other_staff
         )
       end.to raise_error(ActiveRecord::RecordInvalid) { |error|
-        expect(error.record.errors[:base])
-          .to include("無効な予約席が含まれています")
-      }
+               expect(error.record.errors[:base])
+                 .to include("無効な予約席が含まれています")
+             }
     end
 
     it "自分自身の実テーブル割当は二重予約扱いにしない" do

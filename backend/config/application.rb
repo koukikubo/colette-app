@@ -13,7 +13,9 @@ module Backend
     config.session_store :cookie_store,
                         key: "_colette_session",
                         same_site: :lax,
-                        httponly: true
+                        httponly: true,
+                        secure: Rails.env.production?,
+                        expire_after: 12.hours
 
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use config.session_store, config.session_options

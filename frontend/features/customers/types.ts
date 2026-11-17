@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 import { Pagination } from "@/lib/api/pagination";
 import type { Reservation } from "@/features/reservations/types";
 
@@ -16,6 +21,29 @@ export type CustomerStaffSummary = {
   name: string | null;
 };
 
+// 顧客ランク・RFランクの共通表示情報
+export type RankSummary = {
+  id: number;
+  // 追加された基本コードでは業務用codeが未設定の場合がある。
+  code: string | null;
+  label: string;
+};
+
+export type RfRankSummary = Omit<RankSummary, "code"> & {
+  display_code: string;
+  display_color: string | null;
+};
+
+// RFランクを判定したときの型
+export type CustomerRfRankBasis = {
+  calculation_run_id: number;
+  base_date: string;
+  recency_days: number | null;
+  frequency_count: number | null;
+  last_visit_on: string | null;
+  exclusion_reason: string | null;
+};
+
 export type Customer = {
   id: number;
   customer_kind: CustomerKind;
@@ -28,6 +56,9 @@ export type Customer = {
   phone_number: string | null;
   email: string | null;
   birthday: string | null;
+
+  customer_rank_id: number | null;
+  customer_rank: RankSummary | null;
 
   company_name: string | null;
   company_name_kana: string | null;
@@ -50,7 +81,14 @@ export type Customer = {
   updated_at: string;
 };
 
+// 顧客詳細APIでのみ返される情報
+export type CustomerDetail = Customer & {
+  current_rf_rank: RfRankSummary | null;
+  rf_rank_basis: CustomerRfRankBasis | null;
+};
+
 export type CustomerListParams = {
+  customer_rank_id?: number | "unassigned";
   visibility?: CustomerVisibility;
   customer_kind?: CustomerKind;
   query?: string;
@@ -60,6 +98,7 @@ export type CustomerListParams = {
 
 export type CustomerAttributes = {
   customer_kind: CustomerKind;
+  customer_rank_id?: number | null;
 
   name: string;
   kana: string;
@@ -106,6 +145,10 @@ export type CustomerData = {
   customer: Customer;
 };
 
+export type CustomerDetailData = {
+  customer: CustomerDetail;
+};
+
 export type CustomerReservationListParams = {
   page?: number;
   per_page?: number;
@@ -116,20 +159,11 @@ export type CustomerReservationListData = {
   pagination: Pagination;
 };
 
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
-};
-
-export type ApiErrorResponse = {
-  status: "error";
-  message: string;
-  errors: string[];
-};
-
 export type CustomerListResponse = ApiSuccessResponse<CustomerListData>;
 
 export type CustomerResponse = ApiSuccessResponse<CustomerData>;
+
+export type CustomerDetailResponse = ApiSuccessResponse<CustomerDetailData>;
 
 export type CustomerReservationListResponse =
   ApiSuccessResponse<CustomerReservationListData>;

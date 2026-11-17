@@ -178,33 +178,105 @@ standard_master_seeds = [
         position: 99
       }
     ]
+  },
+  {
+    system_key: "customer_rank",
+    name: "顧客ランク",
+    description: "店舗が顧客へ手動で付与するランク",
+    position: 6,
+    items: [
+      {
+        code: "A",
+        label: "Aランク",
+        description: "店舗が手動で付与するAランク",
+        position: 1
+      },
+      {
+        code: "B",
+        label: "Bランク",
+        description: "店舗が手動で付与するBランク",
+        position: 2
+      },
+      {
+        code: "C",
+        label: "Cランク",
+        description: "店舗が手動で付与するCランク",
+        position: 3
+      },
+      {
+        code: "D",
+        label: "Dランク",
+        description: "店舗が手動で付与するDランク",
+        position: 4
+      },
+      {
+        code: "E",
+        label: "Eランク",
+        description: "店舗が手動で付与するEランク",
+        position: 5
+      },
+      {
+        code: "R",
+        label: "Rランク",
+        description: "RFランクの集計対象外とする顧客",
+        position: 6
+      }
+    ]
   }
 ]
 
 standard_master_seeds.each do |master_seed|
   standard_master =
-    StandardMaster.find_or_initialize_by(
-      system_key: master_seed[:system_key]
-    )
+    StandardMaster.find_by(system_key: master_seed[:system_key]) ||
+    StandardMaster.find_by(system_key: nil, name: master_seed[:name]) ||
+    StandardMaster.new(system_key: master_seed[:system_key])
 
   standard_master.update!(
+    system_key: master_seed[:system_key],
     name: master_seed[:name],
     description: master_seed[:description],
     active: true,
     position: master_seed[:position]
   )
 
+  item_codes = master_seed[:items].pluck(:code)
+  seed_positions = master_seed[:items].pluck(:position)
+
+  obsolete_items =
+    standard_master.standard_list_masters.where.not(code: item_codes)
+
+  next_position =
+    [ standard_master.standard_list_masters.maximum(:position).to_i + 1, 100 ].max
+
+  obsolete_items
+    .where(position: seed_positions)
+    .order(:id)
+    .each_with_index do |item, index|
+    item.update_columns(
+      active: false,
+      position: next_position + index
+    )
+  end
+
+  obsolete_items.update_all(active: false)
+
   master_seed[:items].each do |item_seed|
     standard_list_master =
       standard_master
         .standard_list_masters
-        .find_or_initialize_by(
-          code: item_seed[:code]
-        )
+        .find_by(code: item_seed[:code]) ||
+      standard_master
+        .standard_list_masters
+        .find_by(code: nil, position: item_seed[:position]) ||
+      standard_master
+        .standard_list_masters
+        .new(code: item_seed[:code])
 
     standard_list_master.update!(
+      code: item_seed[:code],
       label: item_seed[:label],
       description: item_seed[:description],
+      display_color: item_seed[:display_color],
       active: true,
       position: item_seed[:position]
     )

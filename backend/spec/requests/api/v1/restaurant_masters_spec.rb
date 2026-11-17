@@ -3,6 +3,8 @@ require "rails_helper"
 RSpec.describe "Api::V1::RestaurantMasters", type: :request do
   include_context "authenticated request"
 
+  before { login_staff.staff_master.update!(role_code: "owner") }
+
   let!(:other_staff) do
     create(:staff)
   end
@@ -147,8 +149,8 @@ RSpec.describe "Api::V1::RestaurantMasters", type: :request do
         response_body
           .dig("data", "restaurant_masters")
           .map { |restaurant_master|
-            restaurant_master["id"]
-          }
+          restaurant_master["id"]
+        }
 
 
       expect(ids).to eq(
@@ -167,8 +169,8 @@ RSpec.describe "Api::V1::RestaurantMasters", type: :request do
         response_body
           .dig("data", "restaurant_masters")
           .find { |item|
-            item["id"] == first_table.id
-          }
+          item["id"] == first_table.id
+        }
 
       expect(
         restaurant_master["restaurant_master_type_id"]

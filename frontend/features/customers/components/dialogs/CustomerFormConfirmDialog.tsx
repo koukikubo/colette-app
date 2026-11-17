@@ -17,6 +17,7 @@ type CustomerFormConfirmDialogProps = {
   open: boolean;
   mode: "create" | "edit";
   values: CustomerFormValues;
+  customerRankLabel: string | null;
   isSubmitting?: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
@@ -27,6 +28,7 @@ export function CustomerFormConfirmDialog({
   open,
   mode,
   values,
+  customerRankLabel,
   isSubmitting = false,
   onOpenChange,
   onConfirm,
@@ -51,6 +53,9 @@ export function CustomerFormConfirmDialog({
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-md border p-4 text-sm">
           <dt className="text-muted-foreground">顧客区分</dt>
           <dd>{values.customerKind === "individual" ? "個人" : "法人"}</dd>
+
+          <dt className="text-muted-foreground">顧客ランク</dt>
+          <dd>{customerRankLabel ?? "未設定"}</dd>
 
           <dt className="text-muted-foreground">顧客名</dt>
           <dd>{values.name || "-"}</dd>

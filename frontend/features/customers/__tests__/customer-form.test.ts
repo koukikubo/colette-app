@@ -81,4 +81,25 @@ describe("customer-form", () => {
       memo: "",
     });
   });
+
+  it("選択した顧客ランクIDを登録リクエストへ含める", () => {
+    const request = buildCreateCustomerRequest({
+      ...values,
+      customerRankId: 6,
+    });
+
+    expect(request.customer.customer_rank_id).toBe(6);
+  });
+
+  it("顧客ランクを未設定にするとnullを送信する", () => {
+    const request = buildUpdateCustomerRequest(
+      {
+        ...values,
+        customerRankId: null,
+      },
+      7,
+    );
+
+    expect(request.customer.customer_rank_id).toBeNull();
+  });
 });

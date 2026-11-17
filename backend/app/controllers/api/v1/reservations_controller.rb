@@ -10,7 +10,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   rescue_from ActiveRecord::ExclusionViolation,
               with: :render_customer_overlap_exclusion_error
 
-  before_action :set_reservation, only: %i[show update cancel restore complete reopen]
+  before_action :set_reservation, only: %i[show update cancel restore complete reopen confirm_details]
 
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
@@ -67,15 +67,18 @@ class Api::V1::ReservationsController < Api::V1::BaseController
 
   def create
     reservation =
-      Reservations::CreateService.call(
+      Reservations::IdempotentCreator.call(
         attributes: reservation_create_params,
-        current_staff: current_staff
+        current_staff: current_staff,
+        key: request.headers["Idempotency-Key"]
       )
 
     render_reservation(
       reservation,
       status: :created
     )
+  rescue Reservations::IdempotentCreator::ConflictingRequestError => error
+    render_error(message: error.message, status: :conflict, code: "idempotency_conflict")
   end
 
   def update
@@ -87,6 +90,16 @@ class Api::V1::ReservationsController < Api::V1::BaseController
       )
 
     render_reservation(reservation)
+  end
+
+  # 確認済み時刻はクライアント時計に依存させず、確認した版と担当者を記録する。
+  def confirm_details
+    @reservation.lock_version = required_lock_version
+    if @reservation.canceled_at || @reservation.completed_at
+      return render_error(message: "未完了の有効予約だけを確認済みにできます", status: :unprocessable_content)
+    end
+    @reservation.update!(details_confirmed_at: Time.current, updated_by_staff: current_staff)
+    render_reservation(@reservation)
   end
 
   def complete
@@ -164,28 +177,31 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   end
 
   def restore
-    @reservation.lock_version = required_lock_version
+    ActiveRecord::Base.transaction do
+      Reservations::WriteLock.acquire!
+      @reservation.lock_version = required_lock_version
 
-    if @reservation.canceled_at.nil?
-      return render_error(
-        message: "キャンセルされた予約はキャンセルされてません。",
-        status: :unprocessable_content
+      if @reservation.canceled_at.nil?
+        return render_error(
+          message: "キャンセルされた予約はキャンセルされてません。",
+          status: :unprocessable_content
+        )
+      end
+
+      @reservation.canceled_at = nil
+      @reservation.updated_by_staff = current_staff
+
+      # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
+      Reservations::TableAssignmentValidator.call(
+        reservation: @reservation,
+        restaurant_master_ids: @reservation.restaurant_master_ids
       )
-    end
 
-    @reservation.canceled_at = nil
-    @reservation.updated_by_staff = current_staff
-
-    # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
-    Reservations::TableAssignmentValidator.call(
-      reservation: @reservation,
-      restaurant_master_ids: @reservation.restaurant_master_ids
-    )
-
-    if @reservation.save
-      render_reservation(@reservation)
-    else
-      render_validation_error(@reservation)
+      if @reservation.save
+        render_reservation(@reservation)
+      else
+        render_validation_error(@reservation)
+      end
     end
   end
 

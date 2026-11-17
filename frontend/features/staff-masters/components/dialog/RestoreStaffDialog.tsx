@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiClientError } from "@/lib/api/api-client";
 import { useState } from "react";
 
 import { Loader2Icon } from "lucide-react";
@@ -55,13 +56,15 @@ export function RestoreStaffDialog({
     setErrorMessage(null);
 
     try {
-      await restoreStaffMaster(staffMaster.id);
+      await restoreStaffMaster(staffMaster.id, staffMaster.lock_version);
       await onRestored();
 
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       setErrorMessage(
-        "担当者を復帰できませんでした。時間をおいて再度お試しください。",
+        error instanceof ApiClientError
+          ? `${error.message} ${error.errorMessages.join(" ")}`
+          : "担当者を復帰できませんでした。時間をおいて再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);

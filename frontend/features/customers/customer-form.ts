@@ -8,6 +8,7 @@ import type {
 
 export type CustomerFormValues = {
   customerKind: CustomerKind;
+  customerRankId: number | null;
 
   name: string;
   kana: string;
@@ -30,6 +31,7 @@ export type CustomerFormValues = {
 // 入力変更時に対応するエラーを消せるよう、フォーム項目とRails APIのエラーキーを対応付ける。
 export const CUSTOMER_FORM_FIELD_NAMES = {
   customerKind: "customer_kind",
+  customerRankId: "customer_rank_id",
   name: "name",
   kana: "kana",
   postalCode: "postal_code",
@@ -48,6 +50,7 @@ export const CUSTOMER_FORM_FIELD_NAMES = {
 
 export const EMPTY_CUSTOMER_FORM_VALUES: CustomerFormValues = {
   customerKind: "individual",
+  customerRankId: null,
 
   name: "",
   kana: "",
@@ -78,6 +81,7 @@ function toCustomerAttributes(values: CustomerFormValues): CustomerAttributes {
   const isCorporate = values.customerKind === "corporate";
   return {
     customer_kind: values.customerKind,
+    customer_rank_id: values.customerRankId,
 
     name: values.name.trim(),
     kana: values.kana.trim(),
@@ -132,6 +136,7 @@ export function buildUpdateCustomerRequest(
 export function customerToFormValues(customer: Customer): CustomerFormValues {
   return {
     customerKind: customer.customer_kind,
+    customerRankId: customer.customer_rank_id,
 
     name: customer.name,
     kana: customer.kana,

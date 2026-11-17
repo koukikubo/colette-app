@@ -1,11 +1,11 @@
+import { notifySessionExpired } from "./session-events";
 // CSRFトークンが不要な、安全なHTTPメソッド。
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
 // apiFetchで成功時に返すAPIレスポンスの共通形式。
 export type ApiSuccessResponse<T> = {
+  status: "success";
   data: T;
-  message?: string;
-  errors?: string;
 };
 export type ApiFieldErrors = Record<string, string[]>;
 export type ApiErrorDetails = string[] | ApiFieldErrors;
@@ -65,9 +65,34 @@ async function fetchCsrfToken() {
     cache: "no-store",
   });
 
-  const data = (await response.json()) as CsrfResponse;
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    throw new ApiClientError(
+      "CSRFトークンを取得できませんでした",
+      response.status,
+    );
+  }
 
-  return data.data.csrf_token;
+  if (!response.ok) {
+    const error = data as ApiErrorResponse | null;
+    throw new ApiClientError(
+      error?.message ?? "CSRFトークンを取得できませんでした",
+      response.status,
+      error?.errors ?? [],
+      error?.code,
+    );
+  }
+
+  const token = (data as CsrfResponse | null)?.data?.csrf_token;
+  if (typeof token !== "string" || token.length === 0) {
+    throw new ApiClientError(
+      "CSRFトークンを取得できませんでした",
+      response.status,
+    );
+  }
+  return token;
 }
 
 // Next.jsのAPI Proxy経由でRails APIを呼び出す共通関数。
@@ -118,6 +143,9 @@ export async function apiFetch<T>(
       data = null;
     }
   }
+
+  if (response.status === 401 && path !== "/api/v1/staff/login")
+    notifySessionExpired();
 
   if (!response.ok) {
     const errorResponse = data as ApiErrorResponse | null;

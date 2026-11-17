@@ -1,4 +1,10 @@
 class Api::V1::StandardListMastersController < Api::V1::BaseController
+  before_action :require_owner!,
+                only: %i[
+                  create
+                  update
+                ]
+
   before_action :set_standard_master
 
   def index
@@ -30,8 +36,8 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
     standard_list_master =
       @standard_master.standard_list_masters.new(standard_list_master_params)
 
-      standard_list_master.position =
-      @standard_master.standard_list_masters.maximum(:position).to_i + 1
+    standard_list_master.position =
+    @standard_master.standard_list_masters.maximum(:position).to_i + 1
 
     standard_list_master.save!
 
@@ -75,6 +81,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
         label
         description
         active
+        display_color
       ]
       )
   end

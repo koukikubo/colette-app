@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api/api-client";
 import type {
   ChangeCustomerVisibilityRequest,
   CreateCustomerRequest,
+  CustomerDetailResponse,
   CustomerListParams,
   CustomerListResponse,
   CustomerReservationListParams,
@@ -18,6 +19,10 @@ const CUSTOMERS_PATH = "/api/v1/customers";
  */
 function buildCustomersPath(params: CustomerListParams = {}) {
   const searchParams = new URLSearchParams();
+
+  if (params.customer_rank_id !== undefined) {
+    searchParams.set("customer_rank_id", String(params.customer_rank_id));
+  }
 
   if (params.visibility) {
     searchParams.set("visibility", params.visibility);
@@ -104,7 +109,7 @@ export function fetchCustomerReservations(
  * 指定した顧客を取得する。
  */
 export function fetchCustomer(id: number) {
-  return apiFetch<CustomerResponse>(buildCustomerPath(id), {
+  return apiFetch<CustomerDetailResponse>(buildCustomerPath(id), {
     cache: "no-store",
   });
 }

@@ -33,10 +33,10 @@ class Api::V1::RestaurantMastersController < Api::V1::BaseController
         attributes: restaurant_master_create_params,
         current_staff: current_staff
       )
-      render_restaurant_master(
-      restaurant_master,
-      status: :created
-    )
+    render_restaurant_master(
+    restaurant_master,
+    status: :created
+  )
   end
 
   def update

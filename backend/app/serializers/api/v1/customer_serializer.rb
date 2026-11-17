@@ -12,6 +12,9 @@ module Api
           phone_number: resource.phone_number,
           email: resource.email,
           birthday: resource.birthday,
+          customer_rank_id: resource.customer_rank_id,
+          customer_rank:
+            serialize_customer_rank(resource.customer_rank),
 
           company_name: resource.company_name,
           company_name_kana: resource.company_name_kana,
@@ -36,6 +39,16 @@ module Api
       end
 
       private
+
+      def serialize_customer_rank(customer_rank)
+        return nil if customer_rank.nil?
+
+        {
+          id: customer_rank.id,
+          code: customer_rank.code,
+          label: customer_rank.label
+        }
+      end
 
       # 顧客の登録者・更新者として必要な情報だけを返す。
       # StaffSerializerはログイン状態なども含むため、監査表示には使用しない。

@@ -17,7 +17,7 @@ describe("SiteHeader", () => {
     vi.clearAllMocks();
   });
 
-  it("予約一覧では、予約管理と予約一覧を現在地として表示する", () => {
+  it("タイムラインでは、予約管理とタイムラインを現在地として表示する", () => {
     mocks.usePathname.mockReturnValue("/reservations");
 
     render(
@@ -31,15 +31,20 @@ describe("SiteHeader", () => {
     });
 
     expect(navigation).toHaveTextContent("予約管理");
-    expect(navigation).toHaveTextContent("予約一覧");
+    expect(navigation).toHaveTextContent("タイムライン");
   });
 
   it.each([
     ["/reservations/new", "予約管理", "新規予約登録"],
     ["/reservations/30", "予約管理", "予約詳細"],
+    ["/reservations/detail/30", "予約管理", "予約詳細"],
     ["/reservations/30/edit", "予約管理", "予約編集"],
     ["/customers", "顧客管理", "顧客一覧"],
     ["/customers/10", "顧客管理", "顧客詳細"],
+    ["/rf-management", "統一RFマスタ", "設定一覧"],
+    ["/rf-management/new", "統一RFマスタ", "新規登録"],
+    ["/rf-management/10", "統一RFマスタ", "設定詳細"],
+    ["/rf-management/10/edit", "統一RFマスタ", "設定編集"],
   ])("%sでは、%sと%sを現在地として表示する", (pathname, section, page) => {
     mocks.usePathname.mockReturnValue(pathname);
 
@@ -61,7 +66,8 @@ describe("SiteHeader", () => {
     ["/dashboard", "ダッシュボード"],
     ["/restaurant-masters", "予約テーブルマスタ"],
     ["/staff-masters", "担当者マスタ"],
-    ["/standard-codes", "基本コード・選択肢コード"],
+    ["/standard-codes", "基本コードマスタ"],
+    ["/rf-analysis", "統一RFランク表"],
   ])("%sでは、%sを現在地として表示する", (pathname, section) => {
     mocks.usePathname.mockReturnValue(pathname);
 

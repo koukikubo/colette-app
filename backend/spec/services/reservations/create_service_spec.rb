@@ -147,10 +147,10 @@ RSpec.describe Reservations::CreateService do
           current_staff: staff
         )
       end.to raise_error(ActiveRecord::RecordInvalid) { |error|
-        expect(
-          error.record.errors.details[:restaurant_master_ids]
-        ).to include(error: :insufficient_capacity)
-      }
+               expect(
+                 error.record.errors.details[:restaurant_master_ids]
+               ).to include(error: :insufficient_capacity)
+             }
     end
 
     it "restaurant_master_idsがある場合、実テーブルを割り当てる" do

@@ -1,0 +1,246 @@
+require "rails_helper"
+
+RSpec.describe Rf::CalculationRunner do
+  let(:base_date) do
+    Date.new(2026, 9, 21)
+  end
+
+  let(:staff) do
+    create(:staff)
+  end
+
+  let(:rule_set) do
+    RfRuleSet.create!(
+      name: "公開済みRFルール",
+      version: 1,
+      aggregation_months: 60,
+      frequency_window_months: 12,
+      status: "published",
+      published_at: Time.current
+    )
+  end
+
+  let(:calculation_run) do
+    RfCalculationRun.create!(
+      rf_rule_set: rule_set,
+      started_by_staff: staff,
+      base_date: base_date,
+      aggregation_started_on:
+        base_date.advance(months: -60),
+      frequency_started_on:
+        base_date.advance(months: -12),
+      status: "pending"
+    )
+  end
+
+  let(:rf_rank) do
+    master = create(
+      :standard_master,
+      system_key: "rf_rank",
+      name: "RFランク"
+    )
+
+    create(
+      :standard_list_master,
+      standard_master: master,
+      code: "A",
+      label: "Aランク"
+    )
+  end
+
+  let(:excluded_customer_rank) do
+    master = create(
+      :standard_master,
+      system_key: "customer_rank",
+      name: "顧客ランク"
+    )
+
+    create(
+      :standard_list_master,
+      standard_master: master,
+      code: "R",
+      label: "Rランク"
+    )
+  end
+
+  it "顧客0人でも指定したコードなしランクを保存し、無関係なランクを追加しない" do
+    custom_rank = create(:standard_list_master, standard_master: rf_rank.standard_master,
+                         code: nil, label: "未訪問", display_color: "#123456")
+    create(:standard_list_master, standard_master: rf_rank.standard_master, code: "N")
+    rule_set.update!(no_visit_rank: custom_rank)
+
+    described_class.call(calculation_run: calculation_run)
+
+    expect(calculation_run.reload.rf_rank_snapshots).to eq([
+      {
+        "id" => custom_rank.id,
+        "display_code" => custom_rank.display_code,
+        "label" => "未訪問",
+        "display_color" => "#123456",
+        "position" => custom_rank.position
+      }
+    ])
+  end
+
+  it "表示中の全顧客について計算結果を保存する" do
+    first_customer = create(:customer)
+    second_customer = create(:customer)
+    create(:customer, hidden_at: Time.current)
+
+    calculation_result =
+      Rf::CustomerRankCalculator::Result.new(
+        rf_rank: rf_rank,
+        recency_days: 20,
+        frequency_count: 2,
+        last_visit_on: Date.new(2026, 9, 1)
+      )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+      .and_return(calculation_result)
+
+    described_class.call(
+      calculation_run: calculation_run
+    )
+
+    calculation_run.reload
+
+    expect(calculation_run.status).to eq("completed")
+    expect(calculation_run.customer_count).to eq(2)
+
+    expect(
+      calculation_run
+        .customer_rf_rank_results
+        .pluck(:customer_id)
+    ).to contain_exactly(
+      first_customer.id,
+      second_customer.id
+    )
+  end
+
+  it "計算途中で失敗した場合は結果を保存せず失敗状態にする" do
+    create(:customer)
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+      .and_raise(StandardError, "計算に失敗しました")
+
+    expect do
+      described_class.call(
+        calculation_run: calculation_run
+      )
+    end.to raise_error(
+      StandardError,
+      "計算に失敗しました"
+    )
+
+    calculation_run.reload
+
+    expect(calculation_run.status).to eq("failed")
+    expect(calculation_run.failure_message)
+      .to eq("計算に失敗しました")
+
+    expect(
+      calculation_run.customer_rf_rank_results
+    ).to be_empty
+  end
+
+  it "顧客ランクRの顧客をRF計算対象外にする" do
+    excluded_customer = create(
+      :customer,
+      customer_rank: excluded_customer_rank
+    )
+
+    calculated_customer = create(:customer)
+
+    calculation_result =
+      Rf::CustomerRankCalculator::Result.new(
+        rf_rank: rf_rank,
+        recency_days: 20,
+        frequency_count: 2,
+        last_visit_on: Date.new(2026, 9, 1)
+      )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+      .and_return(calculation_result)
+
+    result =
+      described_class.call(
+        calculation_run: calculation_run
+      )
+
+    excluded_result =
+      result
+        .customer_rf_rank_results
+        .find_by!(customer: excluded_customer)
+
+    expect(excluded_result.rf_rank).to be_nil
+    expect(excluded_result.exclusion_reason)
+      .to eq("manual_customer_rank")
+
+    expect(calculation_run.customer_count).to eq(2)
+    expect(calculation_run.excluded_count).to eq(1)
+
+    expect(Rf::CustomerRankCalculator)
+      .to have_received(:call)
+      .with(
+        customer: calculated_customer,
+        rule_set: rule_set,
+        base_date: base_date
+      )
+      .once
+  end
+
+  it "計算完了済みの履歴は再計算しない" do
+    create(:customer)
+
+    calculation_run.update!(
+      status: "completed",
+      completed_at: Time.current
+    )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+
+    result =
+      described_class.call(
+        calculation_run: calculation_run
+      )
+
+    expect(result).to eq(calculation_run)
+    expect(result.reload.status).to eq("completed")
+    expect(result.started_at).to be_nil
+    expect(result.customer_rf_rank_results).to be_empty
+
+    expect(Rf::CustomerRankCalculator)
+      .not_to have_received(:call)
+  end
+
+  it "別のジョブが処理中の履歴は再計算しない" do
+    calculation_run.update!(
+      status: "processing",
+      started_at: 1.minute.ago
+    )
+
+    allow(Rf::CustomerRankCalculator)
+      .to receive(:call)
+
+    described_class.call(
+      calculation_run: calculation_run
+    )
+
+    expect(calculation_run.reload.status).to eq("processing")
+
+    expect(Rf::CustomerRankCalculator)
+      .not_to have_received(:call)
+  end
+  it "強制終了でprocessingになった履歴を明示的に復旧できる" do
+    calculation_run.update!(status: "processing", started_at: 2.hours.ago)
+    allow_any_instance_of(described_class).to receive(:calculate_all_customers!) do |runner, run|
+      run.update!(status: "completed", completed_at: Time.current)
+    end
+    described_class.call(calculation_run: calculation_run, recover: true)
+    expect(calculation_run.reload.status).to eq("completed")
+  end
+end

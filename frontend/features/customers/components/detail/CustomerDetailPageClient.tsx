@@ -1,13 +1,18 @@
 "use client";
 
+import { useReadRefresh } from "@/hooks/useReadRefresh";
+import { useUrlQuery } from "@/hooks/useUrlQuery";
+import { safeReturnPath } from "@/lib/api/session-events";
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   Building2Icon,
   PencilIcon,
   ShieldCheckIcon,
   UserIcon,
+  ChartNoAxesCombinedIcon,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { fetchCustomer } from "../../api/customer-api";
-import type { Customer } from "../../types";
+import type { Customer, CustomerDetail } from "../../types";
 import {
   formatCustomerPhoneNumber,
   formatCustomerPostalCode,
@@ -87,6 +92,26 @@ function formatDateTime(value: string | null | undefined) {
 
 function customerKindLabel(customerKind: Customer["customer_kind"]) {
   return customerKind === "corporate" ? "法人" : "個人";
+}
+
+function rfRankDisplayValue(customer: CustomerDetail) {
+  if (customer.current_rf_rank) {
+    return customer.current_rf_rank.label;
+  }
+
+  if (customer.rf_rank_basis?.exclusion_reason) {
+    return "RF計算対象外";
+  }
+
+  return "未計算";
+}
+
+function rfExclusionReasonMessage(reason: string) {
+  if (reason === "manual_customer_rank") {
+    return "手動の顧客ランクが設定されているため、RF計算の対象外です。";
+  }
+
+  return `RF計算の対象外です。（理由: ${reason}）`;
 }
 
 function DetailItem({ label, value, wide = false }: DetailItemProps) {
@@ -181,7 +206,11 @@ function CustomerDetailSkeleton() {
 export function CustomerDetailPageClient({
   customerId,
 }: CustomerDetailPageClientProps) {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const { params: returnParams } = useUrlQuery();
+  const backTarget = returnParams.get("return_to")
+    ? safeReturnPath(returnParams.get("return_to"))
+    : "/customers";
+  const [customer, setCustomer] = useState<CustomerDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -190,9 +219,15 @@ export function CustomerDetailPageClient({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [reloadKey, setReloadKey] = useState(0);
+  const readGeneration = useRef(0);
+
+  useReadRefresh(() => setReloadKey((value) => value + 1), !editDialogOpen);
 
   useEffect(() => {
     let isCancelled = false;
+    const generation = ++readGeneration.current;
+    const isCurrentRead = () =>
+      !isCancelled && generation === readGeneration.current;
 
     async function loadCustomer() {
       setIsLoading(true);
@@ -201,13 +236,13 @@ export function CustomerDetailPageClient({
       try {
         const response = await fetchCustomer(customerId);
 
-        if (isCancelled) {
+        if (!isCurrentRead()) {
           return;
         }
 
         setCustomer(response.data.customer);
       } catch (error) {
-        if (isCancelled) {
+        if (!isCurrentRead()) {
           return;
         }
 
@@ -233,7 +268,7 @@ export function CustomerDetailPageClient({
 
         setErrorMessage("顧客情報の取得中に予期しないエラーが発生しました。");
       } finally {
-        if (!isCancelled) {
+        if (isCurrentRead()) {
           setIsLoading(false);
         }
       }
@@ -246,19 +281,28 @@ export function CustomerDetailPageClient({
     };
   }, [customerId, reloadKey]);
 
-  function handleEditCompleted() {
-    setReloadKey((current) => current + 1);
+  async function handleEditCompleted() {
+    // 保存前に始まった背景GETを無効化し、保存後の読取だけを表示へ採用する。
+    const generation = ++readGeneration.current;
+    try {
+      const response = await fetchCustomer(customerId);
+      if (generation !== readGeneration.current) return;
+      setCustomer(response.data.customer);
+      setErrorMessage(null);
+    } finally {
+      if (generation === readGeneration.current) setIsLoading(false);
+    }
   }
 
-  if (isLoading) {
+  if (isLoading && !customer) {
     return <CustomerDetailSkeleton />;
   }
 
-  if (errorMessage) {
+  if (errorMessage && !customer) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
         <Button asChild variant="outline">
-          <Link href="/customers">
+          <Link href={backTarget}>
             <ArrowLeftIcon />
             顧客一覧へ戻る
           </Link>
@@ -278,9 +322,18 @@ export function CustomerDetailPageClient({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+    <div
+      className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6"
+      aria-busy={isLoading}
+    >
+      {/* 背景取得の失敗でも既存の履歴・ページ位置を残す。 */}
+      {errorMessage && (
+        <p role="alert" className="text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
       <Button asChild variant="outline">
-        <Link href="/customers">
+        <Link href={backTarget}>
           <ArrowLeftIcon />
           顧客一覧へ戻る
         </Link>
@@ -325,14 +378,16 @@ export function CustomerDetailPageClient({
               </div>
             </div>
 
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <PencilIcon />
-              顧客情報を編集
-            </Button>
+            <PermissionGate resource="customers">
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <PencilIcon />
+                顧客情報を編集
+              </Button>
+            </PermissionGate>
           </div>
         </CardHeader>
 
@@ -439,6 +494,95 @@ export function CustomerDetailPageClient({
           )}
 
           <DetailSection
+            title="顧客ランク"
+            description="手動設定の顧客ランクと、来店履歴から計算されたRFランクです。"
+            icon={
+              <ChartNoAxesCombinedIcon className="size-5" aria-hidden="true" />
+            }
+          >
+            <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
+              <DetailItem
+                label="手動設定の顧客ランク"
+                value={customer.customer_rank?.label ?? "未設定"}
+              />
+
+              {!customer.rf_rank_basis && (
+                <p className="mt-6 rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
+                  現在適用中のRF計算結果はありません。
+                </p>
+              )}
+
+              {customer.rf_rank_basis?.exclusion_reason && (
+                <Alert className="mt-6">
+                  <AlertTitle>RF計算対象外</AlertTitle>
+
+                  <AlertDescription>
+                    {rfExclusionReasonMessage(
+                      customer.rf_rank_basis.exclusion_reason,
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <DetailItem
+                label="現在のRFランク"
+                value={
+                  customer.current_rf_rank ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="size-3 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor:
+                            customer.current_rf_rank.display_color ?? "#64748B",
+                        }}
+                      />
+                      <span>{customer.current_rf_rank.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        （{customer.current_rf_rank.display_code}）
+                      </span>
+                    </span>
+                  ) : (
+                    rfRankDisplayValue(customer)
+                  )
+                }
+              />
+
+              {customer.rf_rank_basis && (
+                <>
+                  <DetailItem
+                    label="RF計算基準日"
+                    value={formatDate(customer.rf_rank_basis.base_date)}
+                  />
+
+                  <DetailItem
+                    label="最終来店日"
+                    value={formatDate(customer.rf_rank_basis.last_visit_on)}
+                  />
+
+                  <DetailItem
+                    label="最終来店からの経過日数"
+                    value={
+                      customer.rf_rank_basis.recency_days === null
+                        ? "-"
+                        : `${customer.rf_rank_basis.recency_days}日`
+                    }
+                  />
+
+                  <DetailItem
+                    label="期間内の来店回数"
+                    value={
+                      customer.rf_rank_basis.frequency_count === null
+                        ? "-"
+                        : `${customer.rf_rank_basis.frequency_count}回`
+                    }
+                  />
+                </>
+              )}
+            </dl>
+          </DetailSection>
+
+          <DetailSection
             title="管理情報"
             description="登録・更新を行った担当者と日時です。"
             icon={<ShieldCheckIcon className="size-5" aria-hidden="true" />}
@@ -481,15 +625,17 @@ export function CustomerDetailPageClient({
       <CustomerReservationHistory customerId={customer.id} />
 
       {editDialogOpen && (
-        <CustomerFormDialog
-          key={`detail-edit-${customer.id}-${customer.lock_version}`}
-          open={editDialogOpen}
-          mode="edit"
-          customer={customer}
-          allowVisibilityChange={true}
-          onOpenChange={setEditDialogOpen}
-          onCompleted={handleEditCompleted}
-        />
+        <PermissionGate resource="customers">
+          <CustomerFormDialog
+            key={`detail-edit-${customer.id}`}
+            open={editDialogOpen}
+            mode="edit"
+            customer={customer}
+            allowVisibilityChange={true}
+            onOpenChange={setEditDialogOpen}
+            onCompleted={handleEditCompleted}
+          />
+        </PermissionGate>
       )}
     </div>
   );

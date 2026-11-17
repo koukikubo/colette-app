@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it, vi } from "vitest";
 
 import { ReservationListPage } from "../../../components/layouts/displays/ReservationListPage";
@@ -248,7 +249,7 @@ describe("ReservationListPage", () => {
       within(section).getByRole("link", {
         name: "詳細",
       }),
-    ).toHaveAttribute("href", "/reservations/15");
+    ).toHaveAttribute("href", "/reservations/detail/15");
 
     expect(
       within(section).getByRole("link", {
@@ -320,7 +321,7 @@ describe("ReservationListPage", () => {
       name: "山田 太郎様の予約詳細を開く",
     });
 
-    expect(reservationLink).toHaveAttribute("href", "/reservations/20");
+    expect(reservationLink).toHaveAttribute("href", "/reservations/detail/20");
 
     expect(reservationLink).toHaveTextContent("山田 太郎");
     expect(reservationLink).toHaveTextContent("2名");
@@ -711,9 +712,15 @@ describe("ReservationListPage", () => {
 
     expect(reservationLinks).toHaveLength(2);
 
-    expect(reservationLinks[0]).toHaveAttribute("href", "/reservations/25");
+    expect(reservationLinks[0]).toHaveAttribute(
+      "href",
+      "/reservations/detail/25",
+    );
 
-    expect(reservationLinks[1]).toHaveAttribute("href", "/reservations/25");
+    expect(reservationLinks[1]).toHaveAttribute(
+      "href",
+      "/reservations/detail/25",
+    );
 
     expect(
       screen.queryByRole("region", {
@@ -847,7 +854,7 @@ describe("ReservationListPage", () => {
       within(canceledSection).getByRole("link", {
         name: "山田 太郎様の予約詳細を開く",
       }),
-    ).toHaveAttribute("href", "/reservations/30");
+    ).toHaveAttribute("href", "/reservations/detail/30");
 
     expect(within(canceledSection).getByText("2名")).toBeInTheDocument();
 

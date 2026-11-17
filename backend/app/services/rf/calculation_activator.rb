@@ -1,0 +1,67 @@
+module Rf
+  class CalculationActivator
+    class IncompleteRunError < StandardError; end
+    class StaleRunError < StandardError; end
+
+    def self.call(calculation_run:)
+      new(calculation_run: calculation_run).call
+    end
+
+    def initialize(calculation_run:)
+      @calculation_run = calculation_run
+    end
+
+    def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
+      validate_completed!
+
+      setting = RfSetting.first_or_create!
+
+      setting.with_lock do
+        setting.reload
+
+        return setting if already_active?(setting)
+
+        validate_previous_run!(setting)
+        RankAvailability.ensure_available!(calculation_run.rf_rule_set)
+
+        setting.update!(
+          current_calculation_run: calculation_run
+        )
+        # 自動適用の競合を確認したうえで手動適用した場合も、対応済みとして残す。
+        if %w[monthly daily].include?(calculation_run.execution_source)
+          calculation_run.update!(monthly_apply_state: "applied", monthly_apply_error: nil)
+        end
+      end
+
+      setting
+    end
+
+    private
+
+    attr_reader :calculation_run
+
+    def validate_completed!
+      return if calculation_run.status == "completed"
+
+      raise IncompleteRunError,
+            "計算完了済みの履歴だけを適用できます"
+    end
+
+    def already_active?(setting)
+      setting.current_calculation_run_id ==
+        calculation_run.id
+    end
+
+    def validate_previous_run!(setting)
+      return if setting.current_calculation_run_id ==
+        calculation_run.previous_run_id
+
+      raise StaleRunError,
+            "現在のRFランクが変更されています。再計算してください"
+    end
+  end
+end

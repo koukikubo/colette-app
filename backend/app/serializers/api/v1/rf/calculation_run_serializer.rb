@@ -1,0 +1,140 @@
+class Api::V1::Rf::CalculationRunSerializer < ApplicationSerializer
+  def as_json
+    {
+      id: resource.id,
+      execution_source: resource.execution_source,
+      scheduled_month: resource.scheduled_month,
+      scheduled_on: resource.scheduled_on,
+      monthly_apply_state: resource.monthly_apply_state,
+      monthly_apply_error: resource.monthly_apply_error,
+      rf_rule_set_id: resource.rf_rule_set_id,
+      previous_run_id: resource.previous_run_id,
+      base_date: resource.base_date,
+      aggregation_started_on:
+        resource.aggregation_started_on,
+      frequency_started_on:
+        resource.frequency_started_on,
+      status: resource.status,
+      customer_count: resource.customer_count,
+      excluded_count: resource.excluded_count,
+      rank_counts: serialize_rank_counts,
+      preview: serialize_preview,
+      unmatched_count: resource.unmatched_count,
+      started_at: resource.started_at,
+      completed_at: resource.completed_at,
+      failure_message: resource.failure_message,
+      started_by_staff:
+        serialize_staff(resource.started_by_staff),
+      created_at: resource.created_at
+    }
+  end
+
+      private
+
+  def serialize_staff(staff)
+    return nil if staff.nil?
+
+    {
+      id: staff.id,
+      code: staff.staff_master&.code,
+      name: staff.staff_master&.name
+    }
+  end
+
+  def serialize_preview
+    preview =
+      Rf::CalculationPreviewBuilder.call(
+        calculation_run: resource
+      )
+
+    {
+      changed_count: preview.changed_count,
+      unchanged_count: preview.unchanged_count,
+      excluded_count: preview.excluded_count,
+      rank_transitions:
+        preview.rank_transitions.map do |transition|
+          serialize_transition(transition)
+        end,
+
+      rank_comparisons:
+        preview.rank_comparisons.map do |comparison|
+          {
+            id: comparison.rf_rank.id,
+            display_code: comparison.rf_rank.display_code,
+            display_color: comparison.rf_rank.display_color,
+            label: comparison.rf_rank.label,
+            before_count: comparison.before_count,
+            after_count: comparison.after_count,
+            delta:
+              comparison.after_count -
+                comparison.before_count
+          }
+        end
+    }
+  end
+
+  def serialize_transition(transition)
+    {
+      from_rf_rank:
+        serialize_rf_rank(transition.from_rf_rank),
+      to_rf_rank:
+        serialize_rf_rank(transition.to_rf_rank),
+      count: transition.count
+    }
+  end
+
+  def serialize_rf_rank(rf_rank)
+    return nil if rf_rank.nil?
+
+    {
+      id: rf_rank.id,
+      display_code: rf_rank.display_code,
+      label: rf_rank.label,
+      display_color: rf_rank.display_color
+    }
+  end
+
+  def serialize_rank_counts
+    counts =
+      resource
+        .customer_rf_rank_results
+        .where.not(rf_rank_id: nil)
+        .group(:rf_rank_id)
+        .count
+
+    snapshots = resource.rf_rank_snapshots
+
+    ranks =
+      if snapshots.nil?
+        StandardListMaster
+          .where(id: counts.keys)
+          .ordered
+          .map do |rank|
+            {
+              "id" => rank.id,
+              "display_code" => rank.display_code,
+              "label" => rank.label,
+              "display_color" => rank.display_color,
+              "position" => rank.position
+            }
+          end
+      else
+        snapshots.sort_by do |rank|
+          [
+            rank.fetch("position"),
+            rank.fetch("id")
+          ]
+        end
+      end
+
+    ranks.map do |rank|
+      {
+        id: rank.fetch("id"),
+        display_code: rank.fetch("display_code") { rank.fetch("id").to_s.rjust(5, "0") },
+        label: rank.fetch("label"),
+        display_color: rank.fetch("display_color"),
+        count: counts.fetch(rank.fetch("id"), 0)
+      }
+    end
+  end
+end
