@@ -3,7 +3,7 @@ source "https://rubygems.org"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.3"
 # Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.7"
 # Use the Puma web server [https://github.com/puma/puma]
 # 8.0.3で修正された接続待機・TLS制御の脆弱性を含まない版へ固定する。
 gem "puma", "~> 8.0.3"
@@ -29,7 +29,9 @@ gem "kamal", require: false
 
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.2"
+# image_processing 2では画像処理エンジンが任意依存になったため、Rails標準のVipsを明示する。
+gem "ruby-vips", "~> 2.3", require: false
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 gem "rack-cors"
