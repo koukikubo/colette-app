@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { ApiClientError } from "@/lib/api/api-client";
+import { useSessionReadRetry } from "@/hooks/useSessionReadRetry";
 
 import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 import type {
@@ -33,6 +35,9 @@ export function useReservationFormOptions(): UseReservationFormOptionsResult {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [unauthorized, setUnauthorized] = useState(false);
+  const recoveryRevision = useSessionReadRetry(unauthorized);
+
   // 予約フォームの初回表示に選択肢として使用する必要なコード情報を取得する。
   useEffect(() => {
     // 画面遷移などでフォームが破棄された場合に、実行中の通信とその後のState更新を止めるために使用する。
@@ -41,6 +46,7 @@ export function useReservationFormOptions(): UseReservationFormOptionsResult {
     async function loadOptions() {
       setIsLoading(true);
       setErrorMessage(null);
+      setUnauthorized(false);
 
       try {
         // 基本コードと席マスタは互いに依存しないため、並列で取得する。
@@ -53,9 +59,12 @@ export function useReservationFormOptions(): UseReservationFormOptionsResult {
         setStandardCodes(standardCodesResponse.data.standard_masters);
         // 無効な席は除外しない。編集時にはその時点のマスタ情報から選択肢を選択できる形式が好ましいため、全件取得する。
         setRestaurantMasters(restaurantMastersResponse.data.restaurant_masters);
-      } catch {
+      } catch (error) {
         // 画面遷移による通信キャンセルは取得失敗として扱わない。
         if (controller.signal.aborted) return;
+        setUnauthorized(
+          error instanceof ApiClientError && error.status === 401,
+        );
         setErrorMessage("予約フォームのマスタ情報を取得できませんでした。");
       } finally {
         if (!controller.signal.aborted) {
@@ -69,7 +78,7 @@ export function useReservationFormOptions(): UseReservationFormOptionsResult {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [recoveryRevision]);
 
   // standardCodes から system_key が指定されたものを探し、有効なアイテムのみを返す。
   function findActiveStandardListCodes(systemKey: string): StandardListCode[] {

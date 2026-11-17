@@ -23,7 +23,7 @@ type ResetFailedAttemptsDialogProps = {
   open: boolean;
   staffMaster: StaffMaster;
   onOpenChange: (open: boolean) => void;
-  onUpdated: () => Promise<void>;
+  onUpdated: (updated: StaffMaster) => Promise<void>;
 };
 
 export function ResetFailedAttemptsDialog({
@@ -60,8 +60,11 @@ export function ResetFailedAttemptsDialog({
     setErrorMessage(null);
 
     try {
-      await resetStaffFailedAttempts(staffMaster.id, staffMaster.lock_version);
-      await onUpdated();
+      const response = await resetStaffFailedAttempts(
+        staffMaster.id,
+        staffMaster.lock_version,
+      );
+      await onUpdated(response.data.staff_master);
 
       onOpenChange(false);
     } catch (error) {
