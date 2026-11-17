@@ -152,6 +152,9 @@ export function StaffMasterManagementPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button type="button" variant="outline" onClick={handleReload}>
+          一覧を更新
+        </Button>
         <Button
           type="button"
           variant="outline"

@@ -41,9 +41,13 @@ export function fetchReservations(
 }
 
 // 予約を登録する。
-export function createReservation(payload: ReservationCreateRequest) {
+export function createReservation(
+  payload: ReservationCreateRequest,
+  idempotencyKey: string,
+) {
   return apiFetch<ReservationResponse>(RESERVATIONS_PATH, {
     method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
     body: payload,
   });
 }

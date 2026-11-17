@@ -67,15 +67,18 @@ class Api::V1::ReservationsController < Api::V1::BaseController
 
   def create
     reservation =
-      Reservations::CreateService.call(
+      Reservations::IdempotentCreator.call(
         attributes: reservation_create_params,
-        current_staff: current_staff
+        current_staff: current_staff,
+        key: request.headers["Idempotency-Key"]
       )
 
     render_reservation(
       reservation,
       status: :created
     )
+  rescue Reservations::IdempotentCreator::ConflictingRequestError => error
+    render_error(message: error.message, status: :conflict, code: "idempotency_conflict")
   end
 
   def update
