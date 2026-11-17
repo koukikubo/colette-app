@@ -23,7 +23,7 @@ type ToggleLoginEnabledDialogProps = {
   open: boolean;
   staffMaster: StaffMaster;
   onOpenChange: (open: boolean) => void;
-  onUpdated: () => Promise<void>;
+  onUpdated: (updated: StaffMaster) => Promise<void>;
 };
 
 export function ToggleLoginEnabledDialog({
@@ -60,13 +60,13 @@ export function ToggleLoginEnabledDialog({
     setErrorMessage(null);
 
     try {
-      await updateStaffLoginEnabled(
+      const response = await updateStaffLoginEnabled(
         staffMaster.id,
         nextLoginEnabled,
         staffMaster.lock_version,
       );
 
-      await onUpdated();
+      await onUpdated(response.data.staff_master);
       onOpenChange(false);
     } catch (error) {
       setErrorMessage(
