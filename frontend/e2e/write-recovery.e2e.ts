@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -11,11 +11,20 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
+// 正しいログインも回数制限の対象。専用CIコンテキスト間でCookieを共有し、制限は変更しない。
+let cookies: Awaited<ReturnType<BrowserContext["cookies"]>> | null = null;
+test.beforeEach(async ({ page, context }) => {
+  if (cookies) await context.addCookies(cookies);
+  else {
+    await login(page);
+    cookies = await context.cookies();
+  }
+});
+
 for (const failure of ["lost", "invalid-json"] as const) {
   test(`顧客保存後の${failure}とリロードでも二重登録しない`, async ({
     page,
   }) => {
-    await login(page);
     const name = `E2E回復${failure}${Date.now()}`;
     let writes = 0;
     await page.route("**/api/v1/customers", async (route) => {
@@ -75,7 +84,6 @@ for (const failure of ["lost", "invalid-json"] as const) {
 test("予約保存後の応答消失とリロードで登録済み予約を回復する", async ({
   page,
 }) => {
-  await login(page);
   const date = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Tokyo",
   }).format(new Date(Date.now() + 2 * 86_400_000));
