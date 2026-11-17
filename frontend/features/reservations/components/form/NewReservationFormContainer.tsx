@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useReservationModalDirty } from "../layouts/reservation-modal-dirty-context";
 import {
   useReservationFormOptions,
   type UseReservationFormOptionsResult,
@@ -58,6 +59,10 @@ function NewReservationFormContent(
     } else initial.restaurant_master_ids = [];
     return initial;
   });
+  const [initialValues] = useState(values);
+  useReservationModalDirty(
+    JSON.stringify(values) !== JSON.stringify(initialValues),
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =

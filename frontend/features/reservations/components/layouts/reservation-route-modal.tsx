@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ReservationModalDirtyContext } from "./reservation-modal-dirty-context";
 import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import { useRouter } from "next/navigation";
 
@@ -59,7 +60,9 @@ export function ReservationRouteModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div onChangeCapture={() => setDirty(true)}>{children}</div>
+        <ReservationModalDirtyContext.Provider value={setDirty}>
+          {children}
+        </ReservationModalDirtyContext.Provider>
         <ConfirmDiscardChangesDialog
           open={confirmDiscard}
           onOpenChange={setConfirmDiscard}
