@@ -182,7 +182,7 @@ describe("RestaurantMasterMasterPage", () => {
     expect(screen.getByText("API通信エラー")).toBeInTheDocument();
   });
 
-  it("予約席種マスタが存在しない場合、エラーを表示する", async () => {
+  it("予約席種マスタが存在しない場合、一覧を保ち登録不可の理由を表示する", async () => {
     mocks.fetchRestaurantMasters.mockResolvedValue({
       status: "success",
       data: {
@@ -210,20 +210,17 @@ describe("RestaurantMasterMasterPage", () => {
 
     render(<RestaurantMasterMasterPage />);
 
+    expect(await screen.findByText(/新しい席の登録には/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "席を登録" })).toBeDisabled();
     expect(
-      await screen.findByText("席マスタを取得できませんでした"),
+      screen.getByText("登録されている席はありません"),
     ).toBeInTheDocument();
-
     expect(
-      screen.getByText("予約席種マスタが見つかりません。"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByText("登録されている席はありません"),
+      screen.queryByText("席マスタを取得できませんでした"),
     ).not.toBeInTheDocument();
   });
 
-  it("有効な予約席種が存在しない場合、エラーを表示する", async () => {
+  it("有効な予約席種が存在しない場合、一覧を保ち登録不可の理由を表示する", async () => {
     mocks.fetchRestaurantMasters.mockResolvedValue({
       status: "success",
       data: {
@@ -261,16 +258,13 @@ describe("RestaurantMasterMasterPage", () => {
 
     render(<RestaurantMasterMasterPage />);
 
+    expect(await screen.findByText(/新しい席の登録には/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "席を登録" })).toBeDisabled();
     expect(
-      await screen.findByText("席マスタを取得できませんでした"),
+      screen.getByText("登録されている席はありません"),
     ).toBeInTheDocument();
-
     expect(
-      screen.getByText("有効な予約席種が登録されていません。"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByText("登録されている席はありません"),
+      screen.queryByText("席マスタを取得できませんでした"),
     ).not.toBeInTheDocument();
   });
 
@@ -1036,3 +1030,59 @@ describe("RestaurantMasterMasterPage", () => {
     });
   });
 });
+
+it.each(["T/C無効", "席種マスタ無効", "席種マスタなし"])(
+  "%sでも既存席の閲覧・編集を保ち、新規登録だけ止める",
+  async (configuration) => {
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      data: {
+        restaurant_masters: [
+          {
+            id: 1,
+            restaurant_master_type_id: 10,
+            restaurant_master_type: { id: 10, code: "T", label: "テーブル" },
+            sequence_number: 1,
+            code: "T01",
+            name: "既存テーブル",
+            capacity: 2,
+            active: true,
+            memo: null,
+            lock_version: 0,
+            created_by_staff: null,
+            updated_by_staff: null,
+            created_at: "2026-01-01",
+            updated_at: "2026-01-01",
+          },
+        ],
+      },
+    });
+    mocks.fetchStandardCodes.mockResolvedValue({
+      data: {
+        standard_masters:
+          configuration === "席種マスタなし"
+            ? []
+            : [
+                {
+                  id: 1,
+                  system_key: "restaurant_master_type",
+                  active: configuration !== "席種マスタ無効",
+                  items: [
+                    { id: 10, code: "T", label: "テーブル", active: false },
+                    { id: 11, code: "C", label: "カウンター", active: false },
+                    { id: 12, code: "X", label: "追加席種", active: true },
+                  ],
+                },
+              ],
+      },
+    });
+    render(<RestaurantMasterMasterPage />);
+    expect(await screen.findByText("既存テーブル")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "席を登録" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "既存テーブルを編集" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText("席マスタを取得できませんでした"),
+    ).not.toBeInTheDocument();
+  },
+);

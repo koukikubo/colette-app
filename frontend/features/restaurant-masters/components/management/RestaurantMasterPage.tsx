@@ -52,20 +52,13 @@ export function RestaurantMasterMasterPage() {
               standardMaster.active,
           );
 
-        if (!RestaurantMasterTypeMaster) {
-          throw new Error("予約席種マスタが見つかりません。");
-        }
-
         const activeRestaurantMasterTypes = (
-          RestaurantMasterTypeMaster.items ?? []
+          RestaurantMasterTypeMaster?.items ?? []
         )
           .filter(isAutomaticSeatType)
           .filter((item) => item.active);
 
-        if (activeRestaurantMasterTypes.length === 0) {
-          throw new Error("有効な予約席種が登録されていません。");
-        }
-
+        // 登録候補がない設定でも、既存席の履歴・編集は利用できる。
         setRestaurantMasters(RestaurantMastersResponse.data.restaurant_masters);
 
         setRestaurantMasterTypes(activeRestaurantMasterTypes);
@@ -116,12 +109,19 @@ export function RestaurantMasterMasterPage() {
         <PermissionGate resource="masters">
           <Button
             type="button"
-            disabled={isLoading || Boolean(error)}
+            disabled={
+              isLoading || Boolean(error) || RestaurantMasterTypes.length === 0
+            }
             onClick={() => setIsCreateDialogOpen(true)}
           >
             席を登録
           </Button>
         </PermissionGate>
+        {!isLoading && !error && RestaurantMasterTypes.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            新しい席の登録には、有効なテーブル席またはカウンター席の設定が必要です。
+          </p>
+        )}
         <PermissionGate resource="masters">
           <RestaurantMasterCreateDialog
             open={isCreateDialogOpen}
@@ -173,7 +173,9 @@ export function RestaurantMasterMasterPage() {
             <p className="font-medium">登録されている席はありません</p>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              「席を登録」から最初の席を登録してください。
+              {RestaurantMasterTypes.length > 0
+                ? "「席を登録」から最初の席を登録してください。"
+                : "席種の設定を確認してから登録してください。"}
             </p>
           </div>
         )}
