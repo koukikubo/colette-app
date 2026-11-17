@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 import { Pagination } from "@/lib/api/pagination";
 import type { Reservation } from "@/features/reservations/types";
 
@@ -150,17 +155,6 @@ export type CustomerReservationListParams = {
 export type CustomerReservationListData = {
   reservations: Reservation[];
   pagination: Pagination;
-};
-
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
-};
-
-export type ApiErrorResponse = {
-  status: "error";
-  message: string;
-  errors: string[];
 };
 
 export type CustomerListResponse = ApiSuccessResponse<CustomerListData>;

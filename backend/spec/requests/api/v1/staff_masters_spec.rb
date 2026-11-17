@@ -3,6 +3,8 @@ require "rails_helper"
 RSpec.describe "Api::V1::StaffMasters", type: :request do
   include_context "authenticated request"
 
+  before { login_staff.staff_master.update!(role_code: "owner") }
+
   def response_body
     JSON.parse(response.body)
   end

@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 export const STAFF_ROLE_CODES = ["owner", "operator", "viewer"] as const;
 
 export type StaffRoleCode = (typeof STAFF_ROLE_CODES)[number];
@@ -29,11 +34,6 @@ export type StaffMasterListData = {
 
 export type StaffMasterData = {
   staff_master: StaffMaster;
-};
-
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
 };
 
 export type CreateStaffMasterRequest = {
