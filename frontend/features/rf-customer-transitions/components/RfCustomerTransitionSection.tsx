@@ -17,7 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiClientError } from "@/lib/api/api-client";
 import {
   fetchRfComparisonPeriods,
-  type RfComparisonPeriod,
   fetchRfMonthComparison,
 } from "../api/customer-transition-api";
 import type { RfMonthComparison } from "../types/customer-transition";
@@ -32,7 +31,6 @@ export function RfCustomerTransitionSection() {
   const { params, update } = useUrlQuery();
   const startMonth = params.get("start_month") ?? "";
   const endMonth = params.get("end_month") ?? "";
-  const [periods, setPeriods] = useState<RfComparisonPeriod[]>([]);
   const [periodError, setPeriodError] = useState(false);
   const [periodReload, setPeriodReload] = useState(0);
   const [initialized, setInitialized] = useState(false);
@@ -45,7 +43,6 @@ export function RfCustomerTransitionSection() {
         if (controller.signal.aborted) return;
         setPeriodError(false);
         const available = response.data.periods;
-        setPeriods(available);
         const current = new URLSearchParams(window.location.search);
         const currentMonth = response.data.current_month ?? available[0]?.month;
         if (
