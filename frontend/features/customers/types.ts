@@ -24,7 +24,8 @@ export type CustomerStaffSummary = {
 // 顧客ランク・RFランクの共通表示情報
 export type RankSummary = {
   id: number;
-  code: string;
+  // 追加された基本コードでは業務用codeが未設定の場合がある。
+  code: string | null;
   label: string;
 };
 
@@ -87,6 +88,7 @@ export type CustomerDetail = Customer & {
 };
 
 export type CustomerListParams = {
+  customer_rank_id?: number | "unassigned";
   visibility?: CustomerVisibility;
   customer_kind?: CustomerKind;
   query?: string;

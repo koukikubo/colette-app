@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import {
   SidebarGroup,
@@ -34,6 +35,7 @@ type NavDocumentsProps = {
 };
 
 export function NavDocuments({ title, items }: NavDocumentsProps) {
+  const pathname = usePathname();
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
@@ -41,8 +43,11 @@ export function NavDocuments({ title, items }: NavDocumentsProps) {
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.url}>
-            <SidebarMenuButton asChild>
-              <Link href={item.url}>
+            <SidebarMenuButton asChild isActive={pathname === item.url}>
+              <Link
+                href={item.url}
+                aria-current={pathname === item.url ? "page" : undefined}
+              >
                 {item.icon}
                 <span>{item.name}</span>
               </Link>

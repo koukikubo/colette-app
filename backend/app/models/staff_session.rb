@@ -1,6 +1,7 @@
 class StaffSession < ApplicationRecord
   belongs_to :staff
-  IDLE_TIMEOUT = 30.minutes
+  # 最後の操作から4時間で失効する。ログインからの絶対期限とは別に判定する。
+  IDLE_TIMEOUT = 4.hours
   ABSOLUTE_TIMEOUT = 12.hours
 
   def self.issue!(staff)

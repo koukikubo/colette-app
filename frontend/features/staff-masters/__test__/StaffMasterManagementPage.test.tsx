@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it, vi } from "vitest";
 
 import { StaffMasterManagementPage } from "../components/management/StaffMasterManagementPage";
@@ -20,6 +21,7 @@ describe("StaffMasterManagementPage", () => {
         staff_masters: [
           {
             id: 1,
+            lock_version: 0,
             code: "00001",
             name: "店主",
             role_code: "owner",
@@ -38,6 +40,7 @@ describe("StaffMasterManagementPage", () => {
           },
           {
             id: 2,
+            lock_version: 0,
             code: "00002",
             name: "退職者",
             role_code: "operator",
@@ -71,6 +74,7 @@ describe("StaffMasterManagementPage", () => {
         staff_masters: [
           {
             id: 1,
+            lock_version: 0,
             code: "00001",
             name: "店主",
             role_code: "owner",
@@ -89,6 +93,7 @@ describe("StaffMasterManagementPage", () => {
           },
           {
             id: 2,
+            lock_version: 0,
             code: "00002",
             name: "退職者",
             role_code: "operator",
@@ -144,6 +149,7 @@ describe("StaffMasterManagementPage", () => {
           staff_masters: [
             {
               id: 1,
+              lock_version: 0,
               code: "00001",
               name: "店主",
               role_code: "owner",

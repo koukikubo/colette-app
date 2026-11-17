@@ -14,9 +14,19 @@ RSpec.describe "本番セキュリティ境界", type: :request do
     expect(StaffSession.where(staff: login_staff)).to be_empty
   end
 
-  it "無操作期限を超えると401になる" do
-    login!
-    travel 31.minutes do
+  it "無操作が4時間未満なら認証を維持する" do
+    travel_to Time.zone.local(2026, 11, 13, 12) do
+      login!
+      travel (4.hours - 1.second)
+      get "/api/v1/staff/current"
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  it "無操作が4時間に達すると401になる" do
+    travel_to Time.zone.local(2026, 11, 13, 12) do
+      login!
+      travel 4.hours
       get "/api/v1/staff/current"
       expect(response).to have_http_status(:unauthorized)
     end

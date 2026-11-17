@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it } from "vitest";
 
 import { ReservationTimelineRow } from "../../../components/layouts/displays/ReservationTimelineRow";

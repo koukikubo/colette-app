@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
 import { EyeIcon, PencilIcon } from "lucide-react";
 
@@ -125,16 +126,18 @@ export function CustomerTable({ customers, onEdit }: CustomerTableProps) {
                     </Link>
                   </Button>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(customer)}
-                    aria-label={`${customer.name}を編集`}
-                  >
-                    <PencilIcon />
-                    編集
-                  </Button>
+                  <PermissionGate resource="customers">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(customer)}
+                      aria-label={`${customer.name}を編集`}
+                    >
+                      <PencilIcon />
+                      編集
+                    </Button>
+                  </PermissionGate>
                 </div>
               </TableCell>
             </TableRow>

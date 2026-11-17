@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -160,12 +161,14 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
               <ReservationStatusActions reservation={reservation} />
 
-              <Button asChild size="sm">
-                <Link href={"/reservations/" + reservation.id + "/edit"}>
-                  <PencilIcon />
-                  編集する
-                </Link>
-              </Button>
+              <PermissionGate resource="reservations">
+                <Button asChild size="sm">
+                  <Link href={"/reservations/" + reservation.id + "/edit"}>
+                    <PencilIcon />
+                    編集する
+                  </Link>
+                </Button>
+              </PermissionGate>
             </div>
           </div>
         </CardHeader>
