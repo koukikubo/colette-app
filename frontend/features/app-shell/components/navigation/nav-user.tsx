@@ -97,7 +97,7 @@ export function NavUser(
               </DropdownMenuItem> */}
             {/* </DropdownMenuGroup> */}
             {/* <DropdownMenuSeparator /> */}
-            <DropdownMenuItem>
+            <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
               <LogOutIcon />
               <LogoutButton />
             </DropdownMenuItem>

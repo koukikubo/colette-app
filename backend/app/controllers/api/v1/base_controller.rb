@@ -1,6 +1,8 @@
 class Api::V1::BaseController < ApplicationController
   # protect_from_forgery with: :null_session
+  before_action -> { response.set_header("Cache-Control", "no-store") }
   before_action :require_staff_login!
+  before_action :require_write_permission!
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
   rescue_from ActionController::InvalidAuthenticityToken,
@@ -17,17 +19,14 @@ class Api::V1::BaseController < ApplicationController
   # セッションに保存されたスタッフが、現在も操作可能か確認する。
   def current_staff
     return @current_staff if defined?(@current_staff)
-    return @current_staff = nil if session[:staff_id].blank?
-
-    staff =
-      Staff
-        .includes(:staff_master)
-        .find_by(id: session[:staff_id])
-    # ログインできる状態かを判定する。
-    unless staff&.login_allowed?
+    record = StaffSession.for_token(session[:staff_token]).includes(staff: :staff_master).first
+    unless record && !record.expired? && record.staff.login_allowed?
+      record&.destroy!
       reset_session
       return @current_staff = nil
     end
+    record.update!(last_seen_at: Time.current)
+    staff = record.staff
 
     @current_staff = staff
   end
@@ -54,6 +53,19 @@ class Api::V1::BaseController < ApplicationController
       message: "この操作を行う権限がありません",
       status: :forbidden
     )
+  end
+
+  def require_write_permission!
+    return if request.get? || request.head? || request.options?
+    return if controller_path == "api/v1/staff/sessions"
+    staff = current_staff
+    return unless staff
+    return if staff.staff_master_role_code == "owner"
+    if staff.staff_master_role_code == "operator" &&
+        %w[api/v1/customers api/v1/reservations].include?(controller_path)
+      return
+    end
+    render_error(message: "この操作を行う権限がありません", status: :forbidden)
   end
 
   def render_record_invalid(error)

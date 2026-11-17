@@ -52,11 +52,12 @@ export async function proxyRequest(
           "サーバーに接続できませんでした。しばらくしてから再試行してください。",
         errors: [],
       },
-      { status: 502 },
+      { status: 502, headers: { "Cache-Control": "no-store" } },
     );
   }
   // レスポンスのボディとヘッダーを準備
   const responseHeaders = new Headers();
+  responseHeaders.set("Cache-Control", "no-store");
   responseHeaders.set(
     "Content-Type",
     upstream.headers.get("content-type") ?? "application/json",

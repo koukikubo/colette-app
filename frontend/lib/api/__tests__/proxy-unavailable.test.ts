@@ -18,6 +18,7 @@ it("上流接続失敗を内部情報のない統一JSONエラーに変換する
     "/api/test",
   );
   expect(response.status).toBe(502);
+  expect(response.headers.get("Cache-Control")).toBe("no-store");
   const body = await response.json();
   expect(body.status).toBe("error");
   expect(body.message).toContain("再試行");
