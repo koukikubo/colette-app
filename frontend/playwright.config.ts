@@ -25,6 +25,7 @@ export default defineConfig({
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
     timezoneId: "Asia/Tokyo",
+    locale: "ja-JP",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

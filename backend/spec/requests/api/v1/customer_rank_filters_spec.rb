@@ -50,6 +50,15 @@ RSpec.describe "顧客一覧の手動ランク絞り込み", type: :request do
     end
   end
 
+  it "追加ランクの業務コードが未設定でも顧客へ割り当てられ、nullを返す" do
+    custom_rank = create(:standard_list_master, standard_master: master, code: nil, label: "追加ランク")
+    post "/api/v1/customers", params: {
+      customer: { customer_kind: "individual", name: "追加ランク顧客", kana: "ツイカランクコキャク", customer_rank_id: custom_rank.id }
+    }, headers: authenticated_headers, as: :json
+    expect(response).to have_http_status(:created)
+    expect(data.dig("customer", "customer_rank")).to include("id" => custom_rank.id, "code" => nil, "label" => "追加ランク")
+  end
+
   it "別カテゴリのIDは顧客ランクとして扱わない" do
     other_master = create(:standard_master, system_key: "rf_rank", name: "RFランク")
     other_rank = create(:standard_list_master, standard_master: other_master, code: "A", label: "RF A")

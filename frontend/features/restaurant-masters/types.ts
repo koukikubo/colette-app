@@ -14,7 +14,8 @@ export type ReservationTableRow = {
 /*席種として返される基本コード情報*/
 export type RestaurantMasterType = {
   id: number;
-  code: string;
+  // 追加された基本コードでは業務用codeが未設定の場合がある。
+  code: string | null;
   label: string;
 };
 

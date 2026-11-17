@@ -5,6 +5,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "../components/app-sidebar";
 
+vi.mock("next/navigation", () => ({ usePathname: () => "/reservations" }));
+
 vi.mock("../components/navigation/nav-user", () => ({
   NavUser: () => <div>担当者メニュー</div>,
 }));
@@ -24,10 +26,10 @@ describe("AppSidebar", () => {
     renderAppSidebar();
 
     const expectedLinks = [
-      ["Colette", "/dashboard"],
       ["ダッシュボード", "/dashboard"],
       ["顧客管理", "/customers"],
-      ["予約管理", "/reservations"],
+      ["タイムライン", "/reservations"],
+      ["カレンダー", "/reservations/calendar"],
       ["統一RFランク表", "/rf-analysis"],
       ["RFランク客層変動表", "/rf-customer-transitions"],
       ["RFランク低下・予測", "/rf-rank-drops"],
@@ -42,9 +44,13 @@ describe("AppSidebar", () => {
       ).toHaveAttribute("href", href);
     });
 
-    expect(screen.getAllByRole("link")[1]).toHaveAttribute(
+    expect(screen.getAllByRole("link")[0]).toHaveAttribute(
       "href",
       "/dashboard",
+    );
+    expect(screen.getByRole("link", { name: "タイムライン" })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
     expect(screen.getByText("メインメニュー")).toBeInTheDocument();
     expect(screen.queryByText("お知らせ")).not.toBeInTheDocument();
@@ -54,7 +60,7 @@ describe("AppSidebar", () => {
   it("管理メニューへのリンクを表示する", () => {
     renderAppSidebar();
 
-    expect(screen.getByText("管理メニュー")).toBeInTheDocument();
+    expect(screen.getByText("各種設定")).toBeInTheDocument();
 
     const expectedLinks = [
       ["基本コードマスタ", "/standard-codes"],

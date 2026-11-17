@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   get "up", to: "rails/health#show", as: :rails_health_check
   namespace :api do
     namespace :v1 do
+      resource :reservation_calendar, only: :show, controller: "reservation_calendars"
+      resource :dashboard_analytics, only: :show, controller: "dashboard_analytics"
       resource :dashboard, only: :show, controller: "dashboard"
       get "csrf", to: "csrf#show"
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useReservationModalDirty } from "../layouts/reservation-modal-dirty-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ReservationConflictDialog } from "../dialogs/ReservationConflictDialog";
@@ -87,6 +88,7 @@ function EditReservationFormContent({
 
   const initialValues = buildEditReservationFormValues(baseReservation);
   const isDirty = JSON.stringify(values) !== JSON.stringify(initialValues);
+  useReservationModalDirty(isDirty);
   const {
     discardDialogOpen,
     requestNavigation,
@@ -138,7 +140,8 @@ function EditReservationFormContent({
       await updateReservation(reservation.id, request);
 
       // 更新した予約の詳細ページへ戻る。
-      router.push(`/reservations/${reservation.id}`);
+      window.dispatchEvent(new Event("colette:reservations-changed"));
+      router.push(`/reservations/detail/${reservation.id}`);
     } catch (error) {
       if (error instanceof ApiClientError) {
         // 競合時は、再取得を促す案内もエラーメッセージへ含める。
@@ -316,7 +319,7 @@ function EditReservationFormContent({
         cancelLabel="閉じる"
         onCancel={() => {
           requestNavigation(() => {
-            router.push(`/reservations/${reservation.id}`);
+            router.push(`/reservations/detail/${reservation.id}`);
           });
         }}
       />

@@ -35,3 +35,6 @@ docker/postgres_data
 # E2Eの合成データ・ブラウザ検証成果物
 frontend/test-results/
 frontend/playwright-report/
+
+# Rails実レスポンスから検証時だけ生成する契約fixture
+frontend/generated/api-contracts.ts

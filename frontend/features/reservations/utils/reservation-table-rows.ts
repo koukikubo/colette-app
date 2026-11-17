@@ -11,15 +11,24 @@ export function buildReservationTableRows(
   restaurantMasters: RestaurantMaster[],
   reservations: Reservation[],
 ): ReservationTableRow[] {
-  return restaurantMasters
-    .filter((restaurantMaster) => restaurantMaster.active)
-    .sort(compareRestaurantMasters)
-    .map((restaurantMaster) => ({
-      restaurantMaster,
-      reservations: reservations.filter((reservation) =>
-        reservation.restaurant_master_ids.includes(restaurantMaster.id),
-      ),
-    }));
+  return (
+    restaurantMasters
+      // 利用停止した席でも、表示日の既存予約をタイムラインから消さない。
+      .filter(
+        (restaurantMaster) =>
+          restaurantMaster.active ||
+          reservations.some((reservation) =>
+            reservation.restaurant_master_ids.includes(restaurantMaster.id),
+          ),
+      )
+      .sort(compareRestaurantMasters)
+      .map((restaurantMaster) => ({
+        restaurantMaster,
+        reservations: reservations.filter((reservation) =>
+          reservation.restaurant_master_ids.includes(restaurantMaster.id),
+        ),
+      }))
+  );
 }
 
 // 席種、連番、IDの順で安定して表示する。

@@ -123,7 +123,18 @@ jobs:
         run: bin/rails db:test:prepare
 
       - name: Run RSpec
+        env:
+          API_CONTRACT_EXPORT: tmp/api-contracts.json
         run: bundle exec rspec
+
+      - name: Export real Rails contracts
+        uses: actions/upload-artifact@v7
+        with:
+          name: rails-api-contracts
+          overwrite: true
+          path: backend/tmp/api-contracts.json
+          if-no-files-found: error
+          retention-days: 7
 
       # 失敗時の原因調査に使う。
       - name: Show database logs on failure
@@ -136,6 +147,7 @@ jobs:
         run: docker rm -f -v colette-ci-postgres || true
 
   frontend:
+    needs: test
     runs-on: ubuntu-latest
 
     defaults:
@@ -163,7 +175,16 @@ jobs:
       - name: Audit frontend dependencies
         run: npm audit --audit-level=moderate
 
-      - name: Check TypeScript types
+      - name: Download real Rails contracts
+        uses: actions/download-artifact@v4
+        with:
+          name: rails-api-contracts
+          path: backend/tmp
+
+      - name: Generate typed API contracts
+        run: node ../scripts/generate-api-contracts.mjs
+
+      - name: Check TypeScript types and Rails contracts
         run: npm run typecheck
 
       - name: Lint frontend code

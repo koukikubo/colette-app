@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 
 import {
   Armchair,
@@ -18,10 +17,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
 import { NavDocuments } from "./navigation/nav-documents";
@@ -46,7 +41,7 @@ const data = {
       icon: <UsersIcon />,
     },
     {
-      title: "予約管理",
+      title: "タイムライン",
       url: "/reservations",
       icon: <CalendarDaysIcon />,
     },
@@ -100,24 +95,22 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <Link href="/dashboard">
-                <span className="text-base font-semibold">Colette</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
       <SidebarContent>
-        <NavMain title="メインメニュー" items={data.navMain} />
-        <NavDocuments title="管理メニュー" items={data.masterMenu} />
+        <NavMain title="メインメニュー" items={[data.navMain[0]]} />
+        <NavMain
+          title="予約管理"
+          items={[
+            {
+              title: "カレンダー",
+              url: "/reservations/calendar",
+              icon: <CalendarDaysIcon />,
+            },
+            data.navMain[2],
+          ]}
+        />
+        <NavMain title="顧客管理" items={[data.navMain[1]]} />
+        <NavMain title="顧客分析" items={data.navMain.slice(3)} />
+        <NavDocuments title="各種設定" items={data.masterMenu} />
       </SidebarContent>
 
       <SidebarFooter>

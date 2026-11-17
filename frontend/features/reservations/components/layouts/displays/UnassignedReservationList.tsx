@@ -81,7 +81,7 @@ export function UnassignedReservationList({
 
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" size="sm">
-                <Link href={`/reservations/${reservation.id}`}>
+                <Link href={`/reservations/detail/${reservation.id}`}>
                   詳細
                   <ArrowRightIcon />
                 </Link>

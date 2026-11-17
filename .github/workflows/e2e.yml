@@ -83,15 +83,41 @@ jobs:
           exit 1
       - name: Run browser to database flow
         run: bash scripts/check.sh e2e
+      # 静的newと動的IDのinterceptionの優先順位は開発時にも検証する。
+      - name: Verify reservation routes in development mode
+        working-directory: frontend
+        run: |
+          npm run dev -- --hostname 127.0.0.1 --port 4102 > /tmp/colette-e2e-next-dev.log 2>&1 &
+          dev_pid=$!
+          trap 'kill "$dev_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4102/login > /dev/null; then break; fi
+            sleep 1
+          done
+          E2E_BASE_URL=http://127.0.0.1:4102 npm run test:e2e -- --grep '予約ルーティング' --output=test-results-dev
+      - name: Verify real daily scheduler and worker
+        working-directory: backend
+        run: bundle exec rails runner test/e2e/daily_queue_flow.rb
+      - name: Upload UI acceptance screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-acceptance-screenshots
+          path: frontend/test-results/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload failure evidence
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: core-flow-e2e-failure
           path: |
             frontend/test-results/
+            frontend/test-results-dev/
+            backend/tmp/e2e-daily-queue.log
             backend/tmp/e2e-rails.log
             /tmp/colette-e2e-next.log
+            /tmp/colette-e2e-next-dev.log
           retention-days: 7
       - name: Stop E2E servers
         if: always()

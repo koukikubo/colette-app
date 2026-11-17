@@ -1,4 +1,3 @@
-import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
 import { resolveReservationDate } from "@/features/reservations/utils/reservation-date";
 import { ReservationListPage } from "@/features/reservations/components/layouts/displays/ReservationListPage";
@@ -18,19 +17,15 @@ export default async function ReservationsPage({
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <PermissionGate resource="reservations">
-          <Link
-            href={`/reservations/new?date=${targetDate}`}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium"
-          >
-            新規予約
-          </Link>
-        </PermissionGate>
-      </div>
-
-      <div className="space-y-2">
+      {/* 予約作成はタイムラインの空き枠に集約し、日付操作を先頭に置く。 */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <ReservationDateSearch targetDate={targetDate} />
+        <Link
+          className="text-primary underline underline-offset-4"
+          href={`/reservations/calendar?date=${targetDate}`}
+        >
+          月別カレンダーへ
+        </Link>
       </div>
       <ReservationListPage targetDate={targetDate} />
     </div>

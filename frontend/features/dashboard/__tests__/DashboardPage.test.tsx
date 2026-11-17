@@ -2,6 +2,9 @@ import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderWithRole } from "@/test-utils/auth";
 import { DashboardPage } from "../components/DashboardPage";
+vi.mock("../components/DashboardAnalyticsPanel", () => ({
+  DashboardAnalyticsPanel: () => null,
+}));
 const mocks = vi.hoisted(() => ({ api: vi.fn() }));
 vi.mock("@/lib/api/api-client", async (original) => ({
   ...(await original<object>()),
@@ -77,6 +80,10 @@ it("30秒経過やフォーカス復帰だけでは再取得せず、手動操�
     document.dispatchEvent(new Event("visibilitychange"));
   });
   expect(mocks.api).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByRole("link", { name: "新規予約" }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(screen.getByText("2件")).toBeInTheDocument();
   await act(async () => {

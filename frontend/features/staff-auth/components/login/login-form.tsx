@@ -93,7 +93,7 @@ export function LoginForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-xl font-bold">システムログイン画面</h1>
+            <h1 className="text-xl font-bold">ログイン</h1>
             <p className="text-muted-foreground text-sm">
               担当者を選択し、パスワードを入力してください。
             </p>
@@ -125,6 +125,7 @@ export function LoginForm({
             <Input
               id="password"
               name="password"
+              autoComplete="current-password"
               type="password"
               placeholder="パスワードを入力してください"
               value={password}
@@ -135,7 +136,9 @@ export function LoginForm({
           </Field>
 
           {errorMessage ? (
-            <p className="text-destructive text-sm">{errorMessage}</p>
+            <p role="alert" className="text-destructive text-sm">
+              {errorMessage}
+            </p>
           ) : null}
 
           <Field>
