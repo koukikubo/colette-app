@@ -1,4 +1,4 @@
-# TLS終端/VPNは配置先で構成する。開発用Composeと重ねず単独で使用する。
+# TLS終端・Basic認証は配置先の入口で構成する。開発用Composeと重ねず単独で使用する。
 services:
   frontend:
     image: colette-frontend-production
