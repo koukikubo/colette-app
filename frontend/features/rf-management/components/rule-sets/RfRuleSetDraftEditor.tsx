@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import {
   Card,
@@ -99,7 +107,10 @@ function stepForValidationErrors(validation: RfRuleSetValidation): EditorStep {
   if (codes.some((code) => code.startsWith("frequency_"))) return 3;
   if (
     codes.some(
-      (code) => code.startsWith("mapping_") || code === "inactive_rf_rank",
+      (code) =>
+        code.startsWith("mapping_") ||
+        code === "inactive_rf_rank" ||
+        code === "no_visit_rank_missing",
     )
   ) {
     return 4;
@@ -139,6 +150,11 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
     values.frequency_rules,
     values.rank_mappings,
   );
+  const selectedNoVisitRank = rankOptions.find(
+    (rank) => rank.id === values.no_visit_rank_id,
+  );
+  const unavailableNoVisitRank =
+    values.no_visit_rank_id != null && !selectedNoVisitRank;
 
   function updateRecencyRules(recencyRules: RfRecencyRuleInput[]) {
     const availableCodes = new Set(recencyRules.map((rule) => rule.code));
@@ -483,6 +499,68 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               </div>
             )}
 
+            <div className="space-y-2 rounded-lg border p-4">
+              <Label htmlFor="rf-no-visit-rank">来店履歴なしランク</Label>
+              <p
+                id="rf-no-visit-rank-description"
+                className="text-sm text-muted-foreground"
+              >
+                全体の集計期間内に完了した来店履歴がない顧客に付けるランクです。
+              </p>
+              <Select
+                value={
+                  values.no_visit_rank_id == null
+                    ? "unassigned"
+                    : String(values.no_visit_rank_id)
+                }
+                disabled={
+                  isSubmitting ||
+                  isRankOptionsLoading ||
+                  !!rankOptionsErrorMessage
+                }
+                onValueChange={(value) => {
+                  setValues((current) => ({
+                    ...current,
+                    no_visit_rank_id:
+                      value === "unassigned" ? null : Number(value),
+                  }));
+                  setSuccessMessage(null);
+                  setValidation(null);
+                }}
+              >
+                <SelectTrigger
+                  id="rf-no-visit-rank"
+                  aria-describedby="rf-no-visit-rank-description"
+                  className="w-full sm:max-w-sm"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">未設定</SelectItem>
+                  {unavailableNoVisitRank && (
+                    <SelectItem
+                      value={String(values.no_visit_rank_id)}
+                      disabled
+                    >
+                      設定済みランク（選択不可）
+                    </SelectItem>
+                  )}
+                  {rankOptions.map((rank) => (
+                    <SelectItem key={rank.id} value={String(rank.id)}>
+                      {rank.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!isRankOptionsLoading &&
+                !rankOptionsErrorMessage &&
+                unavailableNoVisitRank && (
+                  <p className="text-sm text-destructive">
+                    設定済みのランクは現在選択できません。有効なRFランクを選び直してください。
+                  </p>
+                )}
+            </div>
+
             {isRankOptionsLoading ? (
               <p className="text-sm text-muted-foreground">
                 RFランクを読み込んでいます。
@@ -516,6 +594,7 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
               disabled={
                 isSubmitting ||
                 isRankOptionsLoading ||
+                !!rankOptionsErrorMessage ||
                 recencyIssues.length > 0 ||
                 frequencyIssues.length > 0 ||
                 mappingIssues.length > 0
@@ -600,6 +679,13 @@ export function RfRuleSetDraftEditor({ ruleSet }: RfRuleSetDraftEditorProps) {
 
             <div className="rounded-lg border p-4">
               <p className="font-medium">{values.name}</p>
+              <p className="mt-2 text-sm">
+                来店履歴なしランク：
+                {selectedNoVisitRank?.label ??
+                  (values.no_visit_rank_id == null
+                    ? "未設定"
+                    : "設定済みランク（選択不可）")}
+              </p>
 
               <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>

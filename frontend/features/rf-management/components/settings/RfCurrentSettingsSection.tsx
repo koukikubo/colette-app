@@ -138,6 +138,59 @@ export function RfCurrentSettingsSection({
                 </div>
               </dl>
 
+              <section
+                aria-labelledby="current-rf-rank-counts-heading"
+                className="space-y-3"
+              >
+                <div>
+                  <h3
+                    id="current-rf-rank-counts-heading"
+                    className="font-medium"
+                  >
+                    現在のランク別人数
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    現在適用中の計算結果に含まれる顧客数です。
+                  </p>
+                </div>
+
+                {(calculationRun.rank_counts ?? []).length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {(calculationRun.rank_counts ?? []).map((rank) => {
+                      const color = rank.display_color ?? "#64748B";
+
+                      return (
+                        <div
+                          key={rank.id}
+                          className="rounded-lg border p-4"
+                          style={{
+                            borderLeftColor: color,
+                            borderLeftWidth: 4,
+                            backgroundColor: `${color}0D`,
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              aria-hidden="true"
+                              className="size-2.5 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            <p className="text-sm font-medium">{rank.label}</p>
+                          </div>
+                          <p className="mt-2 text-2xl font-semibold">
+                            {rank.count}名
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    ランク別人数はまだ集計されていません。
+                  </p>
+                )}
+              </section>
+
               <RfRuleSetPreviewTable
                 {...preview}
                 heading="現在適用中のRFランク対応表"

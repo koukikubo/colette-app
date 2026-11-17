@@ -44,6 +44,14 @@ describe("reservation-table-rows", () => {
     expect(rows[2]?.reservations).toEqual([]);
   });
 
+  it("利用停止した席に既存予約がある場合は行と予約を保持する", () => {
+    const table = createTable({ id: 7, active: false });
+    const reservation = createReservation({ restaurant_master_ids: [7] });
+    const rows = buildReservationTableRows([table], [reservation]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].reservations).toEqual([reservation]);
+  });
+
   it("未割当予約を開始時刻順、同時刻ならID順に並べる", () => {
     const reservations = [
       createReservation({ id: 3, starts_at: "2026-09-08T19:00:00+09:00" }),

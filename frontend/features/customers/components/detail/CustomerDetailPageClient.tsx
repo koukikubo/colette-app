@@ -1,7 +1,11 @@
 "use client";
 
+import { useReadRefresh } from "@/hooks/useReadRefresh";
+import { useUrlQuery } from "@/hooks/useUrlQuery";
+import { safeReturnPath } from "@/lib/api/session-events";
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   Building2Icon,
@@ -202,6 +206,10 @@ function CustomerDetailSkeleton() {
 export function CustomerDetailPageClient({
   customerId,
 }: CustomerDetailPageClientProps) {
+  const { params: returnParams } = useUrlQuery();
+  const backTarget = returnParams.get("return_to")
+    ? safeReturnPath(returnParams.get("return_to"))
+    : "/customers";
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -211,9 +219,15 @@ export function CustomerDetailPageClient({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [reloadKey, setReloadKey] = useState(0);
+  const readGeneration = useRef(0);
+
+  useReadRefresh(() => setReloadKey((value) => value + 1), !editDialogOpen);
 
   useEffect(() => {
     let isCancelled = false;
+    const generation = ++readGeneration.current;
+    const isCurrentRead = () =>
+      !isCancelled && generation === readGeneration.current;
 
     async function loadCustomer() {
       setIsLoading(true);
@@ -222,13 +236,13 @@ export function CustomerDetailPageClient({
       try {
         const response = await fetchCustomer(customerId);
 
-        if (isCancelled) {
+        if (!isCurrentRead()) {
           return;
         }
 
         setCustomer(response.data.customer);
       } catch (error) {
-        if (isCancelled) {
+        if (!isCurrentRead()) {
           return;
         }
 
@@ -254,7 +268,7 @@ export function CustomerDetailPageClient({
 
         setErrorMessage("顧客情報の取得中に予期しないエラーが発生しました。");
       } finally {
-        if (!isCancelled) {
+        if (isCurrentRead()) {
           setIsLoading(false);
         }
       }
@@ -267,19 +281,28 @@ export function CustomerDetailPageClient({
     };
   }, [customerId, reloadKey]);
 
-  function handleEditCompleted() {
-    setReloadKey((current) => current + 1);
+  async function handleEditCompleted() {
+    // 保存前に始まった背景GETを無効化し、保存後の読取だけを表示へ採用する。
+    const generation = ++readGeneration.current;
+    try {
+      const response = await fetchCustomer(customerId);
+      if (generation !== readGeneration.current) return;
+      setCustomer(response.data.customer);
+      setErrorMessage(null);
+    } finally {
+      if (generation === readGeneration.current) setIsLoading(false);
+    }
   }
 
-  if (isLoading) {
+  if (isLoading && !customer) {
     return <CustomerDetailSkeleton />;
   }
 
-  if (errorMessage) {
+  if (errorMessage && !customer) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
         <Button asChild variant="outline">
-          <Link href="/customers">
+          <Link href={backTarget}>
             <ArrowLeftIcon />
             顧客一覧へ戻る
           </Link>
@@ -299,9 +322,18 @@ export function CustomerDetailPageClient({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+    <div
+      className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6"
+      aria-busy={isLoading}
+    >
+      {/* 背景取得の失敗でも既存の履歴・ページ位置を残す。 */}
+      {errorMessage && (
+        <p role="alert" className="text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
       <Button asChild variant="outline">
-        <Link href="/customers">
+        <Link href={backTarget}>
           <ArrowLeftIcon />
           顧客一覧へ戻る
         </Link>
@@ -346,14 +378,16 @@ export function CustomerDetailPageClient({
               </div>
             </div>
 
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <PencilIcon />
-              顧客情報を編集
-            </Button>
+            <PermissionGate resource="customers">
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <PencilIcon />
+                顧客情報を編集
+              </Button>
+            </PermissionGate>
           </div>
         </CardHeader>
 
@@ -492,7 +526,26 @@ export function CustomerDetailPageClient({
 
               <DetailItem
                 label="現在のRFランク"
-                value={rfRankDisplayValue(customer)}
+                value={
+                  customer.current_rf_rank ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="size-3 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor:
+                            customer.current_rf_rank.display_color ?? "#64748B",
+                        }}
+                      />
+                      <span>{customer.current_rf_rank.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        （{customer.current_rf_rank.display_code}）
+                      </span>
+                    </span>
+                  ) : (
+                    rfRankDisplayValue(customer)
+                  )
+                }
               />
 
               {customer.rf_rank_basis && (
@@ -572,15 +625,17 @@ export function CustomerDetailPageClient({
       <CustomerReservationHistory customerId={customer.id} />
 
       {editDialogOpen && (
-        <CustomerFormDialog
-          key={`detail-edit-${customer.id}-${customer.lock_version}`}
-          open={editDialogOpen}
-          mode="edit"
-          customer={customer}
-          allowVisibilityChange={true}
-          onOpenChange={setEditDialogOpen}
-          onCompleted={handleEditCompleted}
-        />
+        <PermissionGate resource="customers">
+          <CustomerFormDialog
+            key={`detail-edit-${customer.id}`}
+            open={editDialogOpen}
+            mode="edit"
+            customer={customer}
+            allowVisibilityChange={true}
+            onOpenChange={setEditDialogOpen}
+            onCompleted={handleEditCompleted}
+          />
+        </PermissionGate>
       )}
     </div>
   );

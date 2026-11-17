@@ -1,5 +1,10 @@
 class StaffMaster < ApplicationRecord
   has_one :staff, dependent: :destroy
+  after_update do
+    staff&.staff_sessions&.delete_all if saved_change_to_retired_on? || saved_change_to_role_code?
+  end
+  before_validation -> { Security::OwnerGuard.lock! }, on: :update
+  validate :keep_last_owner
   ROLE_CODES = %w[owner operator viewer].freeze
 
   # コード、名前、役割コード、雇用開始日は必須であることをバリデーション
@@ -29,6 +34,14 @@ class StaffMaster < ApplicationRecord
   end
 
   private
+
+  def keep_last_owner
+    return unless persisted? && role_code_in_database == "owner" && retired_on_in_database.nil?
+    return unless role_code != "owner" || retired_on.present?
+    return unless staff&.login_enabled?
+    return if Security::OwnerGuard.other_owner_exists?(id)
+    errors.add(:base, "最後のオーナーの降格・退職はできません")
+  end
 
   def retired_on_must_be_on_or_after_employment_started_on
     return if retired_on.blank?

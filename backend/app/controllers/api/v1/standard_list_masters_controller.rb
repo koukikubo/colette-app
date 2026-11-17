@@ -1,4 +1,10 @@
 class Api::V1::StandardListMastersController < Api::V1::BaseController
+  before_action :require_owner!,
+                only: %i[
+                  create
+                  update
+                ]
+
   before_action :set_standard_master
 
   def index
@@ -75,6 +81,7 @@ class Api::V1::StandardListMastersController < Api::V1::BaseController
         label
         description
         active
+        display_color
       ]
       )
   end

@@ -1,7 +1,8 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { AutomaticSeatTypeOption } from "../../utils/automatic-seat-types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,15 +25,10 @@ import { Switch } from "@/components/ui/switch";
 import { ApiClientError } from "@/lib/api/api-client";
 import { createRestaurantMaster } from "../../api/restaurant-masters-api";
 
-type RestaurantMasterTypeOption = {
-  id: number;
-  label: string;
-};
-
 type RestaurantMasterCreateDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tableTypeOptions: RestaurantMasterTypeOption[];
+  tableTypeOptions: AutomaticSeatTypeOption[];
   onCreated: () => Promise<void> | void;
 };
 
@@ -45,20 +41,27 @@ export function RestaurantMasterCreateDialog({
   const [tableTypeId, setTableTypeId] = useState("");
   const [name, setName] = useState("");
   const [capacity, setCapacity] = useState("1");
-  const [position, setPosition] = useState("1");
   const [memo, setMemo] = useState("");
   const [active, setActive] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
+  const [savedCode, setSavedCode] = useState<string | null>(null);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const submitting = useRef(false);
 
   function resetForm() {
     setTableTypeId("");
     setName("");
     setCapacity("1");
-    setPosition("1");
     setMemo("");
     setActive(true);
     setErrorMessage("");
+    setSaved(false);
+    setUncertain(false);
+    setSavedCode(null);
+    setRefreshFailed(false);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -73,6 +76,7 @@ export function RestaurantMasterCreateDialog({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current || saved || uncertain) return;
     setErrorMessage("");
 
     if (!tableTypeId) {
@@ -86,22 +90,17 @@ export function RestaurantMasterCreateDialog({
     }
 
     const capacityNumber = Number(capacity);
-    const positionNumber = Number(position);
 
     if (!Number.isInteger(capacityNumber) || capacityNumber < 1) {
       setErrorMessage("定員は1以上の整数で入力してください。");
       return;
     }
 
-    if (!Number.isInteger(positionNumber) || positionNumber < 1) {
-      setErrorMessage("表示順は1以上の整数で入力してください。");
-      return;
-    }
-
     try {
+      submitting.current = true;
       setIsSubmitting(true);
 
-      await createRestaurantMaster({
+      const response = await createRestaurantMaster({
         restaurant_master: {
           restaurant_master_type_id: Number(tableTypeId),
           name: name.trim(),
@@ -111,21 +110,72 @@ export function RestaurantMasterCreateDialog({
         },
       });
 
-      await onCreated();
+      // 保存確定後のGET失敗で新しい席を重複登録しない。
+      setSavedCode(response.data.restaurant_master.code ?? null);
+      setSaved(true);
+      await refreshAfterSave();
+    } catch (error) {
+      // 通信切断・5xxでは保存済みか断定できないため、一覧確認へ進める。
+      if (!(error instanceof ApiClientError) || error.status >= 500) {
+        setUncertain(true);
+      } else {
+        setErrorMessage([error.message, ...error.errorMessages].join(" / "));
+      }
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
+  }
 
+  async function refreshAfterSave() {
+    setIsSubmitting(true);
+    setRefreshFailed(false);
+    try {
+      await onCreated();
       resetForm();
       onOpenChange(false);
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        setErrorMessage(error.message);
-        return;
-      }
-
-      setErrorMessage("席マスタの登録に失敗しました。");
+    } catch {
+      setRefreshFailed(true);
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  if (saved || uncertain)
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {saved ? "席情報は保存済みです" : "登録結果の確認が必要です"}
+            </DialogTitle>
+            <DialogDescription role={uncertain ? "alert" : undefined}>
+              {saved
+                ? `${savedCode ?? "席情報"}の登録は完了しています。登録し直す必要はありません。`
+                : "登録できたか確認できません。一覧を再取得して、重複がないか確認してください。"}
+            </DialogDescription>
+          </DialogHeader>
+          {refreshFailed && (
+            <p role="alert">
+              一覧の表示を更新できませんでした。再取得をお試しください。
+            </p>
+          )}
+          <Button
+            disabled={isSubmitting}
+            onClick={() => void refreshAfterSave()}
+          >
+            表示を再取得
+          </Button>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => handleOpenChange(false)}
+          >
+            閉じる
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -139,6 +189,9 @@ export function RestaurantMasterCreateDialog({
             </DialogDescription>
           </DialogHeader>
 
+          <p className="mt-4 text-sm text-muted-foreground">
+            席コードはテーブル席がT01から、カウンター席がC01から自動で連番になります。個室などの区別は席名に入力してください。
+          </p>
           <div className="grid gap-5 py-6">
             <div className="grid gap-2">
               <label
@@ -199,25 +252,6 @@ export function RestaurantMasterCreateDialog({
                 step={1}
                 value={capacity}
                 onChange={(event) => setCapacity(event.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <label
-                htmlFor="restaurant-master-position"
-                className="text-sm font-medium"
-              >
-                表示順
-              </label>
-
-              <Input
-                id="restaurant-master-position"
-                type="number"
-                min={1}
-                step={1}
-                value={position}
-                onChange={(event) => setPosition(event.target.value)}
                 disabled={isSubmitting}
               />
             </div>

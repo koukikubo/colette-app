@@ -13,6 +13,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       ActiveRecord::Base.transaction do
         rule_set.lock!
 
@@ -20,7 +24,10 @@ module Rf
         ensure_lock_version!
 
         rule_set.update!(
-          status: "archived"
+          status: "archived",
+          rf_rank_snapshots:
+            rule_set.rf_rank_snapshots ||
+              rule_set.build_rf_rank_snapshots
         )
 
         rule_set.reload

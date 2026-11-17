@@ -1,3 +1,8 @@
+import type { ApiSuccessResponse } from "@/lib/api/api-client";
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from "@/lib/api/api-client";
 import { Pagination } from "@/lib/api/pagination";
 import type { Reservation } from "@/features/reservations/types";
 
@@ -19,8 +24,14 @@ export type CustomerStaffSummary = {
 // 顧客ランク・RFランクの共通表示情報
 export type RankSummary = {
   id: number;
-  code: string;
+  // 追加された基本コードでは業務用codeが未設定の場合がある。
+  code: string | null;
   label: string;
+};
+
+export type RfRankSummary = Omit<RankSummary, "code"> & {
+  display_code: string;
+  display_color: string | null;
 };
 
 // RFランクを判定したときの型
@@ -72,11 +83,12 @@ export type Customer = {
 
 // 顧客詳細APIでのみ返される情報
 export type CustomerDetail = Customer & {
-  current_rf_rank: RankSummary | null;
+  current_rf_rank: RfRankSummary | null;
   rf_rank_basis: CustomerRfRankBasis | null;
 };
 
 export type CustomerListParams = {
+  customer_rank_id?: number | "unassigned";
   visibility?: CustomerVisibility;
   customer_kind?: CustomerKind;
   query?: string;
@@ -145,17 +157,6 @@ export type CustomerReservationListParams = {
 export type CustomerReservationListData = {
   reservations: Reservation[];
   pagination: Pagination;
-};
-
-export type ApiSuccessResponse<T> = {
-  status: "success";
-  data: T;
-};
-
-export type ApiErrorResponse = {
-  status: "error";
-  message: string;
-  errors: string[];
 };
 
 export type CustomerListResponse = ApiSuccessResponse<CustomerListData>;

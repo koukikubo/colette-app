@@ -39,6 +39,7 @@ module Rf
     def create_rule_set!
       RfRuleSet.create!(
         name: attributes[:name],
+        no_visit_rank_id: attributes[:no_visit_rank_id],
         version: next_version,
         aggregation_months:
           attributes[:aggregation_months],
