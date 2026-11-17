@@ -14,7 +14,8 @@ export type ReservationCustomer = {
 // 予約レスポンスに含まれる（入子）基本コード情報
 export type ReservationStandardListMaster = {
   id: number;
-  code: string;
+  // 追加された基本コードでは業務用codeが未設定の場合がある。
+  code: string | null;
   label: string;
 };
 // 予約レスポンスに含まれる割り与て席の情報
@@ -160,6 +161,7 @@ export type ReservationCreateRequest = {
 
 // 予約更新APIへ送る属性
 export type ReservationUpdateAttributes = Partial<ReservationAttributes> & {
+  details_confirmed_at?: string | null;
   lock_version: number;
 };
 

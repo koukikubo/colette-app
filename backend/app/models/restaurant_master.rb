@@ -62,6 +62,10 @@ class RestaurantMaster < ApplicationRecord
   validates :active,
             inclusion: { in: [ true, false ] }
 
+  # 予約作成・更新・復元と同じロックを、検証から席の保存まで保持する。
+  before_validation -> { Reservations::WriteLock.acquire! }, on: :update
+  validate :capacity_must_cover_existing_reservations
+
   before_validation :normalize_editable_attributes
 
   scope :active, -> { where(active: true) }
@@ -74,6 +78,23 @@ class RestaurantMaster < ApplicationRecord
   }
 
   private
+
+  def capacity_must_cover_existing_reservations
+    return unless persisted? && will_save_change_to_capacity?
+    return unless capacity.is_a?(Integer) && capacity.positive? && capacity < capacity_in_database
+
+    affected_ids = Reservation.active.where(completed_at: nil)
+      .where("ends_at > ?", Time.current)
+      .joins(:reservation_tables)
+      .where(reservation_tables: { restaurant_master_id: id })
+      .select do |reservation|
+        other_capacity = reservation.restaurant_masters.where.not(id: id).sum(:capacity)
+        other_capacity + capacity < reservation.guest_count
+      end.map(&:id)
+    return if affected_ids.empty?
+
+    errors.add(:capacity, "は予約ID #{affected_ids.join(', ')}の人数を満たしません。先に予約席を変更してください")
+  end
 
   def normalize_editable_attributes
     self.name = name.to_s.strip

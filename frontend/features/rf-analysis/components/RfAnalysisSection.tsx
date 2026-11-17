@@ -135,7 +135,10 @@ export function RfAnalysisSection({ reloadKey = 0 }: RfAnalysisSectionProps) {
               </p>
             </div>
 
-            <RfRankSummaryTable ranks={analysis.rank_distribution} />
+            <RfRankSummaryTable
+              runId={analysis.calculation_run.id}
+              ranks={analysis.rank_distribution}
+            />
           </div>
           <div className="space-y-3">
             <h3 className="font-semibold">統一RFランク表</h3>
@@ -143,6 +146,7 @@ export function RfAnalysisSection({ reloadKey = 0 }: RfAnalysisSectionProps) {
               最終来店期間と来店回数の組み合わせごとに顧客分布を表示します。
             </p>
             <RfDistributionTable
+              runId={analysis.calculation_run.id}
               recencyRules={analysis.recency_rules}
               frequencyRules={analysis.frequency_rules}
               cells={analysis.cells}
@@ -160,7 +164,10 @@ export function RfAnalysisSection({ reloadKey = 0 }: RfAnalysisSectionProps) {
         </CardHeader>
 
         <CardContent>
-          <RfYearComparisonTable comparison={analysis.comparison} />
+          <RfYearComparisonTable
+            currentRunId={analysis.calculation_run.id}
+            comparison={analysis.comparison}
+          />
         </CardContent>
       </Card>
     </section>

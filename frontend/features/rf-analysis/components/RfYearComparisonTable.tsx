@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -11,6 +12,7 @@ import { RfAnalysisComparison } from "../types/analysis";
 
 type RfYearComparisonTableProps = {
   comparison: RfAnalysisComparison | null;
+  currentRunId?: number;
 };
 
 function formatDate(value: string) {
@@ -38,6 +40,7 @@ function deltaClassName(value: number) {
 
 export function RfYearComparisonTable({
   comparison,
+  currentRunId,
 }: RfYearComparisonTableProps) {
   if (!comparison) {
     return (
@@ -88,11 +91,25 @@ export function RfYearComparisonTable({
                 </TableCell>
 
                 <TableCell className="text-right">
-                  {rank.previous_count.toLocaleString("ja-JP")}名
+                  <Link
+                    className="underline"
+                    href={`/rf-customers?run_id=${comparison.calculation_run_id}&rf_rank_id=${rank.rf_rank.id}&return_to=%2Frf-analysis`}
+                  >
+                    {rank.previous_count.toLocaleString("ja-JP")}名
+                  </Link>
                 </TableCell>
 
                 <TableCell className="text-right">
-                  {rank.current_count.toLocaleString("ja-JP")}名
+                  {currentRunId ? (
+                    <Link
+                      className="underline"
+                      href={`/rf-customers?run_id=${currentRunId}&rf_rank_id=${rank.rf_rank.id}&return_to=%2Frf-analysis`}
+                    >
+                      {rank.current_count.toLocaleString("ja-JP")}名
+                    </Link>
+                  ) : (
+                    <>{rank.current_count.toLocaleString("ja-JP")}名</>
+                  )}
                 </TableCell>
 
                 <TableCell
