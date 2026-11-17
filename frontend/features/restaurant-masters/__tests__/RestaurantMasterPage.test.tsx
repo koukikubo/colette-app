@@ -58,7 +58,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -68,6 +68,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -105,7 +106,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -115,6 +116,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -149,7 +151,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -159,6 +161,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -179,7 +182,7 @@ describe("RestaurantMasterMasterPage", () => {
     expect(screen.getByText("API通信エラー")).toBeInTheDocument();
   });
 
-  it("予約席種マスタが存在しない場合、エラーを表示する", async () => {
+  it("予約席種マスタが存在しない場合、一覧を保ち登録不可の理由を表示する", async () => {
     mocks.fetchRestaurantMasters.mockResolvedValue({
       status: "success",
       data: {
@@ -207,20 +210,17 @@ describe("RestaurantMasterMasterPage", () => {
 
     render(<RestaurantMasterMasterPage />);
 
+    expect(await screen.findByText(/新しい席の登録には/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "席を登録" })).toBeDisabled();
     expect(
-      await screen.findByText("席マスタを取得できませんでした"),
+      screen.getByText("登録されている席はありません"),
     ).toBeInTheDocument();
-
     expect(
-      screen.getByText("予約席種マスタが見つかりません。"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByText("登録されている席はありません"),
+      screen.queryByText("席マスタを取得できませんでした"),
     ).not.toBeInTheDocument();
   });
 
-  it("有効な予約席種が存在しない場合、エラーを表示する", async () => {
+  it("有効な予約席種が存在しない場合、一覧を保ち登録不可の理由を表示する", async () => {
     mocks.fetchRestaurantMasters.mockResolvedValue({
       status: "success",
       data: {
@@ -234,7 +234,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -244,6 +244,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -257,21 +258,18 @@ describe("RestaurantMasterMasterPage", () => {
 
     render(<RestaurantMasterMasterPage />);
 
+    expect(await screen.findByText(/新しい席の登録には/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "席を登録" })).toBeDisabled();
     expect(
-      await screen.findByText("席マスタを取得できませんでした"),
+      screen.getByText("登録されている席はありません"),
     ).toBeInTheDocument();
-
     expect(
-      screen.getByText("有効な予約席種が登録されていません。"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByText("登録されている席はありません"),
+      screen.queryByText("席マスタを取得できませんでした"),
     ).not.toBeInTheDocument();
   });
 
   // 予約登録テスト
-  it("テーブルを登録を押すと、新規登録ダイアログを表示する", async () => {
+  it("席を登録を押すと、新規登録ダイアログを表示する", async () => {
     const user = userEvent.setup();
 
     mocks.fetchRestaurantMasters.mockResolvedValue({
@@ -287,7 +285,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -297,6 +295,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -305,6 +304,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 11,
                 display_code: "TABLE",
+                code: "T",
                 label: "テーブル",
                 description: null,
                 position: 2,
@@ -324,7 +324,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "テーブルを登録",
+        name: "席を登録",
       }),
     );
 
@@ -367,7 +367,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -377,6 +377,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -403,7 +404,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "テーブルを登録",
+        name: "席を登録",
       }),
     );
 
@@ -428,7 +429,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     const numberInputs = screen.getAllByRole("spinbutton");
 
-    // [0] は定員、[1] は表示順
+    // 定員は入力し、コードと並び順はサーバーに任せる。
     await user.clear(numberInputs[0]);
     await user.type(numberInputs[0], "2");
 
@@ -477,7 +478,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -487,6 +488,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -506,7 +508,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "テーブルを登録",
+        name: "席を登録",
       }),
     );
 
@@ -539,7 +541,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -549,6 +551,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -568,7 +571,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "テーブルを登録",
+        name: "席を登録",
       }),
     );
 
@@ -615,7 +618,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -625,6 +628,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -644,7 +648,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "テーブルを登録",
+        name: "席を登録",
       }),
     );
 
@@ -683,90 +687,6 @@ describe("RestaurantMasterMasterPage", () => {
     expect(mocks.createRestaurantMaster).not.toHaveBeenCalled();
   });
 
-  it("表示順が1未満の場合、登録できない", async () => {
-    const user = userEvent.setup();
-
-    mocks.fetchRestaurantMasters.mockResolvedValue({
-      status: "success",
-      data: {
-        restaurant_masters: [],
-      },
-    });
-
-    mocks.fetchStandardCodes.mockResolvedValue({
-      status: "success",
-      data: {
-        standard_masters: [
-          {
-            id: 1,
-            system_key: "reservation_table_type",
-            display_code: "RESERVATION_TABLE_TYPE",
-            name: "予約席種",
-            description: "予約席の種別を管理します",
-            position: 1,
-            active: true,
-            items: [
-              {
-                id: 10,
-                display_code: "COUNTER",
-                label: "カウンター",
-                description: null,
-                position: 1,
-                active: true,
-              },
-            ],
-          },
-        ],
-      },
-    });
-
-    render(<RestaurantMasterMasterPage />);
-
-    expect(
-      await screen.findByText("登録されている席はありません"),
-    ).toBeInTheDocument();
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "テーブルを登録",
-      }),
-    );
-
-    await user.click(
-      screen.getByRole("combobox", {
-        name: "席種",
-      }),
-    );
-
-    await user.click(
-      screen.getByRole("option", {
-        name: "カウンター",
-      }),
-    );
-
-    await user.type(
-      screen.getByRole("textbox", {
-        name: "席名",
-      }),
-      "カウンター1",
-    );
-
-    const numberInputs = screen.getAllByRole("spinbutton");
-
-    // [1]が表示順
-    await user.clear(numberInputs[1]);
-    await user.type(numberInputs[1], "0");
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "登録する",
-      }),
-    );
-
-    expect(numberInputs[1]).toBeInvalid();
-    expect(mocks.createRestaurantMaster).not.toHaveBeenCalled();
-  });
-
   it("予約席の登録に失敗すると、エラーを表示する", async () => {
     const user = userEvent.setup();
 
@@ -783,7 +703,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -793,6 +713,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -814,7 +735,7 @@ describe("RestaurantMasterMasterPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "テーブルを登録",
+        name: "席を登録",
       }),
     );
 
@@ -844,7 +765,7 @@ describe("RestaurantMasterMasterPage", () => {
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "席マスタの登録に失敗しました。",
+      "登録できたか確認できません。",
     );
 
     expect(mocks.createRestaurantMaster).toHaveBeenCalledWith({
@@ -905,7 +826,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -915,6 +836,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -1034,7 +956,7 @@ describe("RestaurantMasterMasterPage", () => {
         standard_masters: [
           {
             id: 1,
-            system_key: "reservation_table_type",
+            system_key: "restaurant_master_type",
             display_code: "RESERVATION_TABLE_TYPE",
             name: "予約席種",
             description: "予約席の種別を管理します",
@@ -1044,6 +966,7 @@ describe("RestaurantMasterMasterPage", () => {
               {
                 id: 10,
                 display_code: "COUNTER",
+                code: "C",
                 label: "カウンター",
                 description: null,
                 position: 1,
@@ -1107,3 +1030,59 @@ describe("RestaurantMasterMasterPage", () => {
     });
   });
 });
+
+it.each(["T/C無効", "席種マスタ無効", "席種マスタなし"])(
+  "%sでも既存席の閲覧・編集を保ち、新規登録だけ止める",
+  async (configuration) => {
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      data: {
+        restaurant_masters: [
+          {
+            id: 1,
+            restaurant_master_type_id: 10,
+            restaurant_master_type: { id: 10, code: "T", label: "テーブル" },
+            sequence_number: 1,
+            code: "T01",
+            name: "既存テーブル",
+            capacity: 2,
+            active: true,
+            memo: null,
+            lock_version: 0,
+            created_by_staff: null,
+            updated_by_staff: null,
+            created_at: "2026-01-01",
+            updated_at: "2026-01-01",
+          },
+        ],
+      },
+    });
+    mocks.fetchStandardCodes.mockResolvedValue({
+      data: {
+        standard_masters:
+          configuration === "席種マスタなし"
+            ? []
+            : [
+                {
+                  id: 1,
+                  system_key: "restaurant_master_type",
+                  active: configuration !== "席種マスタ無効",
+                  items: [
+                    { id: 10, code: "T", label: "テーブル", active: false },
+                    { id: 11, code: "C", label: "カウンター", active: false },
+                    { id: 12, code: "X", label: "追加席種", active: true },
+                  ],
+                },
+              ],
+      },
+    });
+    render(<RestaurantMasterMasterPage />);
+    expect(await screen.findByText("既存テーブル")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "席を登録" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "既存テーブルを編集" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText("席マスタを取得できませんでした"),
+    ).not.toBeInTheDocument();
+  },
+);

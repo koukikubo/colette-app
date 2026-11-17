@@ -1,4 +1,6 @@
 export type StandardListCode = {
+  // T/C等の読み取り専用の業務コード。追加の希望条件などでは未設定。
+  code?: string | null;
   id: number;
   display_code: string;
   label: string;
