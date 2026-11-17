@@ -31,6 +31,7 @@ export async function proxyRequest(
 
   // Rails APIにリクエストを転送
   let upstream: Response;
+  let responseBody: string;
   try {
     upstream = await fetch(`${RAILS_API_URL}${path}`, {
       method,
@@ -40,6 +41,8 @@ export async function proxyRequest(
       // 上流の応答待ちで画面が止まり続けないようにする。
       signal: AbortSignal.timeout(30_000),
     });
+    // ヘッダー受信後も本文の読み込み完了までは同じ失敗境界で扱う。
+    responseBody = await upstream.text();
   } catch {
     // 内部URLや例外本文を公開せず、共通API形式で再試行を案内する。
     return Response.json(
@@ -53,7 +56,6 @@ export async function proxyRequest(
     );
   }
   // レスポンスのボディとヘッダーを準備
-  const responseBody = await upstream.text();
   const responseHeaders = new Headers();
   responseHeaders.set("Cache-Control", "no-store");
   responseHeaders.set(

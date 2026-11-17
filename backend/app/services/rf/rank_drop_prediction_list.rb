@@ -104,7 +104,10 @@ module Rf
 
       # CustomerRankCalculatorは、読み込み済みの対応表をメモリ上で検索する。
       # 対応するランクも一緒に読み込み、ランク取得の追加問い合わせを防ぐ。
-      rule_set.rank_mappings.includes(:rf_rank).load
+      # scoped relationではなく、計算器が参照する関連キャッシュへ読み込む。
+      ActiveRecord::Associations::Preloader.new(
+        records: [ rule_set ], associations: { rank_mappings: :rf_rank }
+      ).call
     end
 
     def target_customers
