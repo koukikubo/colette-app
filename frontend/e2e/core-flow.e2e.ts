@@ -146,6 +146,38 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   await expect(
     page.getByRole("dialog", { name: "予約詳細", exact: true }),
   ).toBeVisible();
+  // 編集の中止・保存のどちらも、詳細を閉じれば元のタイムラインへ戻る。
+  for (const save of [false, true]) {
+    await page.getByRole("link", { name: /編集する/ }).click();
+    await expect(
+      page.getByRole("dialog", { name: "予約編集", exact: true }),
+    ).toBeVisible();
+    if (save) {
+      await page
+        .getByLabel("店舗メモ", { exact: true })
+        .fill("編集履歴の回帰確認");
+      await page
+        .getByRole("button", { name: "予約を更新", exact: true })
+        .click();
+      await page
+        .getByRole("alertdialog")
+        .getByRole("button", { name: "更新する", exact: true })
+        .click();
+    } else {
+      await page.getByRole("button", { name: "閉じる", exact: true }).click();
+    }
+    await expect(
+      page.getByRole("dialog", { name: "予約詳細", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/reservations\\?date=${yesterday}$`),
+    );
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page
+      .getByRole("link", { name: `${name}様の予約詳細を開く`, exact: true })
+      .click();
+  }
   await page.getByRole("button", { name: "対応完了", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "対応完了を取り消す" }),
