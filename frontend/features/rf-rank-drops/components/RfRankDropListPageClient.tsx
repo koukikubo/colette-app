@@ -4,13 +4,11 @@
 // useRfRankDropsで取得し、共通のページ操作と顧客詳細へのリンクを表示する。
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -25,7 +23,6 @@ import { usePagination } from "@/hooks/usePagination";
 import { useRfRankDrops } from "../hooks/useRfRankDrops";
 import type {
   RfRankDropLatestState,
-  RfRankDropParams,
   RfRankDropUnavailableState,
 } from "../types/rf-rank-drop";
 
@@ -52,51 +49,18 @@ const LATEST_STATE_LABELS: Record<RfRankDropLatestState, string> = {
  * 顧客名のリンクは既存の顧客詳細ページへ接続する。
  */
 export function RfRankDropListPageClient() {
-  const [startDateInput, setStartDateInput] = useState<string | null>(null);
-  const [endDateInput, setEndDateInput] = useState<string | null>(null);
-  const [period, setPeriod] = useState<
-    Pick<RfRankDropParams, "start_date" | "end_date">
-  >({});
   const [reloadKey, setReloadKey] = useState(0);
 
   const { currentPage, perPage, setCurrentPage, setPerPage, resetPage } =
     usePagination();
 
   const { data, isLoading, errorMessage } = useRfRankDrops({
-    ...period,
+    // 期間は指定せず、店舗日付による当月初日〜今日のAPI既定値を使う。
     page: currentPage,
     // 共通Hookのnumber型を、APIで許可している表示件数へ絞り込む。
     per_page: perPage === 50 || perPage === 100 ? perPage : 20,
     reloadKey,
   });
-
-  /**
-   * 入力した期間を取得条件へ反映する。
-   * 条件が変わるため1ページ目へ戻し、同じ条件でも再取得する。
-   */
-  function handleApplyPeriod(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetPage();
-
-    setPeriod({
-      start_date: (startDateInput ?? data?.start_date) || undefined,
-      end_date: (endDateInput ?? data?.end_date) || undefined,
-    });
-
-    setReloadKey((current) => current + 1);
-  }
-
-  /**
-   * 期間指定を解除し、バックエンドの初期期間で取得する。
-   * 初期期間は当月初日から今日まで。
-   */
-  function handleResetPeriod() {
-    setStartDateInput(null);
-    setEndDateInput(null);
-    setPeriod({});
-    resetPage();
-    setReloadKey((current) => current + 1);
-  }
 
   /**
    * PaginationControlsから通知された表示件数を反映する。
@@ -125,56 +89,11 @@ export function RfRankDropListPageClient() {
         </Link>
       </nav>
       <header>
-        <h1 className="text-2xl font-semibold">RFランク低下顧客</h1>
+        <h1 className="text-2xl font-semibold">今月のRFランク低下顧客</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          対象期間内にランクが低下した顧客を確認できます。
+          当月初日から今日までにランクが低下した顧客を一覧で確認できます。
         </p>
       </header>
-
-      <section
-        className="rounded-lg border bg-card p-4"
-        aria-label="対象期間の指定"
-      >
-        <form
-          className="flex flex-wrap items-end gap-4"
-          onSubmit={handleApplyPeriod}
-        >
-          <div className="space-y-2">
-            <Label htmlFor="rank-drop-start-date">開始日</Label>
-            <Input
-              id="rank-drop-start-date"
-              type="date"
-              value={startDateInput ?? data?.start_date ?? ""}
-              max={(endDateInput ?? data?.end_date) || undefined}
-              onChange={(event) => setStartDateInput(event.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rank-drop-end-date">終了日</Label>
-            <Input
-              id="rank-drop-end-date"
-              type="date"
-              value={endDateInput ?? data?.end_date ?? ""}
-              min={(startDateInput ?? data?.start_date) || undefined}
-              onChange={(event) => setEndDateInput(event.target.value)}
-            />
-          </div>
-
-          <Button type="submit" disabled={isLoading}>
-            表示する
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isLoading}
-            onClick={handleResetPeriod}
-          >
-            当月に戻す
-          </Button>
-        </form>
-      </section>
 
       {isLoading && (
         <p role="status" className="py-8 text-center text-muted-foreground">
@@ -245,14 +164,14 @@ export function RfRankDropListPageClient() {
                   role="status"
                   className="rounded-lg border border-dashed p-8 text-center text-muted-foreground"
                 >
-                  対象期間内にランクが低下した顧客はいません。
+                  今月ランクが低下した顧客はいません。
                 </p>
               ) : (
                 <>
                   <div className="rounded-lg border">
                     <Table>
                       <TableCaption className="sr-only">
-                        対象期間内にRFランクが低下した顧客一覧
+                        今月RFランクが低下した顧客一覧
                       </TableCaption>
                       <TableHeader>
                         <TableRow>

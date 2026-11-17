@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useReadRefresh } from "@/hooks/useReadRefresh";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
-import { useRfRankDrops } from "@/features/rf-rank-drops/hooks/useRfRankDrops";
 import type { Reservation } from "@/features/reservations/types";
 type Dashboard = {
   date: string;
@@ -27,57 +25,13 @@ type Dashboard = {
   };
 };
 
-function RankDropOverview({ reloadKey }: { reloadKey: number }) {
-  const { data, isLoading, errorMessage } = useRfRankDrops({
-    per_page: 20,
-    reloadKey,
-  });
-  return (
-    <section className="space-y-3 rounded border p-4">
-      <h2 className="font-semibold">今月のRFランク低下</h2>
-      {isLoading ? (
-        <p role="status">RF履歴を読み込んでいます。</p>
-      ) : errorMessage ? (
-        <p role="alert">{errorMessage}</p>
-      ) : data?.state === "ready" ? (
-        <>
-          <p>{data.pagination.total_count}人</p>
-          <ul>
-            {data.customers.slice(0, 5).map((row) => (
-              <li key={row.customer_id}>
-                <Link
-                  className="underline"
-                  href={`/customers/${row.customer_id}`}
-                >
-                  {row.customer_name}
-                </Link>{" "}
-                ／ {row.previous_rank.label} → {row.dropped_rank.label}（
-                {row.detected_on}）
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <p>比較可能な適用済み履歴がありません。低下人数は未集計です。</p>
-      )}
-      <div className="flex flex-wrap gap-4">
-        <Link className="underline" href="/rf-rank-drops">
-          低下済み一覧
-        </Link>
-        <Link className="underline" href="/rf-rank-drops/predictions">
-          今後の低下予定
-        </Link>
-      </div>
-    </section>
-  );
-}
 export function DashboardPage() {
   const [reload, setReload] = useState(0);
   const { data, error, loading } = useApiRead<Dashboard>(
     "/api/v1/dashboard",
     reload,
   );
-  useReadRefresh(() => setReload((value) => value + 1));
+  // 定期・フォーカス復帰時の再取得はしない。画面表示時と明示的な更新で取得する。
   return (
     <main className="space-y-6 p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -102,7 +56,6 @@ export function DashboardPage() {
               {new Date(data.as_of).toLocaleTimeString("ja-JP", {
                 timeZone: "Asia/Tokyo",
               })}
-              （表示中は30秒ごとに更新）
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               {(
@@ -198,7 +151,6 @@ export function DashboardPage() {
           </>
         )
       )}
-      <RankDropOverview reloadKey={reload} />
     </main>
   );
 }
