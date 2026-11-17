@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { EllipsisIcon } from "lucide-react";
 
 import {
@@ -21,29 +22,31 @@ export function ReservationTimelineActionMenu({
   onReservationStatusChanged,
 }: ReservationTimelineActionMenuProps) {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${reservation.reservation_name}様の予約操作を開く`}
-          className="inline-flex size-7 items-center justify-center rounded-md bg-background/90 text-foreground shadow-sm hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <EllipsisIcon className="size-4" aria-hidden="true" />
-        </button>
-      </PopoverTrigger>
+    <PermissionGate resource="reservations">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`${reservation.reservation_name}様の予約操作を開く`}
+            className="inline-flex size-7 items-center justify-center rounded-md bg-background/90 text-foreground shadow-sm hover:bg-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <EllipsisIcon className="size-4" aria-hidden="true" />
+          </button>
+        </PopoverTrigger>
 
-      <PopoverContent align="end">
-        <PopoverHeader>
-          <PopoverTitle>{reservation.reservation_name} 様</PopoverTitle>
+        <PopoverContent align="end">
+          <PopoverHeader>
+            <PopoverTitle>{reservation.reservation_name} 様</PopoverTitle>
 
-          <PopoverDescription>予約状態を変更できます。</PopoverDescription>
-        </PopoverHeader>
+            <PopoverDescription>予約状態を変更できます。</PopoverDescription>
+          </PopoverHeader>
 
-        <ReservationStatusActions
-          reservation={reservation}
-          onStatusChanged={onReservationStatusChanged}
-        />
-      </PopoverContent>
-    </Popover>
+          <ReservationStatusActions
+            reservation={reservation}
+            onStatusChanged={onReservationStatusChanged}
+          />
+        </PopoverContent>
+      </Popover>
+    </PermissionGate>
   );
 }

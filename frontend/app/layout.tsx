@@ -1,22 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/features/staff-auth/providers/AuthProvider";
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "./fonts/Geist.ttf",
+  weight: "100 900",
+  display: "swap",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/GeistMono.ttf",
+  weight: "100 900",
+  display: "swap",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Colette - スタッフ管理システム",
+  title: "Colette - 予約・顧客管理",
   description:
-    "Coletteは、飲食店のスタッフ管理を効率化するためのシステムです。スタッフのシフト管理、勤怠管理、連絡機能などを提供し、店舗運営をサポートします。",
+    "Coletteは、飲食店の予約・顧客・席情報を共有し、来店準備とRF分析を支援するシステムです。",
 };
 
 export default function RootLayout({

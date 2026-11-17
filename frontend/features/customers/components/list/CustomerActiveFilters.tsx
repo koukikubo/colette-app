@@ -8,6 +8,8 @@ import type { CustomerListParams } from "../../types";
 
 type CustomerActiveFiltersProps = {
   filters: CustomerListParams;
+  customerRankLabel?: string;
+  onClearCustomerRank: () => void;
   onClearQuery: () => void;
   onResetVisibility: () => void;
   onClearCustomerKind: () => void;
@@ -16,6 +18,8 @@ type CustomerActiveFiltersProps = {
 
 export function CustomerActiveFilters({
   filters,
+  customerRankLabel,
+  onClearCustomerRank,
   onClearQuery,
   onResetVisibility,
   onClearCustomerKind,
@@ -24,6 +28,7 @@ export function CustomerActiveFilters({
   const visibility = filters.visibility ?? "visible";
 
   const hasActiveFilters =
+    filters.customer_rank_id !== undefined ||
     Boolean(filters.query) ||
     visibility !== "visible" ||
     Boolean(filters.customer_kind);
@@ -35,6 +40,21 @@ export function CustomerActiveFilters({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm text-muted-foreground">適用中:</span>
+
+      {filters.customer_rank_id !== undefined && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onClearCustomerRank}
+        >
+          手動ランク:{" "}
+          {filters.customer_rank_id === "unassigned"
+            ? "未設定"
+            : (customerRankLabel ?? "選択中")}
+          <XIcon className="size-3.5" />
+        </Button>
+      )}
 
       {filters.query && (
         <Button

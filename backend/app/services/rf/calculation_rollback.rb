@@ -15,6 +15,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       setting = RfSetting.first
 
       if setting.nil?
@@ -39,6 +43,8 @@ module Rf
           raise PreviousRunNotFoundError,
                 "復元できる以前の計算結果がありません"
         end
+
+        RankAvailability.ensure_available!(previous_run.rf_rule_set)
 
         setting.update!(
           current_calculation_run: previous_run

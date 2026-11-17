@@ -1,4 +1,5 @@
 "use client";
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import * as React from "react";
 import { Armchair, CircleAlert } from "lucide-react";
 
@@ -7,14 +8,17 @@ import { fetchRestaurantMasters } from "@/features/restaurant-masters/api/restau
 
 import type { RestaurantMaster } from "@/features/restaurant-masters/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StandardListCode } from "@/features/standard-codes/types";
+import {
+  isAutomaticSeatType,
+  type AutomaticSeatTypeOption,
+} from "../../utils/automatic-seat-types";
 import { fetchStandardCodes } from "@/features/standard-codes/api/standard-code-api";
 import { RestaurantMasterTable } from "./RestaurantMasterTable";
 import { useState } from "react";
 import { RestaurantMasterEditDialog } from "../dialog/RestaurantMasterEditDialog";
 import { RestaurantMasterCreateDialog } from "../dialog/RestaurantMasterCreateDialog";
 
-const RESTAURANT_MASTER_TYPE_NAME = "予約席種";
+const RESTAURANT_MASTER_TYPE_KEY = "restaurant_master_type";
 
 export function RestaurantMasterMasterPage() {
   const [RestaurantMasters, setRestaurantMasters] = React.useState<
@@ -24,7 +28,7 @@ export function RestaurantMasterMasterPage() {
   const [error, setError] = React.useState<string | null>(null);
   const hasRestaurantMasters = RestaurantMasters.length > 0;
   const [RestaurantMasterTypes, setRestaurantMasterTypes] = React.useState<
-    StandardListCode[]
+    AutomaticSeatTypeOption[]
   >([]);
   const [editingRestaurantMaster, setEditingRestaurantMaster] =
     React.useState<RestaurantMaster | null>(null);
@@ -44,22 +48,17 @@ export function RestaurantMasterMasterPage() {
         const RestaurantMasterTypeMaster =
           standardCodesResponse.data.standard_masters.find(
             (standardMaster) =>
-              standardMaster.name === RESTAURANT_MASTER_TYPE_NAME &&
+              standardMaster.system_key === RESTAURANT_MASTER_TYPE_KEY &&
               standardMaster.active,
           );
 
-        if (!RestaurantMasterTypeMaster) {
-          throw new Error("予約席種マスタが見つかりません。");
-        }
-
         const activeRestaurantMasterTypes = (
-          RestaurantMasterTypeMaster.items ?? []
-        ).filter((item) => item.active);
+          RestaurantMasterTypeMaster?.items ?? []
+        )
+          .filter(isAutomaticSeatType)
+          .filter((item) => item.active);
 
-        if (activeRestaurantMasterTypes.length === 0) {
-          throw new Error("有効な予約席種が登録されていません。");
-        }
-
+        // 登録候補がない設定でも、既存席の履歴・編集は利用できる。
         setRestaurantMasters(RestaurantMastersResponse.data.restaurant_masters);
 
         setRestaurantMasterTypes(activeRestaurantMasterTypes);
@@ -107,15 +106,30 @@ export function RestaurantMasterMasterPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
-          テーブルを登録
-        </Button>
-        <RestaurantMasterCreateDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          tableTypeOptions={RestaurantMasterTypes}
-          onCreated={refreshRestaurantMasters}
-        />
+        <PermissionGate resource="masters">
+          <Button
+            type="button"
+            disabled={
+              isLoading || Boolean(error) || RestaurantMasterTypes.length === 0
+            }
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            席を登録
+          </Button>
+        </PermissionGate>
+        {!isLoading && !error && RestaurantMasterTypes.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            新しい席の登録には、有効なテーブル席またはカウンター席の設定が必要です。
+          </p>
+        )}
+        <PermissionGate resource="masters">
+          <RestaurantMasterCreateDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            tableTypeOptions={RestaurantMasterTypes}
+            onCreated={refreshRestaurantMasters}
+          />
+        </PermissionGate>
       </div>
 
       <div className="rounded-lg border bg-card" aria-live="polite">
@@ -159,7 +173,9 @@ export function RestaurantMasterMasterPage() {
             <p className="font-medium">登録されている席はありません</p>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              「席を登録」から最初の席を登録してください。
+              {RestaurantMasterTypes.length > 0
+                ? "「席を登録」から最初の席を登録してください。"
+                : "席種の設定を確認してから登録してください。"}
             </p>
           </div>
         )}
@@ -173,17 +189,19 @@ export function RestaurantMasterMasterPage() {
         )}
       </div>
       {editingRestaurantMaster ? (
-        <RestaurantMasterEditDialog
-          key={editingRestaurantMaster.id}
-          open
-          restaurantMaster={editingRestaurantMaster}
-          onUpdated={handleUpdatedRestaurantMaster}
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
-              setEditingRestaurantMaster(null);
-            }
-          }}
-        />
+        <PermissionGate resource="masters">
+          <RestaurantMasterEditDialog
+            key={editingRestaurantMaster.id}
+            open
+            restaurantMaster={editingRestaurantMaster}
+            onUpdated={handleUpdatedRestaurantMaster}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                setEditingRestaurantMaster(null);
+              }
+            }}
+          />
+        </PermissionGate>
       ) : null}
     </div>
   );

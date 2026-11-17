@@ -9,11 +9,16 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useUrlQuery } from "@/hooks/useUrlQuery";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiClientError } from "@/lib/api/api-client";
-import { fetchRfMonthComparison } from "../api/customer-transition-api";
+import {
+  fetchRfComparisonPeriods,
+  fetchRfMonthComparison,
+} from "../api/customer-transition-api";
 import type { RfMonthComparison } from "../types/customer-transition";
 import { RfMovementMatrix } from "./RfMovementMatrix";
 import { RfMovementOverview } from "./RfMovementOverview";
@@ -23,8 +28,58 @@ import { RfHelpHint } from "./RfHelpHint";
  * 比較条件と取得状態を管理し、期間入力・概要・マトリクスを表示する。
  */
 export function RfCustomerTransitionSection() {
-  const [startMonth, setStartMonth] = useState("");
-  const [endMonth, setEndMonth] = useState("");
+  const { params, update } = useUrlQuery();
+  const startMonth = params.get("start_month") ?? "";
+  const endMonth = params.get("end_month") ?? "";
+  const [periodError, setPeriodError] = useState(false);
+  const [periodReload, setPeriodReload] = useState(0);
+  const [initialized, setInitialized] = useState(false);
+  const firstComparison = useRef(true);
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadPeriods() {
+      try {
+        const response = await fetchRfComparisonPeriods(controller.signal);
+        if (controller.signal.aborted) return;
+        setPeriodError(false);
+        const available = response.data.periods;
+        const current = new URLSearchParams(window.location.search);
+        const currentMonth = response.data.current_month ?? available[0]?.month;
+        if (
+          !current.get("start_month") &&
+          !current.get("end_month") &&
+          currentMonth
+        ) {
+          // 履歴が古い場合も初期表示を過去月へすり替えず、当月の有無を示す。
+          const end = available.find((item) => item.month === currentMonth);
+          const [year, month] = currentMonth.split("-");
+          const yearAgo = `${Number(year) - 1}-${month}`;
+          const start = end
+            ? (available.find(
+                (item) =>
+                  item.month === yearAgo &&
+                  item.rule_set_id === end.rule_set_id,
+              ) ??
+              available.find(
+                (item) =>
+                  item.month < currentMonth &&
+                  item.rule_set_id === end.rule_set_id,
+              ))
+            : undefined;
+          update({
+            start_month: start?.month ?? (end ? currentMonth : yearAgo),
+            end_month: currentMonth,
+          });
+        }
+      } catch {
+        if (!controller.signal.aborted) setPeriodError(true);
+      } finally {
+        if (!controller.signal.aborted) setInitialized(true);
+      }
+    }
+    void loadPeriods();
+    return () => controller.abort();
+  }, [update, periodReload]);
   const [comparison, setComparison] = useState<RfMonthComparison | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -42,8 +97,8 @@ export function RfCustomerTransitionSection() {
     setIsLoading(false);
     setComparison(null);
     setErrorMessage(null);
-    if (side === "start") setStartMonth(value);
-    else setEndMonth(value);
+    firstComparison.current = false;
+    update(side === "start" ? { start_month: value } : { end_month: value });
   }
 
   /**
@@ -61,37 +116,47 @@ export function RfCustomerTransitionSection() {
    * 中止されたリクエストの結果は反映しない。
    * APIから返る履歴不足・ルール違いなどの理由も画面へ表示する。
    */
-  async function compare(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    pending.current?.abort();
-    const controller = new AbortController();
-    pending.current = controller;
-    setComparison(null);
-    setErrorMessage(null);
-    if (startMonth > endMonth) {
-      setErrorMessage("開始月は終了月以前を指定してください");
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await fetchRfMonthComparison(
-        startMonth,
-        endMonth,
-        controller.signal,
-      );
-      if (!controller.signal.aborted) setComparison(response.data);
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        setErrorMessage(
-          error instanceof ApiClientError
-            ? [error.message, ...error.errorMessages].join(" / ")
-            : "RFランク比較を取得できませんでした。再度比較してください。",
-        );
+  const compare = useCallback(
+    async (event?: React.FormEvent<HTMLFormElement>) => {
+      event?.preventDefault();
+      pending.current?.abort();
+      const controller = new AbortController();
+      pending.current = controller;
+      setComparison(null);
+      setErrorMessage(null);
+      if (startMonth > endMonth) {
+        setErrorMessage("開始月は終了月以前を指定してください");
+        return;
       }
-    } finally {
-      if (!controller.signal.aborted) setIsLoading(false);
+      setIsLoading(true);
+      try {
+        const response = await fetchRfMonthComparison(
+          startMonth,
+          endMonth,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) setComparison(response.data);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setErrorMessage(
+            error instanceof ApiClientError
+              ? [error.message, ...error.errorMessages].join(" / ")
+              : "RFランク比較を取得できませんでした。再度比較してください。",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    },
+    [startMonth, endMonth],
+  );
+
+  useEffect(() => {
+    if (initialized && firstComparison.current && startMonth && endMonth) {
+      firstComparison.current = false;
+      void compare();
     }
-  }
+  }, [initialized, startMonth, endMonth, compare]);
 
   return (
     <section aria-label="RFランクの2時点比較">
@@ -119,6 +184,19 @@ export function RfCustomerTransitionSection() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
+          {periodError && (
+            <p role="alert">
+              履歴候補を取得できませんでした。
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPeriodReload((value) => value + 1)}
+              >
+                候補を再取得
+              </Button>
+            </p>
+          )}
+
           <form onSubmit={compare} className="flex flex-wrap items-end gap-4">
             <label className="grid gap-1">
               開始月
@@ -156,6 +234,22 @@ export function RfCustomerTransitionSection() {
           {comparison && (
             <div className="space-y-6">
               <RfMovementOverview counts={comparison.movement.counts} />
+              <nav className="flex flex-wrap gap-4">
+                {(["up", "down", "unchanged"] as const).map((category) => (
+                  <Link
+                    key={category}
+                    className="underline"
+                    href={`/rf-customers?${new URLSearchParams({ run_id: String(comparison.end_run.id), comparison_run_id: String(comparison.start_run.id), category, return_to: `/rf-customer-transitions?start_month=${startMonth}&end_month=${endMonth}` })}`}
+                  >
+                    {category === "up"
+                      ? "上昇"
+                      : category === "down"
+                        ? "下降"
+                        : "維持"}
+                    した顧客 {comparison.movement.counts[category]}人
+                  </Link>
+                ))}
+              </nav>
 
               <div className="space-y-3">
                 {/* 選択中の入力値ではなく、取得済み結果の年月を表示する。 */}
@@ -204,6 +298,9 @@ export function RfCustomerTransitionSection() {
                 <RfMovementMatrix
                   key={`${comparison.start_run.id}:${comparison.end_run.id}`}
                   transitions={comparison.movement.transitions}
+                  customerHref={(from, to) =>
+                    `/rf-customers?${new URLSearchParams({ run_id: String(comparison.end_run.id), comparison_run_id: String(comparison.start_run.id), from_state: from.state, to_state: to.state, ...(from.rank ? { from_rank_id: String(from.rank.id) } : {}), ...(to.rank ? { to_rank_id: String(to.rank.id) } : {}), return_to: `/rf-customer-transitions?start_month=${startMonth}&end_month=${endMonth}` })}`
+                  }
                 />
               </div>
             </div>
