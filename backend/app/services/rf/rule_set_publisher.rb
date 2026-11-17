@@ -13,6 +13,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       ActiveRecord::Base.transaction do
         # 同時に複数のルールが公開されることを防ぐ。
         RfRuleSet.lock.order(:id).load

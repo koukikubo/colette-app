@@ -1,5 +1,8 @@
 "use client";
 
+import { PasswordForm } from "@/features/staff-auth/components/session/PasswordForm";
+import { ApiClientError } from "@/lib/api/api-client";
+
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 
 import { Loader2Icon } from "lucide-react";
@@ -93,6 +96,7 @@ export function StaffMasterEditDialog({
   const [resetFailedAttemptsDialogOpen, setResetFailedAttemptsDialogOpen] =
     useState(false);
 
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [retireDialogOpen, setRetireDialogOpen] = useState(false);
 
   const changes = useMemo<ChangeItem[]>(() => {
@@ -181,9 +185,34 @@ export function StaffMasterEditDialog({
     setConfirmOpen(true);
   };
 
+  // 入力開始時点の版を保持し、裏で一覧が更新されても古い入力を再基準化しない。
+  const [editVersion, setEditVersion] = useState(staffMaster.lock_version);
+  const [ownLoginSnapshot, setOwnLoginSnapshot] = useState<StaffMaster | null>(
+    null,
+  );
+
+  async function handleLoginManagementUpdated(updated: StaffMaster) {
+    // この編集の版で成功した本人の操作だけを反映し、基本情報の入力は維持する。
+    // 他者更新のpropsだけでは版を進めず、次の保存でも競合を検出する。
+    setEditVersion(updated.lock_version);
+    setOwnLoginSnapshot(updated);
+    try {
+      await onUpdated();
+    } catch {
+      setApiError(
+        "ログイン管理の変更は保存済みです。一覧の再取得に失敗しました。",
+      );
+    }
+  }
+  const loginSnapshot = {
+    ...(ownLoginSnapshot ?? staffMaster),
+    lock_version: editVersion,
+  };
+
   const handleConfirmUpdate = async () => {
     const payload: UpdateStaffMasterRequest = {
       staff_master: {
+        lock_version: editVersion,
         name: values.name.trim(),
         role_code: values.role_code,
         employment_started_on: values.employment_started_on,
@@ -200,20 +229,33 @@ export function StaffMasterEditDialog({
 
       setConfirmOpen(false);
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       setConfirmOpen(false);
       setApiError(
-        "担当者情報を更新できませんでした。入力内容を確認して再度お試しください。",
+        error instanceof ApiClientError
+          ? `${error.message} ${error.errorMessages.join(" ")}`
+          : "担当者情報を更新できませんでした。入力内容を確認して再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const staff = staffMaster.staff;
+  const staff = (ownLoginSnapshot ?? staffMaster).staff;
 
   return (
     <>
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>担当者のパスワード再設定</DialogTitle>
+            <DialogDescription>
+              対象担当者の全セッションを失効します。
+            </DialogDescription>
+          </DialogHeader>
+          <PasswordForm target={staffMaster} onCompleted={onUpdated} />
+        </DialogContent>
+      </Dialog>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="flex max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b px-6 py-5 pr-12">
@@ -441,6 +483,16 @@ export function StaffMasterEditDialog({
                 </>
               )}
 
+              {staff && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                  onClick={() => setPasswordOpen(true)}
+                >
+                  パスワード再設定
+                </Button>
+              )}
               {apiError && (
                 <p className="text-sm text-destructive" role="alert">
                   {apiError}
@@ -538,16 +590,16 @@ export function StaffMasterEditDialog({
 
       <ToggleLoginEnabledDialog
         open={loginEnabledDialogOpen}
-        staffMaster={staffMaster}
+        staffMaster={loginSnapshot}
         onOpenChange={setLoginEnabledDialogOpen}
-        onUpdated={onUpdated}
+        onUpdated={handleLoginManagementUpdated}
       />
 
       <ResetFailedAttemptsDialog
         open={resetFailedAttemptsDialogOpen}
-        staffMaster={staffMaster}
+        staffMaster={loginSnapshot}
         onOpenChange={setResetFailedAttemptsDialogOpen}
-        onUpdated={onUpdated}
+        onUpdated={handleLoginManagementUpdated}
       />
 
       <RetireStaffDialog

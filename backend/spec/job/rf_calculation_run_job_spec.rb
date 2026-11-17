@@ -30,7 +30,7 @@ RSpec.describe RfCalculationRunJob do
 
     expect(Rf::CalculationRunner)
       .to have_received(:call)
-      .with(calculation_run: calculation_run)
+      .with(calculation_run: calculation_run, recover: true)
       .once
   end
 end

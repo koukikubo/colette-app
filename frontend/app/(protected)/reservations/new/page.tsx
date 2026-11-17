@@ -1,3 +1,4 @@
+import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import { NewReservationFormContainer } from "@/features/reservations/components/form/NewReservationFormContainer";
 import { resolveReservationDate } from "@/features/reservations/utils/reservation-date";
 
@@ -5,6 +6,8 @@ import { resolveReservationDate } from "@/features/reservations/utils/reservatio
 type NewReservationPageProps = {
   searchParams: Promise<{
     date?: string | string[];
+    time?: string;
+    table_id?: string;
   }>;
 };
 
@@ -13,5 +16,16 @@ export default async function NewReservationPage({
 }: NewReservationPageProps) {
   const parameters = await searchParams;
   const targetDate = resolveReservationDate(parameters.date);
-  return <NewReservationFormContainer targetDate={targetDate} />;
+  return (
+    <PermissionGate
+      resource="reservations"
+      fallback={<p className="p-6">閲覧専用のため予約を変更できません。</p>}
+    >
+      <NewReservationFormContainer
+        targetDate={targetDate}
+        startTime={parameters.time}
+        restaurantMasterId={Number(parameters.table_id)}
+      />
+    </PermissionGate>
+  );
 }
