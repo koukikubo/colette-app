@@ -6,7 +6,7 @@ class RfCalculationRunJob < ApplicationJob
       RfCalculationRun.find(calculation_run_id)
 
     Rf::CalculationRunner.call(
-      calculation_run: calculation_run
+      calculation_run: calculation_run, recover: true
     )
   end
 end

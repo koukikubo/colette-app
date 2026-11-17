@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiClientError } from "@/lib/api/api-client";
 import { useState } from "react";
 
 import { Loader2Icon } from "lucide-react";
@@ -22,7 +23,7 @@ type ResetFailedAttemptsDialogProps = {
   open: boolean;
   staffMaster: StaffMaster;
   onOpenChange: (open: boolean) => void;
-  onUpdated: () => Promise<void>;
+  onUpdated: (updated: StaffMaster) => Promise<void>;
 };
 
 export function ResetFailedAttemptsDialog({
@@ -59,13 +60,18 @@ export function ResetFailedAttemptsDialog({
     setErrorMessage(null);
 
     try {
-      await resetStaffFailedAttempts(staffMaster.id);
-      await onUpdated();
+      const response = await resetStaffFailedAttempts(
+        staffMaster.id,
+        staffMaster.lock_version,
+      );
+      await onUpdated(response.data.staff_master);
 
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       setErrorMessage(
-        "ログイン失敗回数をリセットできませんでした。時間をおいて再度お試しください。",
+        error instanceof ApiClientError
+          ? `${error.message} ${error.errorMessages.join(" ")}`
+          : "ログイン失敗回数をリセットできませんでした。時間をおいて再度お試しください。",
       );
     } finally {
       setIsSubmitting(false);

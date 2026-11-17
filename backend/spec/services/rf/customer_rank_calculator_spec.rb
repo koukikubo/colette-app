@@ -190,6 +190,27 @@ RSpec.describe Rf::CustomerRankCalculator do
     }.to raise_error(ActiveRecord::RecordNotFound)
   end
 
+  it "来店日配列とDB取得の計算結果が一致する" do
+    dates = [ Date.new(2026, 9, 1), Date.new(2026, 8, 1) ]
+    dates.each { |date| create_completed_visit(date) }
+    expected = described_class.call(customer: customer, rule_set: rule_set, base_date: base_date)
+    actual = described_class.call_with_visit_dates(
+      customer: customer, rule_set: rule_set, base_date: base_date, visit_dates: dates
+    )
+    expect(actual.to_h).to eq(expected.to_h)
+  end
+
+  it "空配列または集計期間外の来店日は未訪問になる" do
+    [ [], [ base_date.next_day, base_date.advance(months: -61) ] ].each do |dates|
+      result = described_class.call_with_visit_dates(
+        customer: customer, rule_set: rule_set, base_date: base_date, visit_dates: dates
+      )
+      expect(result.rf_rank).to eq(rank_n)
+      expect(result.last_visit_on).to be_nil
+      expect(result.frequency_count).to eq(0)
+    end
+  end
+
   private
 
   def create_rank(code, label, position)

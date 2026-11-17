@@ -5,6 +5,8 @@ module Api
         data = {
           id: resource.id,
           display_code: resource.display_code,
+          # T/Cなどの業務コードは読み取り専用。項目のDB idとは別に返す。
+          code: resource.code,
           label: resource.label,
           description: resource.description,
           position: resource.position,

@@ -1,6 +1,7 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiClientError } from "@/lib/api/api-client";
 import { useReservationFormOptions } from "../../hooks/useReservationFormOptions";
 
 const mocks = vi.hoisted(() => ({
@@ -78,4 +79,25 @@ describe("useReservationFormOptions", () => {
     );
     expect(result.current.restaurantMasters).toEqual([]);
   });
+});
+
+it("再認証後に401で失敗した選択肢を回復し、取得済みなら再取得しない", async () => {
+  mocks.fetchStandardCodes
+    .mockReset()
+    .mockRejectedValueOnce(new ApiClientError("認証切れ", 401))
+    .mockResolvedValue({ data: { standard_masters: [] } });
+  mocks.fetchRestaurantMasters
+    .mockReset()
+    .mockResolvedValue({ data: { restaurant_masters: [] } });
+  const { result } = renderHook(() => useReservationFormOptions());
+  await waitFor(() => expect(result.current.errorMessage).not.toBeNull());
+  act(() => {
+    window.dispatchEvent(new Event("colette:session-resumed"));
+  });
+  await waitFor(() => expect(result.current.errorMessage).toBeNull());
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  act(() => {
+    window.dispatchEvent(new Event("colette:session-resumed"));
+  });
+  expect(mocks.fetchStandardCodes).toHaveBeenCalledTimes(2);
 });

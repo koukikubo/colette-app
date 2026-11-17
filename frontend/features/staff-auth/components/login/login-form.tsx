@@ -1,5 +1,6 @@
 "use client";
 
+import { safeReturnPath } from "@/lib/api/session-events";
 import { cn } from "@/lib/utils";
 
 import { FormEvent, useState } from "react";
@@ -68,7 +69,11 @@ export function LoginForm({
 
       await refreshCurrentStaff();
 
-      router.replace("/dashboard");
+      router.replace(
+        safeReturnPath(
+          new URLSearchParams(window.location.search).get("return_to"),
+        ),
+      );
     } catch (error) {
       if (error instanceof ApiClientError) {
         setErrorMessage(error.message);
@@ -88,7 +93,7 @@ export function LoginForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-xl font-bold">システムログイン画面</h1>
+            <h1 className="text-xl font-bold">ログイン</h1>
             <p className="text-muted-foreground text-sm">
               担当者を選択し、パスワードを入力してください。
             </p>
@@ -120,6 +125,7 @@ export function LoginForm({
             <Input
               id="password"
               name="password"
+              autoComplete="current-password"
               type="password"
               placeholder="パスワードを入力してください"
               value={password}
@@ -130,7 +136,9 @@ export function LoginForm({
           </Field>
 
           {errorMessage ? (
-            <p className="text-destructive text-sm">{errorMessage}</p>
+            <p role="alert" className="text-destructive text-sm">
+              {errorMessage}
+            </p>
           ) : null}
 
           <Field>
@@ -145,7 +153,7 @@ export function LoginForm({
               className="underline underline-offset-4"
               onClick={() =>
                 setErrorMessage(
-                  "パスワードリセット機能は後続実装予定です。管理者へお問い合わせください。",
+                  "管理者に担当者マスタからパスワードを再設定してもらってください。",
                 )
               }
             >

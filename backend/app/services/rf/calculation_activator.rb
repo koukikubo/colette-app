@@ -12,6 +12,10 @@ module Rf
     end
 
     def call
+      ConfigurationLock.synchronize { call_under_configuration_lock }
+    end
+
+    def call_under_configuration_lock
       validate_completed!
 
       setting = RfSetting.first_or_create!
@@ -22,10 +26,15 @@ module Rf
         return setting if already_active?(setting)
 
         validate_previous_run!(setting)
+        RankAvailability.ensure_available!(calculation_run.rf_rule_set)
 
         setting.update!(
           current_calculation_run: calculation_run
         )
+        # 自動適用の競合を確認したうえで手動適用した場合も、対応済みとして残す。
+        if %w[monthly daily].include?(calculation_run.execution_source)
+          calculation_run.update!(monthly_apply_state: "applied", monthly_apply_error: nil)
+        end
       end
 
       setting
