@@ -83,6 +83,9 @@ jobs:
           exit 1
       - name: Run browser to database flow
         run: bash scripts/check.sh e2e
+      - name: Verify real daily scheduler and worker
+        working-directory: backend
+        run: bundle exec rails runner test/e2e/daily_queue_flow.rb
       - name: Upload failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
@@ -90,6 +93,7 @@ jobs:
           name: core-flow-e2e-failure
           path: |
             frontend/test-results/
+            backend/tmp/e2e-daily-queue.log
             backend/tmp/e2e-rails.log
             /tmp/colette-e2e-next.log
           retention-days: 7
