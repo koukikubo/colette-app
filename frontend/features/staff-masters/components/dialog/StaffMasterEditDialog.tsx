@@ -184,7 +184,28 @@ export function StaffMasterEditDialog({
   };
 
   // 入力開始時点の版を保持し、裏で一覧が更新されても古い入力を再基準化しない。
-  const [editVersion] = useState(staffMaster.lock_version);
+  const [editVersion, setEditVersion] = useState(staffMaster.lock_version);
+  const [ownLoginSnapshot, setOwnLoginSnapshot] = useState<StaffMaster | null>(
+    null,
+  );
+
+  async function handleLoginManagementUpdated(updated: StaffMaster) {
+    // この編集の版で成功した本人の操作だけを反映し、基本情報の入力は維持する。
+    // 他者更新のpropsだけでは版を進めず、次の保存でも競合を検出する。
+    setEditVersion(updated.lock_version);
+    setOwnLoginSnapshot(updated);
+    try {
+      await onUpdated();
+    } catch {
+      setApiError(
+        "ログイン管理の変更は保存済みです。一覧の再取得に失敗しました。",
+      );
+    }
+  }
+  const loginSnapshot = {
+    ...(ownLoginSnapshot ?? staffMaster),
+    lock_version: editVersion,
+  };
 
   const handleConfirmUpdate = async () => {
     const payload: UpdateStaffMasterRequest = {
@@ -218,7 +239,7 @@ export function StaffMasterEditDialog({
     }
   };
 
-  const staff = staffMaster.staff;
+  const staff = (ownLoginSnapshot ?? staffMaster).staff;
 
   return (
     <>
@@ -546,16 +567,16 @@ export function StaffMasterEditDialog({
 
       <ToggleLoginEnabledDialog
         open={loginEnabledDialogOpen}
-        staffMaster={staffMaster}
+        staffMaster={loginSnapshot}
         onOpenChange={setLoginEnabledDialogOpen}
-        onUpdated={onUpdated}
+        onUpdated={handleLoginManagementUpdated}
       />
 
       <ResetFailedAttemptsDialog
         open={resetFailedAttemptsDialogOpen}
-        staffMaster={staffMaster}
+        staffMaster={loginSnapshot}
         onOpenChange={setResetFailedAttemptsDialogOpen}
-        onUpdated={onUpdated}
+        onUpdated={handleLoginManagementUpdated}
       />
 
       <RetireStaffDialog
