@@ -1,6 +1,8 @@
 "use client";
 
 // import { type FormEvent, useState } from "react";
+import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
+import type { CustomerListParams } from "../../types";
 import { XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,8 @@ import type { CustomerFilterValues } from "./CustomerFilterPopover";
 import { CustomerKeywordSearch } from "../search/CustomerKeywordSearch";
 
 type CustomerSearchFormProps = {
+  customerRankId?: CustomerListParams["customer_rank_id"];
+  rankOptions: CustomerRankOptions;
   initialQuery?: string;
   isLoading?: boolean;
   value: string;
@@ -29,6 +33,8 @@ export function CustomerSearchForm({
   hasAppliedQuery,
   visibility,
   customerKind,
+  customerRankId,
+  rankOptions,
   isLoading = false,
   onValueChange,
   onSearch,
@@ -57,6 +63,8 @@ export function CustomerSearchForm({
         <CustomerFilterPopover
           visibility={visibility}
           customerKind={customerKind}
+          customerRankId={customerRankId}
+          rankOptions={rankOptions}
           isLoading={isLoading}
           onApply={onApplyFilters}
         />

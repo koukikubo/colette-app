@@ -1,3 +1,4 @@
+import { notifySessionExpired } from "./session-events";
 // CSRFトークンが不要な、安全なHTTPメソッド。
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
@@ -142,6 +143,9 @@ export async function apiFetch<T>(
       data = null;
     }
   }
+
+  if (response.status === 401 && path !== "/api/v1/staff/login")
+    notifySessionExpired();
 
   if (!response.ok) {
     const errorResponse = data as ApiErrorResponse | null;

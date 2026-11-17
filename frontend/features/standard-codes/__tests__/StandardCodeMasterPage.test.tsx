@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it, vi } from "vitest";
 
 import { StandardCodeMasterPage } from "../components/management/StandardCodeMasterPage";

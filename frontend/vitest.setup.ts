@@ -12,6 +12,8 @@ globalThis.ResizeObserver = ResizeObserverMock;
 
 afterEach(() => {
   cleanup();
+  // 画面/検索条件をURLに保存するテスト同士を分離する。
+  window.history.replaceState(null, "", "/");
 });
 
 if (!HTMLElement.prototype.hasPointerCapture) {

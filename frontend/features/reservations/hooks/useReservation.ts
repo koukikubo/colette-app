@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { Reservation } from "../types";
 import { fetchReservation } from "../api/reservation_api";
+import { useSessionReadRetry } from "@/hooks/useSessionReadRetry";
 import { ApiClientError } from "@/lib/api/api-client";
 
 type UseReservationResult = {
@@ -18,6 +19,9 @@ export function useReservation(reservationId: number): UseReservationResult {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [unauthorized, setUnauthorized] = useState(false);
+  const recoveryRevision = useSessionReadRetry(unauthorized);
+
   // 予約IDが変更された場合は、前回の予約情報を破棄して再取得する。
   useEffect(() => {
     const controller = new AbortController();
@@ -25,6 +29,7 @@ export function useReservation(reservationId: number): UseReservationResult {
     async function loadReservation() {
       setIsLoading(true);
       setErrorMessage(null);
+      setUnauthorized(false);
       setReservation(null);
 
       try {
@@ -39,6 +44,7 @@ export function useReservation(reservationId: number): UseReservationResult {
         if (controller.signal.aborted) return;
 
         if (error instanceof ApiClientError) {
+          setUnauthorized(error.status === 401);
           if (error.status === 404) {
             setErrorMessage("指定された予約が見つかりませんでした。");
             return;
@@ -61,7 +67,7 @@ export function useReservation(reservationId: number): UseReservationResult {
     return () => {
       controller.abort();
     };
-  }, [reservationId]);
+  }, [reservationId, recoveryRevision]);
 
   return {
     reservation,

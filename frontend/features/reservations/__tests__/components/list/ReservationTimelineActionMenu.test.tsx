@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 

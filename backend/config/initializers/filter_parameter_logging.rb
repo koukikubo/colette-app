@@ -6,3 +6,9 @@
 Rails.application.config.filter_parameters += [
   :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc
 ]
+
+# 顧客・予約の入力と検索語は、ネスト内も含めてログへ保存しない。
+Rails.application.config.filter_parameters += [
+  :name, :kana, :phone, :address, :postal, :birthday, :memo, :note,
+  :query, :keyword, :search, :company
+]

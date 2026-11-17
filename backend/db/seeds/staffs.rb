@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 default_password =
-  ENV.fetch("SEED_STAFF_PASSWORD", "password")
+  ENV.fetch("SEED_STAFF_PASSWORD", "Development123!")
 
 staff_definitions = [
   {

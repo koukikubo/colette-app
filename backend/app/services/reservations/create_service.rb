@@ -14,6 +14,7 @@ module Reservations
 
     def call
       ActiveRecord::Base.transaction do
+        Reservations::WriteLock.acquire!
         restaurant_master_ids = extract_restaurant_master_ids
 
         reservation = Reservation.new(reservation_attributes)
