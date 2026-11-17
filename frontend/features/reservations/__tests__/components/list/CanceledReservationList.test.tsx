@@ -44,7 +44,7 @@ describe("CanceledReservationList", () => {
       screen.getByRole("link", {
         name: "山田 太郎様の予約詳細を開く",
       }),
-    ).toHaveAttribute("href", "/reservations/30");
+    ).toHaveAttribute("href", "/reservations/detail/30");
 
     expect(
       screen.getByRole("button", {

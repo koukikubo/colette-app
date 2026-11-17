@@ -1,8 +1,18 @@
 "use client";
 
-import { type FormEvent, useState, useEffect } from "react";
+import { type FormEvent, useState, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -68,18 +78,39 @@ export function CustomerFormDialog({
   const [values, setValues] = useState<CustomerFormValues>(() =>
     createInitialFormValues(mode, customer),
   );
+  const initialValues = useRef(values);
+  // 入力値と同じ時点の識別子・版を保持する。背景GETでpropsだけ進んでも再基準化しない。
+  const editSnapshot = useRef(
+    customer ? { id: customer.id, lock_version: customer.lock_version } : null,
+  );
+  const hasUnsavedChanges =
+    JSON.stringify(values) !== JSON.stringify(initialValues.current);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [customerRankOptions, setCustomerRankOptions] = useState<
     StandardListCode[]
   >([]);
 
   const [isCustomerRankLoading, setIsCustomerRankLoading] = useState(false);
 
+  const [saved, setSaved] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const saving = useRef(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = mode === "edit";
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
+
+  useEffect(() => {
+    if (!open || !hasUnsavedChanges || saved) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [open, hasUnsavedChanges, saved]);
 
   // 非表示確認画面の状態管理
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
@@ -149,30 +180,31 @@ export function CustomerFormDialog({
   }
 
   async function handleConfirm() {
-    if (isEdit && !customer) {
+    if (saving.current || saved) return;
+    if (isEdit && !editSnapshot.current) {
       setErrors(["編集対象の顧客情報を取得できませんでした。"]);
       setConfirmOpen(false);
       return;
     }
 
+    saving.current = true;
     setIsSubmitting(true);
     setErrors([]);
 
     try {
-      if (isEdit && customer) {
+      if (isEdit && editSnapshot.current) {
         await updateCustomer(
-          customer.id,
-          buildUpdateCustomerRequest(values, customer.lock_version),
+          editSnapshot.current.id,
+          buildUpdateCustomerRequest(values, editSnapshot.current.lock_version),
         );
       } else {
         await createCustomer(buildCreateCustomerRequest(values));
       }
 
-      await onCompleted();
-
+      // 保存の確定と、表示更新の失敗を別の状態として扱う。
+      setSaved(true);
       setConfirmOpen(false);
-      setIsSubmitting(false);
-      onOpenChange(false);
+      await refreshAfterSave();
     } catch (error) {
       setConfirmOpen(false);
 
@@ -194,6 +226,22 @@ export function CustomerFormDialog({
             : "顧客の登録中に予期しないエラーが発生しました。",
         ]);
       }
+    } finally {
+      saving.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  async function refreshAfterSave() {
+    setIsSubmitting(true);
+    setRefreshFailed(false);
+    try {
+      await onCompleted();
+      setSaved(false);
+      onOpenChange(false);
+    } catch {
+      setRefreshFailed(true);
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -203,15 +251,18 @@ export function CustomerFormDialog({
       return;
     }
 
+    if (!nextOpen && hasUnsavedChanges) {
+      setDiscardOpen(true);
+      return;
+    }
     onOpenChange(nextOpen);
   }
 
   async function handleVisibilityCompleted() {
     setVisibilityDialogOpen(false);
-
-    await onCompleted();
-
-    onOpenChange(false);
+    // 非表示・復帰の保存は成功済み。GET失敗で同じ更新を再送させない。
+    setSaved(true);
+    await refreshAfterSave();
   }
 
   const selectedCustomerRank = customerRankOptions.find(
@@ -223,6 +274,47 @@ export function CustomerFormDialog({
         selectedCustomerRank.active ? "" : "（無効・現在設定中）"
       }`
     : null;
+
+  if (saved)
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && !isSubmitting) {
+            setSaved(false);
+            onOpenChange(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>顧客情報は保存済みです</DialogTitle>
+            <DialogDescription>登録し直す必要はありません。</DialogDescription>
+          </DialogHeader>
+          {refreshFailed && (
+            <p role="alert">
+              保存は完了しましたが、表示を更新できませんでした。
+            </p>
+          )}
+          <Button
+            disabled={isSubmitting}
+            onClick={() => void refreshAfterSave()}
+          >
+            表示を再取得
+          </Button>
+          <Button
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => {
+              setSaved(false);
+              onOpenChange(false);
+            }}
+          >
+            閉じる
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
 
   return (
     <>
@@ -278,6 +370,28 @@ export function CustomerFormDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>入力内容を破棄しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              変更内容はまだ保存されていません。破棄すると元に戻せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>編集を続ける</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDiscardOpen(false);
+                onOpenChange(false);
+              }}
+            >
+              入力内容を破棄する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CustomerFormConfirmDialog
         open={confirmOpen}

@@ -1,4 +1,8 @@
 class Api::V1::StaffMastersController < Api::V1::BaseController
+  include PasswordChangeErrors
+
+  before_action :require_owner!, except: %i[index show]
+
   before_action :set_staff_master,
                 only: %i[
                   show
@@ -7,6 +11,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
                   restore
                   update_login_enabled
                   reset_failed_attempts
+                  reset_password
                 ]
 
   def index
@@ -47,7 +52,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
   end
 
   def update
-    if @staff_master.update(staff_master_params)
+    if @staff_master.update(staff_master_params.to_h.merge(lock_version: required_lock_version))
       render_staff_master(@staff_master.reload)
     else
       render_validation_error(@staff_master)
@@ -55,6 +60,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
   end
 
   def retire
+    @staff_master.lock_version = required_lock_version
     if @staff_master.retired?
       return render_error(
         message: "すでに退職済みの担当者です",
@@ -70,6 +76,7 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
   end
 
   def restore
+    @staff_master.lock_version = required_lock_version
     if @staff_master.active?
       return render_error(
         message: "担当者はすでに在籍中です",
@@ -89,11 +96,14 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
 
     return if performed?
 
-    if staff.update(login_enabled_params)
-      render_staff_master(@staff_master.reload)
-    else
-      render_validation_error(staff)
+    # 認証情報の変更も担当者の版を進め、古い管理画面からの更新を拒否する。
+    StaffMaster.transaction do
+      Security::OwnerGuard.lock!
+      @staff_master.lock_version = required_lock_version
+      @staff_master.touch
+      staff.update!(login_enabled_params)
     end
+    render_staff_master(@staff_master.reload)
   end
 
   def reset_failed_attempts
@@ -102,12 +112,35 @@ class Api::V1::StaffMastersController < Api::V1::BaseController
     return if performed?
 
     # failed_attemptsとlocked_atをまとめてリセットする
-    staff.unlock!
+    StaffMaster.transaction do
+      Security::OwnerGuard.lock!
+      @staff_master.lock_version = required_lock_version
+      @staff_master.touch
+      staff.unlock!
+    end
 
     render_staff_master(@staff_master.reload)
   end
 
+  def reset_password
+    staff = associated_staff
+    return if performed?
+    Security::PasswordChanger.call(actor: current_staff, subject: staff,
+      attributes: params.require(:staff).permit(:current_password, :password, :password_confirmation),
+      expected_version: required_lock_version)
+    reset_session if staff.id == current_staff.id
+    render_staff_master(@staff_master.reload)
+  end
+
   private
+
+  def required_lock_version
+    value = params.require(:staff_master).require(:lock_version)
+    unless value.is_a?(Integer) && value >= 0 || value.is_a?(String) && value.match?(/\A\d+\z/)
+      raise ActionController::BadRequest, "lock_versionは0以上の整数で指定してください"
+    end
+    value.to_i
+  end
 
   def set_staff_master
     @staff_master = StaffMaster

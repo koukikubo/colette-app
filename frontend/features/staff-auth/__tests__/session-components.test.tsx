@@ -62,4 +62,26 @@ describe("認証セッション表示", () => {
     await user.click(button);
     expect(mocks.logout).toHaveBeenCalledOnce();
   });
+  it("ログアウト失敗時は再試行を案内する", async () => {
+    mocks.logout.mockRejectedValueOnce(new Error("network failure"));
+    mocks.useAuth.mockReturnValue({
+      status: "authenticated",
+      logout: mocks.logout,
+    });
+    render(<LogoutButton />);
+    await userEvent.click(screen.getByRole("button", { name: "ログアウト" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "再試行してください",
+    );
+    expect(screen.getByRole("button", { name: "ログアウト" })).toBeEnabled();
+  });
+
+  it("viewerに閲覧専用の権限を表示する", () => {
+    mocks.useAuth.mockReturnValue({
+      status: "authenticated",
+      staff: { staff_master: { name: "閲覧担当", role_code: "viewer" } },
+    });
+    render(<CurrentStaffDisplay />);
+    expect(screen.getByText("閲覧専用")).toBeInTheDocument();
+  });
 });

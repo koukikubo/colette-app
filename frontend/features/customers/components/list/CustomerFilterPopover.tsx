@@ -12,14 +12,19 @@ import {
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
+import type { CustomerListParams } from "../../types";
 import type { CustomerKind, CustomerVisibility } from "../../types";
 
 export type CustomerFilterValues = {
+  customerRankId?: CustomerListParams["customer_rank_id"];
   visibility: CustomerVisibility;
   customerKind?: CustomerKind;
 };
 
 type CustomerFilterPopoverProps = {
+  customerRankId?: CustomerListParams["customer_rank_id"];
+  rankOptions: CustomerRankOptions;
   visibility: CustomerVisibility;
   customerKind?: CustomerKind;
   isLoading?: boolean;
@@ -31,6 +36,8 @@ type CustomerKindFilter = CustomerKind | "all";
 export function CustomerFilterPopover({
   visibility,
   customerKind,
+  customerRankId,
+  rankOptions,
   isLoading = false,
   onApply,
 }: CustomerFilterPopoverProps) {
@@ -42,30 +49,43 @@ export function CustomerFilterPopover({
   const [draftCustomerKind, setDraftCustomerKind] =
     useState<CustomerKindFilter>(customerKind ?? "all");
 
+  const [draftRank, setDraftRank] = useState(String(customerRankId ?? "all"));
+
   const activeFilterCount =
-    Number(visibility !== "visible") + Number(customerKind !== undefined);
+    Number(customerRankId !== undefined) +
+    Number(visibility !== "visible") +
+    Number(customerKind !== undefined);
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) {
       setDraftVisibility(visibility);
+      setDraftRank(String(customerRankId ?? "all"));
       setDraftCustomerKind(customerKind ?? "all");
     }
 
     setOpen(nextOpen);
+    rankOptions.onOpenChange(nextOpen);
   }
 
   function handleReset() {
     setDraftVisibility("visible");
+    setDraftRank("all");
     setDraftCustomerKind("all");
   }
 
   function handleApply() {
     onApply({
       visibility: draftVisibility,
+      customerRankId:
+        draftRank === "all"
+          ? undefined
+          : draftRank === "unassigned"
+            ? "unassigned"
+            : Number(draftRank),
       customerKind: draftCustomerKind === "all" ? undefined : draftCustomerKind,
     });
 
-    setOpen(false);
+    handleOpenChange(false);
   }
 
   return (
@@ -82,7 +102,10 @@ export function CustomerFilterPopover({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80 space-y-5" align="end">
+      <PopoverContent
+        className="max-h-[80vh] w-80 max-w-[calc(100vw-2rem)] space-y-5 overflow-y-auto"
+        align="end"
+      >
         <div className="space-y-3">
           <div>
             <p className="font-medium">表示状態</p>
@@ -146,6 +169,49 @@ export function CustomerFilterPopover({
               <Label htmlFor="customer-kind-corporate">法人</Label>
             </div>
           </RadioGroup>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="customer-rank-filter">手動設定の顧客ランク</Label>
+          <select
+            id="customer-rank-filter"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={draftRank}
+            disabled={rankOptions.loading}
+            onChange={(event) => setDraftRank(event.target.value)}
+          >
+            <option value="all">すべて</option>
+            <option value="unassigned">未設定</option>
+            {customerRankId !== undefined &&
+              customerRankId !== "unassigned" &&
+              !rankOptions.options.some(
+                (option) => option.id === customerRankId,
+              ) && <option value={customerRankId}>現在の検索条件</option>}
+            {rankOptions.options.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+                {option.active ? "" : "（無効）"}
+              </option>
+            ))}
+          </select>
+          {rankOptions.loading && (
+            <p role="status" className="text-sm">
+              選択肢を取得中です…
+            </p>
+          )}
+          {rankOptions.error && (
+            <div role="alert" className="text-sm text-destructive">
+              <p>{rankOptions.error}</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={rankOptions.retry}
+              >
+                選択肢を再取得
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2">

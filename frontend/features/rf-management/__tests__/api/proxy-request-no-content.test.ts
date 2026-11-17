@@ -51,3 +51,23 @@ it("削除APIの204を本文なしで返し、認証情報と本文を転送す�
     }),
   );
 });
+
+it("複数のSet-Cookieを個別に転送する", async () => {
+  vi.stubEnv("RAILS_API_URL", "https://rails.example.test");
+  const cookies = [
+    "session=abc; HttpOnly; Path=/",
+    "other=xyz; Expires=Wed, 21 Oct 2030 07:28:00 GMT; Path=/",
+  ];
+  const headers = new Headers();
+  cookies.forEach((cookie) => headers.append("Set-Cookie", cookie));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("{}", { headers })),
+  );
+  const { proxyRequest } = await import("@/lib/api/proxy-request");
+  const response = await proxyRequest(
+    new Request("https://frontend.example.test/api/v1/csrf"),
+    "/api/v1/csrf",
+  );
+  expect(response.headers.getSetCookie()).toEqual(cookies);
+});

@@ -2,6 +2,8 @@ require 'rails_helper'
 
 RSpec.describe "Api::V1::StandardMasters", type: :request do
   include_context "authenticated request"
+
+  before { login_staff.staff_master.update!(role_code: "owner") }
   describe "認証" do
     it "未ログインの場合は401を返す" do
       get "/api/v1/standard_masters",
