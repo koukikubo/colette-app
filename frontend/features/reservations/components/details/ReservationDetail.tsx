@@ -163,7 +163,11 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
               <PermissionGate resource="reservations">
                 <Button asChild size="sm">
-                  <Link href={"/reservations/" + reservation.id + "/edit"}>
+                  {/* 詳細と編集を同じ履歴枠で切り替え、閉じる操作の戻り先を維持する。 */}
+                  <Link
+                    replace
+                    href={"/reservations/" + reservation.id + "/edit"}
+                  >
                     <PencilIcon />
                     編集する
                   </Link>
