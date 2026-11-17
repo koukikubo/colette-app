@@ -129,8 +129,8 @@ export function NewReservationFormContainer(
       if (!(error instanceof ApiClientError) || error.status >= 500)
         setHasUncertainAttempt(true);
       if (error instanceof ApiClientError) {
-        if (error.status === 400 || error.status === 422)
-          setHasUncertainAttempt(false);
+        // 再試行前のCSRF等の拒否では、最初の保存結果は確定しない。
+        // 既に結果不明なら、元のキー・本文を保持して新規作成へ切り替えない。
         setErrorMessage(error.message);
 
         if (error.status === 422 && !Array.isArray(error.errors)) {

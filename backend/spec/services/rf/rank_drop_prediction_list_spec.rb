@@ -229,6 +229,21 @@ RSpec.describe Rf::RankDropPredictionList do
     }.to raise_error(ArgumentError, "予測期限は基準日より後を指定してください")
   end
 
+  it "新しく取得したルールでも顧客数・探索日数に比例して対応表を再取得しない" do
+    3.times { create_visit(create(:customer), Date.new(2026, 11, 20)) }
+    fresh_rule_set = RfRuleSet.find(rule_set.id)
+    queries = []
+    subscriber = lambda do |*args|
+      event = ActiveSupport::Notifications::Event.new(*args)
+      sql = event.payload[:sql]
+      queries << sql if sql.match?(/SELECT.*(?:rf_rank_mappings|standard_list_masters)/i)
+    end
+    ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+      described_class.call(rule_set: fresh_rule_set, base_date: base_date, until_date: until_date)
+    end
+    expect(queries.length).to be <= 5
+  end
+
   private
 
   def create_rank(code, position)
