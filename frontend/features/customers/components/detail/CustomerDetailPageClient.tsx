@@ -5,7 +5,7 @@ import { useUrlQuery } from "@/hooks/useUrlQuery";
 import { safeReturnPath } from "@/lib/api/session-events";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   Building2Icon,
@@ -219,11 +219,15 @@ export function CustomerDetailPageClient({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [reloadKey, setReloadKey] = useState(0);
+  const readGeneration = useRef(0);
 
   useReadRefresh(() => setReloadKey((value) => value + 1), !editDialogOpen);
 
   useEffect(() => {
     let isCancelled = false;
+    const generation = ++readGeneration.current;
+    const isCurrentRead = () =>
+      !isCancelled && generation === readGeneration.current;
 
     async function loadCustomer() {
       setIsLoading(true);
@@ -232,13 +236,13 @@ export function CustomerDetailPageClient({
       try {
         const response = await fetchCustomer(customerId);
 
-        if (isCancelled) {
+        if (!isCurrentRead()) {
           return;
         }
 
         setCustomer(response.data.customer);
       } catch (error) {
-        if (isCancelled) {
+        if (!isCurrentRead()) {
           return;
         }
 
@@ -264,7 +268,7 @@ export function CustomerDetailPageClient({
 
         setErrorMessage("顧客情報の取得中に予期しないエラーが発生しました。");
       } finally {
-        if (!isCancelled) {
+        if (isCurrentRead()) {
           setIsLoading(false);
         }
       }
@@ -278,10 +282,16 @@ export function CustomerDetailPageClient({
   }, [customerId, reloadKey]);
 
   async function handleEditCompleted() {
-    // ダイアログをアンマウントせず、GETの成功まで保存済み状態を保持する。
-    const response = await fetchCustomer(customerId);
-    setCustomer(response.data.customer);
-    setErrorMessage(null);
+    // 保存前に始まった背景GETを無効化し、保存後の読取だけを表示へ採用する。
+    const generation = ++readGeneration.current;
+    try {
+      const response = await fetchCustomer(customerId);
+      if (generation !== readGeneration.current) return;
+      setCustomer(response.data.customer);
+      setErrorMessage(null);
+    } finally {
+      if (generation === readGeneration.current) setIsLoading(false);
+    }
   }
 
   if (isLoading && !customer) {
