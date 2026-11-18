@@ -125,7 +125,7 @@ describe("CustomerListPageClient", () => {
       screen.getByRole("link", {
         name: "山田 太郎の詳細を表示",
       }),
-    ).toHaveAttribute("href", "/customers/1");
+    ).toHaveAttribute("href", "/customers/1?return_to=%2Fcustomers");
   });
 
   it("顧客が登録されていない場合、空表示メッセージを表示する", async () => {

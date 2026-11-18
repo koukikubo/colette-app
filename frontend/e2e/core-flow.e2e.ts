@@ -227,6 +227,44 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   const detail = (await detailResponse.json()).data.customer;
   expect(detail.current_rf_rank.label).toBe("Eランク");
   expect(detail.rf_rank_basis.frequency_count).toBe(1);
+
+  // Railsで適用した結果を一覧検索へ接続し、選択条件を保持して詳細から戻る。
+  await page.goto(`/customers?query=${encodeURIComponent(name)}`);
+  await expect(
+    page.getByRole("columnheader", { name: "手動ランク", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /絞り込み/ }).click();
+  await page
+    .getByRole("combobox", { name: "現在適用中のRFランク" })
+    .selectOption(String(detail.current_rf_rank.id));
+  await page.getByRole("button", { name: "適用", exact: true }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`rf_rank_id=${detail.current_rf_rank.id}`),
+  );
+  const row = page
+    .getByRole("row")
+    .filter({ has: page.getByText(name, { exact: true }) });
+  await expect(row.getByText("Eランク", { exact: true })).toBeVisible();
+  await row.getByRole("link", { name: `${name}の詳細を表示` }).click();
+  await page.getByRole("link", { name: "顧客一覧へ戻る" }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`rf_rank_id=${detail.current_rf_rank.id}`),
+  );
+  await expect(
+    page
+      .getByRole("row")
+      .filter({ has: page.getByText(name, { exact: true }) })
+      .getByText("Eランク", { exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: /絞り込み/ })).toBeVisible();
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.screenshot({
+    path: "test-results/customer-rank-search-mobile.png",
+    fullPage: true,
+  });
 });
 
 // 合成データだけのE2E環境で分析の空状態・タブレットの主要導線を確認する。

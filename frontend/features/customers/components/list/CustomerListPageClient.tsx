@@ -10,7 +10,12 @@ import { Button } from "@/components/ui/button";
 import { queryPage, useUrlQuery } from "@/hooks/useUrlQuery";
 import { useReadRefresh } from "@/hooks/useReadRefresh";
 
-import type { Customer, CustomerListParams } from "../../types";
+import {
+  CUSTOMER_RF_STATES,
+  type CustomerRfState,
+  type Customer,
+  type CustomerListParams,
+} from "../../types";
 import { useCustomerRankOptions } from "../../hooks/useCustomerRankOptions";
 import { useCustomers } from "../../hooks/useCustomers";
 import {
@@ -26,6 +31,19 @@ import { CustomerFilterValues } from "./CustomerFilterPopover";
 export function CustomerListPageClient() {
   const { params, update } = useUrlQuery();
   const rankParam = params.get("customer_rank_id");
+  // URLを正本として復元する。ランクIDと状態の同時指定はAPIに渡して拒否し、黙って片方を捨てない。
+  const rfIdParam = params.get("rf_rank_id");
+  const rfRankId =
+    rfIdParam &&
+    /^[1-9]\d*$/.test(rfIdParam) &&
+    Number.isSafeInteger(Number(rfIdParam))
+      ? Number(rfIdParam)
+      : undefined;
+  const rfStateParam = params.get("rf_rank_state");
+  const rfRankState =
+    rfStateParam && Object.hasOwn(CUSTOMER_RF_STATES, rfStateParam)
+      ? (rfStateParam as CustomerRfState)
+      : undefined;
   const customerRankId =
     rankParam === "unassigned"
       ? "unassigned"
@@ -37,6 +55,8 @@ export function CustomerListPageClient() {
   const rankOptions = useCustomerRankOptions(customerRankId !== undefined);
   const filters: CustomerListParams = {
     customer_rank_id: customerRankId,
+    rf_rank_id: rfRankId,
+    rf_rank_state: rfRankState,
     visibility: ["visible", "hidden", "all"].includes(
       params.get("visibility") ?? "",
     )
@@ -60,6 +80,8 @@ export function CustomerListPageClient() {
     update({
       visibility: value.visibility,
       customer_rank_id: value.customer_rank_id,
+      rf_rank_id: value.rf_rank_id,
+      rf_rank_state: value.rf_rank_state,
       customer_kind: value.customer_kind,
       query: value.query,
     });
@@ -83,16 +105,24 @@ export function CustomerListPageClient() {
   const setPerPage = (per_page: number) => update({ per_page });
   const resetPage = () => update({ page: 1 });
   useReadRefresh(() => setReloadKey((value) => value + 1), !formDialogOpen);
-  const { customers, pagination, isLoading, errorMessage, refresh } =
-    useCustomers({
-      visibility,
-      customer_kind: customerKind,
-      customer_rank_id: customerRankId,
-      query: appliedQuery,
-      page: currentPage,
-      per_page: perPage,
-      reloadKey,
-    });
+  const {
+    customers,
+    pagination,
+    rfReference,
+    isLoading,
+    errorMessage,
+    refresh,
+  } = useCustomers({
+    visibility,
+    customer_kind: customerKind,
+    customer_rank_id: customerRankId,
+    rf_rank_id: rfRankId,
+    rf_rank_state: rfRankState,
+    query: appliedQuery,
+    page: currentPage,
+    per_page: perPage,
+    reloadKey,
+  });
 
   function handleSearch() {
     const normalizedQuery = queryInput.trim();
@@ -123,6 +153,8 @@ export function CustomerListPageClient() {
       ...current,
       visibility: nextFilters.visibility,
       customer_rank_id: nextFilters.customerRankId,
+      rf_rank_id: nextFilters.rfRankId,
+      rf_rank_state: nextFilters.rfRankState,
       customer_kind: nextFilters.customerKind,
     }));
   }
@@ -187,6 +219,8 @@ export function CustomerListPageClient() {
 
   const hasSearchConditions =
     customerRankId !== undefined ||
+    rfRankId !== undefined ||
+    rfRankState !== undefined ||
     Boolean(filters.query) ||
     visibility !== "visible" ||
     Boolean(customerKind);
@@ -217,6 +251,9 @@ export function CustomerListPageClient() {
               customerKind={customerKind}
               customerRankId={customerRankId}
               rankOptions={rankOptions}
+              rfRankId={rfRankId}
+              rfRankState={rfRankState}
+              rfReference={rfReference}
               isLoading={isLoading}
               onValueChange={setQueryInput}
               onSearch={handleSearch}
@@ -240,6 +277,13 @@ export function CustomerListPageClient() {
 
         <CustomerActiveFilters
           filters={filters}
+          rfRankLabel={
+            rfReference?.ranks.find((rank) => rank.id === rfRankId)?.label
+          }
+          onClearRf={() => {
+            // RFだけを解除し、キーワード・手動ランクを維持して1ページ目へ戻す。
+            update({ rf_rank_id: null, rf_rank_state: null, page: 1 });
+          }}
           customerRankLabel={
             rankOptions.options.find((option) => option.id === customerRankId)
               ?.label

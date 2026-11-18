@@ -20,6 +20,12 @@ const CUSTOMERS_PATH = "/api/v1/customers";
 function buildCustomersPath(params: CustomerListParams = {}) {
   const searchParams = new URLSearchParams();
 
+  // RF条件も一覧と同じリクエストへ渡し、サーバー側でページ分割前に絞り込む。
+  if (params.rf_rank_id !== undefined)
+    searchParams.set("rf_rank_id", String(params.rf_rank_id));
+  if (params.rf_rank_state)
+    searchParams.set("rf_rank_state", params.rf_rank_state);
+
   if (params.customer_rank_id !== undefined) {
     searchParams.set("customer_rank_id", String(params.customer_rank_id));
   }

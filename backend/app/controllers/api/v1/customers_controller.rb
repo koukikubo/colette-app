@@ -1,5 +1,8 @@
 class Api::V1::CustomersController < Api::V1::BaseController
   include ApiPagination
+  rescue_from ::Customers::CurrentRfQuery::IncompleteHistoryError do |error|
+    render_error(message: error.message, status: :unprocessable_content)
+  end
 
   VISIBILITIES = %w[visible hidden all].freeze
   CUSTOMER_KINDS = %w[individual corporate].freeze
@@ -44,21 +47,27 @@ class Api::V1::CustomersController < Api::V1::BaseController
       ).call
     customers = customers.order(id: :desc)
 
+    rf_query = ::Customers::CurrentRfQuery.new
+    customers = rf_query.filter(customers, rank_id: params[:rf_rank_id], state: params[:rf_rank_state])
+
     # 顧客固有の絞り込みが終わったRelationを共通Concernへ渡してページ分割する。
     paginated_customers = paginate(
       customers,
       **pagination
     )
 
+    records = paginated_customers[:records].to_a
+    rf_query.load_page(records)
     serialized_customers =
-      paginated_customers[:records].map do |customer|
-        serialize_customer(customer)
+      records.map do |customer|
+        serialize_customer(customer).merge(rf_query.fields(customer.id))
       end
 
     render_success(
       data: {
         customers: serialized_customers,
-        pagination: paginated_customers[:metadata]
+        pagination: paginated_customers[:metadata],
+        rf_reference: rf_query.reference
       }
     )
   end

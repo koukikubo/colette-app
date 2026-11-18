@@ -13,18 +13,28 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
-import type { CustomerListParams } from "../../types";
+import {
+  CUSTOMER_RF_STATES,
+  type CustomerListParams,
+  type CustomerRfState,
+  type CustomerRfReference,
+} from "../../types";
 import type { CustomerKind, CustomerVisibility } from "../../types";
 
 export type CustomerFilterValues = {
   customerRankId?: CustomerListParams["customer_rank_id"];
+  rfRankId?: number;
+  rfRankState?: CustomerRfState;
   visibility: CustomerVisibility;
   customerKind?: CustomerKind;
 };
 
 type CustomerFilterPopoverProps = {
   customerRankId?: CustomerListParams["customer_rank_id"];
+  rfRankId?: number;
+  rfRankState?: CustomerRfState;
   rankOptions: CustomerRankOptions;
+  rfReference?: CustomerRfReference | null;
   visibility: CustomerVisibility;
   customerKind?: CustomerKind;
   isLoading?: boolean;
@@ -38,6 +48,9 @@ export function CustomerFilterPopover({
   customerKind,
   customerRankId,
   rankOptions,
+  rfRankId,
+  rfRankState,
+  rfReference,
   isLoading = false,
   onApply,
 }: CustomerFilterPopoverProps) {
@@ -51,8 +64,16 @@ export function CustomerFilterPopover({
 
   const [draftRank, setDraftRank] = useState(String(customerRankId ?? "all"));
 
+  const rfValue =
+    rfRankId !== undefined
+      ? String(rfRankId)
+      : rfRankState
+        ? `state:${rfRankState}`
+        : "all";
+  const [draftRf, setDraftRf] = useState(rfValue);
   const activeFilterCount =
     Number(customerRankId !== undefined) +
+    Number(rfRankId !== undefined || rfRankState !== undefined) +
     Number(visibility !== "visible") +
     Number(customerKind !== undefined);
 
@@ -60,6 +81,7 @@ export function CustomerFilterPopover({
     if (nextOpen) {
       setDraftVisibility(visibility);
       setDraftRank(String(customerRankId ?? "all"));
+      setDraftRf(rfValue);
       setDraftCustomerKind(customerKind ?? "all");
     }
 
@@ -70,12 +92,21 @@ export function CustomerFilterPopover({
   function handleReset() {
     setDraftVisibility("visible");
     setDraftRank("all");
+    setDraftRf("all");
     setDraftCustomerKind("all");
   }
 
   function handleApply() {
     onApply({
       visibility: draftVisibility,
+      // 1つの選択欄でランクIDと分類を排他的に扱い、矛盾した検索を作らない。
+      rfRankId:
+        draftRf !== "all" && !draftRf.startsWith("state:")
+          ? Number(draftRf)
+          : undefined,
+      rfRankState: draftRf.startsWith("state:")
+        ? (draftRf.slice(6) as CustomerRfState)
+        : undefined,
       customerRankId:
         draftRank === "all"
           ? undefined
@@ -211,6 +242,37 @@ export function CustomerFilterPopover({
                 選択肢を再取得
               </Button>
             </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="customer-rf-filter">現在適用中のRFランク</Label>
+          <select
+            id="customer-rf-filter"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={draftRf}
+            onChange={(event) => setDraftRf(event.target.value)}
+          >
+            <option value="all">すべて</option>
+            {rfRankId !== undefined &&
+              !rfReference?.ranks.some((rank) => rank.id === rfRankId) && (
+                <option value={rfRankId}>現在の検索条件</option>
+              )}
+            {(rfReference?.ranks ?? []).map((rank) => (
+              <option key={rank.id} value={rank.id}>
+                {rank.label}
+              </option>
+            ))}
+            {Object.entries(CUSTOMER_RF_STATES).map(([state, label]) => (
+              <option key={state} value={`state:${state}`}>
+                {label}
+              </option>
+            ))}
+          </select>
+          {rfReference?.base_date && (
+            <p className="text-xs text-muted-foreground">
+              計算基準日：{rfReference.base_date}
+            </p>
           )}
         </div>
 
