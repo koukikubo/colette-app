@@ -585,6 +585,13 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
   await page
     .getByRole("link", { name: visited.customer_name, exact: true })
     .press("Enter");
+  // Linkのキー操作完了とクライアント遷移完了は別なので、詳細表示を待って戻り先を記録する。
+  await expect(
+    page.getByRole("heading", { name: "予約履歴", exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(
+    new RegExp(`/customers/${visited.customer_id}\\?return_to=`),
+  );
   const customerUrl = page.url();
   const historyResponse = await page.request.get(
     `/api/v1/customers/${visited.customer_id}/reservations`,
