@@ -19,6 +19,27 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
     .fill(process.env.E2E_PASSWORD!);
   await page.getByRole("button", { name: "ログイン", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
+  // 初期DBのゼロ件と算出不能を実API・画面で確認し、店舗日付の予約導線をキーボードで開く。
+  const emptyDashboard = await page.request.get("/api/v1/dashboard");
+  expect(emptyDashboard.status()).toBe(200);
+  const empty = (await emptyDashboard.json()).data;
+  expect(Object.values(empty.summary)).toEqual([0, 0, 0, 0, 0, 0]);
+  await expect(page.getByText("算出できません", { exact: true })).toBeVisible();
+  await page.getByText("本日の予約状況", { exact: true }).press("Enter");
+  await expect(
+    page.getByRole("link", { name: "本日の予約一覧", exact: true }),
+  ).toHaveAttribute("href", `/reservations?date=${empty.date}`);
+  await page.screenshot({
+    path: "test-results/dashboard-empty-desktop.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("link", { name: "本日の予約一覧", exact: true })
+    .press("Enter");
+  await expect(page).toHaveURL(
+    new RegExp(`/reservations\\?date=${empty.date}$`),
+  );
+
   const withoutCsrf = await page.request.post("/api/v1/customers", {
     data: {
       customer: {
@@ -228,6 +249,25 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   expect(detail.current_rf_rank.label).toBe("Eランク");
   expect(detail.rf_rank_basis.frequency_count).toBe(1);
 
+  // 画面で作成した1件の完了実績が月別・年次・顧客指標へ同じ定義で反映されることを照合する。
+  const analyticsResponse = await page.request.get(
+    "/api/v1/dashboard_analytics",
+  );
+  expect(analyticsResponse.status()).toBe(200);
+  const analytics = (await analyticsResponse.json()).data;
+  const sameMonth = yesterday.slice(0, 7) === analytics.period.current_month;
+  expect(analytics.kpis.annual_visits).toBe(
+    Number(yesterday.slice(0, 4)) === analytics.period.year ? 1 : 0,
+  );
+  expect(analytics.kpis.monthly_reservations).toBe(sameMonth ? 1 : 0);
+  expect(analytics.kpis.new_customers).toBe(sameMonth ? 1 : 0);
+  expect(analytics.kpis.returning_customer_ratio).toBe(sameMonth ? 0 : null);
+  expect(
+    analytics.monthly_series.find(
+      (point: { month: string }) => point.month === yesterday.slice(0, 7),
+    ),
+  ).toEqual({ month: yesterday.slice(0, 7), reservations: 1, visits: 1 });
+
   // Railsで適用した結果を一覧検索へ接続し、選択条件を保持して詳細から戻る。
   await page.goto(`/customers?query=${encodeURIComponent(name)}`);
   await expect(
@@ -267,7 +307,7 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   });
 });
 
-// 合成データだけのE2E環境で分析の空状態・タブレットの主要導線を確認する。
+// 合成データだけのE2E環境で分析の数値・取得失敗からの回復・各画面幅の主要導線を確認する。
 test("分析ダッシュボードとタブレット表示", async ({ page }) => {
   await page.goto("/login");
   await page.getByRole("combobox", { name: "担当者", exact: true }).click();
@@ -282,6 +322,52 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
   await expect(
     page.getByRole("heading", { name: "RFランク別の顧客数" }),
   ).toBeVisible();
+  const response = await page.request.get("/api/v1/dashboard_analytics");
+  expect(response.status()).toBe(200);
+  const analytics = (await response.json()).data;
+  await expect(
+    page
+      .getByText("年間累計来店", { exact: true })
+      .locator("..")
+      .getByText(`${analytics.kpis.annual_visits}件`, { exact: true }),
+  ).toBeVisible();
+
+  // 通信失敗を0件へ置き換えず、手動更新で実Railsの結果へ回復する。
+  await page.route("**/api/v1/dashboard_analytics", (route) =>
+    route.abort("failed"),
+  );
+  await page
+    .getByRole("button", { name: "最新情報に更新", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "店舗とお客様の傾向" }),
+  ).not.toBeVisible();
+  await page.unroute("**/api/v1/dashboard_analytics");
+  await page
+    .getByRole("button", { name: "最新情報に更新", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "店舗とお客様の傾向" }),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).not.toBeVisible();
+  await page.getByText("数値を表で確認", { exact: true }).press("Enter");
+  const table = page.getByRole("table", { name: "月別予約・来店件数" });
+  for (const months of [3, 6, 12]) {
+    await page
+      .getByRole("combobox", { name: "表示期間" })
+      .selectOption(String(months));
+    await expect(table.getByRole("row")).toHaveCount(months + 1);
+    for (const point of analytics.monthly_series.slice(-months)) {
+      const row = table.getByRole("row").filter({ hasText: point.month });
+      await expect(row.getByRole("cell").nth(0)).toHaveText(
+        String(point.reservations),
+      );
+      await expect(row.getByRole("cell").nth(1)).toHaveText(
+        String(point.visits),
+      );
+    }
+  }
   await page.getByRole("combobox", { name: "表示期間" }).selectOption("3");
   await page.screenshot({
     path: "test-results/dashboard-redesign-desktop.png",
@@ -297,6 +383,22 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
     path: "test-results/dashboard-redesign-tablet.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.screenshot({
+    path: "test-results/dashboard-acceptance-mobile.png",
+    fullPage: true,
+  });
+  await page.getByText("本日の予約状況", { exact: true }).press("Enter");
+  const summaryResponse = await page.request.get("/api/v1/dashboard");
+  const today = (await summaryResponse.json()).data.date;
+  await page
+    .getByRole("link", { name: "本日の予約一覧", exact: true })
+    .press("Enter");
+  await expect(page).toHaveURL(new RegExp(`/reservations\\?date=${today}$`));
+  await page.setViewportSize({ width: 820, height: 1180 });
   await page.getByRole("link", { name: "カレンダー", exact: true }).click();
   await expect(
     page

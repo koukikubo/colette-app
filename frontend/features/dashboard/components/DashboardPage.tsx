@@ -23,15 +23,16 @@ export function DashboardPage() {
     "/api/v1/dashboard",
     reload,
   );
+  // 一方のAPIが応答待ちでも再試行できるようにする。
+  // useApiReadが旧リクエストを中断し、遅れて到着した応答を表示から除外する。
+  function refreshDashboard() {
+    setReload((value) => value + 1);
+  }
   // 定期・フォーカス復帰時の再取得はしない。画面表示時と明示的な更新で取得する。
   return (
     <div className="colette-page">
       <header className="flex justify-end">
-        <Button
-          variant="outline"
-          disabled={loading}
-          onClick={() => setReload((value) => value + 1)}
-        >
+        <Button variant="outline" onClick={refreshDashboard}>
           最新情報に更新
         </Button>
       </header>
