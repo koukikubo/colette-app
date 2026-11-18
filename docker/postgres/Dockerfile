@@ -14,8 +14,10 @@ WORKDIR /src/gosu
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath -o /out/gosu .
 
-# PostgreSQL本体は17.11を維持し、gosuだけを置き換える。
-FROM postgres:17.11
+# PostgreSQL 17系のセキュリティ修正版とOS更新を取り込む。
+FROM postgres:17.12
+
+RUN apt-get update -qq && apt-get upgrade --no-install-recommends -y && rm -rf /var/lib/apt/lists/*
 
 COPY --from=gosu-build /out/gosu /usr/local/bin/gosu
 
