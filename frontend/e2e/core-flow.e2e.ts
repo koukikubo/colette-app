@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+// 全体画像で固定ヘッダーが画面途中へ写り込まないよう、撮影前に先頭へ戻す。
+async function captureDashboard(page: Page, path: string) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.screenshot({ path, fullPage: true });
+}
 
 // APIをモックせず、画面→Next proxy→Rails→専用PostgreSQL→画面を確認する。
 test("ログインから顧客・予約・来店完了・RF計算適用まで", async ({ page }) => {
@@ -29,10 +36,7 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   await expect(
     page.getByRole("link", { name: "本日の予約一覧", exact: true }),
   ).toHaveAttribute("href", `/reservations?date=${empty.date}`);
-  await page.screenshot({
-    path: "test-results/dashboard-empty-desktop.png",
-    fullPage: true,
-  });
+  await captureDashboard(page, "test-results/dashboard-empty-desktop.png");
   await page
     .getByRole("link", { name: "本日の予約一覧", exact: true })
     .press("Enter");
@@ -371,28 +375,19 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
     }
   }
   await page.getByRole("combobox", { name: "表示期間" }).selectOption("3");
-  await page.screenshot({
-    path: "test-results/dashboard-redesign-desktop.png",
-    fullPage: true,
-  });
+  await captureDashboard(page, "test-results/dashboard-redesign-desktop.png");
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.getByRole("combobox", { name: "表示期間" }).selectOption("12");
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(820);
   await page.getByRole("combobox", { name: "表示期間" }).selectOption("3");
-  await page.screenshot({
-    path: "test-results/dashboard-redesign-tablet.png",
-    fullPage: true,
-  });
+  await captureDashboard(page, "test-results/dashboard-redesign-tablet.png");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await page.screenshot({
-    path: "test-results/dashboard-acceptance-mobile.png",
-    fullPage: true,
-  });
+  await captureDashboard(page, "test-results/dashboard-acceptance-mobile.png");
   await page.getByText("本日の予約状況", { exact: true }).press("Enter");
   const summaryResponse = await page.request.get("/api/v1/dashboard");
   const today = (await summaryResponse.json()).data.date;
