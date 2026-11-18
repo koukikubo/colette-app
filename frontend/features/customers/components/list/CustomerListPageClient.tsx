@@ -367,7 +367,12 @@ export function CustomerListPageClient() {
       )}
 
       {!isLoading && !errorMessage && customers.length > 0 && (
-        <CustomerTable customers={customers} onEdit={handleOpenEditDialog} />
+        <CustomerTable
+          customers={customers}
+          onEdit={handleOpenEditDialog}
+          // 詳細から戻る際も、URLに保持した検索条件とページを復元する。
+          returnPath={`/customers${params.size ? `?${params.toString()}` : ""}`}
+        />
       )}
 
       {!isLoading && !errorMessage && pagination && (

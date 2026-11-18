@@ -68,7 +68,10 @@ it("手動ランクとRFランクを区別して表示し、条件付きの詳�
   });
   expect(
     screen.getByRole("link", { name: "ランク対象の詳細を表示" }),
-  ).toHaveAttribute("href", expect.stringContaining("return_to="));
+  ).toHaveAttribute(
+    "href",
+    "/customers/10?return_to=%2Fcustomers%3Frf_rank_id%3D71%26page%3D2",
+  );
   await waitFor(() =>
     expect(mocks.list).toHaveBeenCalledWith(
       expect.objectContaining({ rf_rank_id: 71, page: 2 }),
