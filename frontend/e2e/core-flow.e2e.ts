@@ -611,6 +611,10 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
     .getByRole("link", { name: "RFの顧客内訳に戻る", exact: true })
     .press("Enter");
   await expect(page).toHaveURL(cellUrl);
+  // 戻るURLだけでなく、同じセルの対象顧客が再表示されたことを待って証跡を残す。
+  await expect(
+    page.getByRole("link", { name: visited.customer_name, exact: true }),
+  ).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: "test-results/rf-breakdown-acceptance-desktop.png",
