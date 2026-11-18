@@ -19,6 +19,8 @@ export function CustomerTableSkeleton() {
             <TableHead className="w-20">区分</TableHead>
             <TableHead className="w-24">表示状態</TableHead>
             <TableHead className="min-w-40">顧客名</TableHead>
+            <TableHead>手動ランク</TableHead>
+            <TableHead>RFランク</TableHead>
             <TableHead className="hidden lg:table-cell">フリガナ</TableHead>
             <TableHead className="min-w-36">電話番号</TableHead>
             <TableHead className="hidden xl:table-cell">
@@ -41,6 +43,12 @@ export function CustomerTableSkeleton() {
               <TableCell>
                 <Skeleton className="h-5 w-14" />
               </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-24" />
+              </TableCell>
               <TableCell className="hidden lg:table-cell">
                 <Skeleton className="h-5 w-28" />
               </TableCell>
@@ -55,6 +63,12 @@ export function CustomerTableSkeleton() {
               </TableCell>
               <TableCell className="hidden xl:table-cell">
                 <Skeleton className="h-5 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-24" />
               </TableCell>
               <TableCell className="hidden lg:table-cell">
                 <Skeleton className="h-5 w-32" />

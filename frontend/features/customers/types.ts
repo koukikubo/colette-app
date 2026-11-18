@@ -87,7 +87,30 @@ export type CustomerDetail = Customer & {
   rf_rank_basis: CustomerRfRankBasis | null;
 };
 
+// 一覧では「適用履歴なし」と「適用履歴内の未計算」も区別する。
+export const CUSTOMER_RF_STATES = {
+  no_applied_run: "適用履歴なし",
+  not_calculated: "未計算",
+  excluded: "RF計算対象外",
+  no_visit: "来店履歴なし",
+  unmatched: "ルール未一致",
+  ranked: "ランクあり",
+} as const;
+export type CustomerRfState = keyof typeof CUSTOMER_RF_STATES;
+export type CustomerListItem = Customer & {
+  current_rf_rank: RfRankSummary | null;
+  rf_rank_state: CustomerRfState;
+  rf_rank_basis: CustomerRfRankBasis | null;
+};
+export type CustomerRfReference = {
+  calculation_run_id: number | null;
+  base_date: string | null;
+  ranks: RfRankSummary[];
+};
+
 export type CustomerListParams = {
+  rf_rank_id?: number;
+  rf_rank_state?: CustomerRfState;
   customer_rank_id?: number | "unassigned";
   visibility?: CustomerVisibility;
   customer_kind?: CustomerKind;
@@ -137,8 +160,9 @@ export type ChangeCustomerVisibilityRequest = {
 };
 
 export type CustomerListData = {
-  customers: Customer[];
+  customers: CustomerListItem[];
   pagination: Pagination;
+  rf_reference: CustomerRfReference;
 };
 
 export type CustomerData = {

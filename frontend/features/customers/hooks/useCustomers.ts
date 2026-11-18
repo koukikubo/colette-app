@@ -3,7 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiClientError } from "@/lib/api/api-client";
 import type { Pagination } from "@/lib/api/pagination";
 import { fetchCustomers } from "../api/customer-api";
-import type { Customer, CustomerListParams } from "../types";
+import type {
+  CustomerListItem,
+  CustomerListParams,
+  CustomerRfReference,
+} from "../types";
 type UseCustomersOptions = CustomerListParams & { reloadKey?: number };
 
 // 通常の読取は画面のエラーへ、保存後の再取得は呼出元にも失敗を返す。
@@ -11,15 +15,20 @@ export function useCustomers({
   visibility = "visible",
   customer_kind,
   customer_rank_id,
+  rf_rank_id,
+  rf_rank_state,
   query,
   page = 1,
   per_page = 20,
   reloadKey = 0,
 }: UseCustomersOptions) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [rfReference, setRfReference] = useState<CustomerRfReference | null>(
+    null,
+  );
   const request = useRef(0);
   const invalidateRequest = useCallback(() => {
     request.current++;
@@ -33,6 +42,8 @@ export function useCustomers({
         visibility,
         customer_kind,
         ...(customer_rank_id !== undefined ? { customer_rank_id } : {}),
+        rf_rank_id,
+        rf_rank_state,
         query,
         page,
         per_page,
@@ -40,6 +51,7 @@ export function useCustomers({
       if (version !== request.current) return;
       setCustomers(response.data.customers);
       setPagination(response.data.pagination);
+      setRfReference(response.data.rf_reference ?? null);
     } catch (error) {
       if (version !== request.current) return;
       setErrorMessage(
@@ -51,7 +63,16 @@ export function useCustomers({
     } finally {
       if (version === request.current) setIsLoading(false);
     }
-  }, [visibility, customer_kind, customer_rank_id, query, page, per_page]);
+  }, [
+    visibility,
+    customer_kind,
+    customer_rank_id,
+    rf_rank_id,
+    rf_rank_state,
+    query,
+    page,
+    per_page,
+  ]);
   useEffect(() => {
     let active = true;
     void Promise.resolve()
@@ -62,5 +83,12 @@ export function useCustomers({
       invalidateRequest();
     };
   }, [refresh, reloadKey, invalidateRequest]);
-  return { customers, pagination, isLoading, errorMessage, refresh };
+  return {
+    customers,
+    pagination,
+    rfReference,
+    isLoading,
+    errorMessage,
+    refresh,
+  };
 }

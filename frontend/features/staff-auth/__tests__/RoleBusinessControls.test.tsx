@@ -20,7 +20,17 @@ it("viewerは顧客詳細を開けるが編集ボタンと予約状態変更は�
   } as Customer;
   renderWithRole(
     <>
-      <CustomerTable customers={[customer]} onEdit={vi.fn()} />
+      <CustomerTable
+        customers={[
+          {
+            ...customer,
+            current_rf_rank: null,
+            rf_rank_state: "no_applied_run",
+            rf_rank_basis: null,
+          },
+        ]}
+        onEdit={vi.fn()}
+      />
       <ReservationStatusActions reservation={createReservation()} />
     </>,
     "viewer",

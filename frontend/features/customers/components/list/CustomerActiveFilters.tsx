@@ -4,11 +4,13 @@ import { XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import type { CustomerListParams } from "../../types";
+import { CUSTOMER_RF_STATES, type CustomerListParams } from "../../types";
 
 type CustomerActiveFiltersProps = {
   filters: CustomerListParams;
   customerRankLabel?: string;
+  rfRankLabel?: string;
+  onClearRf: () => void;
   onClearCustomerRank: () => void;
   onClearQuery: () => void;
   onResetVisibility: () => void;
@@ -19,6 +21,8 @@ type CustomerActiveFiltersProps = {
 export function CustomerActiveFilters({
   filters,
   customerRankLabel,
+  rfRankLabel,
+  onClearRf,
   onClearCustomerRank,
   onClearQuery,
   onResetVisibility,
@@ -29,6 +33,8 @@ export function CustomerActiveFilters({
 
   const hasActiveFilters =
     filters.customer_rank_id !== undefined ||
+    filters.rf_rank_id !== undefined ||
+    filters.rf_rank_state !== undefined ||
     Boolean(filters.query) ||
     visibility !== "visible" ||
     Boolean(filters.customer_kind);
@@ -52,6 +58,16 @@ export function CustomerActiveFilters({
           {filters.customer_rank_id === "unassigned"
             ? "未設定"
             : (customerRankLabel ?? "選択中")}
+          <XIcon className="size-3.5" />
+        </Button>
+      )}
+
+      {(filters.rf_rank_id !== undefined || filters.rf_rank_state) && (
+        <Button type="button" variant="secondary" size="sm" onClick={onClearRf}>
+          RFランク:{" "}
+          {filters.rf_rank_state
+            ? CUSTOMER_RF_STATES[filters.rf_rank_state]
+            : (rfRankLabel ?? "選択中")}
           <XIcon className="size-3.5" />
         </Button>
       )}

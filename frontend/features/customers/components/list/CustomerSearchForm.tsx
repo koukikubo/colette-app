@@ -2,7 +2,11 @@
 
 // import { type FormEvent, useState } from "react";
 import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
-import type { CustomerListParams } from "../../types";
+import type {
+  CustomerListParams,
+  CustomerRfState,
+  CustomerRfReference,
+} from "../../types";
 import { XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +20,9 @@ import { CustomerKeywordSearch } from "../search/CustomerKeywordSearch";
 type CustomerSearchFormProps = {
   customerRankId?: CustomerListParams["customer_rank_id"];
   rankOptions: CustomerRankOptions;
+  rfRankId?: number;
+  rfRankState?: CustomerRfState;
+  rfReference?: CustomerRfReference | null;
   initialQuery?: string;
   isLoading?: boolean;
   value: string;
@@ -35,6 +42,9 @@ export function CustomerSearchForm({
   customerKind,
   customerRankId,
   rankOptions,
+  rfRankId,
+  rfRankState,
+  rfReference,
   isLoading = false,
   onValueChange,
   onSearch,
@@ -65,6 +75,9 @@ export function CustomerSearchForm({
           customerKind={customerKind}
           customerRankId={customerRankId}
           rankOptions={rankOptions}
+          rfRankId={rfRankId}
+          rfRankState={rfRankState}
+          rfReference={rfReference}
           isLoading={isLoading}
           onApply={onApplyFilters}
         />
