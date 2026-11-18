@@ -339,7 +339,9 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
   await page
     .getByRole("button", { name: "最新情報に更新", exact: true })
     .click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  // Next.js標準のルート読み上げ通知ではなく、業務画面の取得エラーを検証する。
+  const dashboardAlert = page.locator(".colette-page").getByRole("alert");
+  await expect(dashboardAlert).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "店舗とお客様の傾向" }),
   ).not.toBeVisible();
@@ -350,7 +352,7 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
   await expect(
     page.getByRole("heading", { name: "店舗とお客様の傾向" }),
   ).toBeVisible();
-  await expect(page.getByRole("alert")).not.toBeVisible();
+  await expect(dashboardAlert).not.toBeVisible();
   await page.getByText("数値を表で確認", { exact: true }).press("Enter");
   const table = page.getByRole("table", { name: "月別予約・来店件数" });
   for (const months of [3, 6, 12]) {
