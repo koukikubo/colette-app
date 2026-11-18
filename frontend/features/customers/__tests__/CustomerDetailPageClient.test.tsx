@@ -422,3 +422,32 @@ it.each(["成功", "失敗"])(
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   },
 );
+
+it.each([true, false])(
+  "RF内訳からの戻り先と名称を取得成功=%sでも維持する",
+  async (success) => {
+    const target = "/rf-customers?run_id=2&rf_rank_id=22&page=3&per_page=1";
+    window.history.replaceState(
+      null,
+      "",
+      `/customers/10?return_to=${encodeURIComponent(target)}`,
+    );
+    mocks.fetchCustomer.mockReset();
+    if (success)
+      mocks.fetchCustomer.mockResolvedValue({
+        data: { customer: createCustomer() },
+      });
+    else
+      mocks.fetchCustomer.mockRejectedValue(
+        new ApiClientError("取得失敗", 503),
+      );
+    try {
+      render(<CustomerDetailPageClient customerId={10} />);
+      expect(
+        await screen.findByRole("link", { name: "RFの顧客内訳に戻る" }),
+      ).toHaveAttribute("href", target);
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  },
+);

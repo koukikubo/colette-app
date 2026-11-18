@@ -87,15 +87,18 @@ export function RfCustomerBreakdownPage() {
                 )?.label,
                 data.cell_labels?.recency,
                 data.cell_labels?.frequency,
-                data.filters.from_state
+                data.filters.from_state || data.filters.from_rank_id
                   ? `開始：${data.comparison_ranks.find((rank) => rank.id === Number(data.filters.from_rank_id))?.label ?? labels[data.filters.from_state]}`
                   : undefined,
-                data.filters.to_state
+                data.filters.to_state || data.filters.to_rank_id
                   ? `終了：${data.ranks.find((rank) => rank.id === Number(data.filters.to_rank_id))?.label ?? labels[data.filters.to_state]}`
                   : undefined,
               ]
                 .filter(Boolean)
-                .join(" ／ ") || "全顧客"}{" "}
+                .join(" ／ ") ||
+                (data.comparison_run
+                  ? "比較履歴に記録された顧客"
+                  : "RFランクが付与された顧客")}{" "}
               ／ {data.pagination.total_count}人
             </p>
             <p className="text-sm text-muted-foreground">
@@ -147,7 +150,11 @@ export function RfCustomerBreakdownPage() {
               currentPage={data.pagination.current_page}
               totalPages={data.pagination.total_pages}
               totalCount={data.pagination.total_count}
-              perPage={Number(params.get("per_page")) || 20}
+              perPage={data.pagination.per_page}
+              // APIが認めた深いリンクの件数も、空欄にせず選択肢へ含める。
+              perPageOptions={[
+                ...new Set([20, 50, 100, data.pagination.per_page]),
+              ].sort((a, b) => a - b)}
               onPageChange={(page) => update({ page })}
               onPerPageChange={(per_page) => update({ per_page, page: 1 })}
             />

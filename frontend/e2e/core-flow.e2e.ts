@@ -410,3 +410,203 @@ test("分析ダッシュボードとタブレット表示", async ({ page }) => 
     fullPage: true,
   });
 });
+
+// RFの再計算・適用も実APIとJobを使い、内訳をモックで作らない。
+async function calculateBreakdownRun(
+  page: Page,
+  ruleId: number,
+  date: string,
+  csrf: string,
+) {
+  const headers = { "X-CSRF-Token": csrf };
+  const response = await page.request.post("/api/v1/rf_calculation_runs", {
+    headers,
+    data: { rf_calculation: { rf_rule_set_id: ruleId, base_date: date } },
+  });
+  expect(response.status()).toBe(202);
+  const run = (await response.json()).data.calculation_run;
+  await expect
+    .poll(async () => {
+      const result = await page.request.get(
+        `/api/v1/rf_calculation_runs/${run.id}`,
+      );
+      expect(result.status()).toBe(200);
+      return (await result.json()).data.calculation_run.status;
+    })
+    .toBe("completed");
+  const applied = await page.request.patch(
+    `/api/v1/rf_calculation_runs/${run.id}/activate`,
+    { headers },
+  );
+  expect(applied.status()).toBe(200);
+  return run.id as number;
+}
+
+test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件を保持して戻る", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("combobox", { name: "担当者", exact: true }).click();
+  await page.getByRole("option", { name: /E2E管理者/ }).click();
+  await page
+    .getByLabel("パスワード", { exact: true })
+    .fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const settingsResponse = await page.request.get("/api/v1/rf_settings");
+  const settings = (await settingsResponse.json()).data;
+  const previousId = settings.current_calculation_run.id;
+  const date = settings.current_calculation_run.base_date;
+  const csrfResponse = await page.request.get("/api/v1/csrf");
+  const csrf = (await csrfResponse.json()).data.csrf_token;
+  const addedIds: number[] = [];
+  for (const index of [1, 2]) {
+    const created = await page.request.post("/api/v1/customers", {
+      headers: { "X-CSRF-Token": csrf },
+      data: {
+        customer: {
+          customer_kind: "individual",
+          name: `E2E内訳${index}`,
+          kana: "イーツーイーウチワケ",
+          phone_number: `0900000555${index}`,
+        },
+      },
+    });
+    expect(created.status()).toBe(201);
+    addedIds.push((await created.json()).data.customer.id);
+  }
+  const runId = await calculateBreakdownRun(
+    page,
+    settings.published_rule_set.id,
+    date,
+    csrf,
+  );
+  const allResponse = await page.request.get(
+    `/api/v1/rf_customers?run_id=${runId}`,
+  );
+  expect(allResponse.status()).toBe(200);
+  const all = (await allResponse.json()).data;
+  expect(all.pagination.total_count).toBe(3);
+  const noVisit = all.customers.find(
+    (row: { customer_id: number }) => row.customer_id === addedIds[0],
+  );
+  expect(noVisit.to_state).toBe("no_visit");
+  const rankId = noVisit.to_rank.id;
+
+  await page.goto("/rf-analysis");
+  await page
+    .locator(`a[href*="/rf-customers?run_id=${runId}&rf_rank_id=${rankId}"]`)
+    .first()
+    .press("Enter");
+  await expect(page).toHaveURL(/\/rf-customers\?/);
+  await expect(page.getByText(/条件：.*2人/)).toBeVisible();
+  const rankPath = `/rf-customers?${new URLSearchParams({ run_id: String(runId), rf_rank_id: String(rankId), page: "2", per_page: "1", return_to: "/rf-analysis" })}`;
+  await page.goto(rankPath);
+  await expect(
+    page.getByRole("combobox", { name: "1ページあたりの表示件数" }),
+  ).toHaveText("1件");
+  const target = all.customers
+    .filter((row: { customer_id: number }) =>
+      addedIds.includes(row.customer_id),
+    )
+    .sort(
+      (a: { customer_id: number }, b: { customer_id: number }) =>
+        a.customer_id - b.customer_id,
+    )[1];
+  await page
+    .getByRole("link", { name: target.customer_name, exact: true })
+    .press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "予約履歴", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: "RFの顧客内訳に戻る", exact: true })
+    .press("Enter");
+  await expect(page).toHaveURL(
+    new RegExp(`run_id=${runId}.*rf_rank_id=${rankId}.*page=2.*per_page=1`),
+  );
+
+  // 現在の適用先を更新した後も、選択済み履歴とページを再取得する。
+  const newestId = await calculateBreakdownRun(
+    page,
+    settings.published_rule_set.id,
+    date,
+    csrf,
+  );
+  expect(newestId).not.toBe(runId);
+  await page.reload();
+  const fixedResponse = await page.request.get(
+    `/api/v1/rf_customers?run_id=${runId}&rf_rank_id=${rankId}&page=2&per_page=1`,
+  );
+  const fixed = (await fixedResponse.json()).data;
+  expect(fixed.run.id).toBe(runId);
+  expect(fixed.customers[0].customer_id).toBe(target.customer_id);
+  const breakdownApi = (url: URL) => url.pathname === "/api/v1/rf_customers";
+  await page.route(breakdownApi, (route) => route.abort("failed"));
+  await page.reload();
+  const alert = page.locator("#main-content").getByRole("alert");
+  await expect(alert).toBeVisible();
+  await page.unroute(breakdownApi);
+  await page.getByRole("button", { name: "再取得", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: target.customer_name, exact: true }),
+  ).toBeVisible();
+  await expect(alert).not.toBeVisible();
+
+  const comparisonReturn = `/rf-customer-transitions?${new URLSearchParams({ start_month: date.slice(0, 7), end_month: date.slice(0, 7) })}`;
+  const comparisonPath = `/rf-customers?${new URLSearchParams({ run_id: String(runId), comparison_run_id: String(previousId), category: "added", page: "2", per_page: "1", return_to: comparisonReturn })}`;
+  await page.goto(comparisonPath);
+  await expect(page.getByText(/条件：.*終了時点のみ.*2人/)).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: "test-results/rf-breakdown-acceptance-mobile.png",
+    fullPage: true,
+  });
+  await expect(
+    page.getByRole("link", { name: "分析画面に戻る" }),
+  ).toHaveAttribute("href", comparisonReturn);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/rf-analysis");
+  await page
+    .locator('a[href*="/rf-customers?"][href*="recency_rule_id="]')
+    .filter({ hasText: /^1名$/ })
+    .first()
+    .press("Enter");
+  await expect(page.getByText(/条件：.*1人/)).toBeVisible();
+  const visited = all.customers.find(
+    (row: { to_state: string }) => row.to_state === "ranked",
+  );
+  const cellUrl = page.url();
+  await page
+    .getByRole("link", { name: visited.customer_name, exact: true })
+    .press("Enter");
+  const customerUrl = page.url();
+  const historyResponse = await page.request.get(
+    `/api/v1/customers/${visited.customer_id}/reservations`,
+  );
+  expect(historyResponse.status()).toBe(200);
+  const reservationId = (await historyResponse.json()).data.reservations[0].id;
+  await page
+    .getByRole("link", {
+      name: `予約${reservationId}の詳細を開く`,
+      exact: true,
+    })
+    .press("Enter");
+  await expect(page).toHaveURL(new RegExp(`/reservations/${reservationId}$`));
+  await page.goBack();
+  await expect(page).toHaveURL(customerUrl);
+  await page
+    .getByRole("link", { name: "RFの顧客内訳に戻る", exact: true })
+    .press("Enter");
+  await expect(page).toHaveURL(cellUrl);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: "test-results/rf-breakdown-acceptance-desktop.png",
+    fullPage: true,
+  });
+});
