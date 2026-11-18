@@ -210,6 +210,10 @@ export function CustomerDetailPageClient({
   const backTarget = returnParams.get("return_to")
     ? safeReturnPath(returnParams.get("return_to"))
     : "/customers";
+  // RF履歴の内訳と一般顧客一覧を混同させず、実際の戻り先に合わせて案内する。
+  const backLabel = backTarget.startsWith("/rf-customers")
+    ? "RFの顧客内訳に戻る"
+    : "顧客一覧へ戻る";
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -304,7 +308,7 @@ export function CustomerDetailPageClient({
         <Button asChild variant="outline">
           <Link href={backTarget}>
             <ArrowLeftIcon />
-            顧客一覧へ戻る
+            {backLabel}
           </Link>
         </Button>
 
@@ -335,7 +339,7 @@ export function CustomerDetailPageClient({
       <Button asChild variant="outline">
         <Link href={backTarget}>
           <ArrowLeftIcon />
-          顧客一覧へ戻る
+          {backLabel}
         </Link>
       </Button>
 

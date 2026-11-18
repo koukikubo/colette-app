@@ -23,13 +23,17 @@ module Rf
         relation = relation.where(category.eq(filters[:category])) if filters[:category].present?
         { "from" => [ @prior, previous ], "to" => [ @current, run ] }.each do |side, (table, source)|
           relation = relation.where(state_expression(table, source).eq(filters["#{side}_state"])) if filters["#{side}_state"].present?
-          relation = relation.where(table[:rf_rank_id].eq(positive_id(filters["#{side}_rank_id"]))) if filters["#{side}_rank_id"].present?
+          relation = relation.where(table[:rf_rank_id].eq(rank_id(filters["#{side}_rank_id"], side == "from" ? previous_ranks : ranks))) if filters["#{side}_rank_id"].present?
         end
         relation = relation.select(@customers[Arel.star], category.as("movement_category"),
           state_expression(@prior, previous).as("from_state"), state_expression(@current, run).as("to_state"), @prior[:rf_rank_id].as("from_rank_id"))
       else
         relation = relation.where(@current[:id].not_eq(nil).and(@current[:exclusion_reason].eq(nil)).and(@current[:rf_rank_id].not_eq(nil)))
-        relation = relation.where(@current[:rf_rank_id].eq(positive_id(filters[:rf_rank_id]))) if filters[:rf_rank_id].present?
+        relation = relation.where(@current[:rf_rank_id].eq(rank_id(filters[:rf_rank_id], ranks))) if filters[:rf_rank_id].present?
+        # セルはR/Fの組で定義する。欠けた条件を0件や不明なルールとして扱わない。
+        if filters[:recency_rule_id].present? != filters[:frequency_rule_id].present?
+          raise ActionController::BadRequest, "RecencyとFrequencyは両方指定してください"
+        end
         if filters[:recency_rule_id].present? || filters[:frequency_rule_id].present?
           recency = run.rf_rule_set.recency_rules.find(positive_id(filters[:recency_rule_id]))
           frequency = run.rf_rule_set.frequency_rules.find(positive_id(filters[:frequency_rule_id]))
@@ -56,6 +60,13 @@ module Rf
     def positive_id(value)
       id = Integer(value.to_s, 10, exception: false)
       raise ActionController::BadRequest, "条件IDは1以上の整数で指定してください" unless id&.positive?
+      id
+    end
+
+    # 現在のマスタではなく選択履歴のランク集合で検証し、0件の正しい条件と区別する。
+    def rank_id(value, snapshots)
+      id = positive_id(value)
+      raise ActionController::BadRequest, "選択した計算履歴のランクを指定してください" unless snapshots.key?(id)
       id
     end
 
