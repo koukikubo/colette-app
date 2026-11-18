@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event";
 
 const mocks = vi.hoisted(() => ({
   fetchCustomers: vi.fn(),
+  fetchCustomerCreationResult: vi.fn(),
   createCustomer: vi.fn(),
   updateCustomer: vi.fn(),
   hideCustomer: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../api/customer-api", () => ({
   fetchCustomers: mocks.fetchCustomers,
   createCustomer: mocks.createCustomer,
+  fetchCustomerCreationResult: mocks.fetchCustomerCreationResult,
   updateCustomer: mocks.updateCustomer,
   hideCustomer: mocks.hideCustomer,
   restoreCustomer: mocks.restoreCustomer,
@@ -748,26 +750,29 @@ describe("CustomerListPageClient", () => {
     );
 
     await waitFor(() => {
-      expect(mocks.createCustomer).toHaveBeenCalledWith({
-        customer: {
-          customer_kind: "individual",
-          customer_rank_id: null,
-          name: "山田 太郎",
-          kana: "ヤマダ タロウ",
-          postal_code: null,
-          address: null,
-          phone_number: null,
-          email: null,
-          birthday: null,
-          company_name: null,
-          company_name_kana: null,
-          company_postal_code: null,
-          company_address: null,
-          company_phone_number: null,
-          company_email: null,
-          memo: null,
+      expect(mocks.createCustomer).toHaveBeenCalledWith(
+        {
+          customer: {
+            customer_kind: "individual",
+            customer_rank_id: null,
+            name: "山田 太郎",
+            kana: "ヤマダ タロウ",
+            postal_code: null,
+            address: null,
+            phone_number: null,
+            email: null,
+            birthday: null,
+            company_name: null,
+            company_name_kana: null,
+            company_postal_code: null,
+            company_address: null,
+            company_phone_number: null,
+            company_email: null,
+            memo: null,
+          },
         },
-      });
+        expect.stringMatching(/^[a-f0-9-]{36}$/),
+      );
     });
 
     // 初期表示と登録後の再取得

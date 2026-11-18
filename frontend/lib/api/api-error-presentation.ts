@@ -2,6 +2,7 @@ import { ApiClientError } from "@/lib/api/api-client";
 
 export type ApiErrorKind =
   | "authentication"
+  | "access_authentication"
   | "authorization"
   | "not_found"
   | "conflict"
@@ -28,6 +29,17 @@ const UNEXPECTED_ERROR: ApiErrorPresentation = {
 
 export function getApiErrorPresentation(error: unknown): ApiErrorPresentation {
   if (!(error instanceof ApiClientError)) return UNEXPECTED_ERROR;
+
+  if (error.code === "access_auth_required")
+    return {
+      kind: "access_authentication",
+      title: "接続先のアクセス認証が必要です",
+      description:
+        "入口の認証を確認してください。担当者のログインとは別の認証です。",
+      guidance: "ブラウザーでアクセス認証を行ってから再試行してください。",
+      primaryLabel: "認証後に再試行",
+    };
+  if (error.code === "unexpected_response") return UNEXPECTED_ERROR;
 
   switch (error.status) {
     case 401:

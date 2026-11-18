@@ -91,3 +91,22 @@ it("ログイン後の戻り先はアプリ内の業務画面に限定する", (
   ])
     expect(safeReturnPath(value)).toBe("/dashboard");
 });
+it("Basic認証の拒否では担当者再認証へ切り替えず入力を保持する", async () => {
+  render(
+    <AuthProvider>
+      <Content />
+    </AuthProvider>,
+  );
+  await screen.findByText("authenticated");
+  mocks.current.mockRejectedValueOnce(
+    new ApiClientError("Basic authentication", 401, [], "access_auth_required"),
+  );
+  act(() => {
+    window.dispatchEvent(new Event("focus"));
+  });
+  await screen.findByText(
+    "認証状態を確認できませんでした。接続を確認して再取得してください。",
+  );
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("編集中の入力")).toHaveValue("未保存の予約");
+});

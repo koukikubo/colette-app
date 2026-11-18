@@ -23,7 +23,11 @@ import {
 } from "@/components/ui/dialog";
 import { ApiClientError } from "@/lib/api/api-client";
 
-import { createCustomer, updateCustomer } from "../../api/customer-api";
+import {
+  createCustomer,
+  updateCustomer,
+  fetchCustomerCreationResult,
+} from "../../api/customer-api";
 import {
   buildCreateCustomerRequest,
   buildUpdateCustomerRequest,
@@ -51,6 +55,9 @@ type CustomerFormDialogProps = {
   onOpenChange: (open: boolean) => void;
   onCompleted: () => void | Promise<void>;
 };
+
+import { usePendingCreation } from "@/hooks/usePendingCreation";
+import { CreationRecoveryNotice } from "@/components/common/CreationRecoveryNotice";
 
 const FORM_ID = "customer-form";
 
@@ -99,6 +106,11 @@ export function CustomerFormDialog({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = mode === "edit";
+  const recovery = usePendingCreation(
+    "customers",
+    fetchCustomerCreationResult,
+    !isEdit && open,
+  );
   const { fieldErrors, setFieldErrors, clearFieldError, clearAllFieldErrors } =
     useFieldErrors();
 
@@ -179,7 +191,7 @@ export function CustomerFormDialog({
     setConfirmOpen(true);
   }
 
-  async function handleConfirm() {
+  async function handleConfirm(retryPrevious = false) {
     if (saving.current || saved) return;
     if (isEdit && !editSnapshot.current) {
       setErrors(["編集対象の顧客情報を取得できませんでした。"]);
@@ -198,7 +210,15 @@ export function CustomerFormDialog({
           buildUpdateCustomerRequest(values, editSnapshot.current.lock_version),
         );
       } else {
-        await createCustomer(buildCreateCustomerRequest(values));
+        const input = retryPrevious
+          ? recovery.previousPayload<
+              ReturnType<typeof buildCreateCustomerRequest>
+            >()
+          : buildCreateCustomerRequest(values);
+        if (!input) return;
+        const key = recovery.begin(input);
+        await createCustomer(input, key);
+        if (!recovery.isActive()) return;
       }
 
       // 保存の確定と、表示更新の失敗を別の状態として扱う。
@@ -206,6 +226,7 @@ export function CustomerFormDialog({
       setConfirmOpen(false);
       await refreshAfterSave();
     } catch (error) {
+      if (!isEdit) recovery.failed(error);
       setConfirmOpen(false);
 
       if (error instanceof ApiClientError) {
@@ -237,6 +258,7 @@ export function CustomerFormDialog({
     setRefreshFailed(false);
     try {
       await onCompleted();
+      if (!isEdit) recovery.complete();
       setSaved(false);
       onOpenChange(false);
     } catch {
@@ -281,6 +303,7 @@ export function CustomerFormDialog({
         open={open}
         onOpenChange={(next) => {
           if (!next && !isSubmitting) {
+            if (!isEdit) recovery.complete();
             setSaved(false);
             onOpenChange(false);
           }
@@ -306,6 +329,7 @@ export function CustomerFormDialog({
             variant="outline"
             disabled={isSubmitting}
             onClick={() => {
+              if (!isEdit) recovery.complete();
               setSaved(false);
               onOpenChange(false);
             }}
@@ -332,6 +356,23 @@ export function CustomerFormDialog({
             </DialogDescription>
           </DialogHeader>
 
+          {!isEdit && recovery.error && !recovery.uncertain && (
+            <p role="alert">{recovery.error}</p>
+          )}
+          {!isEdit && recovery.uncertain && (
+            <CreationRecoveryNotice
+              noun="顧客"
+              {...recovery}
+              found={Boolean(recovery.found)}
+              busy={isSubmitting}
+              onCheck={() => void recovery.check()}
+              onRetry={() => void handleConfirm(true)}
+              onFound={() => {
+                setSaved(true);
+                void refreshAfterSave();
+              }}
+            />
+          )}
           <CustomerForm
             formId={FORM_ID}
             values={values}

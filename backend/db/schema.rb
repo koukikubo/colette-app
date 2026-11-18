@@ -10,10 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "customer_creation_requests", force: :cascade do |t|
+    t.bigint "staff_id", null: false
+    t.bigint "customer_id", null: false
+    t.string "key_digest", null: false
+    t.string "request_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_customer_creation_requests_on_customer_id"
+    t.index ["staff_id", "key_digest"], name: "index_customer_creation_requests_on_staff_id_and_key_digest", unique: true
+    t.index ["staff_id"], name: "index_customer_creation_requests_on_staff_id"
+  end
 
   create_table "customer_rf_rank_results", force: :cascade do |t|
     t.bigint "rf_calculation_run_id", null: false
@@ -368,6 +380,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
     t.index ["system_key"], name: "index_standard_masters_on_system_key", unique: true
   end
 
+  add_foreign_key "customer_creation_requests", "customers"
+  add_foreign_key "customer_creation_requests", "staffs"
   add_foreign_key "customer_rf_rank_results", "customers"
   add_foreign_key "customer_rf_rank_results", "rf_calculation_runs"
   add_foreign_key "customer_rf_rank_results", "standard_list_masters", column: "rf_rank_id"

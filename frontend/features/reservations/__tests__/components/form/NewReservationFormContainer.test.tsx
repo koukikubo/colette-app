@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it, vi } from "vitest";
 
 import { NewReservationFormContainer } from "../../../components/form/NewReservationFormContainer";
@@ -7,6 +8,7 @@ import { ApiClientError } from "@/lib/api/api-client";
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  fetchReservationCreationResult: vi.fn(),
   createReservation: vi.fn(),
 
   setCustomerQuery: vi.fn(),
@@ -23,6 +25,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/features/reservations/api/reservation_api", () => ({
   createReservation: mocks.createReservation,
+  fetchReservationCreationResult: mocks.fetchReservationCreationResult,
 }));
 
 vi.mock("@/features/reservations/hooks/useReservationFormOptions", () => ({
