@@ -1,6 +1,10 @@
 name: Production images
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "45 21 * * *" # 毎日06:45 JST、実配布する最終イメージを確認する。
   pull_request:
     paths:
       - "backend/**"
@@ -12,19 +16,40 @@ jobs:
   production:
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         app: [backend, frontend]
     steps:
       - uses: actions/checkout@v6
       - name: Build final production image
-        run: docker build -t colette-production:${{ matrix.app }} ./${{ matrix.app }}
+        run: docker build --pull -t colette-production:${{ matrix.app }} ./${{ matrix.app }}
+      # 全件レポートを保存してから判定し、修正版未提供のHIGH/CRITICALも従来どおり失敗させる。
       - name: Scan final production image
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: colette-production:${{ matrix.app }}
           scanners: vuln,secret
-          format: table
-          exit-code: "1"
+          format: json
+          output: trivy-production.json
+          exit-code: "0"
           ignore-unfixed: "false"
-          severity: HIGH,CRITICAL
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          timeout: 15m
+
+      - name: Check production security findings
+        run: |
+          jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | {total: length, with_fix: map(select((.FixedVersion // "") != "")) | length}' trivy-production.json
+          jq -e 'all(.Results[]?;
+            all(.Vulnerabilities[]?; .Severity != "HIGH" and .Severity != "CRITICAL")
+            and (((.Secrets // []) | length) == 0)
+          )' trivy-production.json
+
+      - name: Upload full production security report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-security-${{ matrix.app }}
+          path: trivy-production.json
+          if-no-files-found: error
+          retention-days: 30

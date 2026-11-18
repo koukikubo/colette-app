@@ -25,7 +25,8 @@ jobs:
           ruby_version=$(cat backend/.ruby-version)
           docker_ruby_version=$(sed -n 's/^ARG RUBY_VERSION=//p' backend/Dockerfile)
           test "$ruby_version" = "$docker_ruby_version"
-          images=$( { docker compose config --images; echo "ruby:${ruby_version}-slim"; } | sort -u | jq -R . | jq -sc '{image: .}')
+          # 実際に起動する開発イメージを検査する。本番の最終イメージはProduction imagesで別途検査する。
+          images=$(docker compose config --images | sort -u | jq -R . | jq -sc '{image: .}')
           echo "matrix=$images" >> "$GITHUB_OUTPUT"
 
   scan:
@@ -43,9 +44,13 @@ jobs:
         if: matrix.image == 'colette-frontend-dev:node22.23.4-npm12.2.2'
         run: docker compose build --pull frontend
 
+      - name: Build backend runtime image
+        if: matrix.image == 'colette-backend-dev:ruby3.4.12'
+        run: docker compose build --pull backend
+
       # gosu更新後のPostgreSQLイメージを検査する。
       - name: Build PostgreSQL runtime image
-        if: matrix.image == 'colette-postgres:17.11-gosu1.20'
+        if: matrix.image == 'colette-postgres:17.12-gosu1.20'
         run: docker compose build --pull db
       # 修正版未提供の指摘も含め、全深刻度の検査結果を保存する。
       # 検出内容による合否は、後続ステップで判定する。

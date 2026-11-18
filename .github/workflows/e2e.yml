@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17.11
+        image: postgres:17.12
         env:
           POSTGRES_DB: colette_core_e2e
           POSTGRES_USER: postgres

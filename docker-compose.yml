@@ -19,7 +19,10 @@ services:
       exec npm run dev -- --hostname 0.0.0.0"
 
   backend:
-    image: ruby:3.4.12
+    image: colette-backend-dev:ruby3.4.12
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     container_name: colette_backend
     init: true
     tty: true
@@ -42,7 +45,7 @@ services:
               exec bin/rails server -b 0.0.0.0"
   db:
     # PostgreSQL本体は維持し、gosuの依存脆弱性に対応したイメージを使う。
-    image: colette-postgres:17.11-gosu1.20
+    image: colette-postgres:17.12-gosu1.20
     build:
       context: ./docker/postgres
       dockerfile: Dockerfile

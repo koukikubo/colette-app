@@ -94,7 +94,7 @@ jobs:
             -e POSTGRES_PASSWORD=postgres \
             -e POSTGRES_DB=backend_test \
             -p 127.0.0.1:5432:5432 \
-            colette-postgres:17.11-gosu1.20
+            colette-postgres:17.12-gosu1.20
 
       # 初期化中の一時サーバーと区別するため、TCP接続で起動を確認する。
       - name: Wait for test database
@@ -172,8 +172,24 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Verify npm audit policy
+        run: node --test ../scripts/check-npm-audit.test.mjs
+
       - name: Audit frontend dependencies
-        run: npm audit --audit-level=moderate
+        env:
+          NPM_AUDIT_REPORT: ${{ runner.temp }}/npm-audit-report.json
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../scripts/check-npm-audit.mjs
+
+      # 撤回済みを区別しても、npmの元の検出内容は失敗時を含めて追跡できるよう残す。
+      - name: Upload full npm audit report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-audit-report
+          path: ${{ runner.temp }}/npm-audit-report.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Download real Rails contracts
         uses: actions/download-artifact@v4

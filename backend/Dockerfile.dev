@@ -1,0 +1,4 @@
+# 開発用Rubyも配布後のOS修正を取り込み、実行するイメージをCIで検査する。
+FROM ruby:3.4.12
+RUN apt-get update -qq && apt-get upgrade --no-install-recommends -y && rm -rf /var/lib/apt/lists/*
+WORKDIR /backend
