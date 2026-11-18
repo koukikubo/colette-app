@@ -92,6 +92,11 @@ export async function checkAudit(report, withdrawn = isWithdrawn) {
   const advisories = auditAdvisories(report);
   const active = [];
   for (const advisory of advisories) {
+    // npmのJSONはaudit-level未満も含むため、個別告知にも従来の閾値を適用する。
+    if (["info", "low"].includes(advisory.severity)) continue;
+    if (!["moderate", "high", "critical"].includes(advisory.severity)) {
+      throw new Error("告知の深刻度が不明です");
+    }
     if (await withdrawn(advisory.url))
       console.log(`公式撤回済み: ${advisory.url}`);
     else active.push(advisory);

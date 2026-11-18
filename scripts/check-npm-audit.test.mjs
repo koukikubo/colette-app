@@ -11,7 +11,10 @@ const report = () => ({
   metadata: { vulnerabilities: { total: 2 } },
   vulnerabilities: {
     parent: { severity: "high", via: ["child"] },
-    child: { severity: "high", via: [{ title: "ReDoS", url }] },
+    child: {
+      severity: "high",
+      via: [{ title: "ReDoS", severity: "high", url }],
+    },
   },
 });
 test("推移依存の同じ告知を一度だけ照合する", async () => {
@@ -115,8 +118,19 @@ test("別の撤回告知があっても根拠不明な循環依存を見逃さ�
   data.vulnerabilities.child.via = ["parent"];
   data.vulnerabilities.other = {
     severity: "high",
-    via: [{ title: "Withdrawn", url }],
+    via: [{ title: "Withdrawn", severity: "high", url }],
   };
   data.metadata.vulnerabilities.total = 3;
   assert.throws(() => auditAdvisories(data));
+});
+
+test("撤回済みHIGHと有効なLOWの混在ではmoderate基準を維持する", async () => {
+  const data = report();
+  data.vulnerabilities.child.via[0].severity = "high";
+  data.vulnerabilities.child.via.push({
+    title: "Active low",
+    severity: "low",
+    url: "https://github.com/advisories/GHSA-low-low-low",
+  });
+  assert.deepEqual(await checkAudit(data, async (value) => value === url), []);
 });
