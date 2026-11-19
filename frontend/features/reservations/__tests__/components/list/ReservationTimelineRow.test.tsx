@@ -88,6 +88,64 @@ describe("ReservationTimelineRow", () => {
     ).toBeCloseTo(42.86, 2);
   });
 
+  it("日跨ぎ後も未退店の表示を縮めず、予定時刻を変更しない", () => {
+    const reservation = createReservation({
+      starts_at: "2026-09-14T18:00:00+09:00",
+      ends_at: "2026-09-14T20:00:00+09:00",
+    });
+    render(
+      <ReservationTimelineRow
+        label="席"
+        reservations={[reservation]}
+        targetDate="2026-09-14"
+        currentTime={new Date("2026-09-15T00:30:00+09:00")}
+        timelineStartMinutes={1020}
+        timelineEndMinutes={1440}
+        hourLabels={[]}
+      />,
+    );
+    const block = screen
+      .getByRole("link", { name: "山田 太郎様の予約詳細を開く" })
+      .closest("[data-reservation-block]") as HTMLElement;
+    expect(Number.parseFloat(block.style.width)).toBeCloseTo(85.714, 2);
+    expect(
+      screen.getByText("予定終了から270分超過・退店未処理"),
+    ).toBeInTheDocument();
+    expect(reservation.ends_at).toBe("2026-09-14T20:00:00+09:00");
+  });
+
+  it("表示上の延長で後続予約の予定枠を覆わない", () => {
+    const first = createReservation({
+      id: 1,
+      starts_at: "2026-09-14T18:00:00+09:00",
+      ends_at: "2026-09-14T20:00:00+09:00",
+    });
+    const next = createReservation({
+      id: 2,
+      reservation_name: "次のお客様",
+      starts_at: "2026-09-14T20:00:00+09:00",
+      ends_at: "2026-09-14T22:00:00+09:00",
+    });
+    render(
+      <ReservationTimelineRow
+        label="席"
+        reservations={[first, next]}
+        targetDate="2026-09-14"
+        currentTime={new Date("2026-09-14T21:00:00+09:00")}
+        timelineStartMinutes={1020}
+        timelineEndMinutes={1440}
+        hourLabels={[]}
+      />,
+    );
+    const block = screen
+      .getByRole("link", { name: "山田 太郎様の予約詳細を開く" })
+      .closest("[data-reservation-block]") as HTMLElement;
+    expect(Number.parseFloat(block.style.width)).toBeCloseTo(28.571, 2);
+    expect(
+      screen.getByRole("link", { name: "次のお客様様の予約詳細を開く" }),
+    ).toBeInTheDocument();
+  });
+
   it("次の予約が15分以内なら警告を表示する", () => {
     const overdueReservation = createReservation({
       id: 31,

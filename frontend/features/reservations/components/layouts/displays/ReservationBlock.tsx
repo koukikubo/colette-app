@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Reservation } from "@/features/reservations/types";
 import { reservationResultLabel } from "../../../utils/reservation-result";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
+import { getReservationTimingLabel } from "../../../utils/reservation-timeline-state";
 import type {
   NextReservationWarning,
   ReservationTimelineState,
@@ -10,6 +11,7 @@ import { ReservationWarningDialog } from "./ReservationWarningDialog";
 import { ReservationTimelineActionMenu } from "./ReservationTimelineActionMenu";
 
 type ReservationBlockProps = {
+  currentTime: Date;
   reservation: Reservation;
 
   // タイムライン左端から予約開始位置までの割合。
@@ -43,6 +45,7 @@ const timelineStateClassNames: Record<ReservationTimelineState, string> = {
  * 予約情報の表示と詳細画面への遷移を担当する。
  */
 export function ReservationBlock({
+  currentTime,
   reservation,
   leftPercentage,
   widthPercentage,
@@ -51,6 +54,7 @@ export function ReservationBlock({
   nextReservationWarning,
   onReservationStatusChanged,
 }: ReservationBlockProps) {
+  const timingLabel = getReservationTimingLabel(reservation, currentTime);
   const startTime = formatReservationTime(reservation.starts_at);
   const endTime = formatReservationTime(reservation.ends_at);
   return (
@@ -70,6 +74,7 @@ export function ReservationBlock({
       <Link
         href={`/reservations/detail/${encodeURIComponent(String(reservation.id))}`}
         scroll={false}
+        title={timingLabel ?? "予約予定"}
         aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
         className={[
           "focus-visible:ring-ring absolute inset-0 overflow-hidden rounded-md px-2 py-1 text-left focus-visible:ring-2 focus-visible:outline-none",
@@ -99,8 +104,11 @@ export function ReservationBlock({
 
         <div className="text-muted-foreground relative z-10 truncate text-xs">
           {reservation.guest_count}名{" / "}
-          {startTime}〜{endTime}
+          予定 {startTime}〜{endTime}
         </div>
+        {timingLabel && (
+          <p className="relative z-10 truncate text-[10px]">{timingLabel}</p>
+        )}
       </Link>
       <span className="sr-only">
         予約時間は予定です。時間経過だけでは来店実績になりません。

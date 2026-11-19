@@ -451,7 +451,7 @@ describe("ReservationListPage", () => {
     });
   });
 
-  it("17時より前から始まる予約は、タイムライン上では17時から表示する", async () => {
+  it("17時より前から始まる退店済み予約は、タイムライン上では17時から表示する", async () => {
     const restaurantMaster = {
       id: 10,
       restaurant_master_type_id: 1,
@@ -478,6 +478,7 @@ describe("ReservationListPage", () => {
       reservation_name: "鈴木 一郎",
       starts_at: "2026-09-08T16:30:00+09:00",
       ends_at: "2026-09-08T18:00:00+09:00",
+      completed_at: "2026-09-08T18:00:00+09:00",
       restaurant_master_ids: [10],
       restaurant_masters: [
         {
