@@ -187,7 +187,8 @@ RSpec.describe Rf::CalculationRunner do
       .with(
         customer: calculated_customer,
         rule_set: rule_set,
-        base_date: base_date
+        base_date: base_date,
+        visit_summary: { last_visit_on: nil, frequency_count: 0 }
       )
       .once
   end

@@ -1,6 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Rf::CustomerRankCalculator do
+  include ActiveSupport::Testing::TimeHelpers
   let(:base_date) do
     Date.new(2026, 9, 21)
   end
@@ -209,6 +210,26 @@ RSpec.describe Rf::CustomerRankCalculator do
       expect(result.last_visit_on).to be_nil
       expect(result.frequency_count).to eq(0)
     end
+  end
+
+  it "同日の未来予約や未到達の退店記録をRF実績に含めない" do
+    travel_to(Time.zone.local(2026, 9, 21, 17)) do
+      create_completed_visit(base_date.prev_day)
+      future = create_completed_visit(base_date)
+      future.update!(completed_at: Time.current)
+      not_yet_recorded = create_completed_visit(base_date - 2)
+      not_yet_recorded.update!(completed_at: 1.hour.from_now)
+      result = described_class.call(customer: customer, rule_set: rule_set, base_date: base_date)
+      expect(result.frequency_count).to eq(1)
+      expect(result.last_visit_on).to eq(base_date.prev_day)
+    end
+  end
+
+  it "過去日の退店を後日記録しても次回計算に含める" do
+    create_reservation(date: base_date.prev_day, completed_at: Time.current)
+    result = described_class.call(customer: customer, rule_set: rule_set, base_date: base_date)
+    expect(result.frequency_count).to eq(1)
+    expect(result.last_visit_on).to eq(base_date.prev_day)
   end
 
   private

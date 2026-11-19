@@ -97,6 +97,9 @@ class Reservation < ApplicationRecord
 
   validate :customer_reservation_must_not_overlap
 
+  # 予定日と退店記録がともに確認時刻へ到達した、未取消の来店実績。
+  scope :recorded_visits, ->(as_of: Time.current) { active.where(completed_at: ..as_of).where(starts_at: ..as_of) }
+
   # 検索に使用するスコープ
   scope :ordered, -> { order(:starts_at, :id) }
 

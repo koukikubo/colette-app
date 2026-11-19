@@ -1,6 +1,7 @@
 class Api::V1::DashboardController < Api::V1::BaseController
   def show
-    today = Time.zone.today
+    now = Time.current
+    today = now.to_date
     reservations = Reservation.on_date(today)
     active = reservations.active
     pending = active.where(completed_at: nil)
@@ -9,9 +10,9 @@ class Api::V1::DashboardController < Api::V1::BaseController
       created_by_staff: :staff_master, updated_by_staff: :staff_master).order(:starts_at, :id).limit(10)
     current = RfSetting.first&.current_calculation_run
     monthly = RfCalculationRun.where(execution_source: "monthly").order(scheduled_month: :desc).first
-    render_success(data: { date: today, as_of: Time.current,
+    render_success(data: { date: today, as_of: now,
       summary: { reservation_count: active.count, expected_guest_count: pending.sum(:guest_count),
-        completed_count: active.where.not(completed_at: nil).count, canceled_count: reservations.canceled.count,
+        completed_count: active.recorded_visits(as_of: now).count, canceled_count: reservations.canceled.count,
         unassigned_count: pending.where.not(id: ReservationTable.select(:reservation_id)).count,
         unconfirmed_count: pending.where(details_confirmed_at: nil).count },
       reservations: Api::V1::ReservationSerializer.collection(upcoming),
