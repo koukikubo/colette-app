@@ -179,18 +179,18 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
         <CardContent className="p-0">
           <DetailSection
-            title="日時・人数"
+            title="日時・人数・来店結果"
             description="来店予定と予約人数を確認できます。"
             icon={<CalendarClockIcon className="size-4" />}
           >
             <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
               <DetailItem
-                label="予約開始"
+                label="予約開始予定"
                 value={formatDateTime(reservation.starts_at)}
                 tone="info"
               />
               <DetailItem
-                label="予約終了"
+                label="予約終了予定"
                 value={formatDateTime(reservation.ends_at)}
                 tone="info"
               />
@@ -200,7 +200,11 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                 tone="info"
               />
               <DetailItem
-                label="予約状況"
+                label="受付状態"
+                value={reservation.reservation_status?.label ?? "受付状態不明"}
+              />
+              <DetailItem
+                label="来店結果"
                 tone={isCanceled ? "danger" : "success"}
                 value={
                   <span
@@ -210,7 +214,7 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                         : "font-semibold text-emerald-700"
                     }
                   >
-                    {statusLabel}
+                    {isCompleted || isCanceled ? statusLabel : "未退店"}
                   </span>
                 }
               />
