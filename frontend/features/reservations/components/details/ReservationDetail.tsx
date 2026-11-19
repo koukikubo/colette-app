@@ -183,7 +183,7 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
             description="来店予定と予約人数を確認できます。"
             icon={<CalendarClockIcon className="size-4" />}
           >
-            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
               <DetailItem
                 label="予約開始予定"
                 value={formatDateTime(reservation.starts_at)}
@@ -205,7 +205,9 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
               />
               <DetailItem
                 label="来店結果"
-                tone={isCanceled ? "danger" : "success"}
+                tone={
+                  isCanceled ? "danger" : isCompleted ? "success" : "default"
+                }
                 value={
                   <span
                     className={
@@ -217,6 +219,11 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                     {isCompleted || isCanceled ? statusLabel : "未退店"}
                   </span>
                 }
+              />
+              <DetailItem
+                label="退店処理日時"
+                value={formatDateTime(reservation.completed_at)}
+                tone={isCompleted ? "success" : "default"}
               />
             </dl>
           </DetailSection>
@@ -385,8 +392,7 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
           {isCompleted && (
             <p className="px-5 py-3 text-sm">
-              退店処理日時：{formatDateTime(reservation.completed_at)}
-              （実際の退店時刻ではなく記録日時）
+              退店処理日時は操作を記録した日時であり、実際の退店時刻とは区別されます。
             </p>
           )}
           <DetailSection

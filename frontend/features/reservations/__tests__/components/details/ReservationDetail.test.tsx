@@ -19,6 +19,7 @@ describe("ReservationDetail", () => {
     expect(screen.getByText("受付状態")).toBeInTheDocument();
     expect(screen.getByText("来店結果")).toBeInTheDocument();
     expect(screen.getByText("未退店")).toBeInTheDocument();
+    expect(screen.getByText("退店処理日時")).toBeInTheDocument();
     expect(screen.getAllByText(/山田 太郎/)).toHaveLength(2);
     expect(screen.getByText("2026/09/08 18:00")).toBeInTheDocument();
     expect(screen.getByText("2026/09/08 20:00")).toBeInTheDocument();
