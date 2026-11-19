@@ -66,6 +66,32 @@ RSpec.describe Rf::DailyUpdater do
     expect(second.execution_source).to eq("daily")
   end
 
+  it "後日訂正は翌日の計算だけへ反映し、適用済み履歴を変更しない" do
+    customer = Customer.first!
+    staff = customer.created_by_staff
+    type = create(:standard_list_master, standard_master: create(:standard_master, system_key: "restaurant_master_type"))
+    status = create(:standard_list_master, standard_master: create(:standard_master, system_key: "reservation_status"), code: "confirmed")
+    booking = create(:reservation, customer: customer, requested_restaurant_master_type: type, reservation_status: status,
+      starts_at: Time.zone.local(2026, 11, 13, 18), ends_at: Time.zone.local(2026, 11, 13, 20), completed_at: Time.current,
+      created_by_staff: staff, updated_by_staff: staff)
+    pending = create(:reservation, customer: customer, requested_restaurant_master_type: type, reservation_status: status,
+      starts_at: Time.zone.local(2026, 11, 12, 18), ends_at: Time.zone.local(2026, 11, 12, 20),
+      created_by_staff: staff, updated_by_staff: staff)
+    first = described_class.call(date: "2026-11-14")
+    expect(pending.reload.completed_at).to be_nil
+    expect(first.customer_rf_rank_results.find_by!(customer: customer).frequency_count).to eq(1)
+    original = first.customer_rf_rank_results.find_by!(customer: customer).attributes
+    Reservations::ResultChanger.call(reservation: booking, attributes: { lock_version: 0, visit_result: "no_show" },
+      current_staff: staff, key: SecureRandom.uuid, operation: "correct_result")
+    expect(described_class.call(date: "2026-11-14").id).to eq(first.id)
+    expect(first.customer_rf_rank_results.find_by!(customer: customer).attributes).to eq(original)
+    travel_to(Time.zone.local(2026, 11, 15, 3))
+    second = described_class.call(date: "2026-11-15")
+    expect(second.customer_rf_rank_results.find_by!(customer: customer).frequency_count).to eq(0)
+    expect(second.previous_run_id).to eq(first.id)
+    expect(first.customer_rf_rank_results.find_by!(customer: customer).attributes).to eq(original)
+  end
+
   it "未来日と不正な日付を拒否する" do
     %w[2026-11-15 2026-02-30 invalid].each do |date|
       expect { described_class.call(date: date) }.to raise_error(ArgumentError)

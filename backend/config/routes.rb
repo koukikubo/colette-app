@@ -58,6 +58,9 @@ Rails.application.routes.draw do
           patch :cancel
           patch :reopen
           patch :restore
+          patch :no_show
+          patch :correct_result
+          get :result_changes
           patch :complete
           patch :confirm_details
         end

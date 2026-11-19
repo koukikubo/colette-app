@@ -847,8 +847,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         :reservation,
         reservation_name: "対応完了対象",
         reservation_phone_number: "09011112222",
-        starts_at: reservation_time(Time.zone.today, 18),
-        ends_at: reservation_time(Time.zone.today, 20),
+        starts_at: reservation_time(Time.zone.yesterday, 18),
+        ends_at: reservation_time(Time.zone.yesterday, 20),
         requested_restaurant_master_type: table_type,
         reservation_status: confirmed_status,
         created_by_staff: staff,
@@ -1016,7 +1016,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         "/api/v1/reservations/#{reservation.id}/reopen",
         params: {
           reservation: {
-            lock_version: reservation.lock_version
+            lock_version: reservation.lock_version,
+            reason: "誤操作の訂正"
           }
         },
         headers: csrf_headers
@@ -1042,7 +1043,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         "/api/v1/reservations/#{reservation.id}/reopen",
         params: {
           reservation: {
-            lock_version: reservation.lock_version
+            lock_version: reservation.lock_version,
+            reason: "誤操作の訂正"
           }
         },
         headers: csrf_headers
@@ -1256,7 +1258,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         "/api/v1/reservations/#{reservation.id}/restore",
         params: {
           reservation: {
-            lock_version: reservation.lock_version
+            lock_version: reservation.lock_version,
+            reason: "誤操作の訂正"
           }
         },
         headers: csrf_headers
@@ -1275,6 +1278,7 @@ RSpec.describe "Api::V1::Reservations", type: :request do
     it "キャンセルされていない予約は復元できない" do
       reservation.update!(
         canceled_at: nil,
+        cancellation_kind: nil,
         reservation_status: confirmed_status
       )
 
@@ -1282,7 +1286,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         "/api/v1/reservations/#{reservation.id}/restore",
         params: {
           reservation: {
-            lock_version: reservation.lock_version
+            lock_version: reservation.lock_version,
+            reason: "誤操作の訂正"
           }
         },
         headers: csrf_headers
@@ -1312,7 +1317,8 @@ RSpec.describe "Api::V1::Reservations", type: :request do
         "/api/v1/reservations/#{reservation.id}/restore",
         params: {
           reservation: {
-            lock_version: reservation.lock_version
+            lock_version: reservation.lock_version,
+            reason: "誤操作の訂正"
           }
         },
         headers: csrf_headers

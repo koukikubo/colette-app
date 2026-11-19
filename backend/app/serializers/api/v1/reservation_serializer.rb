@@ -68,6 +68,8 @@ module Api
           details_confirmed_at: resource.details_confirmed_at,
           completed_at: resource.completed_at,
           canceled_at: resource.canceled_at,
+          cancellation_kind: resource.cancellation_kind,
+          visit_result: resource.visit_result,
 
           # 同時更新制御
           lock_version: resource.lock_version,

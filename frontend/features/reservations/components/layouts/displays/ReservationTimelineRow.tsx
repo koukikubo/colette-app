@@ -7,6 +7,7 @@ import {
   getReservationTimelineState,
   getReservationProgressPercentage,
   findNextReservationWarning,
+  findNextScheduledReservation,
 } from "@/features/reservations/utils/reservation-timeline-state";
 import type { ReservationTimelineState } from "@/features/reservations/utils/reservation-timeline-state";
 
@@ -148,6 +149,10 @@ export function ReservationTimelineRow({
             timelineState,
             timelineStartMinutes,
             timelineEndMinutes,
+            nextReservationStartsAt: findNextScheduledReservation(
+              reservation,
+              reservations,
+            )?.starts_at,
           });
 
           const progressPercentage = getReservationProgressPercentage(
@@ -170,6 +175,7 @@ export function ReservationTimelineRow({
             <ReservationBlock
               key={reservation.id}
               reservation={reservation}
+              currentTime={currentTime}
               leftPercentage={position.leftPercentage}
               widthPercentage={position.widthPercentage}
               timelineState={timelineState}
@@ -191,6 +197,7 @@ export function ReservationTimelineRow({
 }
 
 type CalculateReservationPositionParams = {
+  nextReservationStartsAt?: string;
   reservation: Reservation;
   targetDate: string;
   currentTime: Date;
@@ -218,6 +225,7 @@ type ReservationPosition = {
  * 120 ÷ 420 × 100 = 28.57%
  */
 function calculateReservationPosition({
+  nextReservationStartsAt,
   reservation,
   targetDate,
   currentTime,
@@ -235,15 +243,20 @@ function calculateReservationPosition({
     targetDate,
   );
 
+  // 予定枠が表示時間と全く重ならない予約を、超過だけを理由に描画しない。
+  if (
+    reservationEndMinutes <= timelineStartMinutes ||
+    reservationStartMinutes >= timelineEndMinutes
+  )
+    return null;
+
   const currentTimeMinutes = convertToTargetDateMinutes(
     currentTime.toISOString(),
     targetDate,
   );
 
   const canExtendToCurrentTime =
-    timelineState === "overdue" &&
-    currentTimeMinutes >= timelineStartMinutes &&
-    currentTimeMinutes <= timelineEndMinutes;
+    timelineState === "overdue" && currentTimeMinutes >= timelineStartMinutes;
 
   const displayEndMinutes = canExtendToCurrentTime
     ? Math.max(reservationEndMinutes, currentTimeMinutes)
@@ -262,7 +275,15 @@ function calculateReservationPosition({
     timelineStartMinutes,
   );
 
-  const visibleEndMinutes = Math.min(displayEndMinutes, timelineEndMinutes);
+  // 日跨ぎでも表示を縮めず、後続予約の予定枠を覆う延長だけを抑える。
+  const extensionLimit = nextReservationStartsAt
+    ? convertToTargetDateMinutes(nextReservationStartsAt, targetDate)
+    : timelineEndMinutes;
+  const visibleEndMinutes = Math.min(
+    displayEndMinutes,
+    timelineEndMinutes,
+    extensionLimit,
+  );
   //表示範囲と予約時間が重なっていない場合は描画しない。
   if (visibleEndMinutes <= visibleStartMinutes) {
     return null;

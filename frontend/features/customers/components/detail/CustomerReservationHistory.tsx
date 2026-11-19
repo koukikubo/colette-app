@@ -19,6 +19,8 @@ import type { Pagination } from "@/lib/api/pagination";
 import type { Reservation } from "@/features/reservations/types";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
 
+import { reservationResultLabel } from "@/features/reservations/utils/reservation-result";
+
 import { fetchCustomerReservations } from "../../api/customer-api";
 
 type CustomerReservationHistoryProps = {
@@ -51,7 +53,7 @@ function reservationTableNames(reservation: Reservation) {
 }
 
 function reservationStatusLabel(reservation: Reservation) {
-  return reservation.reservation_status?.label ?? "状態不明";
+  return reservationResultLabel(reservation);
 }
 
 export function CustomerReservationHistory({

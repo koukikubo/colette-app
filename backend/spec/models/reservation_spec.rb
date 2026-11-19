@@ -340,7 +340,7 @@ RSpec.describe Reservation, type: :model do
       expect(
         reservation.errors[:base]
       ).to include(
-        "対応完了とキャンセルは同時に設定できません"
+        "退店済とキャンセルは同時に設定できません"
       )
     end
   end

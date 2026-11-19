@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "本日のダッシュボード", type: :request do
   include_context "authenticated request"
   include ActiveSupport::Testing::TimeHelpers
-  before { travel_to Time.zone.local(2026, 11, 13, 12) }
+  before { travel_to Time.zone.local(2026, 11, 13, 21) }
   after { travel_back }
 
   it "未ログインでは取得できない" do

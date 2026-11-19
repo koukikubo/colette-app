@@ -13,12 +13,13 @@ module Rf
     # 【入口】
     # 計算Jobや予定計算サービスから呼び出す。
     # 受け取った値をnewへ渡し、計算用オブジェクトのcallを実行する。
-    def self.call(customer:, rule_set:, base_date:, visit_dates: nil)
+    def self.call(customer:, rule_set:, base_date:, visit_dates: nil, visit_summary: nil)
       new(
         customer: customer,
         rule_set: rule_set,
         base_date: base_date,
-        visit_dates: visit_dates
+        visit_dates: visit_dates,
+        visit_summary: visit_summary
       ).call
     end
 
@@ -35,18 +36,24 @@ module Rf
 
     # 【準備】
     # newによって自動的に呼ばれる。
-    def initialize(customer:, rule_set:, base_date:, visit_dates: nil)
+    def initialize(customer:, rule_set:, base_date:, visit_dates: nil, visit_summary: nil)
       @customer = customer
       @rule_set = rule_set
       @base_date = base_date.to_date
       @visit_dates = visit_dates
+      @visit_summary = visit_summary
+      @as_of = Time.current
     end
 
     # 【計算】
     # 最終来店日と来店回数を求め、RFルールからランクを決定する。
     # どちらの取得方法でも、日付はlast_visit_onにそろえる。
     def call
-      if @visit_dates.nil?
+      if @visit_summary
+        # 日次計算では一つのSQLで固定済みの実績を使い、予約を再読込しない。
+        last_visit_on = @visit_summary.fetch(:last_visit_on)
+        frequency_count = @visit_summary.fetch(:frequency_count)
+      elsif @visit_dates.nil?
         # 通常計算：DBから最終来店日時と来店回数を取得する。
         last_visit_at = completed_visits.maximum(:starts_at)
         last_visit_on = last_visit_at&.in_time_zone&.to_date
@@ -94,8 +101,7 @@ module Rf
       @completed_visits ||=
         customer
           .reservations
-          .where.not(completed_at: nil)
-          .where(canceled_at: nil)
+          .recorded_visits(as_of: @as_of)
           .where(starts_at: aggregation_period)
     end
 

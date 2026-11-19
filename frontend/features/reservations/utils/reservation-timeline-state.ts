@@ -83,28 +83,10 @@ export function findNextReservationWarning(
     return null;
   }
 
-  const currentEndsAt = new Date(currentReservation.ends_at).getTime();
-
-  const nextReservation = reservations
-    .filter((reservation) => {
-      if (reservation.id === currentReservation.id) {
-        return false;
-      }
-
-      if (
-        reservation.completed_at !== null ||
-        reservation.canceled_at !== null
-      ) {
-        return false;
-      }
-
-      return new Date(reservation.starts_at).getTime() >= currentEndsAt;
-    })
-    .sort(
-      (firstReservation, secondReservation) =>
-        new Date(firstReservation.starts_at).getTime() -
-        new Date(secondReservation.starts_at).getTime(),
-    )[0];
+  const nextReservation = findNextScheduledReservation(
+    currentReservation,
+    reservations,
+  );
 
   if (!nextReservation) {
     return null;
@@ -123,4 +105,39 @@ export function findNextReservationWarning(
     nextReservationId: nextReservation.id,
     minutesUntilNextReservation,
   };
+}
+
+// 表示の延長で後続予約を覆わないため、同じ席の次の予定を取得する。
+export function findNextScheduledReservation(
+  current: WarningReservation,
+  reservations: WarningReservation[],
+): WarningReservation | undefined {
+  return reservations
+    .filter(
+      (reservation) =>
+        reservation.id !== current.id &&
+        !reservation.completed_at &&
+        !reservation.canceled_at &&
+        new Date(reservation.starts_at).getTime() >=
+          new Date(current.ends_at).getTime(),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
+    )[0];
+}
+
+// 実入店を推測せず、予定からの経過と退店を記録した日時を区別する。
+export function getReservationTimingLabel(
+  reservation: TimelineStateReservation,
+  now: Date,
+): string | null {
+  const state = getReservationTimelineState(reservation, now);
+  if (state === "completed")
+    return `退店処理 ${new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(reservation.completed_at!))}`;
+  if (state === "in_progress")
+    return `予定開始から${Math.floor((now.getTime() - new Date(reservation.starts_at).getTime()) / 60000)}分`;
+  if (state === "overdue")
+    return `予定終了から${Math.floor((now.getTime() - new Date(reservation.ends_at).getTime()) / 60000)}分超過・退店未処理`;
+  return null;
 }

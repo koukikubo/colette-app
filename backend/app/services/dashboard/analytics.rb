@@ -35,7 +35,7 @@ module Dashboard
       @today = now.in_time_zone.to_date
       @month = @today.beginning_of_month
       @year = @today.beginning_of_year
-      @visits = Reservation.active.where(completed_at: ..now).where(starts_at: ..now)
+      @visits = Reservation.recorded_visits(as_of: now)
     end
 
     def call

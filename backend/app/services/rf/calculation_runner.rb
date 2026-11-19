@@ -62,10 +62,12 @@ module Rf
       excluded_count = 0
 
       ActiveRecord::Base.transaction do
+        # 来店日・回数・対象顧客・手動除外を同一の読取時点で固定する。
+        @inputs = CalculationInputs.call(rule_set: rule_set, base_date: base_date)
         # 強制終了後に再配信された場合も、途中結果を二重作成しない。
         calculation_run.customer_rf_rank_results.delete_all if @recover
         target_customers.find_each do |customer|
-          if customer.excluded_from_rf_calculation?
+          if @inputs.fetch(customer.id).fetch(:excluded)
             create_excluded_result!(
               calculation_run,
               customer
@@ -107,7 +109,8 @@ module Rf
         Rf::CustomerRankCalculator.call(
           customer: customer,
           rule_set: rule_set,
-          base_date: base_date
+          base_date: base_date,
+          visit_summary: @inputs.fetch(customer.id).slice(:last_visit_on, :frequency_count)
         )
 
       calculation_run.customer_rf_rank_results.create!(
@@ -157,7 +160,7 @@ module Rf
     def target_customers
       Customer
         .includes(:customer_rank)
-        .where(hidden_at: nil)
+        .where(id: @inputs.keys)
     end
 
     def mark_as_failed(calculation_run, error)

@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Reservation } from "../../types";
 import { formatReservationDateTimeLocal } from "../../utils/reservation-date";
+import { reservationResultLabel } from "../../utils/reservation-result";
+import { ReservationResultHistory } from "./ReservationResultHistory";
 import { ReservationStatusActions } from "./ReservationStatusActions";
 
 type DetailItemTone = "default" | "info" | "seat" | "success" | "danger";
@@ -114,11 +116,7 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
   ).slice(0, 10);
   const isCompleted = reservation.completed_at !== null;
   const isCanceled = reservation.canceled_at !== null;
-  const statusLabel = isCanceled
-    ? "キャンセル"
-    : isCompleted
-      ? "対応完了"
-      : (reservation.reservation_status?.label ?? "状況不明");
+  const statusLabel = reservationResultLabel(reservation);
   const totalTableCapacity = reservation.restaurant_masters.reduce(
     (total, restaurantMaster) => total + restaurantMaster.capacity,
     0,
@@ -161,36 +159,38 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
               <ReservationStatusActions reservation={reservation} />
 
-              <PermissionGate resource="reservations">
-                <Button asChild size="sm">
-                  {/* 詳細と編集を同じ履歴枠で切り替え、閉じる操作の戻り先を維持する。 */}
-                  <Link
-                    replace
-                    href={"/reservations/" + reservation.id + "/edit"}
-                  >
-                    <PencilIcon />
-                    編集する
-                  </Link>
-                </Button>
-              </PermissionGate>
+              {!isCompleted && (
+                <PermissionGate resource="reservations">
+                  <Button asChild size="sm">
+                    {/* 詳細と編集を同じ履歴枠で切り替え、閉じる操作の戻り先を維持する。 */}
+                    <Link
+                      replace
+                      href={"/reservations/" + reservation.id + "/edit"}
+                    >
+                      <PencilIcon />
+                      編集する
+                    </Link>
+                  </Button>
+                </PermissionGate>
+              )}
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
           <DetailSection
-            title="日時・人数"
+            title="日時・人数・来店結果"
             description="来店予定と予約人数を確認できます。"
             icon={<CalendarClockIcon className="size-4" />}
           >
-            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
               <DetailItem
-                label="予約開始"
+                label="予約開始予定"
                 value={formatDateTime(reservation.starts_at)}
                 tone="info"
               />
               <DetailItem
-                label="予約終了"
+                label="予約終了予定"
                 value={formatDateTime(reservation.ends_at)}
                 tone="info"
               />
@@ -200,8 +200,14 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                 tone="info"
               />
               <DetailItem
-                label="予約状況"
-                tone={isCanceled ? "danger" : "success"}
+                label="受付状態"
+                value={reservation.reservation_status?.label ?? "受付状態不明"}
+              />
+              <DetailItem
+                label="来店結果"
+                tone={
+                  isCanceled ? "danger" : isCompleted ? "success" : "default"
+                }
                 value={
                   <span
                     className={
@@ -210,9 +216,14 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
                         : "font-semibold text-emerald-700"
                     }
                   >
-                    {statusLabel}
+                    {isCompleted || isCanceled ? statusLabel : "未退店"}
                   </span>
                 }
+              />
+              <DetailItem
+                label="退店処理日時"
+                value={formatDateTime(reservation.completed_at)}
+                tone={isCompleted ? "success" : "default"}
               />
             </dl>
           </DetailSection>
@@ -379,6 +390,11 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
             </dl>
           </DetailSection>
 
+          {isCompleted && (
+            <p className="px-5 py-3 text-sm">
+              退店処理日時は操作を記録した日時であり、実際の退店時刻とは区別されます。
+            </p>
+          )}
           <DetailSection
             title="管理情報"
             description="登録・更新を行った担当者と日時です。"
@@ -409,6 +425,10 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
               )}
             </dl>
           </DetailSection>
+          <ReservationResultHistory
+            reservationId={reservation.id}
+            version={reservation.lock_version}
+          />
         </CardContent>
       </Card>
     </main>

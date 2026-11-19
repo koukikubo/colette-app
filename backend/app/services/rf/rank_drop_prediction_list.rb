@@ -30,6 +30,7 @@ module Rf
 
     def initialize(rule_set:, base_date:, until_date:)
       @rule_set = rule_set
+      @as_of = Time.current
 
       # 日付単位で予測するため、受け取った値をDateにそろえる。
       @base_date = base_date.to_date
@@ -126,8 +127,7 @@ module Rf
       # 基準日より後や、集計期間より前の予約は取得しない。
       Reservation
         .where(customer_id: customers.map(&:id))
-        .where.not(completed_at: nil)
-        .where(canceled_at: nil)
+        .recorded_visits(as_of: @as_of)
         .where(starts_at: aggregation_period)
         .pluck(:customer_id, :starts_at)
         .each do |customer_id, starts_at|

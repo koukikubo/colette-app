@@ -48,6 +48,8 @@ export function createReservation(
     details_confirmed_at: null,
     completed_at: null,
     canceled_at: null,
+    cancellation_kind: null,
+    visit_result: "pending",
     lock_version: 0,
 
     created_by_staff: {

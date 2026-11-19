@@ -53,7 +53,7 @@ RSpec.describe "予約の並行操作と割当の原子性", type: :request do
       session, headers = sessions[index]
       if index.zero?
         session.patch "/api/v1/reservations/#{canceled.id}/restore",
-          params: { reservation: { lock_version: canceled.lock_version } }, headers: headers, as: :json
+          params: { reservation: { lock_version: canceled.lock_version, reason: "誤取消の訂正" } }, headers: headers, as: :json
       else
         session.post "/api/v1/reservations", params: { reservation: attributes.merge(restaurant_master_ids: [ seat.id ]) }, headers: headers, as: :json
       end

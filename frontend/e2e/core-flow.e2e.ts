@@ -181,6 +181,8 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
       await page
         .getByLabel("店舗メモ", { exact: true })
         .fill("編集履歴の回帰確認");
+      await page.getByRole("combobox", { name: /^予約状況/ }).click();
+      await page.getByRole("option", { name: "仮予約", exact: true }).click();
       await page
         .getByRole("button", { name: "予約を更新", exact: true })
         .click();
@@ -203,10 +205,108 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
       .getByRole("link", { name: `${name}様の予約詳細を開く`, exact: true })
       .click();
   }
-  await page.getByRole("button", { name: "対応完了", exact: true }).click();
+  // タイムラインのメニューから、仮予約の確定と退店をキーボードで一体処理する。
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page
+    .getByRole("button", { name: `${name}様の予約操作を開く`, exact: true })
+    .click();
+  await page.getByRole("button", { name: "退店済にする", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "対応完了を取り消す" }),
+    page.getByRole("alertdialog", {
+      name: "予約確定と退店を同時に記録しますか？",
+    }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "確定する", exact: true })
+    .press("Enter");
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  const completedLink = page.getByRole("link", {
+    name: `${name}様の予約詳細を開く`,
+    exact: true,
+  });
+  await expect(completedLink.locator("..")).toHaveAttribute(
+    "data-timeline-state",
+    "completed",
+  );
+  await page.keyboard.press("Escape");
+  await completedLink.click();
+  await expect(
+    page.getByRole("dialog", { name: "予約詳細", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "来店結果を訂正", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/manual-checkout-desktop.png",
+    animations: "disabled",
+  });
+
+  // 無断キャンセル訂正は理由不要。Rails保存後に応答を失っても同じキーで復旧する。
+  const correctionUrl = `**/api/v1/reservations/${reservation.id}/correct_result`;
+  await page.route(
+    correctionUrl,
+    async (route) => {
+      const upstream = await route.fetch();
+      expect(upstream.status()).toBe(200);
+      await route.abort("failed");
+    },
+    { times: 1 },
+  );
+  await page
+    .getByRole("button", { name: "来店結果を訂正", exact: true })
+    .click();
+  // ネイティブselectのEndキーはOS差があるため、値選択とTab移動を別々に確認する。
+  await page.getByLabel("訂正後の来店結果").selectOption("no_show");
+  await page.getByLabel("訂正後の来店結果").focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("checkbox", { name: "予約情報も訂正する" }),
+  ).toBeFocused();
+  await expect(page.getByLabel("訂正理由（必須）")).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/manual-checkout-correction-desktop.png",
+    animations: "disabled",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  const correctionBounds = await page.getByRole("alertdialog").boundingBox();
+  expect(correctionBounds).not.toBeNull();
+  expect(correctionBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(correctionBounds!.x + correctionBounds!.width).toBeLessThanOrEqual(
+    390,
+  );
+  await page.screenshot({
+    path: "test-results/manual-checkout-correction-mobile.png",
+    animations: "disabled",
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole("button", { name: "確定する", exact: true }).click();
+  await page
+    .getByRole("button", { name: "同じ操作を再試行", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  let audit = await page.request.get(
+    `/api/v1/reservations/${reservation.id}/result_changes`,
+  );
+  expect(audit.status()).toBe(200);
+  expect((await audit.json()).data.pagination.total_count).toBe(2);
+  await page
+    .getByRole("button", { name: "来店結果を訂正", exact: true })
+    .click();
+  await page.getByLabel("訂正後の来店結果").selectOption("checked_out");
+  await expect(page.getByLabel("訂正理由（必須）")).toHaveCount(0);
+  await page.getByRole("button", { name: "確定する", exact: true }).click();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  audit = await page.request.get(
+    `/api/v1/reservations/${reservation.id}/result_changes`,
+  );
+  expect((await audit.json()).data.pagination.total_count).toBe(3);
 
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page).toHaveURL(/\/reservations\?date=/);

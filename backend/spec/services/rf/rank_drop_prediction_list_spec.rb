@@ -1,6 +1,9 @@
 require "rails_helper"
 
 RSpec.describe Rf::RankDropPredictionList do
+  include ActiveSupport::Testing::TimeHelpers
+  before { travel_to(base_date.end_of_day) }
+  after { travel_back }
   # 9月1日から90日後は11月30日。
   # 翌12月1日にRecency条件が変わる設定で検証する。
   let(:base_date) { Date.new(2026, 11, 29) }

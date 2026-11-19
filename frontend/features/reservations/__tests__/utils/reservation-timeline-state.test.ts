@@ -4,6 +4,7 @@ import {
   getReservationTimelineState,
   getReservationProgressPercentage,
   findNextReservationWarning,
+  getReservationTimingLabel,
 } from "../../utils/reservation-timeline-state";
 
 const baseReservation = {
@@ -191,5 +192,30 @@ describe("getReservationTimelineState", () => {
 
       expect(warning).toBeNull();
     });
+  });
+});
+
+describe("予定経過と退店記録の区別", () => {
+  it("時間経過だけでは実際の滞在と断定しない", () => {
+    expect(
+      getReservationTimingLabel(
+        baseReservation,
+        new Date("2026-09-14T19:00:00+09:00"),
+      ),
+    ).toBe("予定開始から60分");
+    expect(
+      getReservationTimingLabel(
+        baseReservation,
+        new Date("2026-09-15T00:30:00+09:00"),
+      ),
+    ).toBe("予定終了から270分超過・退店未処理");
+  });
+  it("後日の退店記録から実滞在時間を計算しない", () => {
+    const label = getReservationTimingLabel(
+      { ...baseReservation, completed_at: "2026-09-15T10:00:00+09:00" },
+      new Date("2026-09-15T12:00:00+09:00"),
+    );
+    expect(label).toContain("退店処理");
+    expect(label).not.toContain("分超過");
   });
 });

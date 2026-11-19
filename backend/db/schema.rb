@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_19_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -88,6 +88,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
     t.index ["staff_id"], name: "index_reservation_creation_requests_on_staff_id"
   end
 
+  create_table "reservation_result_changes", force: :cascade do |t|
+    t.bigint "reservation_id", null: false
+    t.bigint "staff_id", null: false
+    t.string "operation", null: false
+    t.string "key_digest", null: false
+    t.string "request_digest", null: false
+    t.string "reason", limit: 1000
+    t.jsonb "before_state", null: false
+    t.jsonb "after_state", null: false
+    t.datetime "created_at", null: false
+    t.index ["reservation_id"], name: "index_reservation_result_changes_on_reservation_id"
+    t.index ["staff_id", "key_digest"], name: "index_reservation_result_changes_on_staff_id_and_key_digest", unique: true
+    t.index ["staff_id"], name: "index_reservation_result_changes_on_staff_id"
+  end
+
   create_table "reservation_tables", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "reservation_id", null: false
@@ -124,6 +139,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
     t.datetime "updated_at", null: false
     t.bigint "updated_by_staff_id", null: false
     t.datetime "completed_at"
+    t.string "cancellation_kind"
     t.index ["canceled_at"], name: "index_reservations_on_canceled_at"
     t.index ["completed_at"], name: "index_reservations_on_completed_at"
     t.index ["created_by_staff_id"], name: "index_reservations_on_created_by_staff_id"
@@ -136,6 +152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
     t.index ["starts_at"], name: "index_reservations_on_starts_at"
     t.index ["updated_by_staff_id"], name: "index_reservations_on_updated_by_staff_id"
     t.check_constraint "NOT (completed_at IS NOT NULL AND canceled_at IS NOT NULL)", name: "check_reservations_not_completed_and_canceled"
+    t.check_constraint "canceled_at IS NULL AND cancellation_kind IS NULL OR canceled_at IS NOT NULL AND cancellation_kind IS NOT NULL AND (cancellation_kind::text = ANY (ARRAY['regular'::character varying, 'no_show'::character varying, 'unknown'::character varying]::text[]))", name: "reservation_cancellation_kind_consistent"
     t.check_constraint "char_length(btrim(reservation_name::text)) > 0", name: "check_reservations_name_not_blank"
     t.check_constraint "char_length(btrim(reservation_phone_number::text)) > 0", name: "check_reservations_phone_not_blank"
     t.check_constraint "ends_at > starts_at", name: "check_reservations_ends_at_after_starts_at"
@@ -202,9 +219,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
     t.index ["status"], name: "index_rf_calculation_runs_on_status"
     t.check_constraint "customer_count >= 0", name: "check_rf_calculation_runs_customer_count"
     t.check_constraint "excluded_count >= 0", name: "check_rf_calculation_runs_excluded_count"
-    t.check_constraint "execution_source::text = ANY (ARRAY['manual'::character varying, 'monthly'::character varying, 'daily'::character varying]::text[])", name: "rf_execution_source_valid"
-    t.check_constraint "monthly_apply_state IS NULL OR (monthly_apply_state::text = ANY (ARRAY['pending'::character varying, 'applied'::character varying, 'conflict'::character varying, 'failed'::character varying]::text[]))", name: "rf_monthly_apply_state_valid"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying]::text[])", name: "check_rf_calculation_runs_status"
+    t.check_constraint "execution_source::text = ANY (ARRAY['manual'::character varying::text, 'monthly'::character varying::text, 'daily'::character varying::text])", name: "rf_execution_source_valid"
+    t.check_constraint "monthly_apply_state IS NULL OR (monthly_apply_state::text = ANY (ARRAY['pending'::character varying::text, 'applied'::character varying::text, 'conflict'::character varying::text, 'failed'::character varying::text]))", name: "rf_monthly_apply_state_valid"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'processing'::character varying::text, 'completed'::character varying::text, 'failed'::character varying::text])", name: "check_rf_calculation_runs_status"
     t.check_constraint "unmatched_count >= 0", name: "check_rf_calculation_runs_unmatched_count"
   end
 
@@ -273,7 +290,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
     t.check_constraint "aggregation_months > 0", name: "check_rf_rule_sets_aggregation_months"
     t.check_constraint "frequency_window_months <= aggregation_months", name: "check_rf_rule_sets_frequency_within_aggregation"
     t.check_constraint "frequency_window_months > 0", name: "check_rf_rule_sets_frequency_window_months"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying]::text[])", name: "check_rf_rule_sets_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'published'::character varying::text, 'archived'::character varying::text])", name: "check_rf_rule_sets_status"
   end
 
   create_table "rf_settings", force: :cascade do |t|
@@ -376,6 +393,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_060000) do
   add_foreign_key "customers", "standard_list_masters", column: "customer_rank_id"
   add_foreign_key "reservation_creation_requests", "reservations"
   add_foreign_key "reservation_creation_requests", "staffs"
+  add_foreign_key "reservation_result_changes", "reservations"
+  add_foreign_key "reservation_result_changes", "staffs"
   add_foreign_key "reservation_tables", "reservations"
   add_foreign_key "reservation_tables", "restaurant_masters"
   add_foreign_key "reservations", "customers"

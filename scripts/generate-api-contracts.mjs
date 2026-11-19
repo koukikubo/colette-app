@@ -53,13 +53,19 @@ route(
 const reservations = "reservations/api/reservation_api";
 route(
   "GET",
+  "reservations/:id/result_changes",
+  "reservation",
+  client(reservations, "fetchReservationResultChanges"),
+);
+route(
+  "GET",
   "reservations",
   "reservation",
   client(reservations, "fetchReservations"),
 );
 route(
   "GET|POST|PATCH",
-  "reservations(?:/:id(?:/cancel|/restore|/complete|/reopen|/confirm_details)?)?",
+  "reservations(?:/:id(?:/cancel|/restore|/complete|/reopen|/no_show|/correct_result|/confirm_details)?)?",
   "reservation",
   client(reservations, "fetchReservation"),
 );

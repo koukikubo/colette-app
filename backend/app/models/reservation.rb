@@ -35,6 +35,19 @@ class Reservation < ApplicationRecord
   has_many :restaurant_masters,
           through: :reservation_tables
 
+  has_many :reservation_result_changes, dependent: :restrict_with_error
+
+  # 来店結果は既存日時から導出し、受付状態の基本コードとは分ける。
+  def visit_result
+    return "no_show" if canceled_at && cancellation_kind == "no_show"
+    return "canceled" if canceled_at
+    completed_at ? "checked_out" : "pending"
+  end
+
+  # 旧データ／内部取込の取消は、根拠なく通常・無断へ分類しない。
+  before_validation { self.cancellation_kind ||= "unknown" if canceled_at.present? }
+  validates :cancellation_kind, inclusion: { in: %w[regular no_show unknown] }, allow_nil: true
+
   # 入力チェック
   validates :reservation_name,
             presence: true,
@@ -83,6 +96,9 @@ class Reservation < ApplicationRecord
             }
 
   validate :customer_reservation_must_not_overlap
+
+  # 予定日と退店記録がともに確認時刻へ到達した、未取消の来店実績。
+  scope :recorded_visits, ->(as_of: Time.current) { active.where(completed_at: ..as_of).where(starts_at: ..as_of) }
 
   # 検索に使用するスコープ
   scope :ordered, -> { order(:starts_at, :id) }
@@ -192,7 +208,7 @@ class Reservation < ApplicationRecord
 
     errors.add(
       :base,
-      "対応完了とキャンセルは同時に設定できません"
+      "退店済とキャンセルは同時に設定できません"
     )
   end
 end

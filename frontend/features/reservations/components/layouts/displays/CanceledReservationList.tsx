@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ReservationStatusActions } from "@/features/reservations/components/details/ReservationStatusActions";
 import type { Reservation } from "@/features/reservations/types";
+import { reservationResultLabel } from "../../../utils/reservation-result";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
 
 type CanceledReservationListProps = {
@@ -48,6 +49,7 @@ export function CanceledReservationList({
                   {reservation.reservation_name}
                 </Link>
 
+                <p className="text-sm">{reservationResultLabel(reservation)}</p>
                 <p className="text-sm text-muted-foreground">
                   <span>{reservation.guest_count}名</span>
                   {" / "}
