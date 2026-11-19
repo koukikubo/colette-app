@@ -29,7 +29,7 @@ describe("ReservationDetail", () => {
       "/reservations/30/edit",
     );
     expect(
-      screen.getByRole("button", { name: "対応完了" }),
+      screen.getByRole("button", { name: "退店済にする" }),
     ).toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe("ReservationDetail", () => {
 
     expect(screen.getAllByText("キャンセル")).toHaveLength(2);
     expect(
-      screen.queryByRole("button", { name: "対応完了" }),
+      screen.queryByRole("button", { name: "退店済にする" }),
     ).not.toBeInTheDocument();
   });
 
@@ -63,9 +63,9 @@ describe("ReservationDetail", () => {
       />,
     );
 
-    expect(screen.getAllByText("対応完了")).toHaveLength(2);
+    expect(screen.getAllByText("退店済")).toHaveLength(2);
     expect(
-      screen.queryByRole("button", { name: "対応完了" }),
+      screen.queryByRole("button", { name: "退店済にする" }),
     ).not.toBeInTheDocument();
   });
 });

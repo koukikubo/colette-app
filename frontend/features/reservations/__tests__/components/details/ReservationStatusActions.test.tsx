@@ -2,266 +2,309 @@ import { screen, waitFor } from "@testing-library/react";
 import { renderWithOwner as render } from "@/test-utils/auth";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import { ApiClientError } from "@/lib/api/api-client";
 import { createReservation } from "../../fixtures/reservation-fixtures";
 import { ReservationStatusActions } from "@/features/reservations/components/details/ReservationStatusActions";
 
 const mocks = vi.hoisted(() => ({
   completeReservation: vi.fn(),
-  reopenReservation: vi.fn(),
   cancelReservation: vi.fn(),
-  restoreReservation: vi.fn(),
+  noShowReservation: vi.fn(),
+  correctReservationResult: vi.fn(),
+  confirmReservationDetails: vi.fn(),
   refresh: vi.fn(),
+  fetchReservation: vi.fn(),
 }));
-
-vi.mock("@/features/reservations/api/reservation_api", () => ({
-  completeReservation: mocks.completeReservation,
-  reopenReservation: mocks.reopenReservation,
-  cancelReservation: mocks.cancelReservation,
-  restoreReservation: mocks.restoreReservation,
-}));
-
+vi.mock("@/features/reservations/api/reservation_api", () => mocks);
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    refresh: mocks.refresh,
-  }),
+  useRouter: () => ({ refresh: mocks.refresh }),
 }));
+const booking = () =>
+  createReservation({ details_confirmed_at: "2026-09-08T17:00:00+09:00" });
 
 describe("ReservationStatusActions", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
-  it("未完了の予約には対応完了ボタンを表示する", () => {
+  it("手動退店と無断キャンセルを表示し、未来予約では操作できない", () => {
     render(
       <ReservationStatusActions
         reservation={createReservation({
-          completed_at: null,
-          canceled_at: null,
+          starts_at: "2099-01-01T18:00:00+09:00",
         })}
       />,
     );
-
+    expect(screen.getByRole("button", { name: "退店済にする" })).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "対応完了" }),
-    ).toBeInTheDocument();
+      screen.getByRole("button", { name: "無断キャンセル" }),
+    ).toBeDisabled();
   });
 
-  it("対応完了ボタンから予約を完了できる", async () => {
+  it("退店を記録し、画面内の状態を更新する", async () => {
     const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    const reservation = createReservation({
-      id: 30,
-      lock_version: 2,
-      completed_at: null,
-      canceled_at: null,
-    });
-
+    const reservation = booking();
     mocks.completeReservation.mockResolvedValue({
       data: {
         reservation: {
           ...reservation,
-          completed_at: "2026-09-12T20:30:00+09:00",
+          completed_at: "2026-09-08T20:00:00+09:00",
+          lock_version: 1,
+        },
+      },
+    });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "退店済にする" }));
+    expect(mocks.completeReservation).toHaveBeenCalledWith(
+      1,
+      { reservation: { lock_version: 0 } },
+      expect.any(String),
+    );
+    expect(
+      await screen.findByRole("button", { name: "来店結果を訂正" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "退店済にする" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("仮予約は確認してから確定と退店を一体で送信する", async () => {
+    const user = userEvent.setup();
+    const reservation = createReservation({
+      reservation_status: { id: 2, code: "tentative", label: "仮予約" },
+    });
+    mocks.completeReservation.mockResolvedValue({
+      data: {
+        reservation: {
+          ...reservation,
+          completed_at: "2026-09-08T20:00:00+09:00",
+          lock_version: 1,
+        },
+      },
+    });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "退店済にする" }));
+    expect(mocks.completeReservation).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("予約確定と退店を同時に記録しますか？"),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "確定する" }));
+    expect(mocks.completeReservation).toHaveBeenCalledWith(
+      1,
+      { reservation: { lock_version: 0, confirm_tentative: true } },
+      expect.any(String),
+    );
+  });
+
+  it("無断キャンセルに関わる訂正では理由欄を要求しない", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReservationStatusActions
+        reservation={createReservation({
+          completed_at: "2026-09-08T20:00:00+09:00",
+        })}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "来店結果を訂正" }));
+    expect(screen.getByRole("button", { name: "確定する" })).toBeDisabled();
+    await user.type(
+      screen.getByLabelText("訂正理由（必須）"),
+      "通常訂正で入力した理由",
+    );
+    await user.selectOptions(
+      screen.getByLabelText("訂正後の来店結果"),
+      "no_show",
+    );
+    expect(screen.queryByLabelText("訂正理由（必須）")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "確定する" })).toBeEnabled();
+    mocks.correctReservationResult.mockResolvedValue({
+      data: {
+        reservation: createReservation({
+          canceled_at: "2026-09-08T20:00:00+09:00",
+          cancellation_kind: "no_show",
+          lock_version: 1,
+        }),
+      },
+    });
+    await user.click(screen.getByRole("button", { name: "確定する" }));
+    expect(mocks.correctReservationResult).toHaveBeenCalledWith(
+      1,
+      { reservation: { lock_version: 0, visit_result: "no_show", reason: "" } },
+      expect.any(String),
+    );
+  });
+
+  it("無断キャンセルからの訂正も理由不要", async () => {
+    const user = userEvent.setup();
+    const reservation = createReservation({
+      canceled_at: "2026-09-08T20:00:00+09:00",
+      cancellation_kind: "no_show",
+    });
+    mocks.correctReservationResult.mockResolvedValue({
+      data: {
+        reservation: {
+          ...reservation,
+          canceled_at: null,
+          cancellation_kind: null,
+          lock_version: 1,
+        },
+      },
+    });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "来店結果を訂正" }));
+    await user.click(screen.getByRole("button", { name: "確定する" }));
+    expect(mocks.correctReservationResult).toHaveBeenCalledWith(
+      1,
+      { reservation: { lock_version: 0, visit_result: "pending", reason: "" } },
+      expect.any(String),
+    );
+  });
+
+  it("通常の訂正には理由を入力して1回で送信する", async () => {
+    const user = userEvent.setup();
+    const reservation = createReservation({
+      completed_at: "2026-09-08T20:00:00+09:00",
+    });
+    mocks.correctReservationResult.mockResolvedValue({
+      data: {
+        reservation: {
+          ...reservation,
+          completed_at: null,
+          canceled_at: "2026-09-08T20:00:00+09:00",
+          lock_version: 1,
+        },
+      },
+    });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "来店結果を訂正" }));
+    await user.selectOptions(
+      screen.getByLabelText("訂正後の来店結果"),
+      "canceled",
+    );
+    await user.type(
+      screen.getByLabelText("訂正理由（必須）"),
+      "誤った退店操作",
+    );
+    await user.click(screen.getByRole("button", { name: "確定する" }));
+    expect(mocks.correctReservationResult).toHaveBeenCalledWith(
+      1,
+      {
+        reservation: {
+          lock_version: 0,
+          visit_result: "canceled",
+          reason: "誤った退店操作",
+        },
+      },
+      expect.any(String),
+    );
+  });
+
+  it("応答喪失の再送では同じ入力・キーを使用する", async () => {
+    const user = userEvent.setup();
+    const reservation = booking();
+    mocks.completeReservation
+      .mockRejectedValueOnce(new ApiClientError("通信失敗", 502))
+      .mockResolvedValueOnce({
+        data: {
+          reservation: {
+            ...reservation,
+            completed_at: "2026-09-08T20:00:00+09:00",
+            lock_version: 1,
+          },
+        },
+      });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "退店済にする" }));
+    await user.click(
+      await screen.findByRole("button", { name: "同じ操作を再試行" }),
+    );
+    expect(mocks.completeReservation.mock.calls[1]).toEqual(
+      mocks.completeReservation.mock.calls[0],
+    );
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
+  });
+
+  it("保存後の一覧更新失敗を保存失敗として案内しない", async () => {
+    const user = userEvent.setup();
+    const reservation = booking();
+    mocks.completeReservation.mockResolvedValue({
+      data: {
+        reservation: {
+          ...reservation,
+          completed_at: "2026-09-08T20:00:00+09:00",
+          lock_version: 1,
+        },
+      },
+    });
+    render(
+      <ReservationStatusActions
+        reservation={reservation}
+        onStatusChanged={() => {
+          throw new Error("GET失敗");
+        }}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "退店済にする" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("保存済み");
+    expect(
+      screen.queryByRole("button", { name: "同じ操作を再試行" }),
+    ).not.toBeInTheDocument();
+  });
+  it("409では最新内容と比較するまで確定を止め、理由を保持して再編集する", async () => {
+    const user = userEvent.setup();
+    const reservation = createReservation({
+      completed_at: "2026-09-08T20:00:00+09:00",
+    });
+    mocks.correctReservationResult.mockRejectedValueOnce(
+      new ApiClientError("競合", 409),
+    );
+    mocks.fetchReservation.mockResolvedValue({
+      data: {
+        reservation: { ...reservation, guest_count: 3, lock_version: 2 },
+      },
+    });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "来店結果を訂正" }));
+    await user.selectOptions(
+      screen.getByLabelText("訂正後の来店結果"),
+      "canceled",
+    );
+    await user.type(
+      screen.getByLabelText("訂正理由（必須）"),
+      "入力保全の確認",
+    );
+    await user.click(screen.getByRole("button", { name: "確定する" }));
+    expect(
+      await screen.findByRole("button", { name: "確定する" }),
+    ).toBeDisabled();
+    await user.click(
+      screen.getByRole("button", { name: "最新内容を確認して訂正を続ける" }),
+    );
+    expect(screen.getByLabelText("訂正理由（必須）")).toHaveValue(
+      "入力保全の確認",
+    );
+    expect(screen.getByRole("button", { name: "確定する" })).toBeEnabled();
+    mocks.correctReservationResult.mockResolvedValueOnce({
+      data: {
+        reservation: {
+          ...reservation,
+          completed_at: null,
+          canceled_at: "2026-09-08T20:00:00+09:00",
           lock_version: 3,
         },
       },
     });
-
-    render(
-      <ReservationStatusActions
-        reservation={reservation}
-        onStatusChanged={onStatusChanged}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "対応完了" }));
-
-    expect(mocks.completeReservation).toHaveBeenCalledWith(30, {
-      reservation: {
-        lock_version: 2,
-      },
-    });
-
-    await waitFor(() => {
-      expect(onStatusChanged).toHaveBeenCalledOnce();
-      expect(mocks.refresh).toHaveBeenCalledOnce();
-    });
-  });
-
-  it("対応完了済み予約には取り消しボタンを表示する", () => {
-    render(
-      <ReservationStatusActions
-        reservation={createReservation({
-          completed_at: "2026-09-12T20:30:00+09:00",
-        })}
-      />,
-    );
-
-    expect(
-      screen.getByRole("button", {
-        name: "対応完了を取り消す",
-      }),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByRole("button", { name: "対応 対応完了" }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("予約状態を維持して対応完了を取り消せる", async () => {
-    const user = userEvent.setup();
-    const onStatusChanged = vi.fn();
-    const reservation = createReservation({
-      id: 30,
-      lock_version: 3,
-      completed_at: "2026-09-12T20:30:00+09:00",
-    });
-
-    mocks.reopenReservation.mockResolvedValue({
-      data: {
+    await user.click(screen.getByRole("button", { name: "確定する" }));
+    expect(mocks.correctReservationResult).toHaveBeenLastCalledWith(
+      1,
+      {
         reservation: {
-          ...reservation,
-          reservation_status: {
-            id: 1,
-            code: "confirmed",
-            label: "予約確定",
-          },
-          completed_at: null,
-          lock_version: 4,
+          lock_version: 2,
+          visit_result: "canceled",
+          reason: "入力保全の確認",
         },
       },
-    });
-
-    render(
-      <ReservationStatusActions
-        reservation={reservation}
-        onStatusChanged={onStatusChanged}
-      />,
+      expect.any(String),
     );
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "対応完了を取り消す",
-      }),
-    );
-
-    expect(mocks.reopenReservation).toHaveBeenCalledWith(30, {
-      reservation: {
-        lock_version: 3,
-      },
-    });
-
-    await waitFor(() => {
-      expect(onStatusChanged).toHaveBeenCalledOnce();
-      expect(mocks.refresh).toHaveBeenCalledOnce();
-    });
-  });
-
-  it("未完了の予約にはキャンセルボタンを表示する", () => {
-    render(
-      <ReservationStatusActions
-        reservation={createReservation({
-          completed_at: null,
-          canceled_at: null,
-        })}
-      />,
-    );
-
-    expect(
-      screen.getByRole("button", { name: "予約をキャンセル" }),
-    ).toBeInTheDocument();
-  });
-
-  it("確認後に予約をキャンセルできる", async () => {
-    const user = userEvent.setup();
-    const reservation = createReservation({
-      id: 30,
-      lock_version: 2,
-      completed_at: null,
-      canceled_at: null,
-    });
-
-    mocks.cancelReservation.mockResolvedValue({});
-
-    render(<ReservationStatusActions reservation={reservation} />);
-
-    await user.click(screen.getByRole("button", { name: "予約をキャンセル" }));
-
-    expect(
-      screen.getByRole("alertdialog", {
-        name: "予約をキャンセルしますか？",
-      }),
-    ).toBeInTheDocument();
-
-    expect(mocks.cancelReservation).not.toHaveBeenCalled();
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "キャンセルを確定",
-      }),
-    );
-
-    expect(mocks.cancelReservation).toHaveBeenCalledWith(30, {
-      reservation: {
-        lock_version: 2,
-      },
-    });
-
-    await waitFor(() => {
-      expect(mocks.refresh).toHaveBeenCalledOnce();
-    });
-  });
-
-  it("キャンセル済み予約には復元ボタンを表示する", () => {
-    render(
-      <ReservationStatusActions
-        reservation={createReservation({
-          completed_at: null,
-          canceled_at: "2026-09-12T18:00:00+09:00",
-        })}
-      />,
-    );
-
-    expect(
-      screen.getByRole("button", { name: "予約を復元" }),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByRole("button", { name: "対応完了" }),
-    ).not.toBeInTheDocument();
-
-    expect(
-      screen.queryByRole("button", { name: "予約をキャンセル" }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("キャンセル済み予約を復元できる", async () => {
-    const user = userEvent.setup();
-    const reservation = createReservation({
-      id: 30,
-      lock_version: 3,
-      completed_at: null,
-      canceled_at: "2026-09-12T18:00:00+09:00",
-    });
-
-    mocks.restoreReservation.mockResolvedValue({});
-
-    render(<ReservationStatusActions reservation={reservation} />);
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "予約を復元",
-      }),
-    );
-
-    expect(mocks.restoreReservation).toHaveBeenCalledWith(30, {
-      reservation: {
-        lock_version: 3,
-      },
-    });
-
-    await waitFor(() => {
-      expect(mocks.refresh).toHaveBeenCalledOnce();
-    });
   });
 });

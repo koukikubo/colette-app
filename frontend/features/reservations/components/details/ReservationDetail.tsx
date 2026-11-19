@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Reservation } from "../../types";
 import { formatReservationDateTimeLocal } from "../../utils/reservation-date";
+import { reservationResultLabel } from "../../utils/reservation-result";
+import { ReservationResultHistory } from "./ReservationResultHistory";
 import { ReservationStatusActions } from "./ReservationStatusActions";
 
 type DetailItemTone = "default" | "info" | "seat" | "success" | "danger";
@@ -114,11 +116,7 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
   ).slice(0, 10);
   const isCompleted = reservation.completed_at !== null;
   const isCanceled = reservation.canceled_at !== null;
-  const statusLabel = isCanceled
-    ? "キャンセル"
-    : isCompleted
-      ? "対応完了"
-      : (reservation.reservation_status?.label ?? "状況不明");
+  const statusLabel = reservationResultLabel(reservation);
   const totalTableCapacity = reservation.restaurant_masters.reduce(
     (total, restaurantMaster) => total + restaurantMaster.capacity,
     0,
@@ -161,18 +159,20 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
               <ReservationStatusActions reservation={reservation} />
 
-              <PermissionGate resource="reservations">
-                <Button asChild size="sm">
-                  {/* 詳細と編集を同じ履歴枠で切り替え、閉じる操作の戻り先を維持する。 */}
-                  <Link
-                    replace
-                    href={"/reservations/" + reservation.id + "/edit"}
-                  >
-                    <PencilIcon />
-                    編集する
-                  </Link>
-                </Button>
-              </PermissionGate>
+              {!isCompleted && (
+                <PermissionGate resource="reservations">
+                  <Button asChild size="sm">
+                    {/* 詳細と編集を同じ履歴枠で切り替え、閉じる操作の戻り先を維持する。 */}
+                    <Link
+                      replace
+                      href={"/reservations/" + reservation.id + "/edit"}
+                    >
+                      <PencilIcon />
+                      編集する
+                    </Link>
+                  </Button>
+                </PermissionGate>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -379,6 +379,12 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
             </dl>
           </DetailSection>
 
+          {isCompleted && (
+            <p className="px-5 py-3 text-sm">
+              退店処理日時：{formatDateTime(reservation.completed_at)}
+              （実際の退店時刻ではなく記録日時）
+            </p>
+          )}
           <DetailSection
             title="管理情報"
             description="登録・更新を行った担当者と日時です。"
@@ -409,6 +415,10 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
               )}
             </dl>
           </DetailSection>
+          <ReservationResultHistory
+            reservationId={reservation.id}
+            version={reservation.lock_version}
+          />
         </CardContent>
       </Card>
     </main>

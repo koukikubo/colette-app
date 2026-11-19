@@ -11,7 +11,7 @@ import userEvent from "@testing-library/user-event";
 const mocks = vi.hoisted(() => ({
   fetchReservations: vi.fn(),
   fetchRestaurantMasters: vi.fn(),
-  restoreReservation: vi.fn(),
+  correctReservationResult: vi.fn(),
   refresh: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/features/reservations/api/reservation_api", () => ({
   fetchReservations: mocks.fetchReservations,
-  restoreReservation: mocks.restoreReservation,
+  correctReservationResult: mocks.correctReservationResult,
 }));
 
 vi.mock("@/features/restaurant-masters/api/restaurant-masters-api", () => ({
@@ -864,7 +864,7 @@ describe("ReservationListPage", () => {
 
     expect(
       within(canceledSection).getByRole("button", {
-        name: "予約を復元",
+        name: "来店結果を訂正",
       }),
     ).toBeInTheDocument();
   });
@@ -904,7 +904,7 @@ describe("ReservationListPage", () => {
       },
     });
 
-    mocks.restoreReservation.mockResolvedValue({
+    mocks.correctReservationResult.mockResolvedValue({
       status: "success",
       data: {
         reservation: restoredReservation,
@@ -920,16 +920,24 @@ describe("ReservationListPage", () => {
     await user.click(drawerTrigger);
 
     const restoreButton = await screen.findByRole("button", {
-      name: "予約を復元",
+      name: "来店結果を訂正",
     });
 
     await user.click(restoreButton);
+    await user.type(screen.getByLabelText("訂正理由（必須）"), "誤取消の訂正");
+    await user.click(screen.getByRole("button", { name: "確定する" }));
 
-    expect(mocks.restoreReservation).toHaveBeenCalledWith(30, {
-      reservation: {
-        lock_version: canceledReservation.lock_version,
+    expect(mocks.correctReservationResult).toHaveBeenCalledWith(
+      30,
+      {
+        reservation: {
+          lock_version: canceledReservation.lock_version,
+          visit_result: "pending",
+          reason: "誤取消の訂正",
+        },
       },
-    });
+      expect.any(String),
+    );
 
     const updatedDrawerTrigger = await screen.findByRole("button", {
       name: "キャンセル済み予約0件を表示",
@@ -937,7 +945,8 @@ describe("ReservationListPage", () => {
 
     expect(updatedDrawerTrigger).toHaveTextContent("0件");
 
-    await user.click(updatedDrawerTrigger);
+    if (updatedDrawerTrigger.getAttribute("data-state") !== "open")
+      await user.click(updatedDrawerTrigger);
 
     expect(
       await screen.findByText("キャンセル済みの予約はありません。"),

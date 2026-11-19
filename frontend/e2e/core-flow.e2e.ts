@@ -203,10 +203,48 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
       .getByRole("link", { name: `${name}様の予約詳細を開く`, exact: true })
       .click();
   }
-  await page.getByRole("button", { name: "対応完了", exact: true }).click();
+  await page.getByRole("button", { name: "退店済にする", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "対応完了を取り消す" }),
+    page.getByRole("button", { name: "来店結果を訂正" }),
   ).toBeVisible();
+
+  // 無断キャンセル訂正は理由不要。Rails保存後に応答を失っても同じキーで復旧する。
+  const correctionUrl = `**/api/v1/reservations/${reservation.id}/correct_result`;
+  await page.route(
+    correctionUrl,
+    async (route) => {
+      const upstream = await route.fetch();
+      expect(upstream.status()).toBe(200);
+      await route.abort("failed");
+    },
+    { times: 1 },
+  );
+  await page
+    .getByRole("button", { name: "来店結果を訂正", exact: true })
+    .click();
+  await page.getByLabel("訂正後の来店結果").selectOption("no_show");
+  await expect(page.getByLabel("訂正理由（必須）")).toHaveCount(0);
+  await page.getByRole("button", { name: "確定する", exact: true }).click();
+  await page
+    .getByRole("button", { name: "同じ操作を再試行", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  let audit = await page.request.get(
+    `/api/v1/reservations/${reservation.id}/result_changes`,
+  );
+  expect(audit.status()).toBe(200);
+  expect((await audit.json()).data.pagination.total_count).toBe(2);
+  await page
+    .getByRole("button", { name: "来店結果を訂正", exact: true })
+    .click();
+  await page.getByLabel("訂正後の来店結果").selectOption("checked_out");
+  await expect(page.getByLabel("訂正理由（必須）")).toHaveCount(0);
+  await page.getByRole("button", { name: "確定する", exact: true }).click();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  audit = await page.request.get(
+    `/api/v1/reservations/${reservation.id}/result_changes`,
+  );
+  expect((await audit.json()).data.pagination.total_count).toBe(3);
 
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(page).toHaveURL(/\/reservations\?date=/);

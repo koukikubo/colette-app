@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Reservation } from "@/features/reservations/types";
+import { reservationResultLabel } from "../../../utils/reservation-result";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
 import type {
   NextReservationWarning,
@@ -87,6 +88,13 @@ export function ReservationBlock({
 
         <div className="relative z-10 flex items-center gap-1 text-sm font-medium">
           <span className="truncate">{reservation.reservation_name}</span>
+          <span className="shrink-0 rounded bg-background/80 px-1 text-[10px]">
+            {timelineState === "in_progress"
+              ? "予約時間中"
+              : timelineState === "overdue"
+                ? "退店未処理"
+                : reservationResultLabel(reservation)}
+          </span>
         </div>
 
         <div className="text-muted-foreground relative z-10 truncate text-xs">
@@ -94,6 +102,9 @@ export function ReservationBlock({
           {startTime}〜{endTime}
         </div>
       </Link>
+      <span className="sr-only">
+        予約時間は予定です。時間経過だけでは来店実績になりません。
+      </span>
       <div className="absolute right-1 top-1 z-20 flex items-center gap-1">
         {nextReservationWarning ? (
           <ReservationWarningDialog

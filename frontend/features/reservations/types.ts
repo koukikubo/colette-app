@@ -36,6 +36,8 @@ export type ReservationStaff = {
   name: string | null;
 };
 
+export type VisitResult = "pending" | "checked_out" | "canceled" | "no_show";
+
 // Railsから返ってくる登録済み予約
 export type Reservation = {
   id: number;
@@ -87,6 +89,8 @@ export type Reservation = {
   details_confirmed_at: string | null;
   completed_at: string | null;
   canceled_at: string | null;
+  cancellation_kind: "regular" | "no_show" | "unknown" | null;
+  visit_result: VisitResult;
 
   // 楽観ロック
   lock_version: number;
@@ -174,20 +178,30 @@ export type ReservationUpdateRequest = {
 export type ReservationStatusActionRequest = {
   reservation: {
     lock_version: number;
+    reason?: string;
+    confirm_tentative?: boolean;
+    visit_result?: VisitResult;
+    booking?: Pick<
+      ReservationUpdateAttributes,
+      "starts_at" | "ends_at" | "customer_id" | "guest_count"
+    >;
   };
 };
 
-export type ReservationListState = "active" | "canceled";
+export type ReservationListState = "active" | "canceled" | "pending_checkout";
 
 // 予約一覧APIへ渡す検索条件
 export type ReservationListParams = {
   date?: string;
   state?: ReservationListState;
+  page?: number;
+  per_page?: number;
 };
 
 // 予約一覧APIのdata部分
 export type ReservationListData = {
   reservations: Reservation[];
+  pagination?: import("@/lib/api/pagination").Pagination;
 };
 
 // 予約1件取得・登録・更新APIのdata部分
@@ -200,3 +214,28 @@ export type ReservationListResponse = ApiSuccessResponse<ReservationListData>;
 
 // 予約詳細・登録・更新API全体のレスポンス
 export type ReservationResponse = ApiSuccessResponse<ReservationData>;
+
+export type ReservationResultSnapshot = {
+  customer_id: number | null;
+  reservation_status_id: number;
+  starts_at: string;
+  ends_at: string;
+  guest_count: number;
+  completed_at: string | null;
+  canceled_at: string | null;
+  cancellation_kind: "regular" | "no_show" | "unknown" | null;
+  lock_version: number;
+  restaurant_master_ids: number[];
+};
+export type ReservationResultChangesData = {
+  changes: {
+    id: number;
+    operation: string;
+    reason: string | null;
+    created_at: string;
+    staff_name: string | null;
+    before_state: ReservationResultSnapshot;
+    after_state: ReservationResultSnapshot;
+  }[];
+  pagination: import("@/lib/api/pagination").Pagination;
+};

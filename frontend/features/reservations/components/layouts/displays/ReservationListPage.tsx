@@ -16,6 +16,7 @@ import {
 import { ReservationTimeline } from "./ReservationTimeline";
 import { UnassignedReservationList } from "./UnassignedReservationList";
 import { useCurrentTime } from "@/features/reservations/hooks/useCurrentTime";
+import { PendingCheckoutList } from "./PendingCheckoutList";
 import { CanceledReservationDrawer } from "./CanceledReservationDrawer";
 
 type ReservationListPageProps = {
@@ -148,6 +149,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   return (
     <div className="space-y-4">
+      <PendingCheckoutList />
       <p className="text-sm text-muted-foreground">
         空き枠を選ぶと、日付・開始時間・席を入力した予約フォームを開きます。最新の空き状況は保存時に確認します。
       </p>
