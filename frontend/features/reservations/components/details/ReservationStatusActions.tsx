@@ -315,7 +315,7 @@ function ReservationStatusActionsContent({
       <AlertDialog
         open={dialog !== null}
         onOpenChange={(open) => {
-          if (!open && !busy && !uncertain) setDialog(null);
+          if (!open && !busy) setDialog(null);
         }}
       >
         <AlertDialogContent className="max-h-[85dvh] overflow-y-auto">
@@ -405,9 +405,7 @@ function ReservationStatusActionsContent({
             </Button>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy || uncertain}>
-              戻る
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>戻る</AlertDialogCancel>
             <Button
               disabled={busy || conflict || (needsReason && !reason.trim())}
               onClick={() => dialog && void submit(dialog)}

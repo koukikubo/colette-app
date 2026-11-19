@@ -307,4 +307,30 @@ describe("ReservationStatusActions", () => {
       expect.any(String),
     );
   });
+  it("保存結果が不明でも確認画面を閉じられ、同じ操作を保って再試行できる", async () => {
+    const user = userEvent.setup();
+    const reservation = booking();
+    mocks.cancelReservation
+      .mockRejectedValueOnce(new ApiClientError("通信失敗", 502))
+      .mockResolvedValueOnce({
+        data: {
+          reservation: {
+            ...reservation,
+            canceled_at: "2026-09-08T20:00:00+09:00",
+            cancellation_kind: "regular",
+            lock_version: 1,
+          },
+        },
+      });
+    render(<ReservationStatusActions reservation={reservation} />);
+    await user.click(screen.getByRole("button", { name: "予約をキャンセル" }));
+    await user.click(screen.getByRole("button", { name: "キャンセルを確定" }));
+    await user.click(screen.getByRole("button", { name: "戻る" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "退店済にする" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "同じ操作を再試行" }));
+    expect(mocks.cancelReservation.mock.calls[1]).toEqual(
+      mocks.cancelReservation.mock.calls[0],
+    );
+  });
 });
