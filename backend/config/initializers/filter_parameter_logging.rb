@@ -10,5 +10,5 @@ Rails.application.config.filter_parameters += [
 # 顧客・予約の入力と検索語は、ネスト内も含めてログへ保存しない。
 Rails.application.config.filter_parameters += [
   :name, :kana, :phone, :address, :postal, :birthday, :memo, :note,
-  :query, :keyword, :search, :company
+  :query, :keyword, :search, :company, :reason
 ]

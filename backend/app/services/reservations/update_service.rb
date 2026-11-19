@@ -19,6 +19,12 @@ module Reservations
     def call
       ActiveRecord::Base.transaction do
         Reservations::WriteLock.acquire!
+        # 待機中に退店・訂正された場合も、最新状態で編集可否と提出版を検証する。
+        submitted_version = attributes[:lock_version]
+        reservation.lock!
+        if submitted_version && submitted_version.to_i != reservation.lock_version
+          raise ActiveRecord::StaleObjectError.new(reservation, "update")
+        end
         existing_restaurant_master_ids = reservation.restaurant_master_ids
         submitted_restaurant_master_ids = extract_restaurant_master_ids
 
@@ -28,6 +34,13 @@ module Reservations
           submitted_restaurant_master_ids || existing_restaurant_master_ids
 
         reservation.assign_attributes(reservation_attributes)
+        # 退店後の実績を通常フォームから変更せず、理由と監査のある訂正へ案内する。
+        protected_fields = %w[customer_id starts_at ends_at guest_count reservation_status_id]
+        if reservation.completed_at && ((reservation.changes.keys & protected_fields).any? ||
+            (submitted_restaurant_master_ids && submitted_restaurant_master_ids.sort != existing_restaurant_master_ids.sort))
+          reservation.errors.add(:base, "退店済みの予約情報は「来店結果を訂正」から変更してください")
+          raise ActiveRecord::RecordInvalid, reservation
+        end
 
         apply_customer_to_reservation
         apply_staff

@@ -15,6 +15,7 @@ RSpec.shared_context "independent integrity connections" do
     example.run
   ensure
     ids = Reservation.where(reservation_name: @marker).pluck(:id)
+    ReservationResultChange.where(reservation_id: ids).delete_all
     ReservationCreationRequest.where(reservation_id: ids).delete_all
     Reservation.where(id: ids).destroy_all
     @records.reverse_each { |record| record.reload.delete }

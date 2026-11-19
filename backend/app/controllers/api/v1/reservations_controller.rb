@@ -1,4 +1,5 @@
 class Api::V1::ReservationsController < Api::V1::BaseController
+  include ApiPagination
   # 同一顧客の有効な予約時間が重複した場合に発生する。
   CUSTOMER_OVERLAP_CONSTRAINT_NAME =
     "exclude_active_customer_reservation_overlaps".freeze
@@ -10,7 +11,7 @@ class Api::V1::ReservationsController < Api::V1::BaseController
   rescue_from ActiveRecord::ExclusionViolation,
               with: :render_customer_overlap_exclusion_error
 
-  before_action :set_reservation, only: %i[show update cancel restore complete reopen confirm_details]
+  before_action :set_reservation, only: %i[show update cancel restore complete reopen no_show correct_result result_changes confirm_details]
 
   RESERVATION_BASE_ATTRIBUTES = %i[
   customer_id
@@ -48,21 +49,37 @@ class Api::V1::ReservationsController < Api::V1::BaseController
           created_by_staff: :staff_master,
           updated_by_staff: :staff_master
         )
-        .on_date(target_date)
         .ordered
+    reservations = reservations.on_date(target_date) unless params[:state] == "pending_checkout"
 
     reservations =
       apply_reservation_state_filter(reservations)
 
-    render_success(
-      data: {
-        reservations: Api::V1::ReservationSerializer.collection(reservations)
-      }
-    )
+    data = {}
+    if params[:state] == "pending_checkout"
+      pagination = pagination_params
+      return unless pagination
+      result = paginate(reservations, **pagination)
+      reservations = result[:records]
+      data[:pagination] = result[:metadata]
+    end
+    data[:reservations] = Api::V1::ReservationSerializer.collection(reservations)
+    render_success(data: data)
   end
 
   def show
     render_reservation(@reservation)
+  end
+
+  # 監査は追記のみとし、閲覧時は担当者と変更前後をページ単位で返す。
+  def result_changes
+    pagination = pagination_params
+    return unless pagination
+    records = paginate(@reservation.reservation_result_changes.includes(staff: :staff_master).order(id: :desc), **pagination)
+    render_success(data: { changes: records[:records].map { |event|
+      { id: event.id, operation: event.operation, reason: event.reason, created_at: event.created_at,
+        staff_name: event.staff.staff_master.name, before_state: event.before_state, after_state: event.after_state }
+    }, pagination: records[:metadata] })
   end
 
   def create
@@ -102,107 +119,9 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     render_reservation(@reservation)
   end
 
-  def complete
-    @reservation.lock_version = required_lock_version
-
-    if @reservation.completed_at.present?
-      return render_error(
-        message: "この予約はすでに対応完了済みです。",
-        status: :unprocessable_content
-      )
-    end
-
-    if @reservation.canceled_at.present?
-      return render_error(
-        message: "キャンセル済みの予約は対応完了にできません。",
-        status: :unprocessable_content
-      )
-    end
-
-    @reservation.completed_at = Time.current
-    @reservation.updated_by_staff = current_staff
-
-    if @reservation.save
-      render_reservation(@reservation)
-    else
-      render_validation_error(@reservation)
-    end
-  end
-
-  def reopen
-    @reservation.lock_version = required_lock_version
-
-    if @reservation.completed_at.nil?
-      return render_error(
-        message: "この予約は対応完了済みではありません。",
-        status: :unprocessable_content
-      )
-    end
-
-    @reservation.completed_at = nil
-    @reservation.updated_by_staff = current_staff
-
-    if @reservation.save
-      render_reservation(@reservation)
-    else
-      render_validation_error(@reservation)
-    end
-  end
-
-  def cancel
-    @reservation.lock_version = required_lock_version
-
-    if @reservation.completed_at.present?
-      return render_error(
-        message: "対応完了済みの予約はキャンセルできません。",
-        status: :unprocessable_content
-      )
-    end
-
-    if @reservation.canceled_at.present?
-      return render_error(
-        message: "この予約はすでにキャンセル済みです。",
-        status: :unprocessable_content
-      )
-    end
-
-    @reservation.canceled_at = Time.current
-    @reservation.updated_by_staff = current_staff
-
-    if @reservation.save
-      render_reservation(@reservation)
-    else
-      render_validation_error(@reservation)
-    end
-  end
-
-  def restore
-    ActiveRecord::Base.transaction do
-      Reservations::WriteLock.acquire!
-      @reservation.lock_version = required_lock_version
-
-      if @reservation.canceled_at.nil?
-        return render_error(
-          message: "キャンセルされた予約はキャンセルされてません。",
-          status: :unprocessable_content
-        )
-      end
-
-      @reservation.canceled_at = nil
-      @reservation.updated_by_staff = current_staff
-
-      # キャンセルから予約リストに戻す際に既存予約が入っていないかチェックするため２重予約されていないか確認。
-      Reservations::TableAssignmentValidator.call(
-        reservation: @reservation,
-        restaurant_master_ids: @reservation.restaurant_master_ids
-      )
-
-      if @reservation.save
-        render_reservation(@reservation)
-      else
-        render_validation_error(@reservation)
-      end
-    end
+  # 旧APIも来店結果サービスへ委譲し、監査・競合検知を迂回させない。
+  %w[complete reopen cancel restore no_show correct_result].each do |operation|
+    define_method(operation) { change_visit_result(operation) }
   end
 
   private
@@ -286,6 +205,16 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     )
   end
 
+  def change_visit_result(operation)
+    attributes = params.require(:reservation).permit(:lock_version, :visit_result, :reason, :confirm_tentative,
+      booking: %i[customer_id starts_at ends_at guest_count reservation_status_id])
+    reservation = Reservations::ResultChanger.call(reservation: @reservation, attributes: attributes,
+      current_staff: current_staff, key: request.headers["Idempotency-Key"], operation: operation)
+    render_reservation(reservation)
+  rescue Reservations::ResultChanger::ConflictingRequestError => error
+    render_error(message: error.message, status: :conflict, code: "idempotency_conflict")
+  end
+
   def required_lock_version
     params.require(:reservation).require(:lock_version)
   end
@@ -295,8 +224,10 @@ class Api::V1::ReservationsController < Api::V1::BaseController
 
     return reservations.active if state.blank? || state == "active"
     return reservations.canceled if state == "canceled"
+    # 過去の未退店を日付選択だけに埋もれさせず、予約管理内で手動確認する。
+    return reservations.active.where(completed_at: nil).where("ends_at <= ?", Time.current) if state == "pending_checkout"
 
     raise ActionController::BadRequest,
-          "stateはactiveまたはcanceledを指定してください"
+          "stateはactive、canceled、pending_checkoutを指定してください"
   end
 end
