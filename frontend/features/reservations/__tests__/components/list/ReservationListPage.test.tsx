@@ -53,6 +53,24 @@ function mockReservationLists({
 }
 
 describe("ReservationListPage", () => {
+  it("30秒ポーリングを登録せず、手動更新では最新化する", async () => {
+    const user = userEvent.setup();
+    const interval = vi.spyOn(window, "setInterval");
+    mocks.fetchReservations.mockResolvedValue({ data: { reservations: [] } });
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      data: { restaurant_masters: [] },
+    });
+    render(<ReservationListPage targetDate="2026-09-08" />);
+    await screen.findByRole("button", { name: "予約一覧を更新" });
+    expect(interval.mock.calls.some((args) => args[1] === 30_000)).toBe(false);
+    expect(
+      screen.queryByText("表示中は30秒ごとに再取得します。"),
+    ).not.toBeInTheDocument();
+    const before = mocks.fetchReservations.mock.calls.length;
+    await user.click(screen.getByRole("button", { name: "予約一覧を更新" }));
+    expect(mocks.fetchReservations.mock.calls.length).toBe(before + 2);
+  });
+
   it("指定日の予約情報を取得し、予約がない日のサマリーを表示する", async () => {
     mockReservationLists({
       active: [],

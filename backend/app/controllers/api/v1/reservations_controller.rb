@@ -50,7 +50,8 @@ class Api::V1::ReservationsController < Api::V1::BaseController
           updated_by_staff: :staff_master
         )
         .ordered
-    reservations = reservations.on_date(target_date) unless params[:state] == "pending_checkout"
+    # 未処理も日付指定時は表示日に限定し、日付なしの全期間取得は明示操作で使う。
+    reservations = reservations.on_date(target_date) if params[:state] != "pending_checkout" || params[:date].present?
 
     reservations =
       apply_reservation_state_filter(reservations)

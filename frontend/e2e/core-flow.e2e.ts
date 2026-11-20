@@ -721,3 +721,190 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
     fullPage: true,
   });
 });
+
+// 専用DBで選択→処理内容確認→一括保存→応答喪失の再試行を実APIまで通す。
+test("未処理予約の選択一括処理と応答喪失からの復旧", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("combobox", { name: "担当者", exact: true }).click();
+  await page.getByRole("option", { name: /E2E管理者/ }).click();
+  await page
+    .getByLabel("パスワード", { exact: true })
+    .fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const csrf = (await (await page.request.get("/api/v1/csrf")).json()).data
+    .csrf_token;
+  const masters = (
+    await (await page.request.get("/api/v1/standard_masters")).json()
+  ).data.standard_masters;
+  const status = masters.find(
+    (master: { system_key: string }) =>
+      master.system_key === "reservation_status",
+  );
+  const type = masters.find(
+    (master: { system_key: string }) =>
+      master.system_key === "restaurant_master_type",
+  );
+  const day = (offset: number) =>
+    new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(
+      new Date(Date.now() - offset * 86_400_000),
+    );
+  const yesterday = day(1);
+  const prefix = `一括確認${Date.now()}`;
+  const bookings = [];
+  for (const [name, date, code] of [
+    [`${prefix}通常`, yesterday, "confirmed"],
+    [`${prefix}仮`, yesterday, "tentative"],
+    [`${prefix}過去`, day(2), "confirmed"],
+  ]) {
+    const response = await page.request.post("/api/v1/reservations", {
+      headers: { "X-CSRF-Token": csrf, "Idempotency-Key": crypto.randomUUID() },
+      data: {
+        reservation: {
+          reservation_name: name,
+          reservation_phone_number: "09000001234",
+          starts_at: `${date}T18:00:00+09:00`,
+          ends_at: `${date}T20:00:00+09:00`,
+          guest_count: 2,
+          requested_restaurant_master_type_id: type.items.find(
+            (item: { code: string }) => item.code === "table",
+          ).id,
+          reservation_status_id: status.items.find(
+            (item: { code: string }) => item.code === code,
+          ).id,
+          restaurant_master_ids: [],
+        },
+      },
+    });
+    expect(response.status()).toBe(201);
+    bookings.push((await response.json()).data.reservation);
+  }
+  // 新規フォームはマスタの予約確定を初期選択する。
+  await page.goto(`/reservations/new?date=${yesterday}`);
+  await expect(page.getByRole("combobox", { name: /^予約状況/ })).toHaveText(
+    /予約確定/,
+  );
+  await page.goto(`/reservations?date=${yesterday}`);
+  await page
+    .getByRole("button", { name: "退店未処理の予約を確認", exact: true })
+    .click();
+  await expect(
+    page.getByRole("checkbox", { name: `${prefix}通常を選択`, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("checkbox", { name: `${prefix}過去を選択`, exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("checkbox", { name: `${prefix}通常を選択`, exact: true })
+    .check();
+  await page
+    .getByLabel("一括処理の内容", { exact: true })
+    .selectOption("cancel");
+  await page
+    .getByRole("button", { name: "選択した予約の処理を確認", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toContainText(
+    "1件の予約を通常キャンセルにする",
+  );
+  expect(
+    (
+      await (
+        await page.request.get(`/api/v1/reservations/${bookings[0].id}`)
+      ).json()
+    ).data.reservation.visit_result,
+  ).toBe("pending");
+  await page
+    .getByRole("button", { name: "確認した内容で実行", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "結果を確認して選び直す", exact: true }),
+  ).toBeEnabled();
+  expect(
+    (
+      await (
+        await page.request.get(`/api/v1/reservations/${bookings[0].id}`)
+      ).json()
+    ).data.reservation.cancellation_kind,
+  ).toBe("regular");
+  expect(
+    (
+      await (
+        await page.request.get(`/api/v1/reservations/${bookings[1].id}`)
+      ).json()
+    ).data.reservation.visit_result,
+  ).toBe("pending");
+  await page
+    .getByRole("button", { name: "結果を確認して選び直す", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "過去分を含めて全選択", exact: true })
+    .click();
+  await expect(page.getByText(/件選択中$/)).not.toHaveText("0件選択中");
+  await page
+    .getByLabel("一括処理の内容", { exact: true })
+    .selectOption("checkout");
+  await page
+    .getByRole("button", { name: "選択した予約の処理を確認", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toContainText(`${prefix}過去`);
+  await expect(
+    page.getByRole("button", { name: "確認した内容で実行", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("checkbox", { name: /仮予約.*予約確定/ }).check();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const bounds = await page.getByRole("alertdialog").boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: "test-results/bulk-results-mobile.png" });
+  const keys: string[] = [];
+  await page.route(
+    `**/api/v1/reservations/${bookings[1].id}/complete`,
+    async (route) => {
+      keys.push(route.request().headers()["idempotency-key"]);
+      if (keys.length === 1) {
+        await route.fetch();
+        await route.abort("failed");
+      } else await route.continue();
+    },
+  );
+  await page
+    .getByRole("button", { name: "確認した内容で実行", exact: true })
+    .click();
+  await expect(page.getByRole("alertdialog")).toContainText("保存結果が未確認");
+  await page
+    .getByRole("button", {
+      name: "未送信・結果未確認分を同じ操作で再試行",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("button", {
+      name: "未送信・結果未確認分を同じ操作で再試行",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect.poll(() => keys.length).toBe(2);
+  await expect(
+    page.getByRole("alertdialog").getByText(/保存結果が未確認/),
+  ).toHaveCount(0);
+  expect(keys[0]).toBe(keys[1]);
+  for (const booking of bookings.slice(1)) {
+    const saved = (
+      await (
+        await page.request.get(`/api/v1/reservations/${booking.id}`)
+      ).json()
+    ).data.reservation;
+    expect(saved.visit_result).toBe("checked_out");
+    expect(saved.reservation_status.code).toBe("confirmed");
+    const changes = (
+      await (
+        await page.request.get(
+          `/api/v1/reservations/${booking.id}/result_changes`,
+        )
+      ).json()
+    ).data.changes;
+    expect(changes).toHaveLength(1);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.screenshot({ path: "test-results/bulk-results-desktop.png" });
+});

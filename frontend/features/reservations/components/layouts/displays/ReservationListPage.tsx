@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useReadRefresh } from "@/hooks/useReadRefresh";
 import { useEffect, useMemo, useState } from "react";
 
 import { ApiClientError } from "@/lib/api/api-client";
@@ -38,7 +37,6 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  useReadRefresh(() => setReloadKey((value) => value + 1));
   useEffect(() => {
     const refresh = () => setReloadKey((value) => value + 1);
     window.addEventListener("colette:reservations-changed", refresh);
@@ -149,7 +147,7 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   return (
     <div className="space-y-4">
-      <PendingCheckoutList />
+      <PendingCheckoutList targetDate={targetDate} />
       <p className="text-sm text-muted-foreground">
         空き枠を選ぶと、日付・開始時間・席を入力した予約フォームを開きます。最新の空き状況は保存時に確認します。
       </p>
@@ -171,9 +169,6 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
           更新できませんでした。表示は前回取得した内容です。{errorMessage}
         </p>
       )}
-      <p className="text-xs text-muted-foreground">
-        表示中は30秒ごとに再取得します。
-      </p>
       <section aria-labelledby="reservation-summary-heading">
         <h2 id="reservation-summary-heading" className="sr-only">
           表示日の予約サマリー
