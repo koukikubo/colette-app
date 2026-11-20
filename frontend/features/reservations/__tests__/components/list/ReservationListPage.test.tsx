@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { renderWithOwner as render } from "@/test-utils/auth";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   fetchReservations: vi.fn(),
   fetchRestaurantMasters: vi.fn(),
   correctReservationResult: vi.fn(),
+  completeReservation: vi.fn(),
+  cancelReservation: vi.fn(),
+  noShowReservation: vi.fn(),
   refresh: vi.fn(),
 }));
 
@@ -24,6 +27,9 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/features/reservations/api/reservation_api", () => ({
   fetchReservations: mocks.fetchReservations,
   correctReservationResult: mocks.correctReservationResult,
+  completeReservation: mocks.completeReservation,
+  cancelReservation: mocks.cancelReservation,
+  noShowReservation: mocks.noShowReservation,
 }));
 
 vi.mock("@/features/restaurant-masters/api/restaurant-masters-api", () => ({
@@ -53,6 +59,92 @@ function mockReservationLists({
 }
 
 describe("ReservationListPage", () => {
+  it("応答喪失後の日付変更・読取失敗でも元の一括操作を保持し同じキーで復旧する", async () => {
+    const user = userEvent.setup();
+    let failChangedDate: ((error: Error) => void) | undefined;
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      data: { restaurant_masters: [] },
+    });
+    mocks.fetchReservations.mockImplementation((params) => {
+      if (params.state === "pending_checkout")
+        return Promise.resolve({
+          data: {
+            reservations:
+              params.date === "2026-09-08" ? [createReservation()] : [],
+          },
+        });
+      if (params.date === "2026-09-09")
+        return new Promise((_resolve, reject) => {
+          failChangedDate = reject;
+        });
+      return Promise.resolve({ data: { reservations: [] } });
+    });
+    mocks.completeReservation
+      .mockRejectedValueOnce(new Error("response lost"))
+      .mockResolvedValueOnce({});
+    const { rerender } = render(
+      <ReservationListPage targetDate="2026-09-08" />,
+    );
+    await screen.findByRole("button", { name: "予約一覧を更新" });
+    await user.click(
+      screen.getByRole("button", { name: "退店未処理の予約を確認" }),
+    );
+    await user.click(
+      await screen.findByRole("checkbox", { name: "山田 太郎を選択" }),
+    );
+    await user.selectOptions(
+      screen.getByLabelText("一括処理の内容"),
+      "checkout",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "選択した予約の処理を確認" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "確認した内容で実行" }),
+    );
+    await screen.findByText(/保存結果が未確認の予約があります/);
+    await user.click(screen.getByRole("button", { name: /^閉じる$/ }));
+    rerender(<ReservationListPage targetDate="2026-09-09" />);
+    expect(screen.getByText(/結果未確認 1件/)).toBeInTheDocument();
+    await act(async () => failChangedDate?.(new Error("read failed")));
+    await screen.findByRole("alert");
+    expect(screen.getByText(/結果未確認 1件/)).toBeInTheDocument();
+    rerender(<ReservationListPage targetDate="2026-09-08" />);
+    await screen.findByRole("button", { name: "予約一覧を更新" });
+    await user.click(
+      screen.getByRole("button", { name: "一括処理の結果・再試行を確認" }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "未送信・結果未確認分を同じ操作で再試行",
+      }),
+    );
+    await waitFor(() =>
+      expect(mocks.completeReservation).toHaveBeenCalledTimes(2),
+    );
+    expect(mocks.completeReservation.mock.calls[1]).toEqual(
+      mocks.completeReservation.mock.calls[0],
+    );
+  });
+
+  it("30秒ポーリングを登録せず、手動更新では最新化する", async () => {
+    const user = userEvent.setup();
+    const interval = vi.spyOn(window, "setInterval");
+    mocks.fetchReservations.mockResolvedValue({ data: { reservations: [] } });
+    mocks.fetchRestaurantMasters.mockResolvedValue({
+      data: { restaurant_masters: [] },
+    });
+    render(<ReservationListPage targetDate="2026-09-08" />);
+    await screen.findByRole("button", { name: "予約一覧を更新" });
+    expect(interval.mock.calls.some((args) => args[1] === 30_000)).toBe(false);
+    expect(
+      screen.queryByText("表示中は30秒ごとに再取得します。"),
+    ).not.toBeInTheDocument();
+    const before = mocks.fetchReservations.mock.calls.length;
+    await user.click(screen.getByRole("button", { name: "予約一覧を更新" }));
+    expect(mocks.fetchReservations.mock.calls.length).toBe(before + 2);
+  });
+
   it("指定日の予約情報を取得し、予約がない日のサマリーを表示する", async () => {
     mockReservationLists({
       active: [],

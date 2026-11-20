@@ -2,6 +2,7 @@ require "rails_helper"
 
 RSpec.describe "予約の手動退店と来店結果訂正", type: :request do
   include_context "authenticated request"
+  include ActiveSupport::Testing::TimeHelpers
 
   let(:category) { create(:standard_master, system_key: "reservation_status") }
   let!(:confirmed) { create(:standard_list_master, standard_master: category, code: "confirmed") }
@@ -92,6 +93,7 @@ RSpec.describe "予約の手動退店と来店結果訂正", type: :request do
     booking.update!(internal_memo: "他の担当者の更新")
     change_result("complete", lock_version: 0)
     expect(response).to have_http_status(:conflict)
+    expect(response.parsed_body["code"]).to eq("reservation_result_conflict")
     expect(booking.reload.completed_at).to be_nil
   end
 
@@ -152,6 +154,20 @@ RSpec.describe "予約の手動退店と来店結果訂正", type: :request do
     expect(response).to have_http_status(:ok), response.body
     expect(response.parsed_body.dig("data", "reservations").pluck("id")).to eq([ booking.id ])
     expect(response.parsed_body.dig("data", "pagination", "total_count")).to eq(1)
+  end
+
+  it "日付を指定した未処理一覧は店舗日付に限定し、日付なしでは過去分も返す" do
+    travel_to Time.zone.local(2026, 11, 20, 22) do
+      login!
+      booking.update!(starts_at: Time.zone.local(2026, 11, 19, 18), ends_at: Time.zone.local(2026, 11, 19, 20))
+      today = create(:reservation, starts_at: Time.zone.local(2026, 11, 20, 18), ends_at: Time.zone.local(2026, 11, 20, 20),
+        requested_restaurant_master_type: type, reservation_status: confirmed, created_by_staff: login_staff, updated_by_staff: login_staff)
+      get "/api/v1/reservations", params: { state: "pending_checkout", date: "2026-11-20" }, headers: authenticated_headers
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "reservations").pluck("id")).to eq([ today.id ])
+      get "/api/v1/reservations", params: { state: "pending_checkout" }, headers: authenticated_headers
+      expect(response.parsed_body.dig("data", "reservations").pluck("id")).to contain_exactly(booking.id, today.id)
+    end
   end
 
   it "閲覧専用の担当者は結果を変更できない" do
