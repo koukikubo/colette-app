@@ -9,7 +9,18 @@ test("予約ルーティングの直接表示と空き枠", async ({ page }) => 
   await page
     .getByLabel("パスワード", { exact: true })
     .fill(process.env.E2E_PASSWORD!);
-  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  // 本番ビルドの検証に続いて同じ担当者で確認するため、実際の429制限解除を待つ。
+  // アプリ側の認証制限やE2E専用DBのカウンターは変更しない。
+  await expect(async () => {
+    const login = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/v1/staff/login" &&
+        response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "ログイン", exact: true }).click();
+    const response = await login;
+    expect(response.status()).toBe(200);
+  }).toPass({ intervals: [1000, 5000, 10000], timeout: 75_000 });
   await expect(
     page.getByRole("heading", { name: "店舗とお客様の傾向" }),
   ).toBeVisible();

@@ -128,19 +128,26 @@ export function ReservationListPage({ targetDate }: ReservationListPageProps) {
 
   if (loadedDate !== targetDate && (isLoading || !errorMessage)) {
     return (
-      <p className="text-muted-foreground text-sm">
-        予約状況を読み込んでいます...
-      </p>
+      <div className="space-y-4">
+        {/* 日付切替中も同じ位置に置き、未確認の保存結果と再送キーを保持する。 */}
+        <PendingCheckoutList targetDate={targetDate} />
+        <p className="text-muted-foreground text-sm">
+          予約状況を読み込んでいます...
+        </p>
+      </div>
     );
   }
 
   if (errorMessage && loadedDate !== targetDate) {
     return (
-      <div
-        role="alert"
-        className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
-      >
-        {errorMessage}
+      <div className="space-y-4">
+        <PendingCheckoutList targetDate={targetDate} />
+        <div
+          role="alert"
+          className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border p-4 text-sm"
+        >
+          {errorMessage}
+        </div>
       </div>
     );
   }

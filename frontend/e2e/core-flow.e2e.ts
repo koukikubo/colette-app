@@ -882,6 +882,18 @@ test("未処理予約の選択一括処理と応答喪失からの復旧", async
     .getByRole("button", { name: "確認した内容で実行", exact: true })
     .click();
   await expect(page.getByRole("alertdialog")).toContainText("保存結果が未確認");
+  await page.getByRole("button", { name: "閉じる", exact: true }).click();
+  await page.getByLabel("予約表示日", { exact: true }).fill(day(2));
+  await expect(page).toHaveURL(new RegExp(`/reservations\\?date=${day(2)}$`));
+  await expect(page.getByText(/結果未確認 1件/)).toBeVisible();
+  await page.getByLabel("予約表示日", { exact: true }).fill(yesterday);
+  await expect(page).toHaveURL(
+    new RegExp(`/reservations\\?date=${yesterday}$`),
+  );
+  await page
+    .getByRole("button", { name: "一括処理の結果・再試行を確認", exact: true })
+    .click();
+
   await page
     .getByRole("button", {
       name: "未送信・結果未確認分を同じ操作で再試行",
