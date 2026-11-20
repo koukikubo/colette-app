@@ -67,6 +67,17 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
     };
   }, [targetDate]);
 
+  // タイムラインや詳細での単件変更も、開いている未処理一覧へ反映する。
+  useEffect(() => {
+    const refresh = () => {
+      setPage(1);
+      setReload((value) => value + 1);
+    };
+    window.addEventListener("colette:reservations-changed", refresh);
+    return () =>
+      window.removeEventListener("colette:reservations-changed", refresh);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
@@ -350,7 +361,7 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
                     <input
                       type="checkbox"
                       checked
-                      aria-label={`${item.reservation.reservation_name}を一括対象から外す`}
+                      aria-label={`${item.reservation.reservation_name}を一括処理の対象に含める`}
                       onChange={() => {
                         setBatch((items) =>
                           items.filter(

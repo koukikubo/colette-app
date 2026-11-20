@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { renderWithOwner as render, renderWithRole } from "@/test-utils/auth";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -21,6 +21,23 @@ vi.mock(
 );
 
 describe("退店未処理の確認", () => {
+  it("他の予約画面で保存した後も、開いている未処理一覧を最新化する", async () => {
+    const user = userEvent.setup();
+    fetchList.mockResolvedValue({
+      data: { reservations: [createReservation()] },
+    });
+    render(<PendingCheckoutList targetDate="2026-09-08" />);
+    await user.click(
+      screen.getByRole("button", { name: "退店未処理の予約を確認" }),
+    );
+    await screen.findByRole("link", { name: /山田 太郎/ });
+    fetchList.mockResolvedValueOnce({ data: { reservations: [] } });
+    act(() => window.dispatchEvent(new Event("colette:reservations-changed")));
+    expect(
+      await screen.findByText("表示日の退店未処理の予約はありません。"),
+    ).toBeInTheDocument();
+  });
+
   it("選択と処理内容の確認だけでは保存せず、確定後に選択分だけを取り消す", async () => {
     const user = userEvent.setup();
     fetchList.mockResolvedValue({

@@ -93,6 +93,7 @@ RSpec.describe "予約の手動退店と来店結果訂正", type: :request do
     booking.update!(internal_memo: "他の担当者の更新")
     change_result("complete", lock_version: 0)
     expect(response).to have_http_status(:conflict)
+    expect(response.parsed_body["code"]).to eq("reservation_result_conflict")
     expect(booking.reload.completed_at).to be_nil
   end
 

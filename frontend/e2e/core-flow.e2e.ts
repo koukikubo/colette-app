@@ -730,7 +730,18 @@ test("未処理予約の選択一括処理と応答喪失からの復旧", async
   await page
     .getByLabel("パスワード", { exact: true })
     .fill(process.env.E2E_PASSWORD!);
+  // 初期読取のCookie応答がCSRF取得後に到着しないよう、画面の実読取完了を待つ。
+  const dashboardReads = Promise.all(
+    ["/api/v1/dashboard", "/api/v1/dashboard_analytics"].map((path) =>
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === path &&
+          response.status() === 200,
+      ),
+    ),
+  );
   await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  await dashboardReads;
   await expect(page).toHaveURL(/\/dashboard$/);
   const csrf = (await (await page.request.get("/api/v1/csrf")).json()).data
     .csrf_token;
@@ -767,7 +778,7 @@ test("未処理予約の選択一括処理と応答喪失からの復旧", async
           ends_at: `${date}T20:00:00+09:00`,
           guest_count: 2,
           requested_restaurant_master_type_id: type.items.find(
-            (item: { code: string }) => item.code === "table",
+            (item: { code: string }) => item.code === "T",
           ).id,
           reservation_status_id: status.items.find(
             (item: { code: string }) => item.code === code,

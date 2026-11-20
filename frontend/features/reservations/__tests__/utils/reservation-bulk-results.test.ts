@@ -156,6 +156,29 @@ describe("選択予約の一括処理", () => {
       api.completeReservation.mock.calls[2],
     );
   });
+  it("応答喪失後の確定した版競合は選び直し可能にし、残りの未送信を処理する", async () => {
+    api.completeReservation
+      .mockRejectedValueOnce(new Error("lost"))
+      .mockRejectedValueOnce(
+        new ApiClientError(
+          "別の担当者が更新",
+          409,
+          [],
+          "reservation_result_conflict",
+        ),
+      )
+      .mockResolvedValueOnce({});
+    const first = await executeBulkResults(
+      prepareBulkResults(
+        [createReservation(), createReservation({ id: 2 })],
+        "checkout",
+      ),
+      "checkout",
+      vi.fn(),
+    );
+    const retry = await executeBulkResults(first, "checkout", vi.fn());
+    expect(retry.map((item) => item.status)).toEqual(["failed", "success"]);
+  });
   it("認証拒否の後に残りを送り続けない", async () => {
     api.noShowReservation.mockRejectedValueOnce(
       new ApiClientError("ログインしてください", 401),

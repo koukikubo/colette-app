@@ -212,6 +212,10 @@ class Api::V1::ReservationsController < Api::V1::BaseController
     reservation = Reservations::ResultChanger.call(reservation: @reservation, attributes: attributes,
       current_staff: current_staff, key: request.headers["Idempotency-Key"], operation: operation)
     render_reservation(reservation)
+  rescue ActiveRecord::StaleObjectError
+    # 結果更新は保存済みキーを先に照合するため、この拒否なら同じ操作の未保存が確定する。
+    render_error(message: "予約は別の担当者によって更新されています。最新情報を取得して選び直してください",
+      status: :conflict, code: "reservation_result_conflict")
   rescue Reservations::ResultChanger::ConflictingRequestError => error
     render_error(message: error.message, status: :conflict, code: "idempotency_conflict")
   end

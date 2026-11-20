@@ -101,8 +101,13 @@ export async function executeBulkResults(
       item.status = "success";
       item.error = undefined;
     } catch (error) {
+      // 保存済みキー照合後の版競合だけは未保存が確定する。認証・CSRF拒否とは分ける。
+      const definitiveConflict =
+        error instanceof ApiClientError &&
+        error.status === 409 &&
+        error.code === "reservation_result_conflict";
       const ambiguous =
-        wasUncertain ||
+        (wasUncertain && !definitiveConflict) ||
         !(error instanceof ApiClientError) ||
         error.status >= 500;
       item.status = ambiguous ? "uncertain" : "failed";
