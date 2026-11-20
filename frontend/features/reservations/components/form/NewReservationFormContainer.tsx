@@ -49,6 +49,11 @@ function NewReservationFormContent(
       startTime: props.startTime,
       restaurantMasterId: props.restaurantMasterId,
     });
+    // 表示名や固定IDではなく、有効な基本コードの予約確定を初期選択する。
+    initial.reservation_status_id =
+      props.options.reservationStatuses.find(
+        (status) => status.code === "confirmed" && status.active,
+      )?.id ?? null;
     const seat = props.options.restaurantMasters.find(
       (seat) => seat.id === props.restaurantMasterId && seat.active,
     );

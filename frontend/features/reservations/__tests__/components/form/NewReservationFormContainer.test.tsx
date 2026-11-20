@@ -43,6 +43,7 @@ vi.mock("@/features/reservations/hooks/useReservationFormOptions", () => ({
     reservationStatuses: [
       {
         id: 2,
+        code: "confirmed",
         display_code: "CONFIRMED",
         label: "予約確定",
         description: null,
@@ -88,6 +89,7 @@ describe("NewReservationFormContainer", () => {
     render(<NewReservationFormContainer targetDate="2026-09-08" />);
 
     expect(screen.getByText("予約者情報")).toBeInTheDocument();
+    expect(screen.getByLabelText(/予約状況/)).toHaveTextContent("予約確定");
 
     expect(screen.getByLabelText(/予約開始日時/)).toHaveValue(
       "2026-09-08T17:00",
