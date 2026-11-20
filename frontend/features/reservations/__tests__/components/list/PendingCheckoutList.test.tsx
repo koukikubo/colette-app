@@ -21,6 +21,85 @@ vi.mock(
 );
 
 describe("退店未処理の確認", () => {
+  it("全選択の取得中に日付を往復しても選択操作を再開できる", async () => {
+    const user = userEvent.setup();
+    fetchList.mockImplementation((params, signal?: AbortSignal) => {
+      if (params.per_page === 100)
+        return new Promise((_resolve, reject) => {
+          signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError")),
+          );
+        });
+      return Promise.resolve({ data: { reservations: [createReservation()] } });
+    });
+    const { rerender } = render(
+      <PendingCheckoutList targetDate="2026-09-08" />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "退店未処理の予約を確認" }),
+    );
+    await screen.findByRole("checkbox", { name: "山田 太郎を選択" });
+    await user.click(screen.getByRole("button", { name: "表示日分を全選択" }));
+    expect(
+      screen.getByRole("button", { name: "表示日分を全選択" }),
+    ).toBeDisabled();
+    rerender(<PendingCheckoutList targetDate="2026-09-09" />);
+    await screen.findByRole("checkbox", { name: "山田 太郎を選択" });
+    rerender(<PendingCheckoutList targetDate="2026-09-08" />);
+    await screen.findByRole("checkbox", { name: "山田 太郎を選択" });
+    expect(
+      screen.getByRole("button", { name: "表示日分を全選択" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("checkbox", { name: "山田 太郎を選択" }),
+    ).toBeEnabled();
+  });
+
+  it("2ページ目から別の日付へ移ると先頭ページの未処理予約を表示する", async () => {
+    const user = userEvent.setup();
+    fetchList.mockImplementation((params) => {
+      const isFirstDate = params.date === "2026-09-08";
+      const reservations = isFirstDate
+        ? [createReservation({ id: params.page === 1 ? 1 : 21 })]
+        : params.page === 1
+          ? [createReservation({ id: 2, reservation_name: "日付B予約" })]
+          : [];
+      return Promise.resolve({
+        data: {
+          reservations,
+          pagination: {
+            current_page: params.page,
+            per_page: 20,
+            total_pages: isFirstDate ? 2 : 1,
+            total_count: isFirstDate ? 21 : 1,
+          },
+        },
+      });
+    });
+    const { rerender } = render(
+      <PendingCheckoutList targetDate="2026-09-08" />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "退店未処理の予約を確認" }),
+    );
+    await screen.findByRole("link", { name: /山田 太郎/ });
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: /山田 太郎/ })).toHaveAttribute(
+        "href",
+        "/reservations/detail/21",
+      ),
+    );
+    rerender(<PendingCheckoutList targetDate="2026-09-09" />);
+    expect(
+      await screen.findByRole("link", { name: /日付B予約/ }),
+    ).toHaveAttribute("href", "/reservations/detail/2");
+    expect(fetchList).toHaveBeenLastCalledWith(
+      { state: "pending_checkout", date: "2026-09-09", page: 1, per_page: 20 },
+      expect.any(AbortSignal),
+    );
+  });
+
   it("他の予約画面で保存した後も、開いている未処理一覧を最新化する", async () => {
     const user = userEvent.setup();
     fetchList.mockResolvedValue({

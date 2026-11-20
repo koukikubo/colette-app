@@ -31,6 +31,7 @@ import { ReservationStatusActions } from "../../details/ReservationStatusActions
 export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [viewDate, setViewDate] = useState(targetDate);
   const [reload, setReload] = useState(0);
   const [data, setData] = useState<ReservationListData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,6 +58,14 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
   const tentativeCount = batch.filter(
     (item) => item.reservation.reservation_status?.code === "tentative",
   ).length;
+
+  // 表示用の状態だけを日付に合わせる。再送本文・キーと選択済み予約は保持する。
+  // 条件付きの更新で描画をやり直し、旧ページや取得中フラグを次の日付へ持ち越さない。
+  if (viewDate !== targetDate) {
+    setViewDate(targetDate);
+    setPage(1);
+    setSelecting(null);
+  }
 
   useEffect(() => {
     // 日付変更・アンマウント後に遅い全選択の応答で選択を復活させない。
