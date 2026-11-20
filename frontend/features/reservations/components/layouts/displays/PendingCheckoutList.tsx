@@ -25,7 +25,6 @@ import {
   type BulkResultAction,
   type BulkResultItem,
 } from "../../../utils/reservation-bulk-results";
-import { ReservationStatusActions } from "../../details/ReservationStatusActions";
 
 // 通常表示は表示日だけ。全期間は利用者が明示的に選択し、保存前に対象を確認する。
 export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
@@ -33,7 +32,12 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
   const [page, setPage] = useState(1);
   const [viewDate, setViewDate] = useState(targetDate);
   const [reload, setReload] = useState(0);
-  const [data, setData] = useState<ReservationListData | null>(null);
+  const [loaded, setLoaded] = useState<{
+    date: string;
+    value: ReservationListData;
+  } | null>(null);
+  // 取得失敗時も別日の行を操作対象として再表示しない。選択・再送の状態とは分離する。
+  const data = loaded?.date === targetDate ? loaded.value : null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Reservation[]>([]);
@@ -98,7 +102,8 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
           { state: "pending_checkout", date: targetDate, page, per_page: 20 },
           controller.signal,
         );
-        if (!controller.signal.aborted) setData(response.data);
+        if (!controller.signal.aborted)
+          setLoaded({ date: targetDate, value: response.data });
       } catch {
         if (!controller.signal.aborted)
           setError("退店未処理の予約を取得できませんでした。");
@@ -317,15 +322,7 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
                         ／ {reservation.reservation_status?.label}
                       </Link>
                     </div>
-                    {!locked && (
-                      <ReservationStatusActions
-                        reservation={reservation}
-                        onStatusChanged={() => {
-                          setSelected([]);
-                          setReload((value) => value + 1);
-                        }}
-                      />
-                    )}
+                    {/* 個別変更は詳細リンクへ集約し、単件と一括の未確定操作を混在させない。 */}
                   </li>
                 ))}
               </ul>

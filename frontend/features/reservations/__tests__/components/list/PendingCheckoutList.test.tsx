@@ -15,12 +15,48 @@ vi.mock("@/features/reservations/api/reservation_api", () => ({
   cancelReservation: cancel,
   noShowReservation: noShow,
 }));
-vi.mock(
-  "@/features/reservations/components/details/ReservationStatusActions",
-  () => ({ ReservationStatusActions: () => null }),
-);
 
 describe("退店未処理の確認", () => {
+  it("別日取得の失敗時に前日の行を再表示せず、選択済み予約は保持する", async () => {
+    const user = userEvent.setup();
+    fetchList.mockImplementation((params) =>
+      params.date === "2026-09-08"
+        ? Promise.resolve({ data: { reservations: [createReservation()] } })
+        : Promise.reject(new Error("offline")),
+    );
+    const { rerender } = render(
+      <PendingCheckoutList targetDate="2026-09-08" />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "退店未処理の予約を確認" }),
+    );
+    await user.click(
+      await screen.findByRole("checkbox", { name: "山田 太郎を選択" }),
+    );
+    rerender(<PendingCheckoutList targetDate="2026-09-09" />);
+    await screen.findByRole("alert");
+    expect(
+      screen.queryByRole("link", { name: /山田 太郎/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("1件選択中")).toBeInTheDocument();
+  });
+  it("個別変更は詳細への導線を使い、未処理一覧に単件更新ボタンを重複表示しない", async () => {
+    const user = userEvent.setup();
+    fetchList.mockResolvedValue({
+      data: { reservations: [createReservation()] },
+    });
+    render(<PendingCheckoutList targetDate="2026-09-08" />);
+    await user.click(
+      screen.getByRole("button", { name: "退店未処理の予約を確認" }),
+    );
+    expect(
+      await screen.findByRole("link", { name: /山田 太郎/ }),
+    ).toHaveAttribute("href", "/reservations/detail/1");
+    expect(
+      screen.queryByRole("button", { name: /^退店済にする$/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("全選択の取得中に日付を往復しても選択操作を再開できる", async () => {
     const user = userEvent.setup();
     fetchList.mockImplementation((params, signal?: AbortSignal) => {
