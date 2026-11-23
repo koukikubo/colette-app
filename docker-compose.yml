@@ -19,7 +19,7 @@ services:
       exec npm run dev -- --hostname 0.0.0.0"
 
   backend:
-    image: colette-backend-dev:ruby3.4.12
+    image: colette-backend-dev:ruby3.4.13
     build:
       context: ./backend
       dockerfile: Dockerfile.dev

@@ -45,7 +45,7 @@ jobs:
         run: docker compose build --pull frontend
 
       - name: Build backend runtime image
-        if: matrix.image == 'colette-backend-dev:ruby3.4.12'
+        if: matrix.image == 'colette-backend-dev:ruby3.4.13'
         run: docker compose build --pull backend
 
       # gosu更新後のPostgreSQLイメージを検査する。
