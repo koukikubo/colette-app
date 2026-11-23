@@ -1,5 +1,5 @@
-# gosuだけをビルドする。Goの開発環境は最終イメージに含めない。
-FROM --platform=$BUILDPLATFORM golang:1.27.3 AS gosu-build
+# CVE-2026-97054修正版のGoでgosuを再ビルドする。Go開発環境は最終イメージに含めない。
+FROM --platform=$BUILDPLATFORM golang:1.27.4 AS gosu-build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -12,7 +12,7 @@ WORKDIR /src/gosu
 
 # 実行対象のCPU向けに、外部のCライブラリに依存しないバイナリを作る。
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -o /out/gosu .
+    go build -trimpath -o /out/gosu . && go version -m /out/gosu
 
 # PostgreSQL 17系のセキュリティ修正版とOS更新を取り込む。
 FROM postgres:17.12

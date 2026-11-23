@@ -36,3 +36,15 @@ updates:
       - dependency-name: "ruby"
         update-types:
           ["version-update:semver-major", "version-update:semver-minor"]
+  # gosuのビルド用Goも確認し、同系統のセキュリティ更新を見落とさない。
+  - package-ecosystem: docker
+    directory: "/docker/postgres"
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "golang"
+        update-types:
+          ["version-update:semver-major", "version-update:semver-minor"]
+      # PostgreSQLの17.xは同じDBメジャー。17.x内の更新は候補に残す。
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
