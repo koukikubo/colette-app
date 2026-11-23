@@ -23,3 +23,14 @@ PR #240でBrakemanを8.1.1へ更新したところ、Ruby 3.4.12にCVE-2026-1328
 Rubyの版指定とCompose設定を確認し、最終コミットのCIでBrakeman・bundler-audit・RSpec・フロント検証・API契約・実サービスE2E・ランタイムイメージ検査を確認する。実行結果はPR #240へ記録する。
 
 本番イメージの検査も確認するが、修正版が提供されていないHIGH/CRITICALまで今回の更新だけで解消したとは扱わない。保存済みの過去の検証結果は、その時点の結果として保持する。
+
+## Ruby更新後の追加検出
+
+Ruby 3.4.13のCIでBrakemanは警告0件・エラー0件となった。その後のbundler-auditがPuma 8.0.3とnet-ssh 7.3.8の計4件を検出したため、メジャー・マイナー系列を維持してPuma 8.0.4、net-ssh 7.3.10へ更新した。
+
+- Puma：SSL接続のメモリ消費（[GHSA-4v6q-hvv7-49h9](https://github.com/puma/puma/security/advisories/GHSA-4v6q-hvv7-49h9)）、JRubyでのリクエスト解釈（[GHSA-rhww-p99c-hgj9](https://github.com/puma/puma/security/advisories/GHSA-rhww-p99c-hgj9)）。
+- net-ssh：失効済みホスト鍵の扱い（[GHSA-hjwv-j52r-xcg7](https://github.com/net-ssh/net-ssh/security/advisories/GHSA-hjwv-j52r-xcg7)）、HTTPSプロキシの証明書検証（[GHSA-qcf4-j55x-72hv](https://github.com/net-ssh/net-ssh/security/advisories/GHSA-qcf4-j55x-72hv)）。
+
+これらの検出は、Coletteで攻撃可能な構成が存在することの実証ではない。今回の修正はバージョンによる既知の問題を残さないための更新であり、他のgemの固定版は変更していない。
+
+ローカルの検証専用イメージはビルドに成功し、`ruby -v`で3.4.13を確認した。通常稼働中のバックエンドのRubyは、この検証によって更新されない。
