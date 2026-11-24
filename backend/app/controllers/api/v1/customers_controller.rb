@@ -159,23 +159,6 @@ class Api::V1::CustomersController < Api::V1::BaseController
       .find(params[:id])
   end
 
-  def current_rf_rank_result(customer)
-    current_run =
-      RfSetting
-        .first
-        &.current_calculation_run
-
-    return nil if current_run.nil?
-
-    current_run
-      .customer_rf_rank_results
-      .includes(
-        :rf_rank,
-        :rf_calculation_run
-      )
-      .find_by(customer_id: customer.id)
-  end
-
   def customer_create_params
     params.expect(
       customer: customer_attributes
@@ -328,18 +311,11 @@ class Api::V1::CustomersController < Api::V1::BaseController
       .new(customer)
       .as_json
   end
-  # 顧客詳細専用Serializer
+  # 一覧と同じ適用履歴・スナップショット・分類を使い、詳細だけ現在マスタへ切り替えない。
   def serialize_customer_detail(customer)
-    rf_rank_result =
-      current_rf_rank_result(customer)
-
-    Api::V1::CustomerDetailSerializer
-      .new(
-        customer,
-        current_rf_rank_result:
-          rf_rank_result
-      )
-      .as_json
+    rf_query = ::Customers::CurrentRfQuery.new
+    rf_query.load_page([ customer ])
+    Api::V1::CustomerDetailSerializer.new(customer, rf_fields: rf_query.fields(customer.id)).as_json
   end
 
   def render_customer(customer, status: :ok)

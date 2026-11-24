@@ -83,7 +83,10 @@ describe("CustomerReservationHistory", () => {
       within(history).getByRole("link", {
         name: "予約30の詳細を開く",
       }),
-    ).toHaveAttribute("href", "/reservations/30");
+    ).toHaveAttribute(
+      "href",
+      `/reservations/30?return_to=${encodeURIComponent("/customers/10")}`,
+    );
 
     expect(mocks.fetchCustomerReservations).toHaveBeenCalledWith(10, {
       page: 1,
@@ -213,4 +216,55 @@ describe("CustomerReservationHistory", () => {
       per_page: 20,
     });
   });
+});
+
+it("URLの履歴ページを復元し、予約詳細へ元の条件を渡す", async () => {
+  const query = new URLSearchParams({
+    history_page: "2",
+    return_to: "/customers?query=山田&page=3",
+  });
+  window.history.replaceState(null, "", `/customers/10?${query}`);
+  mocks.fetchCustomerReservations.mockResolvedValue({
+    data: {
+      reservations: [createReservation({ id: 30 })],
+      pagination: createPagination({
+        current_page: 2,
+        total_pages: 2,
+        total_count: 21,
+      }),
+    },
+  });
+  render(<CustomerReservationHistory customerId={10} />);
+  expect(
+    await screen.findByRole("link", { name: "予約30の詳細を開く" }),
+  ).toHaveAttribute(
+    "href",
+    `/reservations/30?return_to=${encodeURIComponent(`/customers/10?${query}`)}`,
+  );
+  expect(mocks.fetchCustomerReservations).toHaveBeenCalledWith(10, {
+    page: 2,
+    per_page: 20,
+  });
+});
+
+it.each([
+  [{ completed_at: "2026-11-23T20:00:00+09:00" }, "退店済"],
+  [
+    { canceled_at: "2026-11-23T18:00:00+09:00", cancellation_kind: "regular" },
+    "キャンセル",
+  ],
+  [
+    { canceled_at: "2026-11-23T18:00:00+09:00", cancellation_kind: "no_show" },
+    "無断キャンセル",
+  ],
+] as const)("受付状態より来店結果%sを優先する", async (result, label) => {
+  mocks.fetchCustomerReservations.mockResolvedValue({
+    data: {
+      reservations: [createReservation(result)],
+      pagination: createPagination(),
+    },
+  });
+  render(<CustomerReservationHistory customerId={10} />);
+  expect(await screen.findByText(label)).toBeInTheDocument();
+  expect(screen.queryByText("予約確定")).not.toBeInTheDocument();
 });

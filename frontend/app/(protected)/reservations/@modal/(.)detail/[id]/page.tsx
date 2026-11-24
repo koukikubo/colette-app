@@ -1,6 +1,9 @@
 import PageContent from "../../../[id]/page";
 import { ReservationRouteModal } from "@/features/reservations/components/layouts/reservation-route-modal";
-export default function Page(props: { params: Promise<{ id: string }> }) {
+export default function Page(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ return_to?: string | string[] }>;
+}) {
   return (
     <ReservationRouteModal
       title="予約詳細"

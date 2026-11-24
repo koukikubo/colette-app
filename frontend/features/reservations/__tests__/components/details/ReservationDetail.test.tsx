@@ -73,3 +73,39 @@ describe("ReservationDetail", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it("顧客詳細の履歴ページと検索への戻り先を保持する", () => {
+  const path = `/customers/10?history_page=2&return_to=${encodeURIComponent("/customers?query=山田&page=3")}`;
+  render(
+    <ReservationDetail
+      reservation={createReservation({ customer_id: 10 })}
+      returnTo={path}
+    />,
+  );
+  expect(screen.getByRole("link", { name: "顧客詳細へ戻る" })).toHaveAttribute(
+    "href",
+    path,
+  );
+});
+
+it.each([
+  "https://example.com",
+  "//example.com",
+  "/customers/11",
+  "/customers/10/hidden",
+  "/customers/10/../11",
+])("不正な戻り先%sを顧客詳細として扱わない", (returnTo) => {
+  render(
+    <ReservationDetail
+      reservation={createReservation({ customer_id: 10 })}
+      returnTo={returnTo}
+    />,
+  );
+  expect(
+    screen.queryByRole("link", { name: "顧客詳細へ戻る" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "一覧へ戻る" })).toHaveAttribute(
+    "href",
+    "/reservations?date=2026-09-08",
+  );
+});
