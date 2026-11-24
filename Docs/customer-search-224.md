@@ -38,3 +38,9 @@ E2Eでは、初期画面と入力中に明細GETがないこと、PC/390px、複
 - [Railsのクエリ・集約・ページング](https://guides.rubyonrails.org/active_record_querying.html)
 - [PostgreSQL 17の集約関数](https://www.postgresql.org/docs/17/functions-aggregate.html)
 - Next.jsのLink・URL同期は導入済みバージョンの`node_modules/next/dist/docs/`を参照した。
+
+## PRレビュー・初回E2Eからの修正
+
+Codexから同じ条件で再検索しても取得し直さない点が指摘されたため、修正前の失敗を回帰テストで確認し、同条件の検索・再適用でも再取得するよう修正した。画面外のAPI更新後に同じ検索ボタンで最新名を取得する実サービスE2Eも追加した。
+
+初回E2Eでは、長い絞り込みパネルの適用ボタンが画面外となり通常クリックできなかった。クリックの強制や検査の緩和はせず、条件領域だけをスクロールし、操作フッターを分離して利用可能な高さへ収めるレイアウトへ修正した。最終SHAで再検証する。

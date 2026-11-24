@@ -180,194 +180,200 @@ export function CustomerFilterPopover({
       </PopoverTrigger>
 
       <PopoverContent
-        className="max-h-[80vh] w-[28rem] max-w-[calc(100vw-2rem)] space-y-5 overflow-y-auto"
+        className="flex max-h-[min(80vh,var(--radix-popover-content-available-height))] w-[28rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0"
         align="end"
       >
-        <div>
-          <h3 className="font-semibold">詳細条件</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            異なる条件はすべて満たす顧客を表示します。
-          </p>
-        </div>
-        <div className="space-y-3">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
           <div>
-            <p className="font-medium">表示状態</p>
-            <p className="text-sm text-muted-foreground">
-              顧客の表示状態を選択します。
+            <h3 className="font-semibold">詳細条件</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              異なる条件はすべて満たす顧客を表示します。
             </p>
           </div>
-
-          <RadioGroup
-            value={draftVisibility}
-            onValueChange={(value) =>
-              setDraftVisibility(value as CustomerVisibility)
-            }
-          >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem id="visibility-visible" value="visible" />
-              <Label htmlFor="visibility-visible">表示中</Label>
+          <div className="space-y-3">
+            <div>
+              <p className="font-medium">表示状態</p>
+              <p className="text-sm text-muted-foreground">
+                顧客の表示状態を選択します。
+              </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <RadioGroupItem id="visibility-hidden" value="hidden" />
-              <Label htmlFor="visibility-hidden">非表示</Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <RadioGroupItem id="visibility-all" value="all" />
-              <Label htmlFor="visibility-all">すべて</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <p className="font-medium">顧客区分</p>
-            <p className="text-sm text-muted-foreground">
-              個人または法人で絞り込みます。
-            </p>
-          </div>
-
-          <RadioGroup
-            value={draftCustomerKind}
-            onValueChange={(value) =>
-              setDraftCustomerKind(value as CustomerKindFilter)
-            }
-          >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem id="customer-kind-all" value="all" />
-              <Label htmlFor="customer-kind-all">すべて</Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <RadioGroupItem
-                id="customer-kind-individual"
-                value="individual"
-              />
-              <Label htmlFor="customer-kind-individual">個人</Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <RadioGroupItem id="customer-kind-corporate" value="corporate" />
-              <Label htmlFor="customer-kind-corporate">法人</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="customer-rank-filter">手動設定の顧客ランク</Label>
-          <select
-            id="customer-rank-filter"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            value={draftRank}
-            disabled={rankOptions.loading}
-            onChange={(event) => setDraftRank(event.target.value)}
-          >
-            <option value="all">すべて</option>
-            <option value="unassigned">未設定</option>
-            {customerRankId !== undefined &&
-              customerRankId !== "unassigned" &&
-              !rankOptions.options.some(
-                (option) => option.id === customerRankId,
-              ) && <option value={customerRankId}>現在の検索条件</option>}
-            {rankOptions.options.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-                {option.active ? "" : "（無効）"}
-              </option>
-            ))}
-          </select>
-          {rankOptions.loading && (
-            <p role="status" className="text-sm">
-              選択肢を取得中です…
-            </p>
-          )}
-          {rankOptions.error && (
-            <div role="alert" className="text-sm text-destructive">
-              <p>{rankOptions.error}</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={rankOptions.retry}
-              >
-                選択肢を再取得
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="customer-rf-filter">現在適用中のRFランク</Label>
-          <select
-            id="customer-rf-filter"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            value={draftRf}
-            onChange={(event) => setDraftRf(event.target.value)}
-          >
-            <option value="all">すべて</option>
-            {rfRankId !== undefined &&
-              !rfReference?.ranks.some((rank) => rank.id === rfRankId) && (
-                <option value={rfRankId}>現在の検索条件</option>
-              )}
-            {(rfReference?.ranks ?? []).map((rank) => (
-              <option key={rank.id} value={rank.id}>
-                {rank.label}
-              </option>
-            ))}
-            {Object.entries(CUSTOMER_RF_STATES).map(([state, label]) => (
-              <option key={state} value={`state:${state}`}>
-                {label}
-              </option>
-            ))}
-          </select>
-          {rfReference?.base_date && (
-            <p className="text-xs text-muted-foreground">
-              計算基準日：{rfReference.base_date}
-            </p>
-          )}
-        </div>
-
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-medium">来店実績で絞り込む</legend>
-          <p className="text-xs text-muted-foreground">
-            最終来店日は全期間、回数は直近12か月の退店済み予約が対象です。
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {(
-              [
-                ["last_visit_from", "最終来店日（開始）", "date"],
-                ["last_visit_to", "最終来店日（終了）", "date"],
-                ["min_visits", "来店回数（最小）", "number"],
-                ["max_visits", "来店回数（最大）", "number"],
-              ] as const
-            ).map(([key, label, type]) => (
-              <div key={key} className="min-w-0 space-y-1.5">
-                <Label htmlFor={`visit-${key}`}>{label}</Label>
-                <Input
-                  id={`visit-${key}`}
-                  type={type}
-                  min={type === "number" ? 0 : undefined}
-                  max={type === "number" ? 999999 : undefined}
-                  value={draftVisits[key]}
-                  onChange={(event) =>
-                    setDraftVisits((current) => ({
-                      ...current,
-                      [key]: event.target.value,
-                    }))
-                  }
-                  aria-invalid={Boolean(invalidVisits)}
-                />
+            <RadioGroup
+              value={draftVisibility}
+              onValueChange={(value) =>
+                setDraftVisibility(value as CustomerVisibility)
+              }
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="visibility-visible" value="visible" />
+                <Label htmlFor="visibility-visible">表示中</Label>
               </div>
-            ))}
+
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="visibility-hidden" value="hidden" />
+                <Label htmlFor="visibility-hidden">非表示</Label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="visibility-all" value="all" />
+                <Label htmlFor="visibility-all">すべて</Label>
+              </div>
+            </RadioGroup>
           </div>
-          {invalidVisits && (
-            <p role="alert" className="text-sm text-destructive">
-              日付・回数の範囲を確認してください。回数は0以上の整数で、最小値は最大値以下です。
+
+          <div className="space-y-3">
+            <div>
+              <p className="font-medium">顧客区分</p>
+              <p className="text-sm text-muted-foreground">
+                個人または法人で絞り込みます。
+              </p>
+            </div>
+
+            <RadioGroup
+              value={draftCustomerKind}
+              onValueChange={(value) =>
+                setDraftCustomerKind(value as CustomerKindFilter)
+              }
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="customer-kind-all" value="all" />
+                <Label htmlFor="customer-kind-all">すべて</Label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <RadioGroupItem
+                  id="customer-kind-individual"
+                  value="individual"
+                />
+                <Label htmlFor="customer-kind-individual">個人</Label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <RadioGroupItem
+                  id="customer-kind-corporate"
+                  value="corporate"
+                />
+                <Label htmlFor="customer-kind-corporate">法人</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customer-rank-filter">手動設定の顧客ランク</Label>
+            <select
+              id="customer-rank-filter"
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={draftRank}
+              disabled={rankOptions.loading}
+              onChange={(event) => setDraftRank(event.target.value)}
+            >
+              <option value="all">すべて</option>
+              <option value="unassigned">未設定</option>
+              {customerRankId !== undefined &&
+                customerRankId !== "unassigned" &&
+                !rankOptions.options.some(
+                  (option) => option.id === customerRankId,
+                ) && <option value={customerRankId}>現在の検索条件</option>}
+              {rankOptions.options.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                  {option.active ? "" : "（無効）"}
+                </option>
+              ))}
+            </select>
+            {rankOptions.loading && (
+              <p role="status" className="text-sm">
+                選択肢を取得中です…
+              </p>
+            )}
+            {rankOptions.error && (
+              <div role="alert" className="text-sm text-destructive">
+                <p>{rankOptions.error}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={rankOptions.retry}
+                >
+                  選択肢を再取得
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customer-rf-filter">現在適用中のRFランク</Label>
+            <select
+              id="customer-rf-filter"
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={draftRf}
+              onChange={(event) => setDraftRf(event.target.value)}
+            >
+              <option value="all">すべて</option>
+              {rfRankId !== undefined &&
+                !rfReference?.ranks.some((rank) => rank.id === rfRankId) && (
+                  <option value={rfRankId}>現在の検索条件</option>
+                )}
+              {(rfReference?.ranks ?? []).map((rank) => (
+                <option key={rank.id} value={rank.id}>
+                  {rank.label}
+                </option>
+              ))}
+              {Object.entries(CUSTOMER_RF_STATES).map(([state, label]) => (
+                <option key={state} value={`state:${state}`}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {rfReference?.base_date && (
+              <p className="text-xs text-muted-foreground">
+                計算基準日：{rfReference.base_date}
+              </p>
+            )}
+          </div>
+
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-medium">来店実績で絞り込む</legend>
+            <p className="text-xs text-muted-foreground">
+              最終来店日は全期間、回数は直近12か月の退店済み予約が対象です。
             </p>
-          )}
-        </fieldset>
-        <div className="sticky bottom-0 flex justify-end gap-2 bg-popover pt-3">
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  ["last_visit_from", "最終来店日（開始）", "date"],
+                  ["last_visit_to", "最終来店日（終了）", "date"],
+                  ["min_visits", "来店回数（最小）", "number"],
+                  ["max_visits", "来店回数（最大）", "number"],
+                ] as const
+              ).map(([key, label, type]) => (
+                <div key={key} className="min-w-0 space-y-1.5">
+                  <Label htmlFor={`visit-${key}`}>{label}</Label>
+                  <Input
+                    id={`visit-${key}`}
+                    type={type}
+                    min={type === "number" ? 0 : undefined}
+                    max={type === "number" ? 999999 : undefined}
+                    value={draftVisits[key]}
+                    onChange={(event) =>
+                      setDraftVisits((current) => ({
+                        ...current,
+                        [key]: event.target.value,
+                      }))
+                    }
+                    aria-invalid={Boolean(invalidVisits)}
+                  />
+                </div>
+              ))}
+            </div>
+            {invalidVisits && (
+              <p role="alert" className="text-sm text-destructive">
+                日付・回数の範囲を確認してください。回数は0以上の整数で、最小値は最大値以下です。
+              </p>
+            )}
+          </fieldset>
+        </div>
+        {/* 条件だけをスクロールし、狭い画面でも適用・リセットを常に操作できる。 */}
+        <div className="flex shrink-0 justify-end gap-2 bg-popover px-4 pb-4 pt-3">
           <Button type="button" variant="ghost" onClick={handleReset}>
             リセット
           </Button>
