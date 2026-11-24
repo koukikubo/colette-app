@@ -1,5 +1,5 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
-import { renderWithOwner as render } from "@/test-utils/auth";
+import { renderWithRole, renderWithOwner as render } from "@/test-utils/auth";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -74,6 +74,7 @@ function createCustomer(
     lock_version: 2,
     created_by_staff: { id: 1, code: "001", name: "店主" },
     updated_by_staff: { id: 2, code: "002", name: "担当者" },
+    rf_rank_state: "no_applied_run",
     current_rf_rank: null,
     rf_rank_basis: null,
     created_at: "2026-09-01T10:00:00+09:00",
@@ -184,6 +185,7 @@ describe("CustomerDetailPageClient", () => {
             code: "VIP",
             label: "VIP顧客",
           },
+          rf_rank_state: "ranked",
           current_rf_rank: {
             id: 20,
             display_code: "00020",
@@ -237,6 +239,7 @@ describe("CustomerDetailPageClient", () => {
             code: "VIP",
             label: "VIP顧客",
           },
+          rf_rank_state: "ranked",
           current_rf_rank: {
             id: 20,
             display_code: "00020",
@@ -298,10 +301,10 @@ describe("CustomerDetailPageClient", () => {
       }),
     ).toBeInTheDocument();
 
-    expect(screen.getByText("未計算")).toBeInTheDocument();
+    expect(screen.getByText("適用履歴なし")).toBeInTheDocument();
 
     expect(
-      screen.getByText("現在適用中のRF計算結果はありません。"),
+      screen.getByText("現在適用中のRF計算履歴はありません。"),
     ).toBeInTheDocument();
   });
 
@@ -315,6 +318,7 @@ describe("CustomerDetailPageClient", () => {
             code: "VIP",
             label: "VIP顧客",
           },
+          rf_rank_state: "excluded",
           current_rf_rank: null,
           rf_rank_basis: {
             calculation_run_id: 5,
@@ -451,3 +455,74 @@ it.each([true, false])(
     }
   },
 );
+
+it("ルール未一致を計算対象外や未計算と表示しない", async () => {
+  mocks.fetchCustomer.mockResolvedValue({
+    data: {
+      customer: createCustomer({
+        rf_rank_state: "unmatched",
+        rf_rank_basis: {
+          calculation_run_id: 1,
+          base_date: "2026-11-24",
+          recency_days: 10,
+          frequency_count: 1,
+          last_visit_on: "2026-11-14",
+          exclusion_reason: "no_matching_rule",
+        },
+      }),
+    },
+  });
+  render(<CustomerDetailPageClient customerId={10} />);
+  expect(await screen.findByText("ルール未一致")).toBeInTheDocument();
+  expect(screen.queryByText("RF計算対象外")).not.toBeInTheDocument();
+  expect(screen.queryByText("未計算")).not.toBeInTheDocument();
+});
+
+it("閲覧専用ユーザーは顧客を確認できるが編集できない", async () => {
+  mocks.fetchCustomer.mockResolvedValue({
+    data: { customer: createCustomer() },
+  });
+  renderWithRole(<CustomerDetailPageClient customerId={10} />, "viewer");
+  expect(
+    await screen.findByRole("heading", { name: "山田 太郎" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /編集/ }),
+  ).not.toBeInTheDocument();
+});
+
+it("初回取得の失敗から再読み込みで回復する", async () => {
+  const user = userEvent.setup();
+  mocks.fetchCustomer
+    .mockRejectedValueOnce(new Error("network"))
+    .mockResolvedValueOnce({ data: { customer: createCustomer() } });
+  render(<CustomerDetailPageClient customerId={10} />);
+  await user.click(await screen.findByRole("button", { name: "再読み込み" }));
+  expect(
+    await screen.findByRole("heading", { name: "山田 太郎" }),
+  ).toBeInTheDocument();
+});
+
+it.each([
+  ["not_calculated", "未計算"],
+  ["no_visit", "来店履歴なし：Nランク"],
+] as const)("RF分類%sを一覧と同じ意味で表示する", async (state, label) => {
+  mocks.fetchCustomer.mockResolvedValue({
+    data: {
+      customer: createCustomer({
+        rf_rank_state: state,
+        current_rf_rank:
+          state === "no_visit"
+            ? {
+                id: 3,
+                display_code: "N",
+                label: "Nランク",
+                display_color: "#64748B",
+              }
+            : null,
+      }),
+    },
+  });
+  render(<CustomerDetailPageClient customerId={10} />);
+  expect(await screen.findByText(label)).toBeInTheDocument();
+});

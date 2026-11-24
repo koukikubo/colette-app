@@ -81,11 +81,8 @@ export type Customer = {
   updated_at: string;
 };
 
-// 顧客詳細APIでのみ返される情報
-export type CustomerDetail = Customer & {
-  current_rf_rank: RfRankSummary | null;
-  rf_rank_basis: CustomerRfRankBasis | null;
-};
+// 詳細と一覧は同じ適用履歴のRF分類・判定根拠を返す。
+export type CustomerDetail = CustomerListItem;
 
 // 一覧では「適用履歴なし」と「適用履歴内の未計算」も区別する。
 export const CUSTOMER_RF_STATES = {

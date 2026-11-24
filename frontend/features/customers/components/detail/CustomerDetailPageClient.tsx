@@ -23,7 +23,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiClientError } from "@/lib/api/api-client";
 
 import { fetchCustomer } from "../../api/customer-api";
-import type { Customer, CustomerDetail } from "../../types";
+import {
+  CUSTOMER_RF_STATES,
+  type Customer,
+  type CustomerDetail,
+} from "../../types";
 import {
   formatCustomerPhoneNumber,
   formatCustomerPostalCode,
@@ -85,6 +89,7 @@ function formatDateTime(value: string | null | undefined) {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    timeZone: "Asia/Tokyo",
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
@@ -94,16 +99,9 @@ function customerKindLabel(customerKind: Customer["customer_kind"]) {
   return customerKind === "corporate" ? "法人" : "個人";
 }
 
+// RFの計算有無とルール未一致を分け、一覧と同じ分類名を表示する。
 function rfRankDisplayValue(customer: CustomerDetail) {
-  if (customer.current_rf_rank) {
-    return customer.current_rf_rank.label;
-  }
-
-  if (customer.rf_rank_basis?.exclusion_reason) {
-    return "RF計算対象外";
-  }
-
-  return "未計算";
+  return CUSTOMER_RF_STATES[customer.rf_rank_state];
 }
 
 function rfExclusionReasonMessage(reason: string) {
@@ -315,7 +313,17 @@ export function CustomerDetailPageClient({
         <Alert variant="destructive">
           <AlertTitle>顧客情報を表示できません</AlertTitle>
 
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertDescription>
+            <p>{errorMessage}</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3"
+              onClick={() => setReloadKey((value) => value + 1)}
+            >
+              再読み込み
+            </Button>
+          </AlertDescription>
         </Alert>
       </div>
     );
@@ -504,19 +512,16 @@ export function CustomerDetailPageClient({
               <ChartNoAxesCombinedIcon className="size-5" aria-hidden="true" />
             }
           >
-            <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
-              <DetailItem
-                label="手動設定の顧客ランク"
-                value={customer.customer_rank?.label ?? "未設定"}
-              />
+            {!customer.rf_rank_basis && (
+              <p className="mt-6 rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
+                {customer.rf_rank_state === "no_applied_run"
+                  ? "現在適用中のRF計算履歴はありません。"
+                  : "この顧客は現在適用中のRF計算に含まれていません。"}
+              </p>
+            )}
 
-              {!customer.rf_rank_basis && (
-                <p className="mt-6 rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
-                  現在適用中のRF計算結果はありません。
-                </p>
-              )}
-
-              {customer.rf_rank_basis?.exclusion_reason && (
+            {customer.rf_rank_state === "excluded" &&
+              customer.rf_rank_basis?.exclusion_reason && (
                 <Alert className="mt-6">
                   <AlertTitle>RF計算対象外</AlertTitle>
 
@@ -528,6 +533,12 @@ export function CustomerDetailPageClient({
                 </Alert>
               )}
 
+            <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
+              <DetailItem
+                label="手動設定の顧客ランク"
+                value={customer.customer_rank?.label ?? "未設定"}
+              />
+
               <DetailItem
                 label="現在のRFランク"
                 value={
@@ -537,11 +548,18 @@ export function CustomerDetailPageClient({
                         aria-hidden="true"
                         className="size-3 shrink-0 rounded-full"
                         style={{
-                          backgroundColor:
-                            customer.current_rf_rank.display_color ?? "#64748B",
+                          backgroundColor: /^#[0-9a-f]{6}$/i.test(
+                            customer.current_rf_rank.display_color ?? "",
+                          )
+                            ? customer.current_rf_rank.display_color!
+                            : "#64748B",
                         }}
                       />
-                      <span>{customer.current_rf_rank.label}</span>
+                      <span>
+                        {customer.rf_rank_state === "no_visit"
+                          ? `来店履歴なし：${customer.current_rf_rank.label}`
+                          : customer.current_rf_rank.label}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         （{customer.current_rf_rank.display_code}）
                       </span>
