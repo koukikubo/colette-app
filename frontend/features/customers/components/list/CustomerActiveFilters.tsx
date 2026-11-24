@@ -70,7 +70,7 @@ export function CustomerActiveFilters({
 
       {(filters.rf_rank_id !== undefined || filters.rf_rank_state) && (
         <Button type="button" variant="secondary" size="sm" onClick={onClearRf}>
-          RFランク:{" "}
+          {filters.rf_rank_state ? "RF計算状態" : "RFランク"}:{" "}
           {filters.rf_rank_state
             ? CUSTOMER_RF_STATES[filters.rf_rank_state]
             : (rfRankLabel ?? "選択中")}
