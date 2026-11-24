@@ -130,6 +130,7 @@ export function CustomerListPageClient() {
   }
 
   const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [savedNotice, setSavedNotice] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   );
@@ -237,11 +238,13 @@ export function CustomerListPageClient() {
   }
 
   function handleOpenCreateDialog() {
+    setSavedNotice(false);
     setSelectedCustomer(null);
     setFormDialogOpen(true);
   }
 
   function handleOpenEditDialog(customer: Customer) {
+    setSavedNotice(false);
     setSelectedCustomer(customer);
     setFormDialogOpen(true);
   }
@@ -254,8 +257,10 @@ export function CustomerListPageClient() {
     }
   }
 
-  function handleCustomerFormCompleted() {
-    return searchEnabled ? refresh() : analytics.refresh();
+  async function handleCustomerFormCompleted() {
+    await (searchEnabled ? refresh() : analytics.refresh());
+    // 明細を開かない初期画面でも、登録・更新の保存成功を確認できるようにする。
+    setSavedNotice(true);
   }
 
   function handleRetry() {
@@ -264,6 +269,11 @@ export function CustomerListPageClient() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
+      {savedNotice && (
+        <p role="status" className="rounded-xl bg-primary/10 px-5 py-3 text-sm">
+          顧客情報を保存しました。
+        </p>
+      )}
       <section
         className="space-y-4 rounded-2xl bg-card p-5 shadow-sm sm:p-7"
         aria-label="顧客一覧の検索とページ操作"

@@ -123,6 +123,9 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   const savedCustomer = await customerResponse;
   expect(savedCustomer.status()).toBe(201);
   const customer = (await savedCustomer.json()).data.customer;
+  await expect(
+    page.getByText("顧客情報を保存しました。", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("searchbox", { name: "顧客検索キーワード" }).fill(name);
   await page.getByRole("button", { name: "検索", exact: true }).click();
   await expect(
