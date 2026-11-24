@@ -15,7 +15,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
 import {
-  CUSTOMER_RF_STATES,
   type CustomerVisitFilters,
   type CustomerListParams,
   type CustomerRfState,
@@ -88,9 +87,6 @@ export function CustomerFilterPopover({
   const [draftRank, setDraftRank] = useState(String(customerRankId ?? "all"));
 
   const [draftRfRank, setDraftRfRank] = useState(String(rfRankId ?? "all"));
-  const [draftRfState, setDraftRfState] = useState<CustomerRfState | "all">(
-    rfRankState ?? "all",
-  );
   const activeFilterCount =
     Number(customerRankId !== undefined) +
     Number(rfRankId !== undefined || rfRankState !== undefined) +
@@ -108,7 +104,6 @@ export function CustomerFilterPopover({
       setDraftVisibility(visibility);
       setDraftRank(String(customerRankId ?? "all"));
       setDraftRfRank(String(rfRankId ?? "all"));
-      setDraftRfState(rfRankState ?? "all");
       setDraftCustomerKind(customerKind ?? "all");
     }
 
@@ -126,7 +121,6 @@ export function CustomerFilterPopover({
     setDraftVisibility("visible");
     setDraftRank("all");
     setDraftRfRank("all");
-    setDraftRfState("all");
     setDraftCustomerKind("all");
   }
 
@@ -144,9 +138,9 @@ export function CustomerFilterPopover({
           ? undefined
           : Number(draftVisits.max_visits),
       visibility: draftVisibility,
-      // ランクと計算状態は別の概念。既存APIの排他契約は選択時に維持する。
+      // 通常検索はランクのみ。旧URLの計算状態も条件の再適用時に解除する。
       rfRankId: draftRfRank === "all" ? undefined : Number(draftRfRank),
-      rfRankState: draftRfState === "all" ? undefined : draftRfState,
+      rfRankState: undefined,
       customerRankId:
         draftRank === "all"
           ? undefined
@@ -303,7 +297,6 @@ export function CustomerFilterPopover({
               value={draftRfRank}
               onChange={(event) => {
                 setDraftRfRank(event.target.value);
-                if (event.target.value !== "all") setDraftRfState("all");
               }}
             >
               <option value="all">すべて</option>
@@ -322,40 +315,6 @@ export function CustomerFilterPopover({
                 計算基準日：{rfReference.base_date}
               </p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="customer-rf-state-filter">RF計算状態</Label>
-            <select
-              id="customer-rf-state-filter"
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={draftRfState}
-              aria-describedby="customer-rf-condition-help"
-              onChange={(event) => {
-                setDraftRfState(event.target.value as CustomerRfState | "all");
-                if (event.target.value !== "all") setDraftRfRank("all");
-              }}
-            >
-              <option value="all">すべて</option>
-              {/* 過去のURLは復元できるが、未訪問の新規検索はランク欄へ集約する。 */}
-              {draftRfState === "no_visit" && (
-                <option value="no_visit">来店履歴なし（旧検索条件）</option>
-              )}
-              {Object.entries(CUSTOMER_RF_STATES)
-                .filter(([state]) => state !== "no_visit")
-                .map(([state, label]) => (
-                  <option key={state} value={state}>
-                    {label}
-                  </option>
-                ))}
-            </select>
-            <p
-              id="customer-rf-condition-help"
-              className="text-xs text-muted-foreground"
-            >
-              RFランクとRF計算状態はどちらか一方で検索します。選択すると他方は「すべて」に戻ります。
-              「来店履歴なし」はRFランクから選択してください。
-            </p>
           </div>
 
           <fieldset className="space-y-3">
