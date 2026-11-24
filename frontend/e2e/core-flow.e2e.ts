@@ -1134,7 +1134,10 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   const option = (await optionResponse.json()).data.standard_list_master;
   const rows = (await (await page.request.get("/api/v1/customers")).json()).data
     .customers;
-  const target = rows[0];
+  const target =
+    rows.find(
+      (row: { rf_rank_state: string }) => row.rf_rank_state === "ranked",
+    ) ?? rows[0];
   expect(target).toBeDefined();
   let historyRequests = 0;
   page.on("request", (request) => {

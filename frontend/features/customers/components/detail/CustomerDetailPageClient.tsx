@@ -454,52 +454,53 @@ export function CustomerDetailPageClient({
               </span>
             </div>
           </div>
-          <dl className="grid gap-x-8 gap-y-4 px-6 py-5 sm:grid-cols-2">
-            <DetailItem
-              label="電話番号"
-              value={
-                <span className="inline-flex items-center gap-2">
-                  <PhoneIcon
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  {formatCustomerPhoneNumber(customer.phone_number)}
+          <dl className="grid gap-x-6 gap-y-3 px-6 py-5 sm:grid-cols-2">
+            <div className="min-w-0">
+              <dt className="sr-only">電話番号</dt>
+              <dd className="inline-flex items-center gap-2 text-sm font-medium">
+                <PhoneIcon
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                {formatCustomerPhoneNumber(customer.phone_number)}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="sr-only">メールアドレス</dt>
+              <dd className="inline-flex items-start gap-2 text-sm wrap-anywhere">
+                <MailIcon
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                {displayValue(customer.email)}
+              </dd>
+            </div>
+            <div className="min-w-0 sm:col-span-2">
+              <dt className="sr-only">住所・郵便番号</dt>
+              <dd className="inline-flex items-start gap-2 text-sm text-muted-foreground">
+                <MapPinIcon
+                  className="mt-0.5 size-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="flex flex-wrap gap-x-2">
+                  <span>
+                    〒
+                    <span>
+                      {formatCustomerPostalCode(customer.postal_code)}
+                    </span>
+                  </span>
+                  <span className="wrap-anywhere">
+                    {displayValue(customer.address)}
+                  </span>
                 </span>
-              }
-            />
-            <DetailItem
-              label="メールアドレス"
-              value={
-                <span className="inline-flex items-center gap-2 wrap-anywhere">
-                  <MailIcon
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  {displayValue(customer.email)}
-                </span>
-              }
-            />
-            <DetailItem
-              label="郵便番号"
-              value={formatCustomerPostalCode(customer.postal_code)}
-            />
-            <DetailItem
-              label="生年月日"
-              value={formatDate(customer.birthday)}
-            />
-            <DetailItem
-              label="住所"
-              value={
-                <span className="inline-flex items-start gap-2">
-                  <MapPinIcon
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  {displayValue(customer.address)}
-                </span>
-              }
-              wide
-            />
+              </dd>
+            </div>
+            {customer.birthday && (
+              <div className="text-sm text-muted-foreground">
+                <dt className="inline">生年月日：</dt>
+                <dd className="inline">{formatDate(customer.birthday)}</dd>
+              </div>
+            )}
           </dl>
 
           {customer.customer_kind === "corporate" && (
