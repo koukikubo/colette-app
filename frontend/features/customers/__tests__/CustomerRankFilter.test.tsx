@@ -4,11 +4,33 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { renderWithOwner } from "@/test-utils/auth";
 import { CustomerListPageClient } from "../components/list/CustomerListPageClient";
 const mocks = vi.hoisted(() => ({ list: vi.fn(), codes: vi.fn() }));
-vi.mock("../api/customer-api", () => ({ fetchCustomers: mocks.list }));
+vi.mock("../api/customer-api", () => ({
+  fetchCustomerAnalytics: async () => ({
+    data: {
+      period: {
+        month_from: "2026-11-01",
+        through: "2026-11-24",
+        ranking_from: "2025-11-24",
+      },
+      summary: {
+        customer_count: 0,
+        monthly_visits: 0,
+        monthly_customers: 0,
+        returning_customers: 0,
+        returning_ratio: null,
+      },
+      ranking: [],
+      rf_reference: { calculation_run_id: null, base_date: null, ranks: [] },
+    },
+  }),
+  fetchCustomers: mocks.list,
+}));
 vi.mock("@/features/standard-codes/api/standard-code-api", () => ({
   fetchStandardCodes: mocks.codes,
 }));
 beforeEach(() => {
+  // 既存の一覧・保存テストは検索実行済みの状態で検証する。
+  window.history.replaceState(null, "", "/customers?searched=1");
   mocks.list.mockReset().mockResolvedValue({
     data: {
       customers: [],

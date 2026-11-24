@@ -3,6 +3,7 @@
 // import { type FormEvent, useState } from "react";
 import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
 import type {
+  CustomerVisitFilters,
   CustomerListParams,
   CustomerRfState,
   CustomerRfReference,
@@ -18,6 +19,7 @@ import type { CustomerFilterValues } from "./CustomerFilterPopover";
 import { CustomerKeywordSearch } from "../search/CustomerKeywordSearch";
 
 type CustomerSearchFormProps = {
+  visitFilters?: CustomerVisitFilters;
   customerRankId?: CustomerListParams["customer_rank_id"];
   rankOptions: CustomerRankOptions;
   rfRankId?: number;
@@ -36,6 +38,7 @@ type CustomerSearchFormProps = {
 };
 
 export function CustomerSearchForm({
+  visitFilters,
   value,
   hasAppliedQuery,
   visibility,
@@ -71,6 +74,7 @@ export function CustomerSearchForm({
         </Button>
 
         <CustomerFilterPopover
+          visitFilters={visitFilters}
           visibility={visibility}
           customerKind={customerKind}
           customerRankId={customerRankId}

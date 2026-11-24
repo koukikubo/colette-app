@@ -15,6 +15,24 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../api/customer-api", () => ({
+  fetchCustomerAnalytics: async () => ({
+    data: {
+      period: {
+        month_from: "2026-11-01",
+        through: "2026-11-24",
+        ranking_from: "2025-11-24",
+      },
+      summary: {
+        customer_count: 0,
+        monthly_visits: 0,
+        monthly_customers: 0,
+        returning_customers: 0,
+        returning_ratio: null,
+      },
+      ranking: [],
+      rf_reference: { calculation_run_id: null, base_date: null, ranks: [] },
+    },
+  }),
   fetchCustomers: mocks.fetchCustomers,
   createCustomer: mocks.createCustomer,
   updateCustomer: mocks.updateCustomer,
@@ -27,6 +45,8 @@ vi.mock("@/features/standard-codes/api/standard-code-api", () => ({
 }));
 
 beforeEach(() => {
+  // 既存の一覧・保存テストは検索実行済みの状態で検証する。
+  window.history.replaceState(null, "", "/customers?searched=1");
   mocks.fetchStandardCodes.mockResolvedValue({
     status: "success",
     data: {
@@ -125,7 +145,10 @@ describe("CustomerListPageClient", () => {
       screen.getByRole("link", {
         name: "山田 太郎の詳細を表示",
       }),
-    ).toHaveAttribute("href", "/customers/1?return_to=%2Fcustomers");
+    ).toHaveAttribute(
+      "href",
+      "/customers/1?return_to=%2Fcustomers%3Fsearched%3D1",
+    );
   });
 
   it("顧客が登録されていない場合、空表示メッセージを表示する", async () => {
@@ -381,7 +404,7 @@ describe("CustomerListPageClient", () => {
     ).toBeInTheDocument();
   });
 
-  it("検索条件をクリアすると、検索なしで顧客一覧を再取得する", async () => {
+  it("最後の検索条件をクリアすると明細を再取得せず初期画面へ戻る", async () => {
     const user = userEvent.setup();
 
     mocks.fetchCustomers.mockResolvedValue({
@@ -425,23 +448,9 @@ describe("CustomerListPageClient", () => {
       }),
     );
 
-    await waitFor(() => {
-      expect(mocks.fetchCustomers).toHaveBeenCalledTimes(3);
-    });
-
-    expect(mocks.fetchCustomers).toHaveBeenNthCalledWith(3, {
-      visibility: "visible",
-      customer_kind: undefined,
-      query: undefined,
-      page: 1,
-      per_page: 20,
-    });
-
+    expect(await screen.findByText("表示中の顧客数")).toBeInTheDocument();
+    expect(mocks.fetchCustomers).toHaveBeenCalledTimes(2);
     expect(searchInput).toHaveValue("");
-
-    expect(
-      await screen.findByText("顧客が登録されていません"),
-    ).toBeInTheDocument();
   });
 
   it("顧客を登録を押すと、新規登録ダイアログを表示する", async () => {

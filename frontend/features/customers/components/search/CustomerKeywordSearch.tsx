@@ -29,7 +29,12 @@ export function CustomerKeywordSearch({
         aria-label="顧客検索キーワード"
         onChange={(event) => onValueChange(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter") {
+          // IMEの変換確定と検索のEnterを分け、途中の日本語で検索しない。
+          if (
+            event.key === "Enter" &&
+            !event.nativeEvent.isComposing &&
+            event.nativeEvent.keyCode !== 229
+          ) {
             event.preventDefault();
             onSearch();
           }

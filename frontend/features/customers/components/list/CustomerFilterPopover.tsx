@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SlidersHorizontalIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -15,13 +16,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { CustomerRankOptions } from "../../hooks/useCustomerRankOptions";
 import {
   CUSTOMER_RF_STATES,
+  type CustomerVisitFilters,
   type CustomerListParams,
   type CustomerRfState,
   type CustomerRfReference,
 } from "../../types";
 import type { CustomerKind, CustomerVisibility } from "../../types";
 
-export type CustomerFilterValues = {
+export type CustomerFilterValues = CustomerVisitFilters & {
   customerRankId?: CustomerListParams["customer_rank_id"];
   rfRankId?: number;
   rfRankState?: CustomerRfState;
@@ -30,6 +32,7 @@ export type CustomerFilterValues = {
 };
 
 type CustomerFilterPopoverProps = {
+  visitFilters?: CustomerVisitFilters;
   customerRankId?: CustomerListParams["customer_rank_id"];
   rfRankId?: number;
   rfRankState?: CustomerRfState;
@@ -44,6 +47,7 @@ type CustomerFilterPopoverProps = {
 type CustomerKindFilter = CustomerKind | "all";
 
 export function CustomerFilterPopover({
+  visitFilters = {},
   visibility,
   customerKind,
   customerRankId,
@@ -55,6 +59,25 @@ export function CustomerFilterPopover({
   onApply,
 }: CustomerFilterPopoverProps) {
   const [open, setOpen] = useState(false);
+  function visitDraft() {
+    return {
+      last_visit_from: visitFilters.last_visit_from ?? "",
+      last_visit_to: visitFilters.last_visit_to ?? "",
+      min_visits: String(visitFilters.min_visits ?? ""),
+      max_visits: String(visitFilters.max_visits ?? ""),
+    };
+  }
+  const [draftVisits, setDraftVisits] = useState(visitDraft);
+  const invalidVisits =
+    (draftVisits.last_visit_from &&
+      draftVisits.last_visit_to &&
+      draftVisits.last_visit_from > draftVisits.last_visit_to) ||
+    [draftVisits.min_visits, draftVisits.max_visits].some(
+      (value) => value !== "" && !/^\d{1,6}$/.test(value),
+    ) ||
+    (draftVisits.min_visits !== "" &&
+      draftVisits.max_visits !== "" &&
+      Number(draftVisits.min_visits) > Number(draftVisits.max_visits));
 
   const [draftVisibility, setDraftVisibility] =
     useState<CustomerVisibility>(visibility);
@@ -75,10 +98,16 @@ export function CustomerFilterPopover({
     Number(customerRankId !== undefined) +
     Number(rfRankId !== undefined || rfRankState !== undefined) +
     Number(visibility !== "visible") +
-    Number(customerKind !== undefined);
+    Number(customerKind !== undefined) +
+    (
+      ["last_visit_from", "last_visit_to", "min_visits", "max_visits"] as const
+    ).filter(
+      (key) => visitFilters[key] !== undefined && visitFilters[key] !== "",
+    ).length;
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) {
+      setDraftVisits(visitDraft());
       setDraftVisibility(visibility);
       setDraftRank(String(customerRankId ?? "all"));
       setDraftRf(rfValue);
@@ -90,6 +119,12 @@ export function CustomerFilterPopover({
   }
 
   function handleReset() {
+    setDraftVisits({
+      last_visit_from: "",
+      last_visit_to: "",
+      min_visits: "",
+      max_visits: "",
+    });
     setDraftVisibility("visible");
     setDraftRank("all");
     setDraftRf("all");
@@ -97,7 +132,18 @@ export function CustomerFilterPopover({
   }
 
   function handleApply() {
+    if (invalidVisits) return;
     onApply({
+      last_visit_from: draftVisits.last_visit_from || undefined,
+      last_visit_to: draftVisits.last_visit_to || undefined,
+      min_visits:
+        draftVisits.min_visits === ""
+          ? undefined
+          : Number(draftVisits.min_visits),
+      max_visits:
+        draftVisits.max_visits === ""
+          ? undefined
+          : Number(draftVisits.max_visits),
       visibility: draftVisibility,
       // 1つの選択欄でランクIDと分類を排他的に扱い、矛盾した検索を作らない。
       rfRankId:
@@ -134,9 +180,15 @@ export function CustomerFilterPopover({
       </PopoverTrigger>
 
       <PopoverContent
-        className="max-h-[80vh] w-80 max-w-[calc(100vw-2rem)] space-y-5 overflow-y-auto"
+        className="max-h-[80vh] w-[28rem] max-w-[calc(100vw-2rem)] space-y-5 overflow-y-auto"
         align="end"
       >
+        <div>
+          <h3 className="font-semibold">詳細条件</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            異なる条件はすべて満たす顧客を表示します。
+          </p>
+        </div>
         <div className="space-y-3">
           <div>
             <p className="font-medium">表示状態</p>
@@ -276,12 +328,55 @@ export function CustomerFilterPopover({
           )}
         </div>
 
-        <div className="flex justify-end gap-2">
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-medium">来店実績で絞り込む</legend>
+          <p className="text-xs text-muted-foreground">
+            最終来店日は全期間、回数は直近12か月の退店済み予約が対象です。
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {(
+              [
+                ["last_visit_from", "最終来店日（開始）", "date"],
+                ["last_visit_to", "最終来店日（終了）", "date"],
+                ["min_visits", "来店回数（最小）", "number"],
+                ["max_visits", "来店回数（最大）", "number"],
+              ] as const
+            ).map(([key, label, type]) => (
+              <div key={key} className="min-w-0 space-y-1.5">
+                <Label htmlFor={`visit-${key}`}>{label}</Label>
+                <Input
+                  id={`visit-${key}`}
+                  type={type}
+                  min={type === "number" ? 0 : undefined}
+                  max={type === "number" ? 999999 : undefined}
+                  value={draftVisits[key]}
+                  onChange={(event) =>
+                    setDraftVisits((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))
+                  }
+                  aria-invalid={Boolean(invalidVisits)}
+                />
+              </div>
+            ))}
+          </div>
+          {invalidVisits && (
+            <p role="alert" className="text-sm text-destructive">
+              日付・回数の範囲を確認してください。回数は0以上の整数で、最小値は最大値以下です。
+            </p>
+          )}
+        </fieldset>
+        <div className="sticky bottom-0 flex justify-end gap-2 bg-popover pt-3">
           <Button type="button" variant="ghost" onClick={handleReset}>
             リセット
           </Button>
 
-          <Button type="button" onClick={handleApply}>
+          <Button
+            type="button"
+            disabled={Boolean(invalidVisits)}
+            onClick={handleApply}
+          >
             適用
           </Button>
         </div>

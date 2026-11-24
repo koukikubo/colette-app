@@ -88,7 +88,25 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
     ).toBeVisible();
   }
 
+  const initialCustomerRequests: string[] = [];
+  const trackInitialCustomers = (
+    request: import("@playwright/test").Request,
+  ) => {
+    if (
+      new URL(request.url()).pathname === "/api/v1/customers" &&
+      request.method() === "GET"
+    )
+      initialCustomerRequests.push(request.url());
+  };
+  page.on("request", trackInitialCustomers);
   await page.goto("/customers");
+  await expect(page.getByText("表示中の顧客数", { exact: true })).toBeVisible();
+  expect(initialCustomerRequests).toEqual([]);
+  await page.screenshot({
+    path: "test-results/customer-search-224-initial.png",
+    fullPage: true,
+  });
+  page.off("request", trackInitialCustomers);
   await page.getByRole("button", { name: "顧客を登録", exact: true }).click();
   await page.getByRole("textbox", { name: /^顧客名/ }).fill(name);
   await page
@@ -105,6 +123,8 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   const savedCustomer = await customerResponse;
   expect(savedCustomer.status()).toBe(201);
   const customer = (await savedCustomer.json()).data.customer;
+  await page.getByRole("searchbox", { name: "顧客検索キーワード" }).fill(name);
+  await page.getByRole("button", { name: "検索", exact: true }).click();
   await expect(
     page.getByRole("link", { name: `${name}の詳細を表示` }),
   ).toBeVisible();
@@ -954,4 +974,83 @@ test("未処理予約の選択一括処理と応答喪失からの復旧", async
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.screenshot({ path: "test-results/bulk-results-desktop.png" });
+});
+
+test("顧客検索は入力前に明細を取得せず、組み合わせ条件と詳細復帰を保持する", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("combobox", { name: "担当者", exact: true }).click();
+  await page.getByRole("option", { name: /E2E管理者/ }).click();
+  await page
+    .getByLabel("パスワード", { exact: true })
+    .fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const requests: string[] = [];
+  const track = (request: import("@playwright/test").Request) => {
+    if (
+      new URL(request.url()).pathname === "/api/v1/customers" &&
+      request.method() === "GET"
+    )
+      requests.push(request.url());
+  };
+  page.on("request", track);
+  await page.goto("/customers");
+  await expect(page.getByText("表示中の顧客数", { exact: true })).toBeVisible();
+  const analytics = await page.request.get("/api/v1/customer_analytics");
+  expect(analytics.status()).toBe(200);
+  const target = (await analytics.json()).data.ranking[0];
+  expect(target).toBeTruthy();
+  const input = page.getByRole("searchbox", { name: "顧客検索キーワード" });
+  await input.fill(target.name);
+  expect(requests).toEqual([]);
+  page.off("request", track);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "test-results/customer-search-224-mobile.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: /絞り込み/ }).click();
+  await page.getByRole("radio", { name: "個人", exact: true }).check();
+  await page.getByLabel("来店回数（最小）", { exact: true }).fill("1");
+  await page
+    .getByLabel("最終来店日（開始）", { exact: true })
+    .fill(target.last_visit_on);
+  await page.getByRole("button", { name: "適用", exact: true }).press("Enter");
+  await expect(
+    page.getByRole("link", { name: `${target.name}の詳細を表示`, exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/min_visits=1/);
+  const resultUrl = page.url();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.screenshot({
+    path: "test-results/customer-search-224-results.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("link", { name: `${target.name}の詳細を表示`, exact: true })
+    .press("Enter");
+  await page
+    .getByRole("link", { name: "顧客一覧へ戻る", exact: true })
+    .press("Enter");
+  await expect(page).toHaveURL(resultUrl);
+  await page.reload();
+  await expect(input).toHaveValue(target.name);
+  // 来店実績がある顧客を「0回」で除外し、URLだけでなくRailsまで条件が届くことを確認する。
+  await page.getByRole("button", { name: /絞り込み/ }).click();
+  await page.getByLabel("来店回数（最小）", { exact: true }).fill("");
+  await page.getByLabel("来店回数（最大）", { exact: true }).fill("0");
+  await page.getByRole("button", { name: "適用", exact: true }).click();
+  await expect(
+    page.getByText("検索条件に一致する顧客が見つかりません", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "すべて解除", exact: true }).click();
+  await expect(page.getByText("表示中の顧客数", { exact: true })).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
 });
