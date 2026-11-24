@@ -366,6 +366,7 @@ test("ログインから顧客・予約・来店完了・RF計算適用まで", 
   // 新しい計算結果を顧客詳細と予約履歴から確認する。コードやIDを表示名と混同しない。
   await page.goto(`/customers/${customer.id}`);
   await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "予約・来店履歴", exact: true }).click();
   await expect(
     page.getByRole("link", { name: `予約${reservation.id}の詳細を開く` }),
   ).toBeVisible();
@@ -639,8 +640,9 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
   await page
     .getByRole("link", { name: target.customer_name, exact: true })
     .press("Enter");
+  await page.getByRole("tab", { name: "予約・来店履歴", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "予約履歴", exact: true }),
+    page.getByRole("heading", { name: "予約・来店履歴", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("link", { name: "RFの顧客内訳に戻る", exact: true })
@@ -709,8 +711,9 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
     .getByRole("link", { name: visited.customer_name, exact: true })
     .press("Enter");
   // Linkのキー操作完了とクライアント遷移完了は別なので、詳細表示を待って戻り先を記録する。
+  await page.getByRole("tab", { name: "予約・来店履歴", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "予約履歴", exact: true }),
+    page.getByRole("heading", { name: "予約・来店履歴", exact: true }),
   ).toBeVisible();
   await expect(page).toHaveURL(
     new RegExp(`/customers/${visited.customer_id}\\?return_to=`),
@@ -1081,4 +1084,109 @@ test("顧客検索は入力前に明細を取得せず、組み合わせ条件�
   await expect(
     page.getByRole("link", { name: `${updatedName}の詳細を表示`, exact: true }),
   ).toBeVisible();
+});
+
+test("店舗独自の顧客項目を設定して回答を保存し、タブと履歴の取得を維持する", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("combobox", { name: "担当者", exact: true }).click();
+  await page.getByRole("option", { name: /E2E管理者/ }).click();
+  await page
+    .getByLabel("パスワード", { exact: true })
+    .fill(process.env.E2E_PASSWORD!);
+  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const token = (await (await page.request.get("/api/v1/csrf")).json()).data
+    .csrf_token;
+  const headers = { "X-CSRF-Token": token };
+  const label = `E2E嗜好${Date.now()}`;
+  const created = await page.request.post("/api/v1/standard_masters", {
+    headers,
+    data: {
+      standard_master: {
+        name: label,
+        active: true,
+        customer_detail_mode: "multiple",
+        customer_detail_group: "嗜好",
+      },
+    },
+  });
+  expect(created.status()).toBe(201);
+  const field = (await created.json()).data.standard_master;
+  const optionResponse = await page.request.post(
+    `/api/v1/standard_masters/${field.id}/items`,
+    {
+      headers,
+      data: { standard_list_master: { label: "日本酒", active: true } },
+    },
+  );
+  expect(optionResponse.status()).toBe(201);
+  const option = (await optionResponse.json()).data.standard_list_master;
+  const rows = (await (await page.request.get("/api/v1/customers")).json()).data
+    .customers;
+  const target = rows[0];
+  expect(target).toBeDefined();
+  let historyRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes(`/customers/${target.id}/reservations`))
+      historyRequests++;
+  });
+  await page.goto(`/customers/${target.id}?return_to=%2Fcustomers`);
+  await expect(
+    page.getByRole("heading", { name: target.name, exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(label, { exact: true })).toBeVisible();
+  expect(historyRequests).toBe(0);
+  await page
+    .getByRole("button", { name: "詳細情報を編集", exact: true })
+    .click();
+  await page
+    .getByRole("group", { name: label, exact: true })
+    .getByRole("checkbox", { name: "日本酒", exact: true })
+    .check();
+  // タブを往復しても未保存入力が消えない。
+  await page.getByRole("tab", { name: "スタッフメモ", exact: true }).click();
+  await page.getByRole("tab", { name: "詳細情報", exact: true }).click();
+  await expect(
+    page
+      .getByRole("group", { name: label, exact: true })
+      .getByRole("checkbox", { name: "日本酒", exact: true }),
+  ).toBeChecked();
+  await page.getByRole("button", { name: "変更を保存", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("保存しました");
+  const saved = (
+    await (
+      await page.request.get(`/api/v1/customers/${target.id}/detail_fields`)
+    ).json()
+  ).data;
+  expect(
+    saved.fields.find((item: { id: number }) => item.id === field.id)
+      .selected_ids,
+  ).toEqual([option.id]);
+  await page
+    .getByRole("tab", { name: "予約・来店履歴", exact: true })
+    .press("Enter");
+  await expect.poll(() => historyRequests).toBe(1);
+  await expect(page).toHaveURL(/tab=history/);
+  await page.reload();
+  await expect(
+    page.getByRole("tab", { name: "予約・来店履歴", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "詳細情報", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/customer-detail-225-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.screenshot({
+    path: "test-results/customer-detail-225-desktop.png",
+    fullPage: true,
+  });
 });

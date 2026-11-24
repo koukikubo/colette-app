@@ -41,6 +41,16 @@ vi.mock("../components/dialogs/CustomerFormDialog", () => ({
     ) : null,
 }));
 
+// 独自項目のHTTP検証は専用コンポーネントテストで行う。
+vi.mock("../components/detail/CustomerDetailFields", () => ({
+  CustomerDetailFields: () => (
+    <section aria-label="詳細情報">店舗独自項目</section>
+  ),
+}));
+beforeEach(() => {
+  window.history.replaceState(null, "", "/customers/10?tab=history");
+});
+
 vi.mock("../components/detail/CustomerReservationHistory", () => ({
   CustomerReservationHistory: ({ customerId }: { customerId: number }) => (
     <section aria-label="予約履歴">顧客{customerId}の予約履歴</section>
@@ -525,4 +535,32 @@ it.each([
   });
   render(<CustomerDetailPageClient customerId={10} />);
   expect(await screen.findByText(label)).toBeInTheDocument();
+});
+
+it("4タブをURLに保持し、上部の顧客識別を切り替えない", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/customers/10?return_to=%2Fcustomers%3Fquery%3Dtest&tab=memo",
+  );
+  mocks.fetchCustomer.mockResolvedValue({
+    data: { customer: createCustomer() },
+  });
+  const user = userEvent.setup();
+  render(<CustomerDetailPageClient customerId={10} />);
+  await screen.findByRole("heading", { name: "山田 太郎" });
+  expect(screen.getByRole("tab", { name: "スタッフメモ" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await user.click(screen.getByRole("tab", { name: "予約・来店履歴" }));
+  expect(new URLSearchParams(window.location.search).get("tab")).toBe(
+    "history",
+  );
+  expect(new URLSearchParams(window.location.search).get("return_to")).toBe(
+    "/customers?query=test",
+  );
+  expect(
+    screen.getByRole("heading", { name: "山田 太郎" }),
+  ).toBeInTheDocument();
 });

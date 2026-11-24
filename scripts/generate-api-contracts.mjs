@@ -40,6 +40,12 @@ route(
   "customer",
   client(customers, "fetchCustomerReservations"),
 );
+route(
+  "GET|PATCH",
+  "customers/:id/detail_fields",
+  "customer",
+  client(customers, "fetchCustomerDetailFields"),
+);
 route("GET", "customers/:id", "customer", client(customers, "fetchCustomer"));
 route(
   "POST|PATCH",

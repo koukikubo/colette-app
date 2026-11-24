@@ -160,7 +160,7 @@ export function CustomerReservationHistory({
                 id="customer-reservation-history-heading"
                 className="font-semibold"
               >
-                予約履歴
+                予約・来店履歴
               </h2>
 
               <p className="mt-1 text-sm text-muted-foreground">

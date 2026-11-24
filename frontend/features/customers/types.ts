@@ -213,3 +213,19 @@ export type CustomerDetailResponse = ApiSuccessResponse<CustomerDetailData>;
 
 export type CustomerReservationListResponse =
   ApiSuccessResponse<CustomerReservationListData>;
+
+// 店舗独自項目の定義と顧客の回答。基本コードIDを項目識別子として使う。
+export type CustomerDetailField = {
+  id: number;
+  name: string;
+  group: string | null;
+  mode: "none" | "single" | "multiple";
+  enabled: boolean;
+  selected_ids: number[];
+  options: { id: number; label: string; active: boolean }[];
+};
+export type CustomerDetailFieldsData = {
+  customer_id: number;
+  lock_version: number;
+  fields: CustomerDetailField[];
+};

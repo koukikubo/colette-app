@@ -54,6 +54,8 @@ function buildInitialValues(
 ): StandardCodeFormValues {
   if (mode === "edit" && standardCode) {
     return {
+      customer_detail_mode: standardCode.customer_detail_mode ?? "none",
+      customer_detail_group: standardCode.customer_detail_group ?? null,
       name: standardCode.name,
       description: standardCode.description,
       active: standardCode.active,
@@ -61,6 +63,8 @@ function buildInitialValues(
   }
 
   return {
+    customer_detail_mode: "none",
+    customer_detail_group: null,
     name: "",
     description: null,
     active: true,
@@ -87,6 +91,10 @@ function StandardCodeFormContent({
     event.preventDefault();
 
     setPendingValues({
+      customer_detail_mode: values.customer_detail_mode,
+      customer_detail_group: normalizeNullableText(
+        values.customer_detail_group ?? null,
+      ),
       name: values.name.trim(),
       description: normalizeNullableText(values.description),
       active: values.active,
@@ -152,6 +160,49 @@ function StandardCodeFormContent({
               }
             />
           </div>
+
+          {!standardCode?.system_key && (
+            <fieldset className="space-y-3 rounded-lg bg-muted/40 p-4">
+              <legend className="text-sm font-medium">
+                顧客の詳細情報で使用
+              </legend>
+              <Label htmlFor="standard-code-customer-mode">入力方法</Label>
+              <select
+                id="standard-code-customer-mode"
+                className="w-full rounded-md border bg-background p-2 text-sm"
+                value={values.customer_detail_mode ?? "none"}
+                disabled={isSubmitting}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    customer_detail_mode: event.target.value as
+                      "none" | "single" | "multiple",
+                  }))
+                }
+              >
+                <option value="none">使用しない</option>
+                <option value="single">単一選択（プルダウン）</option>
+                <option value="multiple">複数選択</option>
+              </select>
+              <Label htmlFor="standard-code-customer-group">分類（任意）</Label>
+              <Input
+                id="standard-code-customer-group"
+                maxLength={50}
+                placeholder="嗜好・好み、連絡・会員など"
+                value={values.customer_detail_group ?? ""}
+                disabled={isSubmitting}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    customer_detail_group: event.target.value,
+                  }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                この基本コードの有効な選択肢を顧客詳細で選べます。未入力と「未登録」等の回答は区別します。使用停止後も保存済みの回答は保持します。
+              </p>
+            </fieldset>
+          )}
 
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="space-y-1">
