@@ -104,31 +104,6 @@ export function CustomerListPageClient() {
   const analytics = useCustomerAnalytics(!searchEnabled);
   const [queryDraft, setQueryInput] = useState<string | null>(null);
   const queryInput = queryDraft ?? filters.query ?? "";
-  function setFilters(
-    next:
-      | CustomerListParams
-      | ((current: CustomerListParams) => CustomerListParams),
-    explicit = false,
-  ) {
-    const value = typeof next === "function" ? next(filters) : next;
-    const searching = explicit || hasConditions(value);
-    update({
-      searched: searching ? "1" : null,
-      page: searching ? 1 : null,
-      per_page: searching ? params.get("per_page") : null,
-      last_visit_from: value.last_visit_from,
-      last_visit_to: value.last_visit_to,
-      min_visits: value.min_visits,
-      max_visits: value.max_visits,
-      visibility: value.visibility === "visible" ? null : value.visibility,
-      customer_rank_id: value.customer_rank_id,
-      rf_rank_id: value.rf_rank_id,
-      rf_rank_state: value.rf_rank_state,
-      customer_kind: value.customer_kind,
-      query: value.query,
-    });
-  }
-
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -170,6 +145,48 @@ export function CustomerListPageClient() {
   });
 
   const rfReference = resultRfReference ?? analytics.data?.rf_reference ?? null;
+
+  function setFilters(
+    next:
+      | CustomerListParams
+      | ((current: CustomerListParams) => CustomerListParams),
+    explicit = false,
+  ) {
+    const value = typeof next === "function" ? next(filters) : next;
+    const searching = explicit || hasConditions(value);
+    // URLが変わらない再検索・再適用も、他端末の変更を読み直す操作として扱う。
+    const sameConditions = (
+      [
+        "visibility",
+        "customer_kind",
+        "customer_rank_id",
+        "rf_rank_id",
+        "rf_rank_state",
+        "query",
+        "last_visit_from",
+        "last_visit_to",
+        "min_visits",
+        "max_visits",
+      ] as const
+    ).every((key) => value[key] === filters[key]);
+    if (searchEnabled && searching && currentPage === 1 && sameConditions)
+      setReloadKey((value) => value + 1);
+    update({
+      searched: searching ? "1" : null,
+      page: searching ? 1 : null,
+      per_page: searching ? params.get("per_page") : null,
+      last_visit_from: value.last_visit_from,
+      last_visit_to: value.last_visit_to,
+      min_visits: value.min_visits,
+      max_visits: value.max_visits,
+      visibility: value.visibility === "visible" ? null : value.visibility,
+      customer_rank_id: value.customer_rank_id,
+      rf_rank_id: value.rf_rank_id,
+      rf_rank_state: value.rf_rank_state,
+      customer_kind: value.customer_kind,
+      query: value.query,
+    });
+  }
 
   function handleSearch() {
     const normalizedQuery = queryInput.trim();

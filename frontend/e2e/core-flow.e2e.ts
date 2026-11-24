@@ -1056,4 +1056,29 @@ test("顧客検索は入力前に明細を取得せず、組み合わせ条件�
   await page.getByRole("button", { name: "すべて解除", exact: true }).click();
   await expect(page.getByText("表示中の顧客数", { exact: true })).toBeVisible();
   expect(new URL(page.url()).search).toBe("");
+  // 同条件の再検索で、画面外から更新された顧客情報を再取得する。
+  await input.fill(target.name);
+  await page.getByRole("button", { name: "検索", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: `${target.name}の詳細を表示`, exact: true }),
+  ).toBeVisible();
+  const current = await page.request.get(`/api/v1/customers/${target.id}`);
+  const currentCustomer = (await current.json()).data.customer;
+  const tokenResponse = await page.request.get("/api/v1/csrf");
+  const token = (await tokenResponse.json()).data.csrf_token;
+  const updatedName = `${target.name}（再取得確認）`;
+  const updated = await page.request.patch(`/api/v1/customers/${target.id}`, {
+    headers: { "X-CSRF-Token": token },
+    data: {
+      customer: {
+        name: updatedName,
+        lock_version: currentCustomer.lock_version,
+      },
+    },
+  });
+  expect(updated.status()).toBe(200);
+  await page.getByRole("button", { name: "検索", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: `${updatedName}の詳細を表示`, exact: true }),
+  ).toBeVisible();
 });

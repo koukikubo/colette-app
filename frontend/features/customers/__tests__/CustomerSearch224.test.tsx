@@ -144,3 +144,18 @@ it("集計の通信失敗から再取得でき、来店がない場合の比率�
   expect(await screen.findByText("算出できません")).toBeInTheDocument();
   expect(mocks.list).not.toHaveBeenCalled();
 });
+
+it("同じ条件の再検索でも他端末の変更を再取得する", async () => {
+  const user = userEvent.setup();
+  renderWithOwner(<CustomerListPageClient />);
+  await screen.findByText("表示中の顧客数");
+  await user.type(
+    screen.getByRole("searchbox", { name: "顧客検索キーワード" }),
+    "浅井",
+  );
+  await user.click(screen.getByRole("button", { name: "検索" }));
+  await screen.findByText("検索条件に一致する顧客が見つかりません");
+  expect(mocks.list).toHaveBeenCalledTimes(1);
+  await user.click(screen.getByRole("button", { name: "検索" }));
+  await waitFor(() => expect(mocks.list).toHaveBeenCalledTimes(2));
+});
