@@ -1,6 +1,8 @@
 import { apiFetch } from "@/lib/api/api-client";
 
 import type {
+  CustomerAnalyticsData,
+  ApiSuccessResponse,
   ChangeCustomerVisibilityRequest,
   CreateCustomerRequest,
   CustomerDetailResponse,
@@ -46,6 +48,15 @@ function buildCustomersPath(params: CustomerListParams = {}) {
     searchParams.set("per_page", String(params.per_page));
   }
 
+  // 0回も有効な条件。未指定だけを省き、日付・回数はサーバーでも検証する。
+  for (const key of [
+    "last_visit_from",
+    "last_visit_to",
+    "min_visits",
+    "max_visits",
+  ] as const) {
+    if (params[key] !== undefined) searchParams.set(key, String(params[key]));
+  }
   const query = params.query?.trim();
 
   if (query) {
@@ -164,4 +175,12 @@ export function restoreCustomer(
     method: "PATCH",
     body: payload,
   });
+}
+
+// 初期画面用の集計。顧客の明細一覧は取得しない。
+export function fetchCustomerAnalytics(signal?: AbortSignal) {
+  return apiFetch<ApiSuccessResponse<CustomerAnalyticsData>>(
+    "/api/v1/customer_analytics",
+    { signal },
+  );
 }

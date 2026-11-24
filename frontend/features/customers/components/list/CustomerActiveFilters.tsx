@@ -10,6 +10,7 @@ type CustomerActiveFiltersProps = {
   filters: CustomerListParams;
   customerRankLabel?: string;
   rfRankLabel?: string;
+  onClearVisits: () => void;
   onClearRf: () => void;
   onClearCustomerRank: () => void;
   onClearQuery: () => void;
@@ -22,6 +23,7 @@ export function CustomerActiveFilters({
   filters,
   customerRankLabel,
   rfRankLabel,
+  onClearVisits,
   onClearRf,
   onClearCustomerRank,
   onClearQuery,
@@ -37,7 +39,10 @@ export function CustomerActiveFilters({
     filters.rf_rank_state !== undefined ||
     Boolean(filters.query) ||
     visibility !== "visible" ||
-    Boolean(filters.customer_kind);
+    Boolean(filters.customer_kind) ||
+    Boolean(filters.last_visit_from || filters.last_visit_to) ||
+    filters.min_visits !== undefined ||
+    filters.max_visits !== undefined;
 
   if (!hasActiveFilters) {
     return null;
@@ -51,6 +56,7 @@ export function CustomerActiveFilters({
         <Button
           type="button"
           variant="secondary"
+          className="h-auto max-w-full whitespace-normal wrap-anywhere"
           size="sm"
           onClick={onClearCustomerRank}
         >
@@ -72,10 +78,29 @@ export function CustomerActiveFilters({
         </Button>
       )}
 
+      {(filters.last_visit_from ||
+        filters.last_visit_to ||
+        filters.min_visits !== undefined ||
+        filters.max_visits !== undefined) && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="h-auto max-w-full whitespace-normal wrap-anywhere"
+          aria-label="来店条件を解除"
+          onClick={onClearVisits}
+        >
+          来店条件：{filters.last_visit_from || "指定なし"}〜
+          {filters.last_visit_to || "指定なし"}／{filters.min_visits ?? 0}〜
+          {filters.max_visits ?? "上限なし"}回
+          <XIcon className="size-3.5 shrink-0" />
+        </Button>
+      )}
       {filters.query && (
         <Button
           type="button"
           variant="secondary"
+          className="h-auto max-w-full whitespace-normal wrap-anywhere"
           size="sm"
           onClick={onClearQuery}
         >
@@ -88,6 +113,7 @@ export function CustomerActiveFilters({
         <Button
           type="button"
           variant="secondary"
+          className="h-auto max-w-full whitespace-normal wrap-anywhere"
           size="sm"
           onClick={onResetVisibility}
         >
@@ -100,6 +126,7 @@ export function CustomerActiveFilters({
         <Button
           type="button"
           variant="secondary"
+          className="h-auto max-w-full whitespace-normal wrap-anywhere"
           size="sm"
           onClick={onResetVisibility}
         >
@@ -112,6 +139,7 @@ export function CustomerActiveFilters({
         <Button
           type="button"
           variant="secondary"
+          className="h-auto max-w-full whitespace-normal wrap-anywhere"
           size="sm"
           onClick={onClearCustomerKind}
         >

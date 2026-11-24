@@ -45,6 +45,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
         relation: customers,
         keyword: params[:query]
       ).call
+    customers = ::Customers::VisitFilter.new(params).apply(customers)
     customers = customers.order(id: :desc)
 
     rf_query = ::Customers::CurrentRfQuery.new
