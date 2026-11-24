@@ -607,6 +607,7 @@ export function CustomerDetailPageClient({
         >
           {(fieldsVisited || tab === "details") && (
             <CustomerDetailFields
+              key={customer.id}
               customerId={customer.id}
               onEditingChange={setFieldsEditing}
               onSaved={handleEditCompleted}
@@ -670,13 +671,18 @@ export function CustomerDetailPageClient({
           className="rounded-xl bg-card p-5 data-[state=inactive]:hidden sm:p-6"
         >
           <CustomerStaffMemo
+            key={customer.id}
             customer={customer}
             onEditingChange={setMemoEditing}
-            onSaved={(updated) =>
+            onSaved={(updated) => {
+              // メモ保存より前の背景GETは、保存後の表示へ採用しない。
+              readGeneration.current += 1;
               setCustomer((current) =>
                 current ? { ...current, ...updated } : current,
-              )
-            }
+              );
+              setIsLoading(false);
+              setErrorMessage(null);
+            }}
           />
         </Tabs.Content>
         <Tabs.Content

@@ -10,10 +10,12 @@ import type { CustomerDetail } from "../types";
 
 const mocks = vi.hoisted(() => ({
   fetchCustomer: vi.fn(),
+  updateCustomer: vi.fn(),
 }));
 
 vi.mock("../api/customer-api", () => ({
   fetchCustomer: mocks.fetchCustomer,
+  updateCustomer: mocks.updateCustomer,
 }));
 
 vi.mock("../components/dialogs/CustomerFormDialog", () => ({
@@ -563,4 +565,38 @@ it("4タブをURLに保持し、上部の顧客識別を切り替えない", asy
   expect(
     screen.getByRole("heading", { name: "山田 太郎" }),
   ).toBeInTheDocument();
+});
+
+it("メモ保存前の背景取得が遅れて返っても保存後の表示を上書きしない", async () => {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  let finish!: (value: unknown) => void;
+  const original = createCustomer();
+  mocks.fetchCustomer
+    .mockReset()
+    .mockResolvedValueOnce({ data: { customer: original } })
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+  mocks.updateCustomer.mockResolvedValue({
+    data: { customer: { ...original, memo: "保存後メモ", lock_version: 3 } },
+  });
+  const user = userEvent.setup();
+  render(<CustomerDetailPageClient customerId={10} />);
+  await screen.findByRole("heading", { name: "山田 太郎" });
+  act(() => window.dispatchEvent(new Event("focus")));
+  await waitFor(() => expect(mocks.fetchCustomer).toHaveBeenCalledTimes(2));
+  await user.click(screen.getByRole("tab", { name: "スタッフメモ" }));
+  await user.click(screen.getByRole("button", { name: "メモを編集" }));
+  await user.clear(screen.getByRole("textbox", { name: "スタッフ共有メモ" }));
+  await user.type(
+    screen.getByRole("textbox", { name: "スタッフ共有メモ" }),
+    "保存後メモ",
+  );
+  await user.click(screen.getByRole("button", { name: "メモを保存" }));
+  await screen.findByText("保存後メモ");
+  await act(async () => finish({ data: { customer: original } }));
+  expect(screen.getByText("保存後メモ")).toBeInTheDocument();
 });
