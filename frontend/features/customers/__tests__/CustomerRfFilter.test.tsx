@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { renderWithOwner } from "@/test-utils/auth";
@@ -154,4 +154,70 @@ it("分類条件をURLから復元し、ランクIDと混ぜず送信する", as
       page: 2,
     }),
   );
+});
+
+// マスタ由来のランクと内部の計算状態を混ぜず、既存APIの排他条件を維持する。
+it("RFランクと計算状態を分離し、選び直すと他方を解除する", async () => {
+  const user = userEvent.setup();
+  renderWithOwner(<CustomerListPageClient />);
+  await screen.findByText("ランク対象");
+  await user.click(screen.getByRole("button", { name: /絞り込み/ }));
+  const rank = screen.getByRole("combobox", { name: "現在適用中のRFランク" });
+  const state = screen.getByRole("combobox", { name: "RF計算状態" });
+  expect(
+    within(rank).queryByRole("option", { name: "未計算" }),
+  ).not.toBeInTheDocument();
+  expect(
+    within(state).queryByRole("option", { name: "履歴A" }),
+  ).not.toBeInTheDocument();
+  expect(
+    within(state).queryByRole("option", { name: "来店履歴なし" }),
+  ).not.toBeInTheDocument();
+  await user.selectOptions(rank, "71");
+  await user.selectOptions(state, "excluded");
+  expect(rank).toHaveValue("all");
+  await user.click(screen.getByRole("button", { name: "適用" }));
+  await waitFor(() =>
+    expect(mocks.list).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        rf_rank_state: "excluded",
+        rf_rank_id: undefined,
+      }),
+    ),
+  );
+  await user.click(screen.getByRole("button", { name: /絞り込み/ }));
+  expect(screen.getByRole("combobox", { name: "RF計算状態" })).toHaveValue(
+    "excluded",
+  );
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: "現在適用中のRFランク" }),
+    "71",
+  );
+  expect(screen.getByRole("combobox", { name: "RF計算状態" })).toHaveValue(
+    "all",
+  );
+  await user.click(screen.getByRole("button", { name: "適用" }));
+  await waitFor(() =>
+    expect(mocks.list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rf_rank_id: 71, rf_rank_state: undefined }),
+    ),
+  );
+});
+
+it("旧未訪問URLを復元でき、リセットで両方のRF条件を解除する", async () => {
+  const user = userEvent.setup();
+  window.history.replaceState(null, "", "/customers?rf_rank_state=no_visit");
+  renderWithOwner(<CustomerListPageClient />);
+  await screen.findByText("ランク対象");
+  await user.click(screen.getByRole("button", { name: /絞り込み/ }));
+  expect(screen.getByRole("combobox", { name: "RF計算状態" })).toHaveValue(
+    "no_visit",
+  );
+  await user.click(screen.getByRole("button", { name: "リセット" }));
+  expect(screen.getByRole("combobox", { name: "RF計算状態" })).toHaveValue(
+    "all",
+  );
+  expect(
+    screen.getByRole("combobox", { name: "現在適用中のRFランク" }),
+  ).toHaveValue("all");
 });
