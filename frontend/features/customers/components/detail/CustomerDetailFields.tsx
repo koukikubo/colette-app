@@ -14,12 +14,16 @@ import {
 import type { CustomerDetailFieldsData } from "../../types";
 
 type Props = {
+  customerVersion?: number;
+  editingDisabled?: boolean;
   customerId: number;
   onEditingChange: (editing: boolean) => void;
   onSaved: () => Promise<void>;
 };
 
 export function CustomerDetailFields({
+  customerVersion,
+  editingDisabled = false,
   customerId,
   onEditingChange,
   onSaved,
@@ -35,6 +39,7 @@ export function CustomerDetailFields({
   const [group, setGroup] = useState("");
 
   useEffect(() => {
+    if (editing) return;
     let active = true;
     void fetchCustomerDetailFields(customerId)
       .then((response) => {
@@ -49,7 +54,7 @@ export function CustomerDetailFields({
     return () => {
       active = false;
     };
-  }, [customerId, reload]);
+  }, [customerId, reload, customerVersion, editing]);
 
   // タブ移動ではアンマウントしない。未保存入力は明示的な取消だけで破棄する。
   function changeEditing(next: boolean) {
@@ -147,13 +152,26 @@ export function CustomerDetailFields({
         </div>
         <PermissionGate resource="customers">
           {!editing && data.fields.some((field) => field.enabled) && (
-            <Button variant="outline" onClick={beginEditing}>
+            <Button
+              variant="outline"
+              disabled={
+                editingDisabled ||
+                (customerVersion !== undefined &&
+                  customerVersion > data.lock_version)
+              }
+              onClick={beginEditing}
+            >
               <PencilIcon />
               詳細情報を編集
             </Button>
           )}
         </PermissionGate>
       </div>
+      {editingDisabled && (
+        <p className="text-sm text-muted-foreground">
+          別タブの編集を保存またはキャンセルすると、詳細情報を編集できます。
+        </p>
+      )}
       {error && (
         <div role="alert" className="space-y-2 text-sm text-destructive">
           <p>{error}</p>

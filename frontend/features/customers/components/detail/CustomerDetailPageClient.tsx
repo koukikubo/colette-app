@@ -6,6 +6,7 @@ import { safeReturnPath } from "@/lib/api/session-events";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
 import { Tabs } from "radix-ui";
+import { useCustomerDetailDraftGuard } from "./useCustomerDetailDraftGuard";
 import { CustomerDetailFields } from "./CustomerDetailFields";
 import { CustomerStaffMemo } from "./CustomerStaffMemo";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -220,34 +221,7 @@ export function CustomerDetailPageClient({
   const [fieldsEditing, setFieldsEditing] = useState(false);
   const [memoEditing, setMemoEditing] = useState(false);
   const hasDetailInput = fieldsEditing || memoEditing;
-  // タブ内の入力は保持し、ページ離脱・再読み込み時だけ破棄を確認する。
-  useEffect(() => {
-    if (!hasDetailInput) return;
-    const unload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    const link = (event: MouseEvent) => {
-      if (
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        !(event.target instanceof Element)
-      )
-        return;
-      const target = event.target.closest("a[href]");
-      if (target && !window.confirm("未保存の入力を破棄して移動しますか？")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
-    };
-    window.addEventListener("beforeunload", unload);
-    document.addEventListener("click", link, true);
-    return () => {
-      window.removeEventListener("beforeunload", unload);
-      document.removeEventListener("click", link, true);
-    };
-  }, [hasDetailInput]);
+  useCustomerDetailDraftGuard(hasDetailInput);
   const backTarget = returnParams.get("return_to")
     ? safeReturnPath(returnParams.get("return_to"))
     : "/customers";
@@ -610,6 +584,8 @@ export function CustomerDetailPageClient({
               key={customer.id}
               customerId={customer.id}
               onEditingChange={setFieldsEditing}
+              customerVersion={customer.lock_version}
+              editingDisabled={memoEditing}
               onSaved={handleEditCompleted}
             />
           )}
@@ -674,6 +650,7 @@ export function CustomerDetailPageClient({
             key={customer.id}
             customer={customer}
             onEditingChange={setMemoEditing}
+            editingDisabled={fieldsEditing}
             onSaved={(updated) => {
               // メモ保存より前の背景GETは、保存後の表示へ採用しない。
               readGeneration.current += 1;

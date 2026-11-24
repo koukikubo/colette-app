@@ -119,3 +119,56 @@ it("viewerは回答を読めるが編集できない", async () => {
     screen.queryByRole("button", { name: "詳細情報を編集" }),
   ).not.toBeInTheDocument();
 });
+
+it("メモ等で顧客の版が進んだ場合は回答を再取得してから編集する", async () => {
+  const user = userEvent.setup();
+  const props = {
+    customerId: 10,
+    customerVersion: 2,
+    onEditingChange: vi.fn(),
+    onSaved: vi.fn(),
+  };
+  const view = renderWithOwner(<CustomerDetailFields {...props} />);
+  await screen.findByRole("button", { name: "詳細情報を編集" });
+  mocks.read.mockResolvedValue({
+    data: {
+      ...data,
+      lock_version: 3,
+      fields: data.fields.map((field) =>
+        field.id === 100 ? { ...field, selected_ids: [101] } : field,
+      ),
+    },
+  });
+  view.rerender(<CustomerDetailFields {...props} customerVersion={3} />);
+  await screen.findByText("登録済み");
+  await user.click(screen.getByRole("button", { name: "詳細情報を編集" }));
+  expect(screen.getByRole("combobox", { name: "LINE登録状況" })).toHaveValue(
+    "101",
+  );
+  mocks.write.mockResolvedValue({ data: { ...data, lock_version: 4 } });
+  await user.click(screen.getByRole("button", { name: "変更を保存" }));
+  await waitFor(() => expect(mocks.write).toHaveBeenLastCalledWith(10, 3, []));
+});
+
+it("編集中に顧客の版が変わっても自分の入力と回答時点を保持する", async () => {
+  const user = userEvent.setup();
+  const props = {
+    customerId: 10,
+    customerVersion: 2,
+    onEditingChange: vi.fn(),
+    onSaved: vi.fn(),
+  };
+  const view = renderWithOwner(<CustomerDetailFields {...props} />);
+  await user.click(
+    await screen.findByRole("button", { name: "詳細情報を編集" }),
+  );
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: "LINE登録状況" }),
+    "101",
+  );
+  view.rerender(<CustomerDetailFields {...props} customerVersion={3} />);
+  expect(mocks.read).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("combobox", { name: "LINE登録状況" })).toHaveValue(
+    "101",
+  );
+});

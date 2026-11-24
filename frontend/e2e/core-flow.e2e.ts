@@ -1095,7 +1095,16 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   await page
     .getByLabel("パスワード", { exact: true })
     .fill(process.env.E2E_PASSWORD!);
-  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+  // 6回目のログインは実際の毎分5回制限に達する。認証設定を緩めず解除を待つ。
+  await expect(async () => {
+    const login = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/v1/staff/login" &&
+        response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "ログイン", exact: true }).click();
+    expect((await login).status()).toBe(200);
+  }).toPass({ intervals: [1000, 5000, 10000], timeout: 75000 });
   await expect(page).toHaveURL(/\/dashboard$/);
   const token = (await (await page.request.get("/api/v1/csrf")).json()).data
     .csrf_token;
@@ -1145,6 +1154,14 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     .getByRole("group", { name: label, exact: true })
     .getByRole("checkbox", { name: "日本酒", exact: true })
     .check();
+  // ブラウザBackを取り消した場合も、顧客画面と入力が保持される。
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.goBack();
+  await expect(
+    page
+      .getByRole("group", { name: label, exact: true })
+      .getByRole("checkbox", { name: "日本酒", exact: true }),
+  ).toBeChecked();
   // タブを往復しても未保存入力が消えない。
   await page.getByRole("tab", { name: "スタッフメモ", exact: true }).click();
   await page.getByRole("tab", { name: "詳細情報", exact: true }).click();
@@ -1164,6 +1181,30 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     saved.fields.find((item: { id: number }) => item.id === field.id)
       .selected_ids,
   ).toEqual([option.id]);
+  // 同じスタッフによるメモ更新後も、独自項目を古い版で保存しない。
+  await page.getByRole("tab", { name: "スタッフメモ", exact: true }).click();
+  await page.getByRole("button", { name: "メモを編集", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "スタッフ共有メモ", exact: true })
+    .fill("E2E版同期確認");
+  await page.getByRole("button", { name: "メモを保存", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "スタッフメモを保存しました",
+  );
+  await page.getByRole("tab", { name: "詳細情報", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "詳細情報を編集", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "詳細情報を編集", exact: true })
+    .click();
+  const afterMemo = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/customers/${target.id}/detail_fields`) &&
+      response.request().method() === "PATCH",
+  );
+  await page.getByRole("button", { name: "変更を保存", exact: true }).click();
+  expect((await afterMemo).status()).toBe(200);
   await page
     .getByRole("tab", { name: "予約・来店履歴", exact: true })
     .press("Enter");

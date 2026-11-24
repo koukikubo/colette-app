@@ -10,10 +10,12 @@ import type { Customer } from "../../types";
 // 自由記述は構造化された選択回答と分け、既存の顧客更新・競合検知を再利用する。
 export function CustomerStaffMemo({
   customer,
+  editingDisabled = false,
   onSaved,
   onEditingChange,
 }: {
   customer: Customer;
+  editingDisabled?: boolean;
   onSaved: (customer: Customer) => void;
   onEditingChange: (value: boolean) => void;
 }) {
@@ -56,6 +58,7 @@ export function CustomerStaffMemo({
           {!editing && (
             <Button
               variant="outline"
+              disabled={editingDisabled}
               onClick={() => {
                 setDraft(customer.memo ?? "");
                 setVersion(customer.lock_version);
@@ -69,6 +72,11 @@ export function CustomerStaffMemo({
           )}
         </PermissionGate>
       </div>
+      {editingDisabled && (
+        <p className="text-sm text-muted-foreground">
+          詳細情報の編集を保存またはキャンセルすると、メモを編集できます。
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
