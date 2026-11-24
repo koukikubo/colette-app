@@ -1,3 +1,4 @@
+import { safeReturnPath } from "@/lib/api/session-events";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -25,6 +26,7 @@ type DetailItemTone = "default" | "info" | "seat" | "success" | "danger";
 
 type ReservationDetailProps = {
   reservation: Reservation;
+  returnTo?: string;
 };
 
 type DetailItemProps = {
@@ -110,7 +112,20 @@ function DetailSection({
 }
 
 // 取得済みの予約情報を詳細画面として表示する。
-export function ReservationDetail({ reservation }: ReservationDetailProps) {
+export function ReservationDetail({
+  reservation,
+  returnTo,
+}: ReservationDetailProps) {
+  // 戻り先は同じ顧客の詳細だけを許可し、外部URLや別顧客への誘導を防ぐ。
+  const safeReturn = safeReturnPath(returnTo ?? null);
+  const customerPath = reservation.customer_id
+    ? `/customers/${reservation.customer_id}`
+    : null;
+  const customerReturn =
+    customerPath &&
+    (safeReturn === customerPath || safeReturn.startsWith(`${customerPath}?`))
+      ? safeReturn
+      : null;
   const reservationDate = formatReservationDateTimeLocal(
     reservation.starts_at,
   ).slice(0, 10);
@@ -151,9 +166,13 @@ export function ReservationDetail({ reservation }: ReservationDetailProps) {
 
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild variant="outline" size="sm">
-                <Link href={"/reservations?date=" + reservationDate}>
+                <Link
+                  href={
+                    customerReturn ?? "/reservations?date=" + reservationDate
+                  }
+                >
                   <ArrowLeftIcon />
-                  一覧へ戻る
+                  {customerReturn ? "顧客詳細へ戻る" : "一覧へ戻る"}
                 </Link>
               </Button>
 

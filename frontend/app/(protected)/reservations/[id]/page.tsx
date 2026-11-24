@@ -6,6 +6,7 @@ import { redirect, notFound } from "next/navigation";
 import { ReservationDetail } from "@/features/reservations/components/details/ReservationDetail";
 
 type ReservationDetailPageProps = {
+  searchParams: Promise<{ return_to?: string | string[] }>;
   params: Promise<{
     id: string;
   }>;
@@ -13,8 +14,11 @@ type ReservationDetailPageProps = {
 
 export default async function ReservationDetailPage({
   params,
+  searchParams,
 }: ReservationDetailPageProps) {
-  const { id } = await params;
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const returnTo =
+    typeof query.return_to === "string" ? query.return_to : undefined;
   const reservationId = Number(id);
 
   // URLの予約IDが正の整数でなければ、APIを呼ばずに404を表示する。
@@ -28,7 +32,7 @@ export default async function ReservationDetailPage({
   } catch (error) {
     if (error instanceof ReservationServerApiError && error.status === 401)
       redirect(
-        `/login?return_to=${encodeURIComponent(`/reservations/${reservationId}`)}`,
+        `/login?return_to=${encodeURIComponent(`/reservations/${reservationId}${returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : ""}`)}`,
       );
     if (error instanceof ReservationServerApiError && error.status === 404) {
       notFound();
@@ -39,5 +43,5 @@ export default async function ReservationDetailPage({
 
   const reservation = reservationResponse.data.reservation;
 
-  return <ReservationDetail reservation={reservation} />;
+  return <ReservationDetail reservation={reservation} returnTo={returnTo} />;
 }

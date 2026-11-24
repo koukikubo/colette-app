@@ -14,7 +14,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
-import { usePagination } from "@/hooks/usePagination";
+import { queryPage, useUrlQuery } from "@/hooks/useUrlQuery";
 import type { Pagination } from "@/lib/api/pagination";
 import type { Reservation } from "@/features/reservations/types";
 import { formatReservationTime } from "@/features/reservations/utils/reservation-date";
@@ -59,7 +59,12 @@ function reservationStatusLabel(reservation: Reservation) {
 export function CustomerReservationHistory({
   customerId,
 }: CustomerReservationHistoryProps) {
-  const { currentPage, perPage, setCurrentPage } = usePagination();
+  // 詳細へ移動・再読み込みしても履歴のページと顧客検索への戻り先を保持する。
+  const { params, update } = useUrlQuery();
+  const currentPage = queryPage(params.get("history_page"));
+  const perPage = 20;
+  const query = params.toString();
+  const returnPath = `/customers/${customerId}${query ? `?${query}` : ""}`;
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -220,7 +225,7 @@ export function CustomerReservationHistory({
 
                   <Button asChild variant="outline" size="sm">
                     <Link
-                      href={`/reservations/${reservation.id}`}
+                      href={`/reservations/${reservation.id}?return_to=${encodeURIComponent(returnPath)}`}
                       aria-label={`予約${reservation.id}の詳細を開く`}
                     >
                       予約詳細
@@ -239,7 +244,7 @@ export function CustomerReservationHistory({
               currentPage={pagination.current_page}
               totalPages={pagination.total_pages}
               totalCount={pagination.total_count}
-              onPageChange={setCurrentPage}
+              onPageChange={(page) => update({ history_page: page })}
             />
           </CardFooter>
         )}

@@ -693,6 +693,25 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
     new RegExp(`/customers/${visited.customer_id}\\?return_to=`),
   );
   const customerUrl = page.url();
+  // 顧客詳細はPCと狭幅でも識別情報・履歴・操作が見切れず、予約詳細から戻れる。
+  await page.screenshot({
+    path: "test-results/customer-detail-160-desktop.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    page.getByRole("heading", { name: visited.customer_name, exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/customer-detail-160-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
   const historyResponse = await page.request.get(
     `/api/v1/customers/${visited.customer_id}/reservations`,
   );
@@ -704,8 +723,13 @@ test("RF人数・セルから固定履歴の内訳と予約履歴へ進み条件
       exact: true,
     })
     .press("Enter");
-  await expect(page).toHaveURL(new RegExp(`/reservations/${reservationId}$`));
-  await page.goBack();
+  await expect(page).toHaveURL(
+    new RegExp(`/reservations/${reservationId}\\?return_to=`),
+  );
+  await page.reload();
+  await page
+    .getByRole("link", { name: "顧客詳細へ戻る", exact: true })
+    .press("Enter");
   await expect(page).toHaveURL(customerUrl);
   await page
     .getByRole("link", { name: "RFの顧客内訳に戻る", exact: true })
