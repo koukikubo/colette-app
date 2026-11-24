@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resource :reservation_calendar, only: :show, controller: "reservation_calendars"
+      resource :customer_analytics, only: :show, controller: "customer_analytics"
       resource :dashboard_analytics, only: :show, controller: "dashboard_analytics"
       resource :dashboard, only: :show, controller: "dashboard"
       get "csrf", to: "csrf#show"

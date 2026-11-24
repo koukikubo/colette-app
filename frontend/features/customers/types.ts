@@ -105,7 +105,32 @@ export type CustomerRfReference = {
   ranks: RfRankSummary[];
 };
 
-export type CustomerListParams = {
+export type CustomerVisitFilters = {
+  last_visit_from?: string;
+  last_visit_to?: string;
+  min_visits?: number;
+  max_visits?: number;
+};
+
+export type CustomerAnalyticsData = {
+  period: { month_from: string; through: string; ranking_from: string };
+  summary: {
+    customer_count: number;
+    monthly_visits: number;
+    monthly_customers: number;
+    returning_customers: number;
+    returning_ratio: number | null;
+  };
+  ranking: {
+    id: number;
+    name: string;
+    visit_count: number;
+    last_visit_on: string;
+  }[];
+  rf_reference: CustomerRfReference;
+};
+
+export type CustomerListParams = CustomerVisitFilters & {
   rf_rank_id?: number;
   rf_rank_state?: CustomerRfState;
   customer_rank_id?: number | "unassigned";

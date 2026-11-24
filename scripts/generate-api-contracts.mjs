@@ -27,6 +27,12 @@ route(
   data("dashboard/types", "DashboardAnalytics"),
 );
 const customers = "customers/api/customer-api";
+route(
+  "GET",
+  "customer_analytics",
+  "customer",
+  client(customers, "fetchCustomerAnalytics"),
+);
 route("GET", "customers", "customer", client(customers, "fetchCustomers"));
 route(
   "GET",
