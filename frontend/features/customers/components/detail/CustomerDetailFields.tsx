@@ -29,6 +29,9 @@ export function CustomerDetailFields({
   onSaved,
 }: Props) {
   const [data, setData] = useState<CustomerDetailFieldsData | null>(null);
+  const [editSnapshot, setEditSnapshot] =
+    useState<CustomerDetailFieldsData | null>(null);
+  const [refreshing, setRefreshing] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [reload, setReload] = useState(0);
@@ -41,16 +44,21 @@ export function CustomerDetailFields({
   useEffect(() => {
     if (editing) return;
     let active = true;
-    void fetchCustomerDetailFields(customerId)
-      .then((response) => {
+    void Promise.resolve().then(async () => {
+      if (!active) return;
+      setRefreshing(true);
+      try {
+        const response = await fetchCustomerDetailFields(customerId);
         if (active) {
           setData(response.data);
           setError("");
         }
-      })
-      .catch(() => {
+      } catch {
         if (active) setError("詳細情報を取得できませんでした。");
-      });
+      } finally {
+        if (active) setRefreshing(false);
+      }
+    });
     return () => {
       active = false;
     };
@@ -59,10 +67,17 @@ export function CustomerDetailFields({
   // タブ移動ではアンマウントしない。未保存入力は明示的な取消だけで破棄する。
   function changeEditing(next: boolean) {
     setEditing(next);
+    if (!next) setRefreshing(true);
     onEditingChange(next);
   }
   function beginEditing() {
-    if (!data) return;
+    if (
+      !data ||
+      refreshing ||
+      (customerVersion !== undefined && customerVersion > data.lock_version)
+    )
+      return;
+    setEditSnapshot(data);
     setDraft(
       Object.fromEntries(
         data.fields.map((field) => [field.id, [...field.selected_ids]]),
@@ -72,11 +87,11 @@ export function CustomerDetailFields({
     changeEditing(true);
   }
   async function save() {
-    if (!data || saving) return;
+    if (!editSnapshot || saving) return;
     setSaving(true);
     setError("");
     try {
-      const changed = data.fields.filter(
+      const changed = editSnapshot.fields.filter(
         (field) =>
           field.enabled &&
           JSON.stringify(draft[field.id]) !==
@@ -84,7 +99,7 @@ export function CustomerDetailFields({
       );
       const response = await updateCustomerDetailFields(
         customerId,
-        data.lock_version,
+        editSnapshot.lock_version,
         changed.map((field) => ({
           field_id: field.id,
           option_ids: draft[field.id] ?? [],
@@ -115,6 +130,8 @@ export function CustomerDetailFields({
       !window.confirm("自分の入力を破棄して最新内容を取得しますか？")
     )
       return;
+    setRefreshing(true);
+    setError("");
     changeEditing(false);
     setReload((value) => value + 1);
   }
@@ -131,18 +148,23 @@ export function CustomerDetailFields({
         )}
       </section>
     );
+  const viewData = editing && editSnapshot ? editSnapshot : data;
   const groups = [
     ...new Set(
-      data.fields
+      viewData.fields
         .map((field) => field.group)
         .filter((value): value is string => Boolean(value)),
     ),
   ];
-  const fields = data.fields.filter(
+  const fields = viewData.fields.filter(
     (field) => field.name.includes(query) && (!group || field.group === group),
   );
   return (
-    <section className="space-y-6" aria-label="詳細情報" aria-busy={saving}>
+    <section
+      className="space-y-6"
+      aria-label="詳細情報"
+      aria-busy={saving || refreshing}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">詳細情報</h2>
@@ -155,6 +177,7 @@ export function CustomerDetailFields({
             <Button
               variant="outline"
               disabled={
+                refreshing ||
                 editingDisabled ||
                 (customerVersion !== undefined &&
                   customerVersion > data.lock_version)
@@ -167,6 +190,11 @@ export function CustomerDetailFields({
           )}
         </PermissionGate>
       </div>
+      {refreshing && (
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          最新の詳細情報を取得中です…
+        </p>
+      )}
       {editingDisabled && (
         <p className="text-sm text-muted-foreground">
           別タブの編集を保存またはキャンセルすると、詳細情報を編集できます。

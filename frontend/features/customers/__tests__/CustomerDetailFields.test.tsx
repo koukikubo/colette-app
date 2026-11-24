@@ -172,3 +172,53 @@ it("編集中に顧客の版が変わっても自分の入力と回答時点を�
     "101",
   );
 });
+
+it("409後の最新回答を取得中は再編集できず、回答と版が揃ってから編集する", async () => {
+  const user = userEvent.setup();
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  mocks.write.mockRejectedValue(new ApiClientError("conflict", 409));
+  renderWithOwner(
+    <CustomerDetailFields
+      customerId={10}
+      onEditingChange={vi.fn()}
+      onSaved={vi.fn()}
+    />,
+  );
+  await user.click(
+    await screen.findByRole("button", { name: "詳細情報を編集" }),
+  );
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: "LINE登録状況" }),
+    "101",
+  );
+  await user.click(screen.getByRole("button", { name: "変更を保存" }));
+  await screen.findByRole("alert");
+  let finish!: (value: unknown) => void;
+  mocks.read.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await user.click(screen.getByRole("button", { name: "最新内容を取得" }));
+  expect(screen.getByRole("button", { name: "詳細情報を編集" })).toBeDisabled();
+  await waitFor(() => expect(mocks.read).toHaveBeenCalledTimes(2));
+  finish({
+    data: {
+      ...data,
+      lock_version: 3,
+      fields: data.fields.map((field) =>
+        field.id === 100 ? { ...field, selected_ids: [101] } : field,
+      ),
+    },
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "詳細情報を編集" }),
+    ).toBeEnabled(),
+  );
+  await user.click(screen.getByRole("button", { name: "詳細情報を編集" }));
+  expect(screen.getByRole("combobox", { name: "LINE登録状況" })).toHaveValue(
+    "101",
+  );
+});
