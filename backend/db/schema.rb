@@ -10,10 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_19_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_25_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "customer_detail_selections", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.bigint "standard_list_master_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id", "standard_list_master_id"], name: "idx_customer_detail_unique_choice", unique: true
+    t.index ["customer_id"], name: "index_customer_detail_selections_on_customer_id"
+    t.index ["standard_list_master_id"], name: "index_customer_detail_selections_on_standard_list_master_id"
+  end
 
   create_table "customer_rf_rank_results", force: :cascade do |t|
     t.bigint "rf_calculation_run_id", null: false
@@ -379,12 +389,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_030000) do
     t.integer "position", default: 0, null: false
     t.string "system_key"
     t.datetime "updated_at", null: false
+    t.string "customer_detail_mode", default: "none", null: false
+    t.string "customer_detail_group", limit: 50
     t.index ["active"], name: "index_standard_masters_on_active"
     t.index ["name"], name: "index_standard_masters_on_name"
     t.index ["position"], name: "index_standard_masters_on_position", unique: true
     t.index ["system_key"], name: "index_standard_masters_on_system_key", unique: true
+    t.check_constraint "customer_detail_mode::text = 'none'::text OR system_key IS NULL", name: "customer_details_custom_codes_only"
+    t.check_constraint "customer_detail_mode::text = ANY (ARRAY['none'::character varying, 'single'::character varying, 'multiple'::character varying]::text[])", name: "customer_detail_mode_valid"
   end
 
+  add_foreign_key "customer_detail_selections", "customers"
+  add_foreign_key "customer_detail_selections", "standard_list_masters"
   add_foreign_key "customer_rf_rank_results", "customers"
   add_foreign_key "customer_rf_rank_results", "rf_calculation_runs"
   add_foreign_key "customer_rf_rank_results", "standard_list_masters", column: "rf_rank_id"

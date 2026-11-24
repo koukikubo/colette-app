@@ -40,6 +40,8 @@ Rails.application.routes.draw do
 
       resources :customers, only: %i[index show create update] do
         member do
+          get :detail_fields
+          patch :detail_fields, action: :update_detail_fields
           patch :hidden
           patch :restore
         end
