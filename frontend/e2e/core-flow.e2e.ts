@@ -1106,9 +1106,6 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     expect((await login).status()).toBe(200);
   }).toPass({ intervals: [1000, 5000, 10000], timeout: 75000 });
   await expect(page).toHaveURL(/\/dashboard$/);
-  const token = (await (await page.request.get("/api/v1/csrf")).json()).data
-    .csrf_token;
-  const headers = { "X-CSRF-Token": token };
   const definitions = (
     await (await page.request.get("/api/v1/standard_masters")).json()
   ).data.usage_places;
@@ -1117,20 +1114,30 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   );
   expect(customerPlace).toBeTruthy();
   const label = `E2E嗜好${Date.now()}`;
-  const created = await page.request.post("/api/v1/standard_masters", {
-    headers,
-    data: {
-      standard_master: {
-        name: label,
-        active: true,
-        usage_place_id: customerPlace.id,
-        input_type: "multiple",
-        input_group: "嗜好",
-      },
-    },
-  });
-  expect(created.status()).toBe(201);
+  // 初期表示の通信中に固定CSRFトークンで準備せず、実際の登録画面を通す。
+  await page.goto("/standard-codes");
+  await expect(page.getByText("RFランク", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "追加", exact: true }).first().click();
+  await page.getByLabel("名称", { exact: true }).fill(label);
+  await page
+    .getByLabel("使用場所", { exact: true })
+    .selectOption(String(customerPlace.id));
+  await page.getByLabel("入力方法", { exact: true }).selectOption("multiple");
+  await page.getByLabel("分類（任意）", { exact: true }).fill("嗜好");
+  await page.getByRole("button", { name: "登録", exact: true }).click();
+  const creation = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/v1/standard_masters" &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "保存する", exact: true }).click();
+  const created = await creation;
+  expect(created.status(), await created.text()).toBe(201);
   const field = (await created.json()).data.standard_master;
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const token = (await (await page.request.get("/api/v1/csrf")).json()).data
+    .csrf_token;
+  const headers = { "X-CSRF-Token": token };
   const optionResponse = await page.request.post(
     `/api/v1/standard_masters/${field.id}/items`,
     {
@@ -1140,8 +1147,7 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   );
   expect(optionResponse.status()).toBe(201);
   const option = (await optionResponse.json()).data.standard_list_master;
-  // 実APIの使用場所が設定フォームに反映され、選択しても入力方法は保持される。
-  await page.goto("/standard-codes");
+  // 保存した使用場所と入力方法が編集フォームにも反映される。
   await page
     .getByRole("row")
     .filter({ hasText: label })
@@ -1157,7 +1163,6 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     path: "test-results/standard-code-usage-desktop.png",
     fullPage: true,
   });
-  await page.setViewportSize({ width: 390, height: 844 });
   // 高さの低い画面でもフォーム全体を画面内に収め、更新操作へスクロールできる。
   await page.setViewportSize({ width: 390, height: 700 });
   const dialog = page.getByRole("dialog");
