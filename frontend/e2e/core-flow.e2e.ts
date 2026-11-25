@@ -1158,6 +1158,20 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
+  // 高さの低い画面でもフォーム全体を画面内に収め、更新操作へスクロールできる。
+  await page.setViewportSize({ width: 390, height: 700 });
+  const dialog = page.getByRole("dialog");
+  const dialogBox = await dialog.boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.y).toBeGreaterThanOrEqual(0);
+  expect(dialogBox!.y + dialogBox!.height).toBeLessThanOrEqual(700);
+  await dialog
+    .getByRole("button", { name: "更新", exact: true })
+    .scrollIntoViewIfNeeded();
+  await expect(
+    dialog.getByRole("button", { name: "更新", exact: true }),
+  ).toBeInViewport();
+  await page.getByLabel("名称", { exact: true }).scrollIntoViewIfNeeded();
   await page.screenshot({
     path: "test-results/standard-code-usage-mobile.png",
     fullPage: true,

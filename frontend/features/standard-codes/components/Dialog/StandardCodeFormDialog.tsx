@@ -250,8 +250,8 @@ function StandardCodeFormContent({
             </p>
           )}
 
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+            <div className="min-w-0 flex-1 space-y-1">
               <Label htmlFor="standard-code-active">有効</Label>
               <p className="text-muted-foreground text-xs">
                 無効にすると、新規登録時の選択肢として使わない想定です。
@@ -311,7 +311,7 @@ export function StandardCodeFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {open ? (
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
           <StandardCodeFormContent
             key={`${mode}-${standardCode?.id ?? "new"}`}
             mode={mode}
