@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_25_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -364,6 +364,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_030000) do
     t.check_constraint "failed_attempts >= 0", name: "check_staffs_failed_attempts_non_negative"
   end
 
+  create_table "standard_code_usage_places", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "name", null: false
+    t.string "description"
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_standard_code_usage_places_on_key", unique: true
+  end
+
   create_table "standard_list_masters", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code"
@@ -391,12 +401,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_030000) do
     t.datetime "updated_at", null: false
     t.string "customer_detail_mode", default: "none", null: false
     t.string "customer_detail_group", limit: 50
+    t.bigint "usage_place_id"
+    t.string "input_type", default: "single", null: false
+    t.string "input_group", limit: 50
     t.index ["active"], name: "index_standard_masters_on_active"
     t.index ["name"], name: "index_standard_masters_on_name"
     t.index ["position"], name: "index_standard_masters_on_position", unique: true
     t.index ["system_key"], name: "index_standard_masters_on_system_key", unique: true
+    t.index ["usage_place_id"], name: "index_standard_masters_on_usage_place_id"
     t.check_constraint "customer_detail_mode::text = 'none'::text OR system_key IS NULL", name: "customer_details_custom_codes_only"
     t.check_constraint "customer_detail_mode::text = ANY (ARRAY['none'::character varying, 'single'::character varying, 'multiple'::character varying]::text[])", name: "customer_detail_mode_valid"
+    t.check_constraint "input_type::text = ANY (ARRAY['single'::character varying, 'multiple'::character varying]::text[])", name: "standard_master_input_type_valid"
+    t.check_constraint "usage_place_id IS NULL OR system_key IS NULL", name: "standard_master_custom_usage_only"
   end
 
   add_foreign_key "customer_detail_selections", "customers"
@@ -441,4 +457,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_030000) do
   add_foreign_key "staff_sessions", "staffs"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"
+  add_foreign_key "standard_masters", "standard_code_usage_places", column: "usage_place_id"
 end

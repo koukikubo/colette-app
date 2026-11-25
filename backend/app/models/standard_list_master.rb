@@ -1,6 +1,6 @@
 class StandardListMaster < ApplicationRecord
   before_validation -> { Rf::ConfigurationLock.acquire! }, on: :update
-  before_validation -> { Customers::DetailConfigurationLock.acquire! }
+  before_validation -> { StandardCodes::ConfigurationLock.acquire! }
   validate :keep_used_rf_ranks_active
 
   RF_RANK_FALLBACK_COLOR = "#64748B".freeze

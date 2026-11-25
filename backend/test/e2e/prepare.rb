@@ -1,4 +1,5 @@
 require_relative "guard"
+load Rails.root.join("db/seeds/standard_code_usage_places.rb")
 # 空の専用DBだけに初期マスタを作成する。削除や業務データのseedは行わない。
 abort "E2E database must be empty" if StaffMaster.exists? || Customer.exists? || Reservation.exists? || RfRuleSet.exists?
 load Rails.root.join("db/seeds/standard_masters.rb")
