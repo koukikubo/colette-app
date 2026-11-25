@@ -11,5 +11,5 @@ export default async function CustomersDetailPage({
 }: CustomersDetailPageProps) {
   const { id } = await params;
 
-  return <CustomerDetailPageClient customerId={Number(id)} />;
+  return <CustomerDetailPageClient key={id} customerId={Number(id)} />;
 }

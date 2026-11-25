@@ -184,3 +184,22 @@ export function fetchCustomerAnalytics(signal?: AbortSignal) {
     { signal },
   );
 }
+
+// 回答は一覧の軽量APIへ混ぜず、詳細タブを開いたときに読む。
+export function fetchCustomerDetailFields(id: number) {
+  return apiFetch<
+    ApiSuccessResponse<import("../types").CustomerDetailFieldsData>
+  >(`${buildCustomerPath(id)}/detail_fields`, { cache: "no-store" });
+}
+export function updateCustomerDetailFields(
+  id: number,
+  lockVersion: number,
+  answers: { field_id: number; option_ids: number[] }[],
+) {
+  return apiFetch<
+    ApiSuccessResponse<import("../types").CustomerDetailFieldsData>
+  >(`${buildCustomerPath(id)}/detail_fields`, {
+    method: "PATCH",
+    body: { customer_details: { lock_version: lockVersion, answers } },
+  });
+}

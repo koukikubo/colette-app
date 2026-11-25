@@ -10,6 +10,8 @@ module Api
           description: resource.description,
           active: resource.active,
           position: resource.position,
+          customer_detail_mode: resource.customer_detail_mode,
+          customer_detail_group: resource.customer_detail_group,
           items: resource.standard_list_masters.ordered.map do |item|
             Api::V1::StandardListMasterSerializer.new(item).as_json
           end

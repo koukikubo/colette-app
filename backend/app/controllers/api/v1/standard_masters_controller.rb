@@ -67,6 +67,8 @@ class Api::V1::StandardMastersController < Api::V1::BaseController
         name
         description
         active
+        customer_detail_mode
+        customer_detail_group
       ]
     )
   end

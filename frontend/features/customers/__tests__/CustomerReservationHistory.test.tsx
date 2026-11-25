@@ -70,7 +70,7 @@ describe("CustomerReservationHistory", () => {
     ).toBeInTheDocument();
 
     const history = await screen.findByRole("region", {
-      name: "予約履歴",
+      name: "予約・来店履歴",
     });
 
     expect(within(history).getByText("2026/09/08")).toBeInTheDocument();

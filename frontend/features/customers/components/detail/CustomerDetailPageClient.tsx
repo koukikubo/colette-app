@@ -5,14 +5,20 @@ import { useUrlQuery } from "@/hooks/useUrlQuery";
 import { safeReturnPath } from "@/lib/api/session-events";
 import { PermissionGate } from "@/features/staff-auth/components/session/PermissionGate";
 import Link from "next/link";
+import { Tabs } from "radix-ui";
+import { useCustomerDetailDraftGuard } from "./useCustomerDetailDraftGuard";
+import { CustomerDetailFields } from "./CustomerDetailFields";
+import { CustomerStaffMemo } from "./CustomerStaffMemo";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowLeftIcon,
   Building2Icon,
   PencilIcon,
   ShieldCheckIcon,
-  UserIcon,
   ChartNoAxesCombinedIcon,
+  PhoneIcon,
+  MailIcon,
+  MapPinIcon,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -204,7 +210,18 @@ function CustomerDetailSkeleton() {
 export function CustomerDetailPageClient({
   customerId,
 }: CustomerDetailPageClientProps) {
-  const { params: returnParams } = useUrlQuery();
+  const { params: returnParams, update: updateQuery } = useUrlQuery();
+  const requestedTab = returnParams.get("tab");
+  const tab =
+    requestedTab && ["details", "history", "memo", "rf"].includes(requestedTab)
+      ? requestedTab
+      : "details";
+  const [fieldsVisited, setFieldsVisited] = useState(tab === "details");
+  const [historyVisited, setHistoryVisited] = useState(tab === "history");
+  const [fieldsEditing, setFieldsEditing] = useState(false);
+  const [memoEditing, setMemoEditing] = useState(false);
+  const hasDetailInput = fieldsEditing || memoEditing;
+  useCustomerDetailDraftGuard(hasDetailInput);
   const backTarget = returnParams.get("return_to")
     ? safeReturnPath(returnParams.get("return_to"))
     : "/customers";
@@ -223,7 +240,10 @@ export function CustomerDetailPageClient({
   const [reloadKey, setReloadKey] = useState(0);
   const readGeneration = useRef(0);
 
-  useReadRefresh(() => setReloadKey((value) => value + 1), !editDialogOpen);
+  useReadRefresh(
+    () => setReloadKey((value) => value + 1),
+    !editDialogOpen && !hasDetailInput,
+  );
 
   useEffect(() => {
     let isCancelled = false;
@@ -394,6 +414,7 @@ export function CustomerDetailPageClient({
               <Button
                 type="button"
                 className="w-full sm:w-auto"
+                disabled={hasDetailInput}
                 onClick={() => setEditDialogOpen(true)}
               >
                 <PencilIcon />
@@ -404,63 +425,83 @@ export function CustomerDetailPageClient({
         </CardHeader>
 
         <CardContent className="p-0">
-          <DetailSection
-            title="顧客概要"
-            description="接客時に確認する基本情報・連絡先・共有事項です。"
-            icon={<UserIcon className="size-5" aria-hidden="true" />}
+          <div
+            className="flex flex-wrap gap-8 px-6 pt-5"
+            aria-label="顧客のランク概要"
           >
-            <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
-              <DetailItem
-                label="顧客区分"
-                value={customerKindLabel(customer.customer_kind)}
-              />
-
-              <DetailItem label="顧客名" value={customer.name} />
-
-              <DetailItem label="フリガナ" value={customer.kana} />
-
-              <DetailItem
-                label="生年月日"
-                value={formatDate(customer.birthday)}
-              />
-
-              <DetailItem
-                label="電話番号"
-                value={formatCustomerPhoneNumber(customer.phone_number)}
-              />
-
-              <DetailItem
-                label="メールアドレス"
-                value={displayValue(customer.email)}
-              />
-
-              <DetailItem
-                label="郵便番号"
-                value={formatCustomerPostalCode(customer.postal_code)}
-              />
-
-              <DetailItem
-                label="住所"
-                value={displayValue(customer.address)}
-                wide
-              />
-            </dl>
-
-            <div className="mt-8 border-t pt-6">
-              <div className="mb-3 flex items-center justify-between gap-4">
-                <h3 className="text-sm font-semibold">顧客メモ</h3>
-                <span className="text-xs text-muted-foreground">
-                  スタッフ共有
-                </span>
-              </div>
-
-              <div className="min-h-24 rounded-lg border bg-muted/20 p-4">
-                <p className="whitespace-pre-wrap wrap-break-word text-sm leading-7">
-                  {displayValue(customer.memo)}
-                </p>
-              </div>
+            <div>
+              <p className="text-xs text-muted-foreground">RFランク</p>
+              <span className="mt-1 inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1 text-lg font-semibold">
+                <span
+                  className="size-3 rounded-full"
+                  aria-hidden="true"
+                  style={{
+                    backgroundColor: /^#[0-9a-f]{6}$/i.test(
+                      customer.current_rf_rank?.display_color ?? "",
+                    )
+                      ? customer.current_rf_rank!.display_color!
+                      : "#64748B",
+                  }}
+                />
+                {customer.current_rf_rank?.label.replace(/ランク$/, "") ?? "—"}
+              </span>
             </div>
-          </DetailSection>
+            <div>
+              <p className="text-xs text-muted-foreground">顧客ランク</p>
+              <span className="mt-1 inline-block rounded-lg bg-muted px-3 py-1 text-lg font-semibold">
+                {customer.customer_rank?.label.replace(/ランク$/, "") ??
+                  "未設定"}
+              </span>
+            </div>
+          </div>
+          <dl className="grid gap-x-6 gap-y-3 px-6 py-5 sm:grid-cols-2">
+            <div className="min-w-0">
+              <dt className="sr-only">電話番号</dt>
+              <dd className="inline-flex items-center gap-2 text-sm font-medium">
+                <PhoneIcon
+                  className="size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                {formatCustomerPhoneNumber(customer.phone_number)}
+              </dd>
+            </div>
+            <div className="min-w-0">
+              <dt className="sr-only">メールアドレス</dt>
+              <dd className="inline-flex items-start gap-2 text-sm wrap-anywhere">
+                <MailIcon
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                {displayValue(customer.email)}
+              </dd>
+            </div>
+            <div className="min-w-0 sm:col-span-2">
+              <dt className="sr-only">住所・郵便番号</dt>
+              <dd className="inline-flex items-start gap-2 text-sm text-muted-foreground">
+                <MapPinIcon
+                  className="mt-0.5 size-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="flex flex-wrap gap-x-2">
+                  <span>
+                    〒
+                    <span>
+                      {formatCustomerPostalCode(customer.postal_code)}
+                    </span>
+                  </span>
+                  <span className="wrap-anywhere">
+                    {displayValue(customer.address)}
+                  </span>
+                </span>
+              </dd>
+            </div>
+            {customer.birthday && (
+              <div className="text-sm text-muted-foreground">
+                <dt className="inline">生年月日：</dt>
+                <dd className="inline">{formatDate(customer.birthday)}</dd>
+              </div>
+            )}
+          </dl>
 
           {customer.customer_kind === "corporate" && (
             <DetailSection
@@ -504,7 +545,129 @@ export function CustomerDetailPageClient({
               </dl>
             </DetailSection>
           )}
+        </CardContent>
+      </Card>
+      <Tabs.Root
+        value={tab}
+        onValueChange={(value) => {
+          if (value === "history") setHistoryVisited(true);
+          if (value === "details") setFieldsVisited(true);
+          updateQuery({ tab: value });
+        }}
+        className="space-y-4"
+      >
+        <Tabs.List
+          aria-label="顧客詳細"
+          className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-muted p-1"
+        >
+          {[
+            ["details", "詳細情報"],
+            ["history", "予約・来店履歴"],
+            ["memo", "スタッフメモ"],
+            ["rf", "RF分析"],
+          ].map(([value, label]) => (
+            <Tabs.Trigger
+              key={value}
+              value={value}
+              className="rounded-lg px-4 py-2 text-sm text-muted-foreground outline-offset-2 data-[state=active]:bg-background data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            >
+              {label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
+        <Tabs.Content
+          value="details"
+          forceMount
+          className="space-y-4 rounded-xl bg-card p-5 data-[state=inactive]:hidden sm:p-6"
+        >
+          {(fieldsVisited || tab === "details") && (
+            <CustomerDetailFields
+              key={customer.id}
+              customerId={customer.id}
+              onEditingChange={setFieldsEditing}
+              customerVersion={customer.lock_version}
+              editingDisabled={memoEditing}
+              onSaved={handleEditCompleted}
+            />
+          )}
+          <details>
+            <summary className="cursor-pointer text-sm text-muted-foreground">
+              登録・更新情報
+            </summary>
+            <DetailSection
+              title="管理情報"
+              description="登録・更新を行った担当者と日時です。"
+              icon={<ShieldCheckIcon className="size-5" aria-hidden="true" />}
+            >
+              <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
+                <DetailItem
+                  label="表示状態"
+                  value={customer.hidden ? "非表示" : "表示中"}
+                />
 
+                <DetailItem
+                  label="登録担当者"
+                  value={displayValue(customer.created_by_staff?.name)}
+                />
+
+                <DetailItem
+                  label="最終更新担当者"
+                  value={displayValue(customer.updated_by_staff?.name)}
+                />
+
+                <DetailItem
+                  label="登録日時"
+                  value={formatDateTime(customer.created_at)}
+                />
+
+                <DetailItem
+                  label="最終更新日時"
+                  value={formatDateTime(customer.updated_at)}
+                />
+
+                <DetailItem
+                  label="更新バージョン"
+                  value={String(customer.lock_version)}
+                />
+              </dl>
+            </DetailSection>
+          </details>
+        </Tabs.Content>
+        <Tabs.Content
+          value="history"
+          forceMount
+          className="data-[state=inactive]:hidden"
+        >
+          {(historyVisited || tab === "history") && (
+            <CustomerReservationHistory customerId={customer.id} />
+          )}
+        </Tabs.Content>
+        <Tabs.Content
+          value="memo"
+          forceMount
+          className="rounded-xl bg-card p-5 data-[state=inactive]:hidden sm:p-6"
+        >
+          <CustomerStaffMemo
+            key={customer.id}
+            customer={customer}
+            onEditingChange={setMemoEditing}
+            editingDisabled={fieldsEditing}
+            onSaved={(updated) => {
+              // メモ保存より前の背景GETは、保存後の表示へ採用しない。
+              readGeneration.current += 1;
+              setCustomer((current) =>
+                current ? { ...current, ...updated } : current,
+              );
+              setIsLoading(false);
+              setErrorMessage(null);
+            }}
+          />
+        </Tabs.Content>
+        <Tabs.Content
+          value="rf"
+          forceMount
+          className="rounded-xl bg-card data-[state=inactive]:hidden"
+        >
           <DetailSection
             title="顧客ランク"
             description="手動設定の顧客ランクと、来店履歴から計算されたRFランクです。"
@@ -534,11 +697,6 @@ export function CustomerDetailPageClient({
               )}
 
             <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
-              <DetailItem
-                label="手動設定の顧客ランク"
-                value={customer.customer_rank?.label ?? "未設定"}
-              />
-
               <DetailItem
                 label="現在のRFランク"
                 value={
@@ -603,48 +761,8 @@ export function CustomerDetailPageClient({
               )}
             </dl>
           </DetailSection>
-
-          <DetailSection
-            title="管理情報"
-            description="登録・更新を行った担当者と日時です。"
-            icon={<ShieldCheckIcon className="size-5" aria-hidden="true" />}
-          >
-            <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
-              <DetailItem
-                label="表示状態"
-                value={customer.hidden ? "非表示" : "表示中"}
-              />
-
-              <DetailItem
-                label="登録担当者"
-                value={displayValue(customer.created_by_staff?.name)}
-              />
-
-              <DetailItem
-                label="最終更新担当者"
-                value={displayValue(customer.updated_by_staff?.name)}
-              />
-
-              <DetailItem
-                label="登録日時"
-                value={formatDateTime(customer.created_at)}
-              />
-
-              <DetailItem
-                label="最終更新日時"
-                value={formatDateTime(customer.updated_at)}
-              />
-
-              <DetailItem
-                label="更新バージョン"
-                value={String(customer.lock_version)}
-              />
-            </dl>
-          </DetailSection>
-        </CardContent>
-      </Card>
-
-      <CustomerReservationHistory customerId={customer.id} />
+        </Tabs.Content>
+      </Tabs.Root>
 
       {editDialogOpen && (
         <PermissionGate resource="customers">

@@ -9,7 +9,7 @@ class Api::V1::CustomersController < Api::V1::BaseController
 
 
   before_action :set_customer,
-                only: %i[show update hidden restore]
+                only: %i[show update hidden restore detail_fields update_detail_fields]
 
   def index
     visibility = params[:visibility].presence || "visible"
@@ -80,6 +80,29 @@ class Api::V1::CustomersController < Api::V1::BaseController
             serialize_customer_detail(@customer)
         }
       )
+  end
+
+  def detail_fields
+    render_success(data: ::Customers::DetailFields.new(@customer).read)
+  end
+
+  def update_detail_fields
+    input = params.expect(customer_details: [ :lock_version, answers: [ [ :field_id, { option_ids: [] } ] ] ])
+    version = input[:lock_version]
+    raise ActionController::BadRequest, "lock_versionは0以上の整数です" unless version.is_a?(Integer) && version >= 0
+    answers = input[:answers]
+    raise ActionController::BadRequest, "answersを指定してください" unless answers.is_a?(Array)
+    parsed = answers.map do |answer|
+      field_id = answer[:field_id]
+      option_ids = answer[:option_ids]
+      unless field_id.is_a?(Integer) && field_id.positive? && option_ids.is_a?(Array) && option_ids.all? { |id| id.is_a?(Integer) && id.positive? }
+        raise ActionController::BadRequest, "項目・選択肢IDは正整数で指定してください"
+      end
+      { field_id: field_id, option_ids: option_ids }
+    end
+    service = ::Customers::DetailFields.new(@customer)
+    service.update!(answers: parsed, lock_version: version, staff: current_staff)
+    render_success(data: service.read)
   end
 
   def create
