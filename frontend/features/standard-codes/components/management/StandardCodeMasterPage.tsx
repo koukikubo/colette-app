@@ -27,6 +27,7 @@ import {
 import type {
   StandardCode,
   StandardCodeFormValues,
+  StandardCodeUsagePlace,
   StandardListCode,
   StandardListCodeFormValues,
 } from "@/features/standard-codes/types";
@@ -70,6 +71,7 @@ function filterStandardCodes(
 }
 
 export function StandardCodeMasterPage() {
+  const [usagePlaces, setUsagePlaces] = useState<StandardCodeUsagePlace[]>([]);
   const [standardCodes, setStandardCodes] = useState<StandardCode[]>([]);
   const [standardListCodes, setStandardListCodes] = useState<
     StandardListCode[]
@@ -159,6 +161,7 @@ export function StandardCodeMasterPage() {
           }
         }
 
+        setUsagePlaces(standardCodeResponse.data.usage_places ?? []);
         setStandardCodes(codes);
         setSelectedStandardCode(firstCode);
         setStandardListCodes(listCodes);
@@ -215,6 +218,7 @@ export function StandardCodeMasterPage() {
         codes[0] ??
         null;
 
+      setUsagePlaces(response.data.usage_places ?? []);
       setStandardCodes(codes);
       setSelectedStandardCode(nextSelectedStandardCode);
 
@@ -714,6 +718,7 @@ export function StandardCodeMasterPage() {
           open={standardCodeDialogOpen}
           mode={standardCodeDialogMode}
           standardCode={editingStandardCode}
+          usagePlaces={usagePlaces}
           isSubmitting={isSubmitting}
           errorMessage={standardCodeSubmitError}
           onOpenChange={(open) => {

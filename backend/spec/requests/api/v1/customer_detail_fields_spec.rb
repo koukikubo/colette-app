@@ -88,18 +88,21 @@ RSpec.describe "顧客の店舗独自項目", type: :request do
     reserved = create(:standard_master, system_key: "reservation_status")
     expect(reserved.update(customer_detail_mode: "single")).to be(false)
   end
-  it "1000項目を一括読取でき、1001個目の設定を拒否する" do
+  it "1000件を超えて顧客項目を設定・一括読取できる" do
     login!
     login_staff.staff_master.update!(role_code: "owner")
     login!
     first_position = StandardMaster.maximum(:position).to_i + 1
-    records = 1000.times.map { |index| { name: "項目#{index}", position: first_position + index,
-      active: true, customer_detail_mode: "single", created_at: Time.current, updated_at: Time.current } }
+    records = 1001.times.map { |index| { name: "項目#{index}", position: first_position + index,
+      active: true, usage_place_id: StandardCodeUsagePlace.find_by!(key: "customer_details").id, input_type: "single", created_at: Time.current, updated_at: Time.current } }
     StandardMaster.insert_all!(records)
     get "/api/v1/customers/#{customer.id}/detail_fields"
     expect(response).to have_http_status(:ok)
-    expect(response.parsed_body.dig("data", "fields").size).to eq(1000)
-    post "/api/v1/standard_masters", params: { standard_master: { name: "超過", customer_detail_mode: "single" } }, headers: authenticated_headers, as: :json
-    expect(response).to have_http_status(:unprocessable_content)
+    fields = response.parsed_body.dig("data", "fields")
+    expect(fields.size).to eq(1001)
+    save_fields(fields.map { |item| { field_id: item.fetch("id"), option_ids: [] } })
+    expect(response).to have_http_status(:ok), response.body
+    post "/api/v1/standard_masters", params: { standard_master: { name: "追加項目", customer_detail_mode: "single" } }, headers: authenticated_headers, as: :json
+    expect(response).to have_http_status(:created)
   end
 end

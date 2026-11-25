@@ -662,8 +662,9 @@ describe("StandardCodeMasterPage", () => {
 
     await waitFor(() => {
       expect(mocks.createStandardCode).toHaveBeenCalledWith({
-        customer_detail_mode: "none",
-        customer_detail_group: null,
+        usage_place_id: null,
+        input_type: "single",
+        input_group: null,
         name: "支払方法",
         description: "予約時の支払方法を管理します",
         active: true,
@@ -741,8 +742,9 @@ describe("StandardCodeMasterPage", () => {
     );
 
     expect(mocks.createStandardCode).toHaveBeenCalledWith({
-      customer_detail_mode: "none",
-      customer_detail_group: null,
+      usage_place_id: null,
+      input_type: "single",
+      input_group: null,
       name: "支払方法",
       description: null,
       active: true,
@@ -826,8 +828,9 @@ describe("StandardCodeMasterPage", () => {
 
     await waitFor(() => {
       expect(mocks.updateStandardCode).toHaveBeenCalledWith(1, {
-        customer_detail_mode: "none",
-        customer_detail_group: null,
+        usage_place_id: null,
+        input_type: "single",
+        input_group: null,
         name: "予約ステータス",
         description: "予約状態を管理します",
         active: true,

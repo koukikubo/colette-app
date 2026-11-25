@@ -1106,23 +1106,38 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     expect((await login).status()).toBe(200);
   }).toPass({ intervals: [1000, 5000, 10000], timeout: 75000 });
   await expect(page).toHaveURL(/\/dashboard$/);
+  const definitions = (
+    await (await page.request.get("/api/v1/standard_masters")).json()
+  ).data.usage_places;
+  const customerPlace = definitions.find(
+    (place: { key: string }) => place.key === "customer_details",
+  );
+  expect(customerPlace).toBeTruthy();
+  const label = `E2E嗜好${Date.now()}`;
+  // 初期表示の通信中に固定CSRFトークンで準備せず、実際の登録画面を通す。
+  await page.goto("/standard-codes");
+  await expect(page.getByText("RFランク", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "追加", exact: true }).first().click();
+  await page.getByLabel("名称", { exact: true }).fill(label);
+  await page
+    .getByLabel("使用場所", { exact: true })
+    .selectOption(String(customerPlace.id));
+  await page.getByLabel("入力方法", { exact: true }).selectOption("multiple");
+  await page.getByLabel("分類（任意）", { exact: true }).fill("嗜好");
+  await page.getByRole("button", { name: "登録", exact: true }).click();
+  const creation = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/v1/standard_masters" &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "保存する", exact: true }).click();
+  const created = await creation;
+  expect(created.status(), await created.text()).toBe(201);
+  const field = (await created.json()).data.standard_master;
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   const token = (await (await page.request.get("/api/v1/csrf")).json()).data
     .csrf_token;
   const headers = { "X-CSRF-Token": token };
-  const label = `E2E嗜好${Date.now()}`;
-  const created = await page.request.post("/api/v1/standard_masters", {
-    headers,
-    data: {
-      standard_master: {
-        name: label,
-        active: true,
-        customer_detail_mode: "multiple",
-        customer_detail_group: "嗜好",
-      },
-    },
-  });
-  expect(created.status()).toBe(201);
-  const field = (await created.json()).data.standard_master;
   const optionResponse = await page.request.post(
     `/api/v1/standard_masters/${field.id}/items`,
     {
@@ -1132,6 +1147,42 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   );
   expect(optionResponse.status()).toBe(201);
   const option = (await optionResponse.json()).data.standard_list_master;
+  // 保存した使用場所と入力方法が編集フォームにも反映される。
+  await page
+    .getByRole("row")
+    .filter({ hasText: label })
+    .getByRole("button", { name: "編集", exact: true })
+    .click();
+  await expect(page.getByLabel("使用場所", { exact: true })).toHaveValue(
+    String(customerPlace.id),
+  );
+  await expect(page.getByLabel("入力方法", { exact: true })).toHaveValue(
+    "multiple",
+  );
+  await page.screenshot({
+    path: "test-results/standard-code-usage-desktop.png",
+    fullPage: true,
+  });
+  // 高さの低い画面でもフォーム全体を画面内に収め、更新操作へスクロールできる。
+  await page.setViewportSize({ width: 390, height: 700 });
+  const dialog = page.getByRole("dialog");
+  const dialogBox = await dialog.boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.y).toBeGreaterThanOrEqual(0);
+  expect(dialogBox!.y + dialogBox!.height).toBeLessThanOrEqual(700);
+  await dialog
+    .getByRole("button", { name: "更新", exact: true })
+    .scrollIntoViewIfNeeded();
+  await expect(
+    dialog.getByRole("button", { name: "更新", exact: true }),
+  ).toBeInViewport();
+  await page.getByLabel("名称", { exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: "test-results/standard-code-usage-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.keyboard.press("Escape");
   const rows = (await (await page.request.get("/api/v1/customers")).json()).data
     .customers;
   const target =

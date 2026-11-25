@@ -11,10 +11,21 @@ export type StandardListCode = {
   default_display_color?: string;
 };
 
+export type StandardCodeUsagePlace = {
+  id: number;
+  key: string;
+  name: string;
+  description: string | null;
+};
+
 export type StandardCode = {
   id: number;
   // 利用者が追加した分類には、固定の業務キーを割り当てない。
   system_key: string | null;
+  usage_place_id?: number | null;
+  usage_place?: StandardCodeUsagePlace | null;
+  input_type?: "single" | "multiple";
+  input_group?: string | null;
   customer_detail_mode?: "none" | "single" | "multiple";
   customer_detail_group?: string | null;
   display_code: string;
@@ -26,8 +37,9 @@ export type StandardCode = {
 };
 
 export type StandardCodeFormValues = {
-  customer_detail_mode?: "none" | "single" | "multiple";
-  customer_detail_group?: string | null;
+  usage_place_id: number | null;
+  input_type: "single" | "multiple";
+  input_group: string | null;
   name: string;
   description: string | null;
   active: boolean;

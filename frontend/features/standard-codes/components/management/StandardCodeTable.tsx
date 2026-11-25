@@ -75,6 +75,11 @@ export function StandardCodeTable({
                 <TableCell>
                   <div className="flex flex-col gap-1">
                     <span className="font-medium">{standardCode.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {standardCode.system_key
+                        ? "システム用（用途固定）"
+                        : (standardCode.usage_place?.name ?? "使用場所未指定")}
+                    </span>
                   </div>
                 </TableCell>
 
