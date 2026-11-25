@@ -23,7 +23,12 @@ class AddStandardCodeUsagePlaces < ActiveRecord::Migration[8.1]
       UPDATE standard_masters SET
         usage_place_id = CASE WHEN customer_detail_mode <> 'none' THEN
           (SELECT id FROM standard_code_usage_places WHERE key = 'customer_details') END,
-        input_type = CASE WHEN customer_detail_mode = 'multiple' THEN 'multiple' ELSE 'single' END,
+        input_type = CASE WHEN customer_detail_mode = 'multiple' OR EXISTS (
+          SELECT 1 FROM customer_detail_selections AS answers
+          JOIN standard_list_masters AS choices ON choices.id = answers.standard_list_master_id
+          WHERE choices.standard_master_id = standard_masters.id
+          GROUP BY answers.customer_id HAVING COUNT(*) > 1
+        ) THEN 'multiple' ELSE 'single' END,
         input_group = customer_detail_group
     SQL
   end

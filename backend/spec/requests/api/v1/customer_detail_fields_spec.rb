@@ -98,7 +98,10 @@ RSpec.describe "顧客の店舗独自項目", type: :request do
     StandardMaster.insert_all!(records)
     get "/api/v1/customers/#{customer.id}/detail_fields"
     expect(response).to have_http_status(:ok)
-    expect(response.parsed_body.dig("data", "fields").size).to eq(1001)
+    fields = response.parsed_body.dig("data", "fields")
+    expect(fields.size).to eq(1001)
+    save_fields(fields.map { |item| { field_id: item.fetch("id"), option_ids: [] } })
+    expect(response).to have_http_status(:ok), response.body
     post "/api/v1/standard_masters", params: { standard_master: { name: "追加項目", customer_detail_mode: "single" } }, headers: authenticated_headers, as: :json
     expect(response).to have_http_status(:created)
   end

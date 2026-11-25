@@ -92,7 +92,7 @@ class StandardMaster < ApplicationRecord
     if usage_place_id.present? && usage_place.nil?
       errors.add(:usage_place, "が見つかりません")
     end
-    if persisted? && will_save_change_to_input_type? && input_type == "single" &&
+    if persisted? && (will_save_change_to_input_type? || will_save_change_to_usage_place_id?) && input_type == "single" &&
         CustomerDetailSelection.where(standard_list_master_id: standard_list_masters.select(:id))
           .group(:customer_id).having("COUNT(*) > 1").exists?
       errors.add(:input_type, "には複数回答があります。単一選択へ変更できません")

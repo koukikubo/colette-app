@@ -62,6 +62,18 @@ RSpec.describe "基本コードの使用場所", type: :request do
     expect(master.reload.usage_place_id).to be_nil
   end
 
+  it "保存済みの複数回答がある項目を単一選択のまま再公開しない" do
+    master = create(:standard_master, system_key: nil, input_type: "single")
+    choices = 2.times.map { create(:standard_list_master, standard_master: master) }
+    choices.each { |choice| CustomerDetailSelection.create!(customer: customer, standard_list_master: choice) }
+    update_master(master, usage_place_id: customer_place.id)
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(master.reload.usage_place_id).to be_nil
+    update_master(master, usage_place_id: customer_place.id, input_type: "multiple")
+    expect(response).to have_http_status(:ok)
+    expect(CustomerDetailSelection.where(customer: customer).count).to eq(2)
+  end
+
   it "全体件数の上限でも既存コードの編集を許可し、新規追加だけを拒否する" do
     master = create(:standard_master, system_key: nil)
     stub_const("StandardMaster::MAX_RECORDS", StandardMaster.count)
