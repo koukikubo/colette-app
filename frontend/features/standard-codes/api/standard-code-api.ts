@@ -2,6 +2,7 @@ import { apiFetch, type ApiSuccessResponse } from "@/lib/api/api-client";
 
 import type {
   StandardCode,
+  StandardCodeUsagePlace,
   StandardCodeFormValues,
   StandardListCode,
   StandardListCodeFormValues,
@@ -10,6 +11,7 @@ import type {
 
 type StandardCodesResponse = ApiSuccessResponse<{
   standard_masters: StandardCode[];
+  usage_places?: StandardCodeUsagePlace[];
 }>;
 
 type StandardCodeResponse = ApiSuccessResponse<{

@@ -1109,6 +1109,13 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   const token = (await (await page.request.get("/api/v1/csrf")).json()).data
     .csrf_token;
   const headers = { "X-CSRF-Token": token };
+  const definitions = (
+    await (await page.request.get("/api/v1/standard_masters")).json()
+  ).data.usage_places;
+  const customerPlace = definitions.find(
+    (place: { key: string }) => place.key === "customer_details",
+  );
+  expect(customerPlace).toBeTruthy();
   const label = `E2E嗜好${Date.now()}`;
   const created = await page.request.post("/api/v1/standard_masters", {
     headers,
@@ -1116,8 +1123,9 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
       standard_master: {
         name: label,
         active: true,
-        customer_detail_mode: "multiple",
-        customer_detail_group: "嗜好",
+        usage_place_id: customerPlace.id,
+        input_type: "multiple",
+        input_group: "嗜好",
       },
     },
   });
@@ -1132,6 +1140,30 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
   );
   expect(optionResponse.status()).toBe(201);
   const option = (await optionResponse.json()).data.standard_list_master;
+  // 実APIの使用場所が設定フォームに反映され、選択しても入力方法は保持される。
+  await page.goto("/standard-codes");
+  await page
+    .getByRole("row")
+    .filter({ hasText: label })
+    .getByRole("button", { name: "編集", exact: true })
+    .click();
+  await expect(page.getByLabel("使用場所", { exact: true })).toHaveValue(
+    String(customerPlace.id),
+  );
+  await expect(page.getByLabel("入力方法", { exact: true })).toHaveValue(
+    "multiple",
+  );
+  await page.screenshot({
+    path: "test-results/standard-code-usage-desktop.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "test-results/standard-code-usage-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.keyboard.press("Escape");
   const rows = (await (await page.request.get("/api/v1/customers")).json()).data
     .customers;
   const target =

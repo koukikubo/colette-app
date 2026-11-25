@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type {
   StandardCode,
   StandardCodeFormValues,
+  StandardCodeUsagePlace,
 } from "@/features/standard-codes/types";
 import { ConfirmStandardCodeSaveDialog } from "./ConfirmStandardCodeSaveDialog";
 
@@ -28,6 +29,7 @@ type StandardCodeFormDialogProps = {
   open: boolean;
   mode: DialogMode;
   standardCode?: StandardCode | null;
+  usagePlaces?: StandardCodeUsagePlace[];
   isSubmitting?: boolean;
   errorMessage: string | null;
   onOpenChange: (open: boolean) => void;
@@ -37,6 +39,7 @@ type StandardCodeFormDialogProps = {
 type StandardCodeFormContentProps = {
   mode: DialogMode;
   standardCode?: StandardCode | null;
+  usagePlaces?: StandardCodeUsagePlace[];
   errorMessage: string | null;
   isSubmitting: boolean;
   onSubmit: (values: StandardCodeFormValues) => void | Promise<void>;
@@ -48,14 +51,16 @@ function normalizeNullableText(value: string | null) {
   return trimmedValue === "" ? null : trimmedValue;
 }
 
+// 使用場所と単複選択は独立して復元し、編集開始時に既存設定を変えない。
 function buildInitialValues(
   mode: DialogMode,
   standardCode?: StandardCode | null,
 ): StandardCodeFormValues {
   if (mode === "edit" && standardCode) {
     return {
-      customer_detail_mode: standardCode.customer_detail_mode ?? "none",
-      customer_detail_group: standardCode.customer_detail_group ?? null,
+      usage_place_id: standardCode.usage_place_id ?? null,
+      input_type: standardCode.input_type ?? "single",
+      input_group: standardCode.input_group ?? null,
       name: standardCode.name,
       description: standardCode.description,
       active: standardCode.active,
@@ -63,8 +68,9 @@ function buildInitialValues(
   }
 
   return {
-    customer_detail_mode: "none",
-    customer_detail_group: null,
+    usage_place_id: null,
+    input_type: "single",
+    input_group: null,
     name: "",
     description: null,
     active: true,
@@ -74,6 +80,7 @@ function buildInitialValues(
 function StandardCodeFormContent({
   mode,
   standardCode,
+  usagePlaces = [],
   isSubmitting,
   errorMessage,
   onSubmit,
@@ -91,10 +98,9 @@ function StandardCodeFormContent({
     event.preventDefault();
 
     setPendingValues({
-      customer_detail_mode: values.customer_detail_mode,
-      customer_detail_group: normalizeNullableText(
-        values.customer_detail_group ?? null,
-      ),
+      usage_place_id: values.usage_place_id,
+      input_type: values.input_type,
+      input_group: normalizeNullableText(values.input_group),
       name: values.name.trim(),
       description: normalizeNullableText(values.description),
       active: values.active,
@@ -163,24 +169,58 @@ function StandardCodeFormContent({
 
           {!standardCode?.system_key && (
             <fieldset className="space-y-3 rounded-lg bg-muted/40 p-4">
-              <legend className="text-sm font-medium">
-                顧客の詳細情報で使用
-              </legend>
+              <legend className="text-sm font-medium">選択項目の設定</legend>
+              <Label htmlFor="standard-code-usage-place">使用場所</Label>
+              <select
+                id="standard-code-usage-place"
+                className="w-full rounded-md border bg-background p-2 text-sm"
+                value={values.usage_place_id ?? ""}
+                disabled={isSubmitting || usagePlaces.length === 0}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    usage_place_id:
+                      event.target.value === ""
+                        ? null
+                        : Number(event.target.value),
+                  }))
+                }
+              >
+                <option value="">未指定</option>
+                {usagePlaces.map((place) => (
+                  <option key={place.id} value={place.id}>
+                    {place.name}
+                  </option>
+                ))}
+                {values.usage_place_id &&
+                  !usagePlaces.some(
+                    (place) => place.id === values.usage_place_id,
+                  ) && (
+                    <option value={values.usage_place_id}>
+                      {standardCode?.usage_place?.name ?? "現在の使用場所"}
+                    </option>
+                  )}
+              </select>
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {
+                  usagePlaces.find(
+                    (place) => place.id === values.usage_place_id,
+                  )?.description
+                }
+              </p>
               <Label htmlFor="standard-code-customer-mode">入力方法</Label>
               <select
                 id="standard-code-customer-mode"
                 className="w-full rounded-md border bg-background p-2 text-sm"
-                value={values.customer_detail_mode ?? "none"}
+                value={values.input_type}
                 disabled={isSubmitting}
                 onChange={(event) =>
                   setValues((current) => ({
                     ...current,
-                    customer_detail_mode: event.target.value as
-                      "none" | "single" | "multiple",
+                    input_type: event.target.value as "single" | "multiple",
                   }))
                 }
               >
-                <option value="none">使用しない</option>
                 <option value="single">単一選択（プルダウン）</option>
                 <option value="multiple">複数選択</option>
               </select>
@@ -189,19 +229,25 @@ function StandardCodeFormContent({
                 id="standard-code-customer-group"
                 maxLength={50}
                 placeholder="嗜好・好み、連絡・会員など"
-                value={values.customer_detail_group ?? ""}
+                value={values.input_group ?? ""}
                 disabled={isSubmitting}
                 onChange={(event) =>
                   setValues((current) => ({
                     ...current,
-                    customer_detail_group: event.target.value,
+                    input_group: event.target.value,
                   }))
                 }
               />
               <p className="text-xs text-muted-foreground">
-                この基本コードの有効な選択肢を顧客詳細で選べます。未入力と「未登録」等の回答は区別します。使用停止後も保存済みの回答は保持します。
+                使用場所と入力方法を個別に設定します。使用場所の変更・解除後も顧客の保存済み回答は保持し、参照できます。
               </p>
             </fieldset>
+          )}
+
+          {standardCode?.system_key && (
+            <p className="rounded-lg bg-muted/40 p-3 text-sm">
+              システム用（用途固定）
+            </p>
           )}
 
           <div className="flex items-center justify-between rounded-lg border p-3">
@@ -256,6 +302,7 @@ export function StandardCodeFormDialog({
   open,
   mode,
   standardCode,
+  usagePlaces,
   isSubmitting = false,
   errorMessage,
   onOpenChange,
@@ -269,6 +316,7 @@ export function StandardCodeFormDialog({
             key={`${mode}-${standardCode?.id ?? "new"}`}
             mode={mode}
             standardCode={standardCode}
+            usagePlaces={usagePlaces}
             isSubmitting={isSubmitting}
             errorMessage={errorMessage}
             onSubmit={onSubmit}
