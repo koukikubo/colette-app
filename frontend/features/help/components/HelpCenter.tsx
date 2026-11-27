@@ -53,37 +53,50 @@ function GuideSession({ role, pathname }: { role: string; pathname: string }) {
   const [dismissed, setDismissed] = useState(false);
   const mounted = useRef(true);
   const revision = useRef(0);
+  const busy = useRef(false);
   useEffect(() => {
     mounted.current = true;
-    const controller = new AbortController();
-    const requestedRevision = revision.current;
-    void fetchGuideState(controller.signal)
-      .then((response) => {
-        if (
-          !controller.signal.aborted &&
-          requestedRevision === revision.current
-        ) {
-          setState(response.data.guide_state);
-          setError(null);
-        }
-      })
-      .catch(() => {
-        if (
-          !controller.signal.aborted &&
-          requestedRevision === revision.current
-        )
-          setError(
-            "案内の状態を取得できませんでした。接続を確認して再取得してください。",
-          );
-      });
+    let controller: AbortController | undefined;
+    const read = () => {
+      if (busy.current) return;
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+      const requestedRevision = revision.current;
+      void fetchGuideState(request.signal)
+        .then((response) => {
+          if (
+            !request.signal.aborted &&
+            requestedRevision === revision.current
+          ) {
+            setState(response.data.guide_state);
+            setError(null);
+          }
+        })
+        .catch(() => {
+          if (!request.signal.aborted && requestedRevision === revision.current)
+            setError(
+              "案内の状態を取得できませんでした。接続を確認して再取得してください。",
+            );
+        });
+    };
+    const visible = () => {
+      if (document.visibilityState === "visible") read();
+    };
+    read();
+    window.addEventListener("focus", visible);
+    document.addEventListener("visibilitychange", visible);
     return () => {
       mounted.current = false;
-      controller.abort();
+      controller?.abort();
+      window.removeEventListener("focus", visible);
+      document.removeEventListener("visibilitychange", visible);
     };
   }, [reload]);
 
   async function save(outcome: "completed" | "skipped") {
-    if (saving) return false;
+    if (busy.current) return false;
+    busy.current = true;
     revision.current += 1;
     setSaving(true);
     setError(null);
@@ -99,6 +112,7 @@ function GuideSession({ role, pathname }: { role: string; pathname: string }) {
         );
       return false;
     } finally {
+      busy.current = false;
       if (mounted.current) setSaving(false);
     }
   }
@@ -138,7 +152,8 @@ function HelpSurface({
   const guides = guidesForRole(role);
   const current = guideForPath(pathname);
   const [selectedId, setSelectedId] = useState(
-    current?.id ?? guides[0]?.id ?? "login",
+    guides.find((guide) => guide.id === current?.id)?.id ??
+      (role ? "dashboard" : "login"),
   );
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"closed" | "help" | "tour">("closed");
@@ -158,12 +173,22 @@ function HelpSurface({
 
   useEffect(() => {
     const open = (event: Event) => {
-      // 他の確認・入力ダイアログに重ねて自動的に開かない。
-      if (document.querySelector('[role="dialog"], [role="alertdialog"]'))
+      const source = (event as CustomEvent<{ trigger?: HTMLElement }>).detail
+        ?.trigger;
+      // 入力モーダル内の明示操作だけは許可する。自動案内の抑止とは分ける。
+      const dialogs = Array.from(
+        document.querySelectorAll('[role="dialog"], [role="alertdialog"]'),
+      );
+      if (
+        dialogs.some(
+          (dialog) =>
+            !dialog.matches('[data-help-host="reservation"]') ||
+            !source ||
+            !dialog.contains(source),
+        )
+      )
         return;
-      trigger.current =
-        (event as CustomEvent<{ trigger?: HTMLElement }>).detail?.trigger ??
-        null;
+      trigger.current = source ?? null;
       setMode("help");
     };
     const touch = () => {
@@ -278,13 +303,16 @@ function HelpSurface({
           }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
+            if (trigger.current?.isConnected) {
+              trigger.current.focus();
+              return;
+            }
             if (document.querySelector('[role="dialog"], [role="alertdialog"]'))
               return;
             const fallback = document.querySelector<HTMLElement>(
               '[data-guide-target="help"]',
             );
-            if (trigger.current?.isConnected) trigger.current.focus();
-            else fallback?.focus();
+            fallback?.focus();
           }}
         >
           <DialogHeader>

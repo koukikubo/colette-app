@@ -82,6 +82,32 @@ test("全機能のヘルプとスポットライト案内を使い、完了状�
     await expect(entry).toBeFocused();
   }
 
+  // タイムラインからの予約モーダルでも、ヘルプだけを閉じて入力を続けられる。
+  await page.goto("/reservations");
+  await page
+    .getByRole("link", { name: /^E2Eテーブル .*17:00から予約を登録$/ })
+    .click();
+  const reservationDialog = page.getByRole("dialog", {
+    name: "新規予約",
+    exact: true,
+  });
+  await expect(reservationDialog).toBeVisible();
+  const modalName = reservationDialog.getByRole("textbox", {
+    name: /^予約者名/,
+  });
+  await modalName.fill("モーダル内の入力を保持");
+  const modalHelp = reservationDialog.getByRole("button", {
+    name: "使い方・ヘルプ",
+  });
+  await modalHelp.click();
+  await expect(
+    page.getByRole("article", { name: "予約の登録・編集" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(reservationDialog).toBeVisible();
+  await expect(modalName).toHaveValue("モーダル内の入力を保持");
+  await expect(modalHelp).toBeFocused();
+
   await page.goto("/reservations/new");
   const name = page.getByRole("textbox", { name: /^予約者名/ });
   await name.fill("E2Eヘルプ入力保持");

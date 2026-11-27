@@ -96,7 +96,7 @@ export const featureGuides: FeatureGuide[] = [
   {
     id: "reservation-detail",
     title: "予約詳細・来店結果",
-    summary: "予約内容の確認と、退店・キャンセル・来店結果の訂正を行います。",
+    summary: "予約内容と、退店・キャンセルなどの来店結果を確認します。",
     paths: [/^\/reservations\/(?:detail\/)?[^/]+$/],
     topics: [
       {
@@ -114,6 +114,11 @@ export const featureGuides: FeatureGuide[] = [
         resource: "reservations",
       },
       {
+        title: "取消した予約を復元",
+        text: "キャンセル済みの予約は確認して復元できます。席の定員・時間重複を再検証するため、他の予約と競合する場合は内容を見直してください。",
+        resource: "reservations",
+      },
+      {
         title: "来店結果を訂正",
         text: "誤った退店や来店結果は、詳細の訂正操作から修正します。理由入力は画面の必須条件に従い、無断キャンセルへの訂正では理由不要です。履歴・集計は更新され、RFランクは次回の正常な日次計算で反映します。",
         resource: "reservations",
@@ -123,7 +128,7 @@ export const featureGuides: FeatureGuide[] = [
   {
     id: "reservations",
     title: "予約タイムライン・未処理予約",
-    summary: "席と時間から予約を確認し、空き枠から登録できます。",
+    summary: "席と時間から予約と空き状況を確認します。",
     paths: [/^\/reservations$/],
     topics: [
       {
@@ -169,7 +174,7 @@ export const featureGuides: FeatureGuide[] = [
   },
   {
     id: "customers",
-    title: "顧客検索・登録",
+    title: "顧客検索",
     summary: "キーワードと複数の条件を組み合わせ、対象顧客を探します。",
     paths: [/^\/customers$/],
     topics: [
@@ -180,6 +185,11 @@ export const featureGuides: FeatureGuide[] = [
       {
         title: "顧客の登録と編集",
         text: "必要な基本情報を入力し、法人の場合は法人名も確認します。保存成功と一覧の再取得失敗を区別し、保存済みなら再登録せず再取得してください。",
+        resource: "customers",
+      },
+      {
+        title: "顧客の非表示・復帰",
+        text: "顧客を非表示にしても、既存の予約や履歴を削除する操作ではありません。非表示の顧客を確認し、必要な場合は復帰します。操作の確認画面と競合メッセージに従ってください。",
         resource: "customers",
       },
       {
@@ -283,7 +293,7 @@ export const featureGuides: FeatureGuide[] = [
   {
     id: "standard-codes",
     title: "基本コード・選択肢",
-    summary: "親となる基本コードと、その配下の選択肢を管理します。",
+    summary: "親となる基本コードと、その配下の選択肢を確認します。",
     paths: [/^\/standard-codes$/],
     topics: [
       {
@@ -382,7 +392,8 @@ export function guidesForRole(role?: string): FeatureGuide[] {
           (!topic.ownerOnly || role === "owner") &&
           (!topic.resource || canWrite(role, topic.resource)),
       ),
-    }));
+    }))
+    .filter((guide) => guide.topics.length > 0);
 }
 export function guideForPath(pathname: string) {
   return featureGuides.find((guide) =>

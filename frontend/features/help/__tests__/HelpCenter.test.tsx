@@ -189,9 +189,7 @@ describe("全画面のヘルプと初回案内", () => {
       screen.getByRole("button", { name: "基本操作の案内を最初から見る" }),
     );
     for (let i = 0; i < 4; i++)
-      await user.click(
-        screen.getByRole("button", { name: "次へ" }),
-      );
+      await user.click(screen.getByRole("button", { name: "次へ" }));
     await user.click(screen.getByRole("button", { name: "案内を完了" }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -202,6 +200,28 @@ describe("全画面のヘルプと初回案内", () => {
     await user.click(screen.getByRole("button", { name: "使い方・ヘルプ" }));
     expect(screen.getByText("初回案内：完了")).toBeInTheDocument();
     expect(mocks.save).toHaveBeenCalledWith("completed");
+  });
+  it("別端末で完了した状態を画面復帰時に取得する", async () => {
+    mocks.fetch
+      .mockResolvedValueOnce(result("unseen"))
+      .mockResolvedValue(result("completed"));
+    const user = userEvent.setup();
+    render(view());
+    await screen.findByRole(
+      "region",
+      { name: "はじめての使い方" },
+      { timeout: 2000 },
+    );
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("region", { name: "はじめての使い方" }),
+      ).not.toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole("button", { name: "使い方・ヘルプ" }));
+    expect(screen.getByText("初回案内：完了")).toBeInTheDocument();
   });
   it("担当者切替・セッション失効でガイドと前担当者の状態を持ち越さない", async () => {
     const user = userEvent.setup();

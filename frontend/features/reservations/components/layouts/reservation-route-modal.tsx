@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HelpButton } from "@/features/help/components/HelpButton";
 import { ReservationModalDirtyContext } from "./reservation-modal-dirty-context";
 import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import { useRouter } from "next/navigation";
@@ -43,6 +44,7 @@ export function ReservationRouteModal({
   return (
     <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent
+        data-help-host="reservation"
         className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
         onPointerDownOutside={(event) => {
           event.preventDefault();
@@ -53,7 +55,10 @@ export function ReservationRouteModal({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <div className="flex items-center justify-between gap-3 pr-6">
+            <DialogTitle>{title}</DialogTitle>
+            <HelpButton />
+          </div>
 
           <DialogDescription>
             {description ?? "予約内容を確認し、必要な項目を入力してください。"}

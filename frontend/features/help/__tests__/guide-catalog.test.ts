@@ -36,6 +36,9 @@ describe("全機能のヘルプ定義", () => {
   });
   it("viewerは更新操作なし、operatorは顧客・予約更新、ownerはマスタ更新も案内する", () => {
     expect(
+      guidesForRole("viewer").some((guide) => guide.id === "reservation-form"),
+    ).toBe(false);
+    expect(
       guidesForRole("viewer")
         .flatMap((guide) => guide.topics)
         .some((topic) => topic.resource),
