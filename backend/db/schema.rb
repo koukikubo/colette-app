@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -323,6 +323,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_100000) do
     t.index ["subject_id"], name: "index_security_audit_events_on_subject_id"
   end
 
+  create_table "staff_guide_states", force: :cascade do |t|
+    t.bigint "staff_id", null: false
+    t.integer "guide_version", null: false
+    t.string "status", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["staff_id", "guide_version"], name: "index_staff_guide_states_on_staff_id_and_guide_version", unique: true
+    t.index ["staff_id"], name: "index_staff_guide_states_on_staff_id"
+    t.check_constraint "guide_version > 0", name: "staff_guide_version_positive"
+    t.check_constraint "status::text = ANY (ARRAY['completed'::character varying, 'skipped'::character varying]::text[])", name: "staff_guide_status_valid"
+  end
+
   create_table "staff_masters", force: :cascade do |t|
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -454,6 +466,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_100000) do
   add_foreign_key "rf_settings", "rf_calculation_runs", column: "current_calculation_run_id"
   add_foreign_key "security_audit_events", "staffs", column: "actor_id"
   add_foreign_key "security_audit_events", "staffs", column: "subject_id"
+  add_foreign_key "staff_guide_states", "staffs"
   add_foreign_key "staff_sessions", "staffs"
   add_foreign_key "staffs", "staff_masters"
   add_foreign_key "standard_list_masters", "standard_masters"

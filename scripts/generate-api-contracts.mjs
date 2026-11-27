@@ -115,6 +115,18 @@ route(
   "auth",
   client("staff-auth/api/password-api", "changePassword"),
 );
+route(
+  "GET",
+  "staff/guide_state",
+  "help",
+  client("help/api/guide-state-api", "fetchGuideState"),
+);
+route(
+  "PATCH",
+  "staff/guide_state",
+  "help",
+  client("help/api/guide-state-api", "saveGuideState"),
+);
 const standard = "standard-codes/api/standard-code-api";
 route(
   "GET",
@@ -293,6 +305,7 @@ for (const required of [
   "restaurant",
   "rf",
   "dashboard",
+  "help",
 ]) {
   if (!domains.has(required))
     throw new Error(`Missing Rails contract domain: ${required}`);

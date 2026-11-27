@@ -28,6 +28,7 @@ class Staff < ApplicationRecord
           dependent: :restrict_with_error
 
   has_many :staff_sessions, dependent: :delete_all
+  has_many :staff_guide_states, dependent: :delete_all
   after_update :revoke_sessions_after_security_change
   validates :password, length: { minimum: 12 }, if: -> { password.present? }
 

@@ -14,6 +14,7 @@ Rails.application.routes.draw do
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
         get "current", to: "sessions#current"
+        resource :guide_state, only: %i[show update], controller: "guide_states"
         resource :password, only: :update, controller: "passwords"
       end
 
