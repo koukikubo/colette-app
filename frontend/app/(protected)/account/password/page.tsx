@@ -1,9 +1,10 @@
+import { PageHeading } from "@/components/common/page-heading";
 import { PasswordForm } from "@/features/staff-auth/components/session/PasswordForm";
 export default function PasswordPage() {
   return (
-    <main className="space-y-4 p-6">
-      <h1 className="text-2xl font-semibold">パスワード変更</h1>
+    <div className="space-y-4 p-6">
+      <PageHeading>パスワード変更</PageHeading>
       <PasswordForm />
-    </main>
+    </div>
   );
 }

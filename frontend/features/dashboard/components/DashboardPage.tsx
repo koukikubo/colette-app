@@ -1,7 +1,8 @@
 "use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
 import { DashboardAnalyticsPanel } from "./DashboardAnalyticsPanel";
 import { useApiRead } from "@/hooks/useApiRead";
-import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -73,12 +74,9 @@ export function DashboardPage() {
                 ))}
               </div>
               <nav className="flex gap-4">
-                <Link
-                  className="underline"
-                  href={`/reservations?date=${data.date}`}
-                >
+                <NavigationLink href={`/reservations?date=${data.date}`}>
                   本日の予約一覧
-                </Link>
+                </NavigationLink>
               </nav>
             </>
           )

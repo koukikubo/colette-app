@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { NavigationLink } from "@/components/common/navigation-link";
+
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
@@ -311,8 +312,7 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
                           }
                         />
                       </PermissionGate>
-                      <Link
-                        className="underline"
+                      <NavigationLink
                         href={`/reservations/detail/${reservation.id}`}
                       >
                         {reservation.reservation_name} ／{" "}
@@ -320,7 +320,7 @@ export function PendingCheckoutList({ targetDate }: { targetDate: string }) {
                           reservation.starts_at,
                         ).replace("T", " ")}{" "}
                         ／ {reservation.reservation_status?.label}
-                      </Link>
+                      </NavigationLink>
                     </div>
                     {/* 個別変更は詳細リンクへ集約し、単件と一括の未確定操作を混在させない。 */}
                   </li>

@@ -1,3 +1,6 @@
+"use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
 /**
  * RFランクの2時点間の移動を、操作可能なマトリクスで表示する。
  *
@@ -8,9 +11,7 @@
  * このファイルでは表の描画、配色、セル選択、説明表示を担当する。
  * API通信や顧客ランクの更新は行わない。
  */
-"use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import type {
@@ -238,12 +239,12 @@ export function RfMovementMatrix({ transitions, customerHref }: Props) {
                                 </TooltipContent>
                               </Tooltip>
                               {customerHref && (
-                                <Link
-                                  className="block p-2 text-center underline"
+                                <NavigationLink
+                                  className="block p-2 text-center"
                                   href={customerHref(row, column)}
                                 >
                                   {count}人の内訳
-                                </Link>
+                                </NavigationLink>
                               )}
                             </>
                           )}

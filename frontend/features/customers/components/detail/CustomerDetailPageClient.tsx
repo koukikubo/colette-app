@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeading } from "@/components/common/page-heading";
+
 import { useReadRefresh } from "@/hooks/useReadRefresh";
 import { useUrlQuery } from "@/hooks/useUrlQuery";
 import { safeReturnPath } from "@/lib/api/session-events";
@@ -168,6 +170,7 @@ function DetailSection({
 function CustomerDetailSkeleton() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+      <PageHeading>顧客詳細</PageHeading>
       <Skeleton className="h-9 w-36" />
 
       <Card className="gap-0 py-0">
@@ -323,6 +326,7 @@ export function CustomerDetailPageClient({
   if (errorMessage && !customer) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+        <PageHeading>顧客詳細</PageHeading>
         <Button asChild variant="outline">
           <Link href={backTarget}>
             <ArrowLeftIcon />

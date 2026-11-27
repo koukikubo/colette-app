@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavigationLink } from "@/components/common/navigation-link";
 
 import { ReservationStatusActions } from "@/features/reservations/components/details/ReservationStatusActions";
 import type { Reservation } from "@/features/reservations/types";
@@ -41,13 +41,13 @@ export function CanceledReservationList({
               className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="space-y-1">
-                <Link
+                <NavigationLink
                   href={`/reservations/detail/${reservation.id}`}
                   aria-label={`${reservation.reservation_name}様の予約詳細を開く`}
-                  className="font-medium hover:underline"
+                  className="font-medium"
                 >
                   {reservation.reservation_name}
-                </Link>
+                </NavigationLink>
 
                 <p className="text-sm">{reservationResultLabel(reservation)}</p>
                 <p className="text-sm text-muted-foreground">

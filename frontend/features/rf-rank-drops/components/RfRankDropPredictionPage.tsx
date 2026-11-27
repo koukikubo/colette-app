@@ -1,6 +1,9 @@
 "use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
+
+import { PageHeading } from "@/components/common/page-heading";
 import { useApiRead } from "@/hooks/useApiRead";
-import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
@@ -27,12 +30,10 @@ export function RfRankDropPredictionPage() {
     reload,
   );
   return (
-    <main className="space-y-5 p-6">
-      <h1 className="text-2xl font-semibold">RFランク低下予定の顧客</h1>
+    <div className="space-y-5 p-6">
+      <PageHeading>RFランク低下予定の顧客</PageHeading>
       <nav className="flex gap-4">
-        <Link className="underline" href="/rf-rank-drops">
-          低下済み
-        </Link>
+        <NavigationLink href="/rf-rank-drops">低下済み</NavigationLink>
         <span>低下予定</span>
       </nav>
       <p>
@@ -99,12 +100,11 @@ export function RfRankDropPredictionPage() {
                   {data.customers.map((row) => (
                     <tr key={row.customer_id} className="border-t">
                       <td className="p-3">
-                        <Link
-                          className="underline"
+                        <NavigationLink
                           href={`/customers/${row.customer_id}?return_to=${encodeURIComponent(`/rf-rank-drops/predictions?${query}`)}`}
                         >
                           {row.customer_name}
-                        </Link>
+                        </NavigationLink>
                       </td>
                       <td>{row.predicted_drop_on}</td>
                       <td>{row.days_until_drop}日</td>
@@ -126,6 +126,6 @@ export function RfRankDropPredictionPage() {
           />
         </>
       ) : null}
-    </main>
+    </div>
   );
 }

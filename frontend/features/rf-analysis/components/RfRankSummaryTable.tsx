@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavigationLink } from "@/components/common/navigation-link";
 import {
   Table,
   TableBody,
@@ -47,12 +47,11 @@ export function RfRankSummaryTable({ ranks, runId }: RfRankSummaryTableProps) {
 
               <TableCell className="text-right font-semibold">
                 {runId ? (
-                  <Link
-                    className="underline"
+                  <NavigationLink
                     href={`/rf-customers?run_id=${runId}&rf_rank_id=${rf_rank.id}&return_to=%2Frf-analysis`}
                   >
                     {count.toLocaleString("ja-JP")}名
-                  </Link>
+                  </NavigationLink>
                 ) : (
                   <>{count.toLocaleString("ja-JP")}名</>
                 )}

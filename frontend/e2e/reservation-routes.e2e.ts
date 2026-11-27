@@ -29,7 +29,8 @@ test("予約ルーティングの直接表示と空き枠", async ({ page }) => 
   await expect(
     page.getByRole("link", { name: "新規予約", exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveClass(/sr-only/);
   await page
     .getByRole("link", { name: /^E2Eテーブル .*17:00から予約を登録$/ })
     .waitFor();

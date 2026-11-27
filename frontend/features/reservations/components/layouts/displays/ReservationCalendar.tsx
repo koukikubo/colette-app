@@ -1,4 +1,6 @@
 "use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
 import Link from "next/link";
 import { useState } from "react";
 import { useApiRead } from "@/hooks/useApiRead";
@@ -29,12 +31,12 @@ export function ReservationCalendar({ targetDate }: { targetDate: string }) {
             日付を選ぶと、その日のタイムラインを開きます。
           </p>
         </div>
-        <Link
-          className="text-primary underline underline-offset-4"
+        <NavigationLink
+          className="text-primary"
           href={`/reservations?date=${targetDate}`}
         >
           タイムラインへ
-        </Link>
+        </NavigationLink>
       </header>
       <div className="flex flex-wrap items-center gap-3">
         <label htmlFor="reservation-month">表示月</label>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavigationLink } from "@/components/common/navigation-link";
 import {
   Table,
   TableBody,
@@ -107,12 +107,11 @@ export function RfDistributionTable({
 
                     <p className="mt-2 text-lg font-semibold">
                       {runId ? (
-                        <Link
-                          className="underline"
+                        <NavigationLink
                           href={`/rf-customers?run_id=${runId}&recency_rule_id=${recencyRule.id}&frequency_rule_id=${frequencyRule.id}&return_to=%2Frf-analysis`}
                         >
                           {cell.count.toLocaleString("ja-JP")}名
-                        </Link>
+                        </NavigationLink>
                       ) : (
                         <>{cell.count.toLocaleString("ja-JP")}名</>
                       )}

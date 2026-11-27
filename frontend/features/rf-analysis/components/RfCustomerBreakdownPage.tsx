@@ -1,6 +1,9 @@
 "use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
+
+import { PageHeading } from "@/components/common/page-heading";
 import { useApiRead } from "@/hooks/useApiRead";
-import Link from "next/link";
 import { useState } from "react";
 
 import { useUrlQuery } from "@/hooks/useUrlQuery";
@@ -55,11 +58,9 @@ export function RfCustomerBreakdownPage() {
     ? safeReturnPath(params.get("return_to"))
     : "/rf-analysis";
   return (
-    <main className="space-y-5 p-6">
-      <h1 className="text-2xl font-semibold">RF分析の対象顧客</h1>
-      <Link className="underline" href={back}>
-        分析画面に戻る
-      </Link>
+    <div className="space-y-5 p-6">
+      <PageHeading>RF分析の対象顧客</PageHeading>
+      <NavigationLink href={back}>分析画面に戻る</NavigationLink>
       {loading ? (
         <p role="status">顧客の内訳を読み込んでいます。</p>
       ) : error ? (
@@ -123,12 +124,11 @@ export function RfCustomerBreakdownPage() {
                     {data.customers.map((row) => (
                       <tr key={row.customer_id} className="border-t">
                         <td className="p-3">
-                          <Link
-                            className="underline"
+                          <NavigationLink
                             href={`/customers/${row.customer_id}?return_to=${encodeURIComponent(`/rf-customers?${query}`)}`}
                           >
                             {row.customer_name}
-                          </Link>
+                          </NavigationLink>
                         </td>
                         {data.comparison_run && (
                           <td>
@@ -161,6 +161,6 @@ export function RfCustomerBreakdownPage() {
           </>
         )
       )}
-    </main>
+    </div>
   );
 }

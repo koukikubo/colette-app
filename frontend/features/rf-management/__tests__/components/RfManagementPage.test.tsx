@@ -64,7 +64,7 @@ vi.mock("../../components/settings/RfRankColorSettingsSection", () => ({
 }));
 
 describe("RfManagementPage", () => {
-  it("統一RFマスタ画面の見出しと説明を表示する", () => {
+  it("読み上げ見出しを保持し、各設定操作へ進める", () => {
     render(<RfManagementPage />);
 
     expect(
@@ -73,9 +73,9 @@ describe("RfManagementPage", () => {
       }),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByText("RFルールの設定と、RFランクの計算履歴を管理します。"),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "統一RFマスタ" })).toHaveClass(
+      "sr-only",
+    );
 
     expect(
       screen.getByRole("button", { name: "RFルールを更新" }),

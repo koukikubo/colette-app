@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavigationLink } from "@/components/common/navigation-link";
 import {
   Table,
   TableBody,
@@ -91,22 +91,20 @@ export function RfYearComparisonTable({
                 </TableCell>
 
                 <TableCell className="text-right">
-                  <Link
-                    className="underline"
+                  <NavigationLink
                     href={`/rf-customers?run_id=${comparison.calculation_run_id}&rf_rank_id=${rank.rf_rank.id}&return_to=%2Frf-analysis`}
                   >
                     {rank.previous_count.toLocaleString("ja-JP")}名
-                  </Link>
+                  </NavigationLink>
                 </TableCell>
 
                 <TableCell className="text-right">
                   {currentRunId ? (
-                    <Link
-                      className="underline"
+                    <NavigationLink
                       href={`/rf-customers?run_id=${currentRunId}&rf_rank_id=${rank.rf_rank.id}&return_to=%2Frf-analysis`}
                     >
                       {rank.current_count.toLocaleString("ja-JP")}名
-                    </Link>
+                    </NavigationLink>
                   ) : (
                     <>{rank.current_count.toLocaleString("ja-JP")}名</>
                   )}

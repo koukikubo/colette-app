@@ -5,7 +5,13 @@ import { SiteHeader } from "@/features/app-shell/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/features/staff-auth/hooks/use-auth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { PageHeading } from "@/components/common/page-heading";
+import {
+  resolveHeaderLocation,
+  pageSuppliesHeading,
+} from "@/features/app-shell/components/page-location";
 import { useEffect } from "react";
 
 type ReservationsLayoutProps = {
@@ -14,6 +20,8 @@ type ReservationsLayoutProps = {
 
 export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const location = resolveHeaderLocation(pathname);
   const { status, refreshCurrentStaff } = useAuth();
 
   useEffect(() => {
@@ -28,11 +36,12 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
     return (
       <div role="alert" className="p-6">
         認証状態を確認できませんでした。
-        <button
+        <Button
+          variant="outline"
           onClick={() => void refreshCurrentStaff().catch(() => undefined)}
         >
           再取得
-        </button>
+        </Button>
       </div>
     );
 
@@ -72,14 +81,21 @@ export default function ProtectedLayout({ children }: ReservationsLayoutProps) {
             variant="sidebar"
             className="top-(--header-height) h-[calc(100svh-var(--header-height))] border-none!"
           />
-          <SidebarInset className="min-w-0">
+          <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
             <a
               href="#main-content"
               className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-card focus:p-3"
             >
               本文へ移動
             </a>
-            <div id="main-content" tabIndex={-1} className="min-w-0">
+            <div className="min-w-0">
+              {!pageSuppliesHeading(pathname) && (
+                <PageHeading>
+                  {location.page
+                    ? `${location.section} / ${location.page}`
+                    : location.section}
+                </PageHeading>
+              )}
               {children}
             </div>
           </SidebarInset>

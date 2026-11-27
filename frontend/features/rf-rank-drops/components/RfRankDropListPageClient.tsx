@@ -1,9 +1,12 @@
 "use client";
 
+import { NavigationLink } from "@/components/common/navigation-link";
+
+import { PageHeading } from "@/components/common/page-heading";
+
 // RFランク低下顧客の一覧画面。
 // useRfRankDropsで取得し、共通のページ操作と顧客詳細へのリンクを表示する。
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { PaginationControls } from "@/components/common/pagination/PaginationControls";
@@ -84,12 +87,12 @@ export function RfRankDropListPageClient() {
     <div className="space-y-6 p-4 sm:p-6">
       <nav className="flex gap-4">
         <span>低下済み</span>
-        <Link className="underline" href="/rf-rank-drops/predictions">
+        <NavigationLink href="/rf-rank-drops/predictions">
           低下予定
-        </Link>
+        </NavigationLink>
       </nav>
       <header>
-        <h1 className="text-2xl font-semibold">今月のRFランク低下顧客</h1>
+        <PageHeading>今月のRFランク低下顧客</PageHeading>
         <p className="mt-1 text-sm text-muted-foreground">
           当月初日から今日までにランクが低下した顧客を一覧で確認できます。
         </p>
@@ -187,12 +190,12 @@ export function RfRankDropListPageClient() {
                         {data.customers.map((customer) => (
                           <TableRow key={customer.customer_id}>
                             <TableCell>
-                              <Link
+                              <NavigationLink
                                 href={`/customers/${customer.customer_id}`}
-                                className="font-medium underline underline-offset-4 hover:text-primary"
+                                className="font-medium"
                               >
                                 {customer.customer_name}
-                              </Link>
+                              </NavigationLink>
                             </TableCell>
                             <TableCell>{customer.detected_on}</TableCell>
                             <TableCell>
