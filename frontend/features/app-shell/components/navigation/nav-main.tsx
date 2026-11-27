@@ -21,9 +21,10 @@ type NavMainItem = {
 type NavMainProps = {
   items: NavMainItem[];
   title: string;
+  guideTarget?: string;
 };
 
-export function NavMain({ items, title }: NavMainProps) {
+export function NavMain({ items, title, guideTarget }: NavMainProps) {
   const pathname = usePathname();
   const active = (url: string) =>
     url === "/reservations"
@@ -31,7 +32,7 @@ export function NavMain({ items, title }: NavMainProps) {
         pathname !== "/reservations/calendar"
       : pathname === url || pathname.startsWith(`${url}/`);
   return (
-    <SidebarGroup>
+    <SidebarGroup data-guide-target={guideTarget}>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarGroupLabel>{title}</SidebarGroupLabel>
 
