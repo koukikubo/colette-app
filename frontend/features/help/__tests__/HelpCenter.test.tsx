@@ -190,7 +190,7 @@ describe("全画面のヘルプと初回案内", () => {
     );
     for (let i = 0; i < 4; i++)
       await user.click(
-        screen.getByRole("button", { name: "次へ", exact: true }),
+        screen.getByRole("button", { name: "次へ" }),
       );
     await user.click(screen.getByRole("button", { name: "案内を完了" }));
     await waitFor(() =>
