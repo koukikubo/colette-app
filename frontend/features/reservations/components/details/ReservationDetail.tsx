@@ -138,7 +138,7 @@ export function ReservationDetail({
   );
 
   return (
-    <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
       <Card className="mx-auto w-full max-w-5xl overflow-hidden py-0 shadow-sm">
         <CardHeader className="border-b bg-muted/20 px-5 py-5 sm:px-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -450,6 +450,6 @@ export function ReservationDetail({
           />
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

@@ -10,19 +10,17 @@ vi.mock("../../components/RfAnalysisSection", () => ({
 }));
 
 describe("RfAnalysisPage", () => {
-  it("統一RF分析画面の見出しと説明を表示する", () => {
+  it("重複する大見出しを出さず読み上げ見出しと分析結果を保持する", () => {
     render(<RfAnalysisPage />);
 
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "統一RF分析",
+        name: "統一RFランク表",
       }),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByText("現在の顧客構成と、前年同月からの変化を確認します。"),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveClass("sr-only");
 
     expect(
       screen.getByRole("region", {

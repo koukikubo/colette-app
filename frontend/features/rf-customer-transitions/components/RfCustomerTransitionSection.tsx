@@ -1,3 +1,6 @@
+"use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
 /**
  * RFランクの年月比較画面を構成する。
  *
@@ -7,9 +10,6 @@
  * 入力変更時は通信を中止し、古い条件の結果が画面に残ることを防ぐ。
  */
 
-"use client";
-
-import Link from "next/link";
 import { useUrlQuery } from "@/hooks/useUrlQuery";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -236,9 +236,9 @@ export function RfCustomerTransitionSection() {
               <RfMovementOverview counts={comparison.movement.counts} />
               <nav className="flex flex-wrap gap-4">
                 {(["up", "down", "unchanged"] as const).map((category) => (
-                  <Link
+                  <NavigationLink
                     key={category}
-                    className="underline"
+
                     href={`/rf-customers?${new URLSearchParams({ run_id: String(comparison.end_run.id), comparison_run_id: String(comparison.start_run.id), category, return_to: `/rf-customer-transitions?start_month=${startMonth}&end_month=${endMonth}` })}`}
                   >
                     {category === "up"
@@ -247,7 +247,7 @@ export function RfCustomerTransitionSection() {
                         ? "下降"
                         : "維持"}
                     した顧客 {comparison.movement.counts[category]}人
-                  </Link>
+                  </NavigationLink>
                 ))}
               </nav>
 

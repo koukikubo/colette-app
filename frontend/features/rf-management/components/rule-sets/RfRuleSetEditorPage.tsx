@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeading } from "@/components/common/page-heading";
+
 import { Badge } from "@/components/ui/badge";
 import { RfRuleSetDraftEditor } from "./RfRuleSetDraftEditor";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,50 +24,53 @@ export function RfRuleSetEditorPage({ ruleSetId }: RfRuleSetEditorPageProps) {
 
   if (authStatus === "loading" || (isOwner && isLoading)) {
     return (
-      <main className="space-y-6 p-4 lg:p-6">
+      <div className="space-y-6 p-4 lg:p-6">
+        <PageHeading>統一RFマスタ 設定編集</PageHeading>
         <div role="status" className="space-y-4">
           <span className="sr-only">RFルールを読み込んでいます。</span>
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!isOwner) {
     return (
-      <main className="p-4 lg:p-6">
+      <div className="p-4 lg:p-6">
+        <PageHeading>統一RFマスタ 設定編集</PageHeading>
         <div
           role="alert"
           className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
         >
           RFルールを編集できるのはオーナーのみです。
         </div>
-      </main>
+      </div>
     );
   }
 
   if (errorMessage) {
     return (
-      <main className="p-4 lg:p-6">
+      <div className="p-4 lg:p-6">
+        <PageHeading>統一RFマスタ 設定編集</PageHeading>
         <div
           role="alert"
           className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
         >
           {errorMessage}
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!ruleSet) {
-    return null;
+    return <PageHeading>統一RFマスタ 設定編集</PageHeading>;
   }
 
   if (ruleSet.status !== "draft") {
     return (
-      <main className="space-y-6 p-4 lg:p-6">
+      <div className="space-y-6 p-4 lg:p-6">
         <header>
           <h1 className="text-2xl font-semibold tracking-tight">
             {ruleSet.name}
@@ -78,21 +83,17 @@ export function RfRuleSetEditorPage({ ruleSetId }: RfRuleSetEditorPageProps) {
         >
           公開中またはアーカイブ済みのRFルールは編集できません。
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="space-y-6 p-4 lg:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
+    <div className="space-y-6 p-4 lg:p-6">
+      <header className="colette-surface flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             {ruleSet.name}
           </h1>
-
-          <p className="mt-2 text-sm text-muted-foreground">
-            RFルールの条件とランク対応表を順番に設定します。
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -106,6 +107,6 @@ export function RfRuleSetEditorPage({ ruleSetId }: RfRuleSetEditorPageProps) {
         key={`${ruleSet.id}-${ruleSet.lock_version}`}
         ruleSet={ruleSet}
       />
-    </main>
+    </div>
   );
 }

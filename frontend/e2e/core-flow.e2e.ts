@@ -1284,4 +1284,56 @@ test("店舗独自の顧客項目を設定して回答を保存し、タブと�
     path: "test-results/customer-detail-225-desktop.png",
     fullPage: true,
   });
+  await checkCommonUi(page);
 });
+
+// 同じ認証済み画面から、主要画面の見出し・現在地・遷移を確認する。
+async function checkCommonUi(page: Page) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of [
+    "/dashboard",
+    "/customers",
+    "/reservations",
+    "/reservations/calendar",
+    "/rf-analysis",
+    "/rf-customer-transitions",
+    "/rf-rank-drops",
+    "/rf-rank-drops/predictions",
+    "/rf-management",
+    "/standard-codes",
+    "/staff-masters",
+    "/restaurant-masters",
+    "/account/password",
+  ]) {
+    await page.goto(path);
+    await expect(
+      page.getByRole("navigation", { name: "現在地" }),
+    ).toBeVisible();
+    await expect(page.getByRole("main")).toHaveCount(1);
+    await expect(page.locator("main main")).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveClass(
+      /sr-only/,
+    );
+    await expect(
+      page.locator('nav[aria-label="現在地"] [aria-current="page"]'),
+    ).toHaveCount(1);
+  }
+  await page.goto("/rf-analysis");
+  const link = page.locator('[data-slot="navigation-link"]').first();
+  await expect(link).toBeVisible();
+  await link.focus();
+  await expect(link).toBeFocused();
+  await link.press("Enter");
+  await expect(page).toHaveURL(/\/rf-customers\?/);
+  await expect(
+    page.getByRole("heading", { name: "RF分析の対象顧客", level: 1 }),
+  ).toHaveCount(1);
+  await page
+    .getByRole("link", { name: "分析画面に戻る", exact: true })
+    .press("Enter");
+  await expect(page).toHaveURL(/\/rf-analysis$/);
+  await captureDashboard(page, "test-results/common-ui-226-mobile.png");
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await captureDashboard(page, "test-results/common-ui-226-desktop.png");
+}

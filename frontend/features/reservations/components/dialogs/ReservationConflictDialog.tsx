@@ -1,6 +1,7 @@
 "use client";
+
+import { NavigationLink } from "@/components/common/navigation-link";
 import { useState } from "react";
-import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -73,9 +74,9 @@ export function ReservationConflictDialog({
         {changedState && (
           <p role="alert">
             完了・キャンセル状態が変更されています。
-            <Link className="underline" href={`/reservations/${latest.id}`}>
+            <NavigationLink href={`/reservations/${latest.id}`}>
               最新の予約詳細
-            </Link>
+            </NavigationLink>
             で状態を確認してください。
           </p>
         )}
@@ -140,9 +141,9 @@ export function ReservationConflictDialog({
         >
           選択を反映して再編集
         </Button>
-        <Link className="underline" href={`/reservations/${latest.id}`}>
+        <NavigationLink href={`/reservations/${latest.id}`}>
           最新の予約詳細を開く
-        </Link>
+        </NavigationLink>
         <Button variant="outline" onClick={onClose}>
           入力を保持して閉じる
         </Button>

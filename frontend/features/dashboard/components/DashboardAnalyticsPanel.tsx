@@ -167,9 +167,7 @@ export function DashboardAnalyticsPanel({ reload }: { reload: number }) {
             </div>
           </div>
           <details>
-            <summary className="cursor-pointer text-sm text-primary underline">
-              数値を表で確認
-            </summary>
+            <summary className="colette-disclosure">数値を表で確認</summary>
             <table className="mt-3 w-full text-sm">
               <caption className="sr-only">月別予約・来店件数</caption>
               <thead>
@@ -264,7 +262,7 @@ export function DashboardAnalyticsPanel({ reload }: { reload: number }) {
                         href={`/customers/${customer.id}`}
                         className="flex flex-wrap items-center justify-between gap-2 rounded bg-muted/40 px-3 py-3 hover:bg-accent"
                       >
-                        <span className="font-medium text-primary underline underline-offset-4">
+                        <span className="font-medium text-primary">
                           {customer.name}
                         </span>
                         <span className="text-xs text-muted-foreground">

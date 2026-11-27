@@ -175,7 +175,7 @@ export function ReservationForm({
   const hasFieldErrors = Object.keys(fieldErrors).length > 0;
 
   return (
-    <main className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-var(--header-height))] bg-muted/30 px-4 py-6 sm:px-6 lg:px-8">
       <form
         className="mx-auto flex w-full max-w-5xl flex-col gap-6"
         onSubmit={(event) => {
@@ -722,6 +722,6 @@ export function ReservationForm({
           </CardFooter>
         </Card>
       </form>
-    </main>
+    </div>
   );
 }
