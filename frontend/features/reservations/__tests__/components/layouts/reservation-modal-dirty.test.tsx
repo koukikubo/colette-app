@@ -6,7 +6,10 @@ import { createReservation } from "../../fixtures/reservation-fixtures";
 import { ReservationRouteModal } from "../../../components/layouts/reservation-route-modal";
 import { EditReservationFormContainer } from "../../../components/form/EditReservationFormContainer";
 const mocks = vi.hoisted(() => ({ back: vi.fn(), push: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => mocks }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => mocks,
+  usePathname: () => "/reservations/1/edit",
+}));
 vi.mock("../../../hooks/useReservation", () => ({
   useReservation: () => ({
     reservation: createReservation(),
@@ -55,6 +58,8 @@ it("顧客解除だけの編集もEscapeと閉じる操作で破棄確認する"
       <EditReservationFormContainer reservationId={1} />
     </ReservationRouteModal>,
   );
+  expect(screen.getByRole("heading", { name: "予約編集" })).toHaveFocus();
+  expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "顧客選択を解除" }));
   expect(screen.getByText("解除済み")).toBeInTheDocument();
   await user.keyboard("{Escape}");
