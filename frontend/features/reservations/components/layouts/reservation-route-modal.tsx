@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { HelpButton } from "@/features/help/components/HelpButton";
 import { ReservationModalDirtyContext } from "./reservation-modal-dirty-context";
 import { ConfirmDiscardChangesDialog } from "@/components/common/ConfirmDiscardChangesDialog";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,7 @@ export function ReservationRouteModal({
   children,
 }: ReservationRouteModalProps) {
   const router = useRouter();
+  const heading = useRef<HTMLHeadingElement>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
@@ -43,6 +45,12 @@ export function ReservationRouteModal({
   return (
     <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent
+        data-help-host="reservation"
+        onOpenAutoFocus={(event) => {
+          // 補助ヘルプのTooltipを自動で開かず、予約画面の見出しから案内する。
+          event.preventDefault();
+          heading.current?.focus();
+        }}
         className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
         onPointerDownOutside={(event) => {
           event.preventDefault();
@@ -53,7 +61,12 @@ export function ReservationRouteModal({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <div className="flex items-center justify-between gap-3 pr-6">
+            <DialogTitle ref={heading} tabIndex={-1}>
+              {title}
+            </DialogTitle>
+            <HelpButton />
+          </div>
 
           <DialogDescription>
             {description ?? "予約内容を確認し、必要な項目を入力してください。"}

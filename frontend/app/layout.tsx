@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { HelpCenter } from "@/features/help/components/HelpCenter";
 import { AuthProvider } from "@/features/staff-auth/providers/AuthProvider";
 
 const geistSans = localFont({
@@ -34,7 +35,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <HelpCenter />
+        </AuthProvider>
       </body>
     </html>
   );

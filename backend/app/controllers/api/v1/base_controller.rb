@@ -62,7 +62,8 @@ class Api::V1::BaseController < ApplicationController
 
   def require_write_permission!
     return if request.get? || request.head? || request.options?
-    return if %w[api/v1/staff/sessions api/v1/staff/passwords].include?(controller_path)
+    # 案内状態は本人専用の設定。viewerにも許可し、業務データの更新権限は広げない。
+    return if %w[api/v1/staff/sessions api/v1/staff/passwords api/v1/staff/guide_states].include?(controller_path)
     staff = current_staff
     return unless staff
     return if staff.staff_master_role_code == "owner"

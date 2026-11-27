@@ -99,6 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain title="メインメニュー" items={[data.navMain[0]]} />
         <NavMain
           title="予約管理"
+          guideTarget="reservations"
           items={[
             {
               title: "カレンダー",
@@ -108,9 +109,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             data.navMain[2],
           ]}
         />
-        <NavMain title="顧客管理" items={[data.navMain[1]]} />
-        <NavMain title="顧客分析" items={data.navMain.slice(3)} />
-        <NavDocuments title="各種設定" items={data.masterMenu} />
+        <NavMain
+          guideTarget="customers"
+          title="顧客管理"
+          items={[data.navMain[1]]}
+        />
+        <NavMain
+          guideTarget="analysis"
+          title="顧客分析"
+          items={data.navMain.slice(3)}
+        />
+        <NavDocuments
+          guideTarget="masters"
+          title="各種設定"
+          items={data.masterMenu}
+        />
       </SidebarContent>
 
       <SidebarFooter>

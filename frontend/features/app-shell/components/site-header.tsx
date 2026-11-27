@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
+import { HelpButton } from "@/features/help/components/HelpButton";
 import { Brand } from "./brand";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
@@ -16,6 +17,7 @@ export function SiteHeader() {
       <div className="flex min-w-0 w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger
           className="-ml-1"
+          data-guide-target="navigation"
           aria-label="メニューを開閉"
           title="メニューを開閉"
         />
@@ -28,7 +30,8 @@ export function SiteHeader() {
         >
           <span
             aria-current={!location.page ? "page" : undefined}
-            className="shrink-0 text-muted-foreground"
+            title={location.section}
+            className="min-w-0 truncate text-muted-foreground"
           >
             {location.section}
           </span>
@@ -43,6 +46,9 @@ export function SiteHeader() {
             </>
           )}
         </nav>
+        <div className="ml-auto shrink-0">
+          <HelpButton />
+        </div>
       </div>
     </header>
   );

@@ -27,6 +27,7 @@ type NavDocumentsProps = {
    * - ドキュメント
    */
   title: string;
+  guideTarget?: string;
 
   /**
    * グループ内に表示するメニュー一覧。
@@ -34,10 +35,13 @@ type NavDocumentsProps = {
   items: NavDocumentItem[];
 };
 
-export function NavDocuments({ title, items }: NavDocumentsProps) {
+export function NavDocuments({ title, items, guideTarget }: NavDocumentsProps) {
   const pathname = usePathname();
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup
+      data-guide-target={guideTarget}
+      className="group-data-[collapsible=icon]:hidden"
+    >
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
 
       <SidebarMenu>
